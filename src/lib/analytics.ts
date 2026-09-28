@@ -62,6 +62,169 @@ declare global {
 
 const CURRENCY = "SAR";
 
+// Endpoint that records events to our own analytics_events ledger. Same
+// shape as GA4 events (so a future swap-in of server-side GA4 stays
+// trivial), but lives in our DB so we own the retention + join with
+// orders/vendors/products. See src/app/api/v1/analytics/event/route.ts.
+const IN_HOUSE_ENDPOINT = "/api/v1/analytics/event";
+
+// Allow-list kept in sync with the API route validator. Anything outside
+// this set is dropped client-side — the server-side validator does the
+// same check, but skipping here saves a network round trip and matches
+// the GA4 standard-event set we're actually optimising for.
+const IN_HOUSE_ALLOWLIST = new Set<string>([
+  "add_to_cart",
+  "remove_from_cart",
+  "checkout_start",
+  "purchase",
+  "search",
+  "signup",
+  "view_item",
+  "begin_checkout",
+  "share",
+  "exception",
+]);
+
+// Map a GA4-flavoured payload + camelCase extras onto the flat schema the
+// /api/v1/analytics/event route understands:
+//   { eventName, vendorId, orderId, productId, revenue, currency, metadata }
+// The route validates IDs as UUID-shaped — non-UUID strings are silently
+// dropped, but we still include them in `metadata` so they surface in the
+// ledger for non-UUID identifiers (vendor slugs, transaction IDs, etc.).
+function buildInHouseBody(
+  eventName: string,
+  params: Record<string, unknown> | undefined,
+): Record<string, unknown> {
+  const meta: Record<string, unknown> = {};
+  const p = params ?? {};
+
+  // Vendor: GA4 prefers snake_case `vendor_id`, the camelCase `vendorId`
+  // comes from our own convenience trackers. Pass whichever is present
+  // through to the dedicated column; always keep the original in metadata
+  // so non-UUID vendor slugs survive.
+  const vendorId =
+    (typeof p.vendorId === "string" ? p.vendorId : undefined) ??
+    (typeof p.vendor_id === "string" ? p.vendor_id : undefined);
+  if (vendorId) meta.vendor_id = vendorId;
+
+  // Order: GA4 calls it `transaction_id` for purchase; we also accept
+  // `orderId` from our own trackers. Map both to the server column.
+  const orderId =
+    (typeof p.orderId === "string" ? p.orderId : undefined) ??
+    (typeof p.transaction_id === "string" ? p.transaction_id : undefined) ??
+    (typeof p.order_id === "string" ? p.order_id : undefined);
+  if (orderId) {
+    meta.transaction_id = orderId;
+    meta.orderId = orderId;
+  }
+
+  // Product: GA4 puts this in items[].item_id; convenience trackers pass
+  // it as a flat field. Take the first item if an array is present.
+  let productId: string | undefined;
+  if (Array.isArray(p.items) && p.items.length > 0) {
+    const first = p.items[0] as Record<string, unknown> | undefined;
+    const candidate =
+      (typeof first?.product_id === "string" ? first.product_id : undefined) ??
+      (typeof first?.item_id === "string" ? first.item_id : undefined);
+    if (candidate) productId = candidate;
+  }
+  if (!productId && typeof p.product_id === "string") productId = p.product_id;
+  if (!productId && typeof p.item_id === "string") productId = p.item_id;
+  if (productId) meta.product_id = productId;
+
+  // Revenue: prefer the dedicated `value` field, fall back to revenue.
+  let revenue: number | undefined;
+  if (typeof p.value === "number" && Number.isFinite(p.value)) revenue = p.value;
+  else if (typeof p.revenue === "number" && Number.isFinite(p.revenue)) revenue = p.revenue;
+
+  // Currency is optional — server defaults to SAR.
+  const currency =
+    typeof p.currency === "string" && p.currency.length > 0 ? p.currency : undefined;
+
+  // Bucket all remaining params under `metadata` so we never lose
+  // debuggability. The route caps this at 8KB; anything larger is
+  // silently dropped server-side, which is fine for analytics.
+  for (const [k, v] of Object.entries(p)) {
+    if (
+      k === "vendorId" ||
+      k === "vendor_id" ||
+      k === "orderId" ||
+      k === "transaction_id" ||
+      k === "order_id" ||
+      k === "product_id" ||
+      k === "item_id" ||
+      k === "value" ||
+      k === "revenue" ||
+      k === "currency"
+    ) {
+      continue;
+    }
+    meta[k] = v;
+  }
+
+  const body: Record<string, unknown> = { eventName };
+  if (vendorId) body.vendorId = vendorId;
+  if (orderId) body.orderId = orderId;
+  if (productId) body.productId = productId;
+  if (typeof revenue === "number") body.revenue = revenue;
+  if (currency) body.currency = currency;
+  body.metadata = meta;
+  return body;
+}
+
+/**
+ * Send a single event to the in-house ledger. Uses sendBeacon first
+ * (it survives page unloads — critical for purchase events that fire
+ * right before navigation to the payment gateway); falls back to
+ * fetch with keepalive: true when sendBeacon isn't available or
+ * returns false (quota exceeded, payload too large). Never throws.
+ */
+function sendInHouseEvent(eventName: string, params?: Record<string, unknown>): void {
+  if (typeof window === "undefined") return;
+  if (!IN_HOUSE_ALLOWLIST.has(eventName)) return;
+  if (typeof navigator === "undefined") return;
+
+  let body: string;
+  try {
+    body = JSON.stringify(buildInHouseBody(eventName, params));
+  } catch {
+    return;
+  }
+  const blob = new Blob([body], { type: "application/json" });
+  let beaconUrl: string;
+  try {
+    beaconUrl = new URL(IN_HOUSE_ENDPOINT, window.location.origin).toString();
+  } catch {
+    beaconUrl = IN_HOUSE_ENDPOINT;
+  }
+
+  // sendBeacon returns true when the browser accepts the request for
+  // delivery. A false return means the payload was rejected (typically
+  // because it's too large) — fall back to fetch with keepalive so we
+  // still get the event during page-unload races.
+  const beacon = navigator.sendBeacon;
+  if (typeof beacon === "function") {
+    try {
+      if (beacon.call(navigator, beaconUrl, blob)) return;
+    } catch {
+      // fall through to fetch
+    }
+  }
+
+  if (typeof fetch === "function") {
+    try {
+      void fetch(beaconUrl, {
+        method: "POST",
+        body,
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch {
+      // analytics must never break the page
+    }
+  }
+}
+
 function send(command: "event" | "config" | "set", name: string, params?: Record<string, unknown>) {
   if (typeof window === "undefined") return;
   window.gtag?.(command, name, params);
@@ -100,12 +263,31 @@ function sendMeta(
 
 export const analytics = {
   init({ trackingId }: { trackingId: string }) {
-    if (!trackingId || typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
+    // Allow build-time / env-var injection of the GA4 measurement id so
+    // a deploy can swap ids without touching call sites. Explicit
+    // `trackingId` arg wins when both are present.
+    const envId =
+      typeof process !== "undefined" &&
+      process.env &&
+      typeof process.env.NEXT_PUBLIC_GA4_ID === "string"
+        ? process.env.NEXT_PUBLIC_GA4_ID
+        : "";
+    const effectiveId = envId || trackingId;
+    if (!effectiveId) {
+      // Dev-mode reminder; production must stay silent so missing config
+      // doesn't leak into user-facing logs.
+      if (typeof process !== "undefined" && process.env && process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.warn("[analytics] init() called with no GA4 tracking id; GA events will be dropped.");
+      }
+      return;
+    }
     window.dataLayer = window.dataLayer || [];
     window.gtag = function gtag(...args: Parameters<GtagFn>) {
       (window.dataLayer as unknown[]).push(args);
     };
-    send("config", trackingId);
+    send("config", effectiveId);
   },
 
   /**
@@ -127,6 +309,7 @@ export const analytics = {
     // custom event so it still shows up in Events Manager's Custom Events
     // section. Naming: keep the GA4 action verbatim for easier triage.
     sendMeta(action, params, true);
+    sendInHouseEvent(action, params);
   },
 
   productView(product: { id: string; name: string; category?: string; price?: number; currency?: string; vendorId?: string }) {
@@ -153,6 +336,18 @@ export const analytics = {
       value: product.price ?? 0,
       currency: CURRENCY,
     });
+    // In-house ledger — same view_item name as GA4 so future dashboard
+    // joins stay simple. product.vendorId is preserved as metadata even
+    // when the server validator rejects it (non-UUID vendor slug).
+    sendInHouseEvent("view_item", {
+      currency: CURRENCY,
+      value: product.price ?? 0,
+      items: ga4Items,
+      product_id: product.id,
+      product_name: product.name,
+      product_category: product.category,
+      vendorId: product.vendorId,
+    });
   },
 
   addToCart(item: { id: string; name: string; price: number; quantity: number; category?: string; currency?: string; vendorId?: string }) {
@@ -165,9 +360,10 @@ export const analytics = {
         item_category: item.category,
       },
     ];
+    const value = item.price * item.quantity;
     send("event", "add_to_cart", {
       currency: CURRENCY,
-      value: item.price * item.quantity,
+      value,
       items: ga4Items,
     });
     sendMeta("AddToCart", {
@@ -175,16 +371,26 @@ export const analytics = {
       content_name: item.name,
       content_category: item.category,
       content_type: "product",
-      value: item.price * item.quantity,
+      value,
       currency: CURRENCY,
       contents: [{ id: item.id, quantity: item.quantity }],
+    });
+    sendInHouseEvent("add_to_cart", {
+      currency: CURRENCY,
+      value,
+      items: ga4Items,
+      product_id: item.id,
+      product_name: item.name,
+      product_category: item.category,
+      vendorId: item.vendorId,
     });
   },
 
   removeFromCart(item: { id: string; name: string; price: number; quantity: number }) {
+    const value = item.price * item.quantity;
     send("event", "remove_from_cart", {
       currency: CURRENCY,
-      value: item.price * item.quantity,
+      value,
       items: [
         {
           item_id: item.id,
@@ -201,12 +407,19 @@ export const analytics = {
       {
         content_ids: [item.id],
         content_name: item.name,
-        value: item.price * item.quantity,
+        value,
         currency: CURRENCY,
         contents: [{ id: item.id, quantity: item.quantity }],
       },
       true,
     );
+    sendInHouseEvent("remove_from_cart", {
+      currency: CURRENCY,
+      value,
+      items: [{ item_id: item.id, item_name: item.name }],
+      product_id: item.id,
+      product_name: item.name,
+    });
   },
 
   checkoutStart(cartValue: number, itemCount: number) {
@@ -220,6 +433,11 @@ export const analytics = {
       currency: CURRENCY,
       num_items: itemCount,
       content_type: "product",
+    });
+    sendInHouseEvent("checkout_start", {
+      currency: CURRENCY,
+      value: cartValue,
+      item_count: itemCount,
     });
   },
 
@@ -259,6 +477,15 @@ export const analytics = {
       // the API route may also send (future enhancement).
       order_id: order.id,
     });
+    sendInHouseEvent("purchase", {
+      transaction_id: order.id,
+      currency: CURRENCY,
+      value: order.revenue,
+      revenue: order.revenue,
+      tax: order.tax,
+      shipping: order.shipping,
+      items: ga4Items,
+    });
   },
 
   search(searchTerm: string, resultCount: number) {
@@ -267,6 +494,10 @@ export const analytics = {
       search_string: searchTerm,
       // Meta uses content_category for the facet; we don't have facets here,
       // so leave it out rather than guess.
+    });
+    sendInHouseEvent("search", {
+      search_term: searchTerm,
+      result_count: resultCount,
     });
   },
 
@@ -279,6 +510,7 @@ export const analytics = {
       status: true,
       content_name: "customer_signup",
     });
+    sendInHouseEvent("signup", { method });
   },
 
   error(description: string, fatal = false) {
@@ -290,6 +522,7 @@ export const analytics = {
       { description, fatal },
       true,
     );
+    sendInHouseEvent("exception", { description, fatal });
   },
 
   /**
@@ -304,6 +537,9 @@ export const analytics = {
       page_title: pageTitle,
       ...(metadata ?? {}),
     });
+    // page_view is NOT in the in-house allow-list (we don't need a per-
+    // pageview ledger — server access logs already cover this). Skip the
+    // in-house send entirely so the route doesn't reject it.
   },
 
   /**
@@ -321,6 +557,12 @@ export const analytics = {
       item_id: content.itemId,
       order_id: content.orderId,
       ...content,
+    });
+    sendInHouseEvent("share", {
+      method: target,
+      content_type: content.type,
+      item_id: content.itemId,
+      orderId: content.orderId,
     });
   },
 };
