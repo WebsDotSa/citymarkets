@@ -14,14 +14,18 @@
 - [ ] extract CheckoutService
 - [ ] extract PaymentService
 - [ ] canonicalize catalog/product model
-- [x] **partially:** unify actor/auth layer — admin-api-auth.ts and
-      vendor-auth.ts now share `createRoleCache` from
-      `src/lib/auth/role-cache.ts` (single source of truth for TTL
-      semantics, eviction, value shape). The customer path stays
-      JWT-only — it has no DB-backed role cache and doesn't need one.
-      Remaining unification work: extract a common
-      `signJwt/verifyJwt` helper that subsumes the three near-identical
-      `sign*Token/verify*Request` pairs.
+- [x] **done:** unify actor/auth layer —
+      - `src/lib/auth/role-cache.ts` (createRoleCache) is shared by
+        admin-api-auth.ts and vendor-auth.ts (60s TTL, get/clear,
+        per-call TTL override, onEvict callback).
+      - `src/lib/auth/jwt-helper.ts` (signJwt, verifyJwt) is now the
+        single source of truth for the HS256 claim set. customer-session,
+        admin-session, and vendor-auth are thin wrappers over it. Algorithm
+        pinning (`["HS256"]`) is enforced centrally — alg=none downgrade
+        attacks can't bypass any of the three issuers anymore.
+      - Public API (signCustomerToken, verifyAdminRequest, etc.) is
+        unchanged, so the 60+ route handlers and 92 auth tests still
+        pass without modification.
 - [ ] queue critical notifications
 - [x] **partially:** remove local filesystem coupling — checkout + orders
       catch-all now goes through `src/lib/errors/checkout-error-reporter.ts`

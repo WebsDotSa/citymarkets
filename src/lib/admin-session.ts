@@ -1,8 +1,8 @@
-import { SignJWT, jwtVerify } from "jose";
 import type { NextRequest } from "next/server";
 import { getAdminJwtSecretBytes, isCookieSecure } from "@/lib/env";
 import type { AdminRole } from "@/lib/admin-types";
 import { ADMIN_SESSION_COOKIE } from "@/lib/auth-cookie-name";
+import { signJwt, verifyJwt } from "@/lib/auth/jwt-helper";
 
 export { ADMIN_SESSION_COOKIE };
 
@@ -14,17 +14,16 @@ export async function signAdminSessionToken(admin: {
   email: string;
   role: AdminRole | string;
 }): Promise<string> {
-  return new SignJWT({
-    email: admin.email,
-    role: admin.role,
-  })
-    .setProtectedHeader({ alg: "HS256" })
-    .setSubject(admin.id)
-    .setIssuedAt()
-    .setIssuer(ISS)
-    .setAudience(AUD)
-    .setExpirationTime("7d")
-    .sign(getAdminJwtSecretBytes());
+  return signJwt(
+    { email: admin.email, role: admin.role },
+    admin.id,
+    {
+      issuer: ISS,
+      audience: AUD,
+      secretBytes: getAdminJwtSecretBytes(),
+      expirationTime: "7d",
+    },
+  );
 }
 
 export type VerifiedAdminJwt = {
@@ -38,20 +37,16 @@ export async function verifyAdminRequest(
 ): Promise<VerifiedAdminJwt | null> {
   const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
   if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, getAdminJwtSecretBytes(), {
-      issuer: ISS,
-      audience: AUD,
-      algorithms: ["HS256"],
-    });
-    const id = typeof payload.sub === "string" ? payload.sub : "";
-    const email = typeof payload.email === "string" ? payload.email : "";
-    const role = typeof payload.role === "string" ? payload.role : "";
-    if (!id || !role) return null;
-    return { id, email, role: role as AdminRole };
-  } catch {
-    return null;
-  }
+  const payload = await verifyJwt<{ email?: unknown; role?: unknown }>(
+    token,
+    { issuer: ISS, audience: AUD, secretBytes: getAdminJwtSecretBytes() },
+  );
+  if (!payload || !payload.sub || !payload.role) return null;
+  return {
+    id: payload.sub,
+    email: typeof payload.email === "string" ? payload.email : "",
+    role: payload.role as AdminRole,
+  };
 }
 
 export function adminSessionCookieOptions() {

@@ -1,4 +1,3 @@
-import { SignJWT, jwtVerify } from "jose";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getVendorJwtSecretBytes, isCookieSecure } from "@/lib/env";
@@ -6,6 +5,7 @@ import { query } from "@/lib/db";
 import type { QueryResult } from "pg";
 import { VENDOR_SESSION_COOKIE } from "@/lib/auth-cookie-name";
 import { createRoleCache, type RoleCache } from "@/lib/auth/role-cache";
+import { signJwt, verifyJwt } from "@/lib/auth/jwt-helper";
 
 export { VENDOR_SESSION_COOKIE };
 
@@ -24,38 +24,25 @@ export interface VendorSession {
   permissions: string[];
 }
 
-interface JwtPayload {
-  vendorId: string;
-  vendorSlug: string;
-  staffId: string;
-  email: string;
-  fullName: string;
-  role: VendorRole;
-  permissions: string[];
-  sub: string;
-  iat: number;
-  exp: number;
-  iss: string;
-  aud: string;
-}
-
 export async function signVendorSessionToken(session: VendorSession): Promise<string> {
-  return new SignJWT({
-    vendorId: session.vendorId,
-    vendorSlug: session.vendorSlug,
-    staffId: session.staffId,
-    email: session.email,
-    fullName: session.fullName,
-    role: session.role,
-    permissions: session.permissions,
-  })
-    .setProtectedHeader({ alg: "HS256" })
-    .setSubject(session.staffId)
-    .setIssuedAt()
-    .setIssuer(ISS)
-    .setAudience(AUD)
-    .setExpirationTime("8h")
-    .sign(getVendorJwtSecretBytes());
+  return signJwt(
+    {
+      vendorId: session.vendorId,
+      vendorSlug: session.vendorSlug,
+      staffId: session.staffId,
+      email: session.email,
+      fullName: session.fullName,
+      role: session.role,
+      permissions: session.permissions,
+    },
+    session.staffId,
+    {
+      issuer: ISS,
+      audience: AUD,
+      secretBytes: getVendorJwtSecretBytes(),
+      expirationTime: "8h",
+    },
+  );
 }
 
 export async function verifyVendorRequest(
@@ -64,28 +51,33 @@ export async function verifyVendorRequest(
   const token = request.cookies.get(VENDOR_SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  try {
-    const { payload } = await jwtVerify(token, getVendorJwtSecretBytes(), {
-      issuer: ISS,
-      audience: AUD,
-      algorithms: ["HS256"],
-    });
+  const payload = await verifyJwt<{
+    vendorId?: unknown;
+    vendorSlug?: unknown;
+    email?: unknown;
+    fullName?: unknown;
+    role?: unknown;
+    permissions?: unknown;
+  }>(
+    token,
+    { issuer: ISS, audience: AUD, secretBytes: getVendorJwtSecretBytes() },
+  );
 
-    const p = payload as unknown as JwtPayload;
-    if (!p.sub || !p.vendorId || !p.role) return null;
-
-    return {
-      vendorId: p.vendorId,
-      vendorSlug: p.vendorSlug,
-      staffId: p.sub,
-      email: p.email,
-      fullName: p.fullName,
-      role: p.role,
-      permissions: p.permissions || [],
-    };
-  } catch {
+  if (!payload || !payload.sub || !payload.vendorId || !payload.role) {
     return null;
   }
+
+  return {
+    vendorId: String(payload.vendorId),
+    vendorSlug: typeof payload.vendorSlug === "string" ? payload.vendorSlug : "",
+    staffId: payload.sub,
+    email: typeof payload.email === "string" ? payload.email : "",
+    fullName: typeof payload.fullName === "string" ? payload.fullName : "",
+    role: payload.role as VendorRole,
+    permissions: Array.isArray(payload.permissions)
+      ? (payload.permissions as unknown[]).map(String)
+      : [],
+  };
 }
 
 interface VendorSessionEntry {

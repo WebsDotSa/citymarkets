@@ -14,11 +14,11 @@
  *   3. Supabase session (fallback) — only honored when an explicit
  *      Supabase cookie is present.
  */
-import { SignJWT, jwtVerify } from "jose";
 import { createServerClient } from "@supabase/ssr";
 import type { NextRequest } from "next/server";
 import { CUSTOMER_SESSION_COOKIE } from "./auth-cookie-name";
 import { getCustomerJwtSecretBytes, getSupabasePublicConfig, isCookieSecure } from "./env";
+import { signJwt, verifyJwt, type VerifyConfig } from "@/lib/auth/jwt-helper";
 
 export const COOKIE_NAME = CUSTOMER_SESSION_COOKIE;
 
@@ -38,7 +38,7 @@ export function extractBearerToken(request: NextRequest): string | null {
   const trimmed = header.trim();
   // A real JWT is at least 30+ chars (header.payload.signature). Anything
   // shorter than 14 chars is not a usable token, so reject the header
-  // early to avoid passing garbage to `jwtVerify`.
+  // early before passing it to verifyJwt.
   if (trimmed.length < 14) return null;
   const match = /^Bearer\s+(\S+)$/i.exec(trimmed);
   return match ? match[1] : null;
@@ -48,9 +48,18 @@ export function extractBearerToken(request: NextRequest): string | null {
 // layer, analogous to the admin/vendor tokens. If a customer JWT were
 // ever accidentally signed with the admin secret (or vice versa), the
 // mismatched iss/aud would cause verification to fail instead of granting
-// the wrong-role access.
+// the wrong-role access. See `src/lib/auth/jwt-helper.ts` for the
+// shared sign/verify mechanics.
 const ISS = "citymarket-customer";
 const AUD = "citymarket-customer-api";
+
+const customerSecretBytes = (): Uint8Array => getCustomerJwtSecretBytes();
+
+const customerVerifyConfig = (): VerifyConfig => ({
+  issuer: ISS,
+  audience: AUD,
+  secretBytes: customerSecretBytes(),
+});
 
 export type CustomerJwtPayload = {
   userId: string;
@@ -60,40 +69,30 @@ export type CustomerJwtPayload = {
 export async function signCustomerToken(
   payload: CustomerJwtPayload
 ): Promise<string> {
-  return new SignJWT({
-    userId: payload.userId,
-    phone: payload.phone,
-  })
-    .setProtectedHeader({ alg: "HS256" })
-    .setSubject(payload.userId)
-    .setIssuedAt()
-    .setIssuer(ISS)
-    .setAudience(AUD)
-    .setExpirationTime("14d")
-    .sign(getCustomerJwtSecretBytes());
+  return signJwt(
+    { userId: payload.userId, phone: payload.phone },
+    payload.userId,
+    {
+      issuer: ISS,
+      audience: AUD,
+      secretBytes: customerSecretBytes(),
+      expirationTime: "14d",
+    },
+  );
 }
 
 export async function verifyCustomerToken(
   token: string
 ): Promise<CustomerJwtPayload | null> {
-  try {
-    const { payload } = await jwtVerify(token, getCustomerJwtSecretBytes(), {
-      issuer: ISS,
-      audience: AUD,
-    });
-    const userId =
-      typeof (payload as Record<string, unknown>).userId === "string"
-        ? ((payload as Record<string, unknown>).userId as string)
-        : null;
-    const phone =
-      typeof (payload as Record<string, unknown>).phone === "string"
-        ? ((payload as Record<string, unknown>).phone as string)
-        : null;
-    if (!userId || !phone) return null;
-    return { userId, phone };
-  } catch {
-    return null;
-  }
+  const payload = await verifyJwt<{ userId?: unknown; phone?: unknown }>(
+    token,
+    customerVerifyConfig(),
+  );
+  if (!payload) return null;
+  const userId = typeof payload.userId === "string" ? payload.userId : null;
+  const phone = typeof payload.phone === "string" ? payload.phone : null;
+  if (!userId || !phone) return null;
+  return { userId, phone };
 }
 
 export function customerSessionCookieOptions() {
