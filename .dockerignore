@@ -1,0 +1,63 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Git
+.git
+.gitignore
+
+# Development files
+*.md
+CLAUDE.md
+IOS_APP_GUIDE.md
+
+# Logs and debugging
+*.log
+server.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts (will be rebuilt in container)
+.next
+out
+dist
+build
+
+# IDE and editor
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+
+# Testing and CI
+coverage
+.nyc_output
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Scripts (not needed in production)
+download_images.py
+import_products.py
+
+# Cursor and Claude artifacts
+.claude
+.claude/*
+.cursor
+.cursor/*
+
+# Temporary files
+tmp
+temp
+*.tmp

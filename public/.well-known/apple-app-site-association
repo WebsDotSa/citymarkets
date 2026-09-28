@@ -1,0 +1,40 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": [
+          "ABCDE12345.com.citymarkets.app",
+          "ABCDE12345.com.citymarkets.app.staging",
+          "ABCDE12345.com.citymarkets.app.dev"
+        ],
+        "components": [
+          { "/": "/products/*",        "comment": "Product detail" },
+          { "/": "/categories/*",      "comment": "Category listing" },
+          { "/": "/orders/*",          "comment": "Order detail / tracking" },
+          { "/": "/orders/track/*",    "comment": "Order tracking by code" },
+          { "/": "/cart",              "comment": "Cart" },
+          { "/": "/checkout",          "comment": "Checkout" },
+          { "/": "/checkout/pay",      "comment": "Payment return" },
+          { "/": "/offers",            "comment": "Offers" },
+          { "/": "/loyalty",           "comment": "Loyalty program" },
+          { "/": "/vendors/*",         "comment": "Vendor storefront" },
+          { "/": "/blog",              "comment": "Blog index" },
+          { "/": "/blog/*",            "comment": "Blog post" },
+          { "/": "/profile",           "comment": "Profile" },
+          { "/": "/help",              "comment": "Help center" }
+        ]
+      }
+    ]
+  },
+  "activitycontinuation": {
+    "apps": [
+      "ABCDE12345.com.citymarkets.app"
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "ABCDE12345.com.citymarkets.app"
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+-- Migration 050 — International delivery catch-all for the public endpoints
+--
+-- Background (Pitfall-117, 2026-08-15):
+-- `/api/v1/delivery/quote` and `/api/v1/public/zone-match` had a hard
+-- Saudi bounding box (lat 15-33, lng 35-60) that 400-rejected any
+-- coordinate from outside KSA. A customer in Tokyo, London, etc. could
+-- not even get a delivery quote for the international zone (the one
+-- configured in delivery_zones with `name_ar = 'دولي — كل دول العالم'`,
+-- delivery_fee=100, max_distance_km=NULL).
+--
+-- Fix:
+-- 1. Remove the bounding-box gate in both endpoints.
+-- 2. When point-in-polygon finds no match, fall back to the
+--    international "catch-all" zone (one with max_distance_km IS NULL
+--    and polygon_coords IS NULL).
+-- 3. Treat a `null` `free_delivery_min` as "never waive delivery" so the
+--    international zone stays paid regardless of cart size.
+--
+-- Note: `/api/v1/orders` and `/api/v1/checkout` were also updated (same
+-- session) to delegate zone selection to the shared
+-- `pickClosestZone` + `validateZoneDistance` resolver so the legacy
+-- single-vendor and multi-vendor checkout paths behave identically.
+--
+-- This migration is documentation-only — the previous schema already
+-- supports it. Adding the version row so future replays stay idempotent.

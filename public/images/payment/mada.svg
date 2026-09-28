@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" role="img" aria-label="مدى">
+  <rect width="60" height="40" rx="6" fill="#1f1f1f"/>
+  <text x="30" y="25" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff" letter-spacing="0.5">mada</text>
+  <circle cx="14" cy="32" r="1.6" fill="#ffffff" opacity="0.85"/>
+  <circle cx="19" cy="32" r="1.6" fill="#ffffff" opacity="0.85"/>
+  <circle cx="24" cy="32" r="1.6" fill="#ffffff" opacity="0.85"/>
+  <circle cx="29" cy="32" r="1.6" fill="#ffffff" opacity="0.85"/>
+</svg>

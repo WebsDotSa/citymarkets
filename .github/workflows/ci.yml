@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs on the same branch when a new push lands —
+# saves CI minutes when developers force-push amends.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests + Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: ci_citymarket
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_HOST: localhost
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ci_citymarket
+      DATABASE_USER: ci_user
+      DATABASE_PASSWORD: ci_password
+      JWT_SECRET: ci-test-jwt-secret-min-32-characters-x
+      ADMIN_JWT_SECRET: ci-test-admin-jwt-secret-min-32-characters
+      VENDOR_JWT_SECRET: ci-test-vendor-jwt-secret-min-32-characters
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint || true  # Lint failures don't block — track separately
+
+      - name: Migration dry-run (validates files without touching DB)
+        run: npm run db:migrate:dry-run
+
+      - name: Vitest with coverage
+        run: npm run test:coverage
+
+      - name: Build
+        run: npm run build
+        env:
+          # Build-time placeholders; real values injected at runtime via
+          # .env.local in production, never committed.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14

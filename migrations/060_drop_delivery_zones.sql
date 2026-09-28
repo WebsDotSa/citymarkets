@@ -1,0 +1,31 @@
+-- Migration 060 — Drop delivery_zones; switch to distance-based fee from main store
+--
+-- Background:
+-- The previous delivery pricing was zone-based: an admin drew polygons /
+-- distance circles on a map (Riyadh-North, Riyadh-South, Jeddah, an
+-- international catch-all, etc.) and the customer paid each zone's
+-- `delivery_fee` (or got free delivery once `subtotal >= zone.free_delivery_min`).
+-- Zones were resolved by Haversine on `polygon_coords` centroid, with a
+-- "no max_distance_km" catch-all for out-of-country addresses.
+--
+-- Operator decision (2026-09-26): replace zones with a single, distance-based
+-- fee computed from the main store (`stores.is_main = true`) to the
+-- customer's address:
+--
+--   distance_km ≤  2  → 3 SAR (base, includes first 2 km)
+--   distance_km  >  2 → 3 + 1.5 × (distance_km − 2)  SAR
+--   additional km above threshold → 1.5 SAR each
+--
+-- This migration drops `delivery_zones` and the legacy `delivery_settings.pricing`
+-- keys (`baseFee`, `perKmRate`, `freeDeliveryMin`, `maxDistanceKm`). The
+-- remaining `delivery_settings.pricing` shape keeps `serviceFee*` and `tax*`
+-- (configured in admin); `slots` and `hours` are unchanged.
+--
+-- Notes:
+--   * `vendor_settings.delivery_fee_override` column stays in place but is
+--     no longer read by the checkout pipeline (deprecated — vendors can still
+--     see/edit it in admin until a follow-up migration removes it).
+--   * `stores` is required — `is_main = true` row must exist or the quote /
+--     order routes return 503.
+
+DROP TABLE IF EXISTS delivery_zones CASCADE;

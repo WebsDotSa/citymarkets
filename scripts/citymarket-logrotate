@@ -1,0 +1,16 @@
+# Logrotate configuration for City Market App
+# Place in /etc/logrotate.d/citymarket-app
+
+/var/www/citymarkets.sa/city-market-app/server.log {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 root root
+    postrotate
+        # Touch the log file to signal application to reopen logs
+        # (if using logrotate's copytruncate)
+    endscript
+}

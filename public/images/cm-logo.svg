@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <!-- Green Background -->
+  <rect width="400" height="200" fill="#009345"/>
+  
+  <!-- White Shopping Cart Icon -->
+  <g transform="translate(30, 50)">
+    <path fill="white" d="M10 80 L15 80 L20 30 L70 30 L75 80 L85 80 L85 85 L75 85 L72 90 L23 90 L20 85 L10 85 Z"/>
+    <circle fill="white" cx="30" cy="95" r="8"/>
+    <circle fill="white" cx="65" cy="95" r="8"/>
+    <path fill="white" d="M15 25 L20 5 L70 5 L75 25 Z"/>
+  </g>
+  
+  <!-- Text: CITY MARKETS -->
+  <text x="120" y="115" fill="white" font-family="Arial, sans-serif" font-size="52" font-weight="bold">CITY</text>
+  <text x="120" y="160" fill="white" font-family="Arial, sans-serif" font-size="36" font-weight="normal">MARKETS</text>
+</svg>

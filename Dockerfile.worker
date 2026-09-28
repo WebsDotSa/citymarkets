@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1.7
+# Background-worker image. Runs `tsx scripts/worker.ts` (OTP cleanup,
+# broadcast processing, pending-order checks) on a setInterval loop.
+# Must be deployed alongside the app container; without it broadcast
+# delivery and OTP expiry cleanup silently never run.
+
+FROM node:22-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
+FROM node:22-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Non-root user — same UID as the app container so a shared volume mount
+# (if added later) doesn't have permission issues. Mirrors the app
+# Dockerfile's UID/GID.
+RUN addgroup -g 1001 -S nodejs && adduser -S worker -u 1001 -G nodejs
+
+# Production-only deps (worker uses tsx → must ship devDeps for tsc; the
+# simplest fix is to install everything. Image bloat is acceptable for a
+# scheduler.)
+COPY package.json package-lock.json* ./
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
+# Worker needs only `src/lib/`, `scripts/`, and the manifest to run. We
+# intentionally do NOT copy `.next/` or `public/` — the worker has no
+# web surface.
+COPY --from=deps --chown=worker:nodejs /app/node_modules ./node_modules
+COPY --chown=worker:nodejs ./src ./src
+COPY --chown=worker:nodejs ./scripts ./scripts
+COPY --chown=worker:nodejs ./tsconfig.json ./tsconfig.json
+COPY --chown=worker:nodejs ./migrations ./migrations
+
+USER worker
+
+# Exec form so SIGTERM reaches Node directly → graceful shutdown drains
+# the pg pool. Shell form would swallow the signal via the tsx wrapper.
+CMD ["sh", "-c", "exec ./node_modules/.bin/tsx scripts/worker.ts"]

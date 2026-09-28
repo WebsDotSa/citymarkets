@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Background gradient: NINJA primary green (#009345) → deep (#014d24) -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#009345"/>
+      <stop offset="100%" stop-color="#014d24"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#DFAF5A"/>
+      <stop offset="100%" stop-color="#F5D58A"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="200" cy="100" r="400" fill="url(#glow)"/>
+  <circle cx="1000" cy="500" r="350" fill="url(#glow)"/>
+
+  <!-- Grocery illustration (left side) — flat icons -->
+  <g transform="translate(80, 280)" fill="#ffffff" opacity="0.95">
+    <!-- Carrot -->
+    <g transform="translate(0,40)">
+      <path d="M30,0 L50,0 L60,90 L20,90 Z" fill="#ffffff"/>
+      <path d="M40,0 L40,-30 M28,-15 L42,-30 M52,-15 L38,-30" stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </g>
+    <!-- Tomato -->
+    <g transform="translate(90,60)">
+      <circle cx="40" cy="40" r="38" fill="#ffffff"/>
+      <path d="M28,15 Q40,5 52,15 M28,15 L34,8 M40,12 L40,3 M48,12 L52,3" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>
+    <!-- Bread loaf -->
+    <g transform="translate(20,150)">
+      <ellipse cx="60" cy="35" rx="58" ry="32" fill="#ffffff"/>
+      <path d="M15,35 Q30,15 60,15 Q90,15 105,35" stroke="#014d24" stroke-width="3" fill="none"/>
+      <path d="M30,40 L35,28 M50,42 L55,28 M75,40 L80,28" stroke="#014d24" stroke-width="3" fill="none"/>
+    </g>
+    <!-- Milk carton -->
+    <g transform="translate(150,140)">
+      <path d="M5,5 L75,5 L80,15 L80,130 L0,130 L0,15 Z" fill="#ffffff"/>
+      <path d="M5,5 L30,-10 L75,5 L75,-10 L30,-25 L5,-10 Z" fill="#ffffff" opacity="0.7"/>
+      <text x="40" y="80" font-family="Tajawal,Arial,sans-serif" font-size="20" font-weight="700" fill="#009345" text-anchor="middle">حليب</text>
+    </g>
+  </g>
+
+  <!-- Shopping bag accent (top right) -->
+  <g transform="translate(1000,80)" fill="#ffffff" opacity="0.18">
+    <path d="M0,30 L20,30 L30,10 L110,10 L120,30 L140,30 L130,140 L10,140 Z"/>
+    <path d="M40,30 Q40,-10 70,-10 Q100,-10 100,30" stroke="#ffffff" stroke-width="6" fill="none"/>
+  </g>
+
+  <!-- Main title — Arabic -->
+  <text x="600" y="280" font-family="Tajawal,Arial Black,sans-serif" font-size="84" font-weight="900" fill="#ffffff" text-anchor="middle" direction="rtl" xml:lang="ar">أسواق سيتي المركزية</text>
+
+  <!-- Gold tagline -->
+  <text x="600" y="360" font-family="Tajawal,Arial,sans-serif" font-size="42" font-weight="700" fill="url(#gold)" text-anchor="middle" direction="rtl" xml:lang="ar">توصيل سوبرماركت سريع</text>
+
+  <!-- Description -->
+  <text x="600" y="430" font-family="Tajawal,Arial,sans-serif" font-size="26" font-weight="500" fill="#ffffff" opacity="0.92" text-anchor="middle" direction="rtl" xml:lang="ar">آلاف المنتجات الطازجة إلى باب منزلك في السعودية</text>
+
+  <!-- Bottom bar with phone + delivery -->
+  <g transform="translate(0,540)">
+    <rect x="0" y="0" width="1200" height="90" fill="#014d24" opacity="0.6"/>
+    <!-- Scooter icon -->
+    <g transform="translate(200,30)" fill="#DFAF5A">
+      <circle cx="20" cy="40" r="14" fill="#DFAF5A"/>
+      <circle cx="100" cy="40" r="14" fill="#DFAF5A"/>
+      <path d="M20,40 L60,15 L85,15 L100,40 M60,15 L65,-5 L95,-5" stroke="#DFAF5A" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="78" y="0" width="22" height="18" rx="2" fill="#ffffff"/>
+    </g>
+    <text x="350" y="60" font-family="Tajawal,Arial,sans-serif" font-size="28" font-weight="700" fill="#ffffff" text-anchor="start" direction="rtl" xml:lang="ar">توصيل خلال 30-60 دقيقة</text>
+    <text x="850" y="60" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#DFAF5A" text-anchor="end">+966 53 044 4976</text>
+  </g>
+</svg>

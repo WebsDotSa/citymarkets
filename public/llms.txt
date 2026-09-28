@@ -1,0 +1,66 @@
+# City Markets (citymarkets.sa)
+
+> Saudi Arabian multi-vendor supermarket delivery platform. Customers
+> browse products from local grocery stores, bakeries, and restaurants
+> across Riyadh / Jeddah / Dammam. Payment via Moyasar (card, Apple Pay,
+> Google Pay) or cash on delivery. AI agent authentication follows the
+> Auth.md / OIDC standard.
+
+## API Discovery
+
+- OpenAPI 3.1 spec: <https://citymarkets.sa/openapi.json>
+- API catalog (RFC 9727 linkset): <https://citymarkets.sa/.well-known/api-catalog>
+- OAuth/OIDC config: <https://citymarkets.sa/.well-known/openid-configuration>
+- OAuth protected resource: <https://citymarkets.sa/.well-known/oauth-protected-resource>
+- Auth.md guide: <https://citymarkets.sa/auth.md>
+- A2A Agent Card: <https://citymarkets.sa/.well-known/agent-card.json>
+- MCP Server Card: <https://citymarkets.sa/.well-known/mcp/server-card.json>
+- Agent Skills index: <https://citymarkets.sa/.well-known/agent-skills/index.json>
+- Universal Commerce Protocol: <https://citymarkets.sa/.well-known/ucp>
+- Agentic Commerce Protocol: <https://citymarkets.sa/.well-known/acp.json>
+
+## Public Read Endpoints (no auth required)
+
+- `GET /api/v1/categories` — list all product categories
+- `GET /api/v1/products` — paginated product list with filters
+- `GET /api/v1/products/:id` — single product detail
+- `GET /api/v1/vendors` — list of vendors
+- `GET /api/v1/vendors/:id` — single vendor detail
+- `GET /api/v1/banners` — homepage hero banners
+- `GET /api/v1/delivery/quote` — delivery cost + ETA (POST with address)
+- `GET /api/v1/delivery/cities` — supported Saudi cities
+- `GET /sitemap.xml` — full product/category sitemap
+
+## Authentication
+
+OAuth 2.0 / OIDC. Phone-based OTP via Twilio for customers; vendor
+and admin dashboards use email + password. Client credentials grant
+for autonomous agents.
+
+- Scopes: `products:read`, `cart:write`, `orders:read`, `orders:write`,
+  `profile`.
+- Token TTL: 1 hour (refresh via `refresh_token`).
+- Customer JWT cookie: `session_id` (httpOnly, 14 days).
+
+## Conventions
+
+- All API responses are JSON. Dates are ISO 8601 in `Asia/Riyadh`.
+- All prices in SAR (halalas = SAR × 100).
+- All text fields have `*_ar` and `*_en` variants; the default locale is
+  Arabic (Saudi dialect).
+- All product images are hosted on Cloudflare R2 at
+  `https://cdn.citymarkets.sa/`.
+
+## Content Policy
+
+- `ai-train=no` — don't use our product data to train models.
+- `search=yes` — fine to index for search results.
+- `ai-input=yes` — fine to feed our content to agents at runtime.
+- See `/robots.txt` and the `Content-Signal` response header for the
+  machine-readable form.
+
+## Contact
+
+- Support: <support@citymarkets.sa>
+- Agents: <agents@citymarkets.sa>
+- Status: <https://citymarkets.sa/api/v1/health>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3E2723"/>
+      <stop offset="50%" stop-color="#5D4037"/>
+      <stop offset="100%" stop-color="#3E2723"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="80%" cy="20%" r="60%">
+      <stop offset="0%" stop-color="#FFB74D" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#FFB74D" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="beans" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+      <ellipse cx="40" cy="40" rx="12" ry="18" fill="#FFB74D" opacity="0.06" transform="rotate(20 40 40)"/>
+      <path d="M 40 22 Q 40 40 40 58" stroke="#FFB74D" stroke-width="1.5" fill="none" opacity="0.12" transform="rotate(20 40 40)"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="400" fill="url(#bg)"/>
+  <rect width="1200" height="400" fill="url(#beans)"/>
+  <rect width="1200" height="400" fill="url(#glow)"/>
+  <g transform="translate(900 200)">
+    <circle r="80" fill="none" stroke="#FFB74D" stroke-width="2" opacity="0.3"/>
+    <circle r="120" fill="none" stroke="#FFB74D" stroke-width="1" opacity="0.15"/>
+  </g>
+  <text x="80" y="240" font-family="Tajawal, IBM Plex Sans Arabic, sans-serif" font-size="64" font-weight="900" fill="#FFB74D" opacity="0.95">أميز كافية</text>
+  <text x="80" y="290" font-family="Tajawal, sans-serif" font-size="22" font-weight="500" fill="#FFE0B2" opacity="0.7">قهوة مختصة · أجواء مميزة</text>
+</svg>

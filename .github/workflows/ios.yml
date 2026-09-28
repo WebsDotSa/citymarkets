@@ -1,0 +1,375 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios.yml"
+  # Manual triggers for release / screenshot jobs.
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: "Fastlane lane to run (screenshots | release | beta)"
+        required: true
+        default: screenshots
+        type: choice
+        options:
+          - screenshots
+          - release
+          - beta
+  workflow_call:
+
+# Cancel superseded runs on the same ref — saves macOS runner minutes.
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  SCHEME_DEFAULT: CityMarkets
+  WORKSPACE: CityMarkets.xcworkspace
+  PROJECT: CityMarkets.xcodeproj
+  DERIVED_DATA: ${{ github.workspace }}/ios/build/DerivedData
+  XCODE_VERSION: "15.4"
+
+jobs:
+  # ----------------------------------------------------------------------
+  # 1. Build — fast smoke check. Runs on every PR.
+  # ----------------------------------------------------------------------
+  build:
+    name: Build (simulator)
+    runs-on: macos-14
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode ${{ env.XCODE_VERSION }}
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+
+      - uses: maxim-lobanov/setup-xcodegen@v3
+        with:
+          version: 2.42.2
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios/build/SourcePackages
+            ios/build/SourcePackages/repo
+            ios/build/.build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios/project.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Build (Debug, iPhone 15 Pro simulator)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME_DEFAULT" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
+            -derivedDataPath "$DERIVED_DATA" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            ONLY_ACTIVE_ARCH=YES \
+            build | xcbeautify
+
+  # ----------------------------------------------------------------------
+  # 2. Test — unit tests with coverage upload to Codecov.
+  # ----------------------------------------------------------------------
+  test:
+    name: Tests (unit)
+    runs-on: macos-14
+    timeout-minutes: 30
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode ${{ env.XCODE_VERSION }}
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+
+      - uses: maxim-lobanov/setup-xcodegen@v3
+        with:
+          version: 2.42.2
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios/build/SourcePackages
+            ios/build/SourcePackages/repo
+            ios/build/.build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios/project.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Run unit tests
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME_DEFAULT" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
+            -derivedDataPath "$DERIVED_DATA" \
+            -resultBundlePath ios/build/TestResults.xcresult \
+            -enableCodeCoverage YES \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            ONLY_ACTIVE_ARCH=YES \
+            test | xcbeautify
+
+      - name: Convert coverage to lcov
+        if: always()
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcrun xccov convert --format lcov \
+            --output ios/build/coverage.lcov \
+            ios/build/TestResults.xcresult
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: ios/build/coverage.lcov
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-results
+          path: ios/build/TestResults.xcresult
+          retention-days: 14
+
+  # ----------------------------------------------------------------------
+  # 3. Lint — SwiftLint, strict on CI.
+  # ----------------------------------------------------------------------
+  lint:
+    name: Lint (SwiftLint)
+    runs-on: macos-14
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Run SwiftLint (strict)
+        working-directory: ios
+        run: ./scripts/lint.sh --strict
+
+  # ----------------------------------------------------------------------
+  # 4. Contract smoke — verify the backend speaks the iOS wire format.
+  #    Gated by secrets so forks / PRs from external contributors skip it.
+  # ----------------------------------------------------------------------
+  contract-smoke:
+    name: Backend contract smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Only run against environments we control.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      BASE_URL: ${{ secrets.IOS_CONTRACT_SMOKE_URL || 'https://citymarkets.sa/api/v1' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Public contract smoke
+        run: node scripts/ios-contract-smoke.mjs
+
+      - name: Auth + protected-route smoke
+        run: node scripts/ios-auth-smoke.mjs
+
+  # ----------------------------------------------------------------------
+  # 5. Screenshots — manual dispatch only. Generates App Store screenshots.
+  # ----------------------------------------------------------------------
+  screenshots:
+    name: Screenshots (fastlane)
+    runs-on: macos-14
+    timeout-minutes: 60
+    if: github.event_name == 'workflow_dispatch' && inputs.lane == 'screenshots'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode ${{ env.XCODE_VERSION }}
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+
+      - uses: maxim-lobanov/setup-xcodegen@v3
+        with:
+          version: 2.42.2
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios/build/SourcePackages
+            ios/build/SourcePackages/repo
+            ios/build/.build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios/project.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Generate App Store screenshots
+        working-directory: ios
+        env:
+          FASTLANE_SKIP_UPDATE_CHECK: 1
+        run: bundle exec fastlane screenshots
+
+      - name: Upload screenshot artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-screenshots
+          path: ios/screenshots
+          retention-days: 30
+
+  # ----------------------------------------------------------------------
+  # 6. Beta — TestFlight upload via fastlane pilot.
+  # ----------------------------------------------------------------------
+  beta:
+    name: Beta (TestFlight)
+    runs-on: macos-14
+    timeout-minutes: 60
+    if: github.event_name == 'workflow_dispatch' && inputs.lane == 'beta'
+    environment: testflight
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode ${{ env.XCODE_VERSION }}
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+
+      - uses: maxim-lobanov/setup-xcodegen@v3
+        with:
+          version: 2.42.2
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Import signing certificates
+        if: env.MATCH_PASSWORD != ''
+        working-directory: ios
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+        run: bundle exec fastlane match appstore
+
+      - name: Upload to TestFlight
+        working-directory: ios
+        env:
+          FASTLANE_SKIP_UPDATE_CHECK: 1
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.ASC_API_KEY_BASE64 }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: bundle exec fastlane beta
+
+  # ----------------------------------------------------------------------
+  # 7. Release — App Store submission. Tag-triggered or manual.
+  # ----------------------------------------------------------------------
+  release:
+    name: Release (App Store)
+    runs-on: macos-14
+    timeout-minutes: 90
+    if: github.event_name == 'workflow_dispatch' && inputs.lane == 'release'
+    environment: app-store
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode ${{ env.XCODE_VERSION }}
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+
+      - uses: maxim-lobanov/setup-xcodegen@v3
+        with:
+          version: 2.42.2
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Import signing certificates
+        working-directory: ios
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+        run: bundle exec fastlane match appstore
+
+      - name: Submit to App Store
+        working-directory: ios
+        env:
+          FASTLANE_SKIP_UPDATE_CHECK: 1
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.ASC_API_KEY_BASE64 }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: bundle exec fastlane release
+
+      - name: Upload dSYM archive
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-dsym
+          path: ios/build/dSYMs
+          retention-days: 90

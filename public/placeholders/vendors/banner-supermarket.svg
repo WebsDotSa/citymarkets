@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#009345"/>
+      <stop offset="50%" stop-color="#00B359"/>
+      <stop offset="100%" stop-color="#007A38"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="80%" cy="20%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#bg)"/>
+  <rect width="1200" height="400" fill="url(#glow)"/>
+  <text x="80" y="240" font-family="Tajawal, IBM Plex Sans Arabic, sans-serif" font-size="64" font-weight="900" fill="#FFFFFF">أسواق سيتي</text>
+  <text x="80" y="290" font-family="Tajawal, sans-serif" font-size="22" font-weight="500" fill="#E8F5E9">سوبرمارتك أونلاين · توصيل سريع</text>
+</svg>

@@ -1,0 +1,5 @@
+# Log rotation cron job for City Market App
+# Install with: crontab -e (or place in /etc/cron.d/)
+#
+# Run log rotation daily at 2:00 AM
+0 2 * * * root /usr/bin/python3 /var/www/citymarkets.sa/city-market-app/scripts/rotate_logs.py >> /var/www/citymarkets.sa/city-market-app/logs/rotate.log 2>&1

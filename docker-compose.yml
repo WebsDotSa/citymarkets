@@ -1,0 +1,85 @@
+services:
+  citymarket-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    user: "1001:1001"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:size=100M,mode=01777
+    volumes:
+      # Bind mount for server logs (required for logging)
+      - ./server.log:/app/server.log:rw
+      # Bind mount for Next.js cache (host dir owned by 1001:1001)
+      - ./.next-cache-host:/app/.next/cache
+      # Bind mount for uploaded images (host dir owned by 1001:1001 so the
+      # nextjs user inside the container can write offer/banner uploads).
+      # The container is read_only — without this volume mount, the
+      # /api/admin/upload route fails with EROFS (فشل رفع الملف).
+      - ./public/images:/app/public/images:rw
+    environment:
+      PORT: "3005"
+      # Non-secret overrides only — secrets come from env_file (.env.local)
+      # below. Listing them here with ${VAR} (no default) would override the
+      # env_file values with empty strings when the shell has them unset,
+      # which is what caused JWT_SECRET to be empty inside the container.
+      # DATABASE_HOST/PORT/NAME/USER intentionally NOT listed — they come
+      # from env_file (.env.local) so the pooler URL / Supabase creds win.
+      # (2026-08-17: previously had `${DATABASE_HOST:-127.0.0.1}` defaults
+      # which masked the .env.local values after the Supabase migration.)
+      # Disable Next.js telemetry
+      NEXT_TELEMETRY_DISABLED: "1"
+    # All secrets (JWT_SECRET, ADMIN_JWT_SECRET, VENDOR_JWT_SECRET,
+    # DATABASE_URL, DATABASE_PASSWORD, Twilio keys, Moyasar keys, etc.)
+    # come from here — do NOT also list them in the environment block
+    # above, as that takes precedence and would mask these values.
+    env_file:
+      - .env.local
+    restart: unless-stopped
+    healthcheck:
+      # PORT (env) is 3005 above; the healthcheck MUST hit that port or
+      # the container is marked unhealthy indefinitely despite the app
+      # running fine. Use 127.0.0.1 (IPv4) because Next.js binds 0.0.0.0
+      # only — `localhost` resolves to IPv6 [::1] and refuses the
+      # connection, marking the container unhealthy even when healthy.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3005/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Background worker: OTP cleanup, broadcast processing, pending-order
+  # checks. Runs `tsx scripts/worker.ts` on its own schedule (1 min /
+  # 5 min / hourly / daily). MUST be deployed alongside the app service,
+  # otherwise broadcast delivery and OTP expiry cleanup silently never
+  # run. Shares the same env_file so DATABASE_URL / JWT secrets match
+  # the app.
+  citymarket-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    network_mode: host
+    user: "1001:1001"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:size=100M,mode=01777
+    env_file:
+      - .env.local
+    environment:
+      NEXT_TELEMETRY_DISABLED: "1"
+    restart: unless-stopped
+    # No healthcheck — the worker is a long-lived setInterval loop. If
+    # the process dies, Docker will restart it; a healthcheck would just
+    # be a tautology.
+
+volumes:
+  nextjs_cache:

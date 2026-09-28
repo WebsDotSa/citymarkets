@@ -1,0 +1,22 @@
+# CODEOWNERS — auto-request reviews for changes in owned paths.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# iOS app — owned by the mobile team
+/ios/                                       @citymarkets/mobile
+
+# iOS CI workflow
+/.github/workflows/ios.yml                  @citymarkets/mobile
+
+# App Store metadata + fastlane
+/ios/fastlane/metadata/                     @citymarkets/mobile
+/ios/fastlane/Fastfile                      @citymarkets/mobile
+/ios/fastlane/Appfile                       @citymarkets/mobile
+
+# iOS contract smoke
+/scripts/ios-contract-smoke.mjs             @citymarkets/mobile
+
+# Web app CI
+/.github/workflows/ci.yml                   @citymarkets/backend
+
+# Schema migrations
+/migrations/                                @citymarkets/backend

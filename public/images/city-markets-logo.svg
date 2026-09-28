@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- أسواق سيتي · City Markets — شعار متجه للويب (حاد على الشاشات عالية الكثافة) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 134" role="img" aria-labelledby="cityMarketsLogoTitle">
+  <title id="cityMarketsLogoTitle">أسواق سيتي — City Markets</title>
+  <defs>
+    <linearGradient id="cmGreen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00a34e"/>
+      <stop offset="100%" stop-color="#009345"/>
+    </linearGradient>
+    <clipPath id="bagClip">
+      <path d="M18 34c0-3.3 2.7-6 6-6h3.2c1.2-10.5 10.8-18.5 22.3-18.5s21.1 8 22.3 18.5H69c3.3 0 6 2.7 6 6v66c0 5.5-4.5 10-10 10H28c-5.5 0-10-4.5-10-10V34z"/>
+    </clipPath>
+  </defs>
+  <g fill="url(#cmGreen)">
+    <path d="M34 30c0-10 8.5-18 19-18s19 8 19 18v4h-6v-3c0-7.2-5.8-13-13-13s-13 5.8-13 13v3h-6v-4z"/>
+    <path d="M18 34c0-3.3 2.7-6 6-6h3.2c1.2-10.5 10.8-18.5 22.3-18.5s21.1 8 22.3 18.5H69c3.3 0 6 2.7 6 6v66c0 5.5-4.5 10-10 10H28c-5.5 0-10-4.5-10-10V34z"/>
+  </g>
+  <g clip-path="url(#bagClip)" fill="#fff">
+    <rect x="16" y="52" width="68" height="3" rx="0.6"/>
+    <rect x="16" y="78" width="68" height="3" rx="0.6"/>
+    <rect x="22" y="40" width="4.5" height="22" rx="0.6"/>
+    <rect x="30" y="36" width="4" height="30" rx="0.6"/>
+    <rect x="38" y="38" width="4.5" height="26" rx="0.6"/>
+    <rect x="46" y="34" width="4" height="34" rx="0.6"/>
+    <rect x="54" y="39" width="4.5" height="23" rx="0.6"/>
+    <rect x="62" y="41" width="4" height="20" rx="0.6"/>
+  </g>
+  <g fill="#009345">
+    <text x="98" y="52" font-family="system-ui, 'Segoe UI', Roboto, Arial, sans-serif" font-size="22" font-weight="800" letter-spacing="0.14em">CITY MARKETS</text>
+    <line x1="98" y1="62" x2="332" y2="62" stroke="#009345" stroke-width="1.5"/>
+    <text x="332" y="98" text-anchor="end" font-family="'IBM Plex Sans Arabic', 'Noto Sans Arabic', Tahoma, sans-serif" font-size="28" font-weight="700">أسواق سيتي</text>
+  </g>
+</svg>
