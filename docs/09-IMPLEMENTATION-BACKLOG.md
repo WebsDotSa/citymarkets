@@ -34,7 +34,14 @@
 ## P2
 - [ ] consolidate routes/components
 - [ ] remove auth aliases after consumer audit
-- [ ] remove unused dependencies
+- [x] remove unused dependencies — 2026-09-28 sweep removed:
+      `@x402/next`, `react-leaflet`, `ws`, `drizzle-orm`,
+      `@types/formidable` (none had any importer in src/ or scripts/;
+      README already notes raw pg replaced Drizzle; leaflet is imported
+      directly, not via the React wrapper). `date-fns` retained because
+      `next.config.mjs` lists it in `optimizePackageImports`. Devdeps
+      `@types/jquery`, `@types/select2`, and `postcss` retained — used
+      by admin form components and the Tailwind pipeline.
 - [ ] shared design system
 - [ ] performance/caching review
 
