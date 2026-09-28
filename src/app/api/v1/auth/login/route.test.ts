@@ -54,6 +54,13 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/lib/env", () => ({
   isLegacyPhoneOtpAllowed: () => true,
+  // apple-review.ts reads these at module init; the route imports the
+  // resulting constants. Default the Apple Review shortcut off so the
+  // test exercises the normal OTP flow.
+  isAppleReviewEnabled: () => false,
+  getAppleReviewPhone: () => null,
+  getAppleReviewOtp: () => null,
+  getAppleReviewName: () => null,
 }));
 
 vi.mock("@/lib/logger", () => ({
