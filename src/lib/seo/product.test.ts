@@ -106,21 +106,26 @@ afterEach(() => {
 });
 
 describe("getProductForSeo", () => {
+  // Use UUID-shaped strings because the implementation short-circuits
+  // non-UUID inputs (see UUID_LIKE in product.ts) to avoid wasting a
+  // round-trip on malformed share-links.
+  const UUID = "00000000-0000-0000-0000-000000000abc";
+
   it("returns null when the query yields no rows", async () => {
     nextQueryResult = { rows: [] };
-    const res = await getProductForSeo("missing");
+    const res = await getProductForSeo(UUID);
     expect(res).toBeNull();
   });
 
   it("returns the first row when found", async () => {
     nextQueryResult = { rows: [base] };
-    const res = await getProductForSeo("abc");
+    const res = await getProductForSeo(UUID);
     expect(res).toEqual(base);
   });
 
   it("queries the products_unified view (not bare 'products')", async () => {
     nextQueryResult = { rows: [base] };
-    await getProductForSeo("abc");
+    await getProductForSeo(UUID);
     expect(calls.length).toBe(1);
     const sql = calls[0].sql;
     expect(sql).toMatch(/FROM\s+products_unified/i);
@@ -129,14 +134,14 @@ describe("getProductForSeo", () => {
 
   it("LEFT JOINs categories on category_id", async () => {
     nextQueryResult = { rows: [] };
-    await getProductForSeo("abc");
+    await getProductForSeo(UUID);
     expect(calls[0].sql).toMatch(/LEFT JOIN categories c ON p\.category_id = c\.id/i);
   });
 
   it("passes the id as the first parameter", async () => {
     nextQueryResult = { rows: [] };
-    await getProductForSeo("uuid-xyz");
-    expect(calls[0].params).toEqual(["uuid-xyz"]);
+    await getProductForSeo(UUID);
+    expect(calls[0].params).toEqual([UUID]);
   });
 });
 

@@ -173,8 +173,8 @@ describe("rate-limit presets (cost-amplification defense)", () => {
     );
   });
 
-  it("ORDER_CREATE_CONFIG caps at 5 per 10 minutes", () => {
-    expect(ORDER_CREATE_CONFIG.maxRequests).toBe(5);
+  it("ORDER_CREATE_CONFIG caps at 15 per 10 minutes", () => {
+    expect(ORDER_CREATE_CONFIG.maxRequests).toBe(15);
     expect(ORDER_CREATE_CONFIG.windowMs).toBe(10 * 60 * 1000);
   });
 

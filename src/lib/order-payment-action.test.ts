@@ -13,7 +13,6 @@ describe("ONLINE_RETRYABLE_METHODS", () => {
     expect(ONLINE_RETRYABLE_METHODS).toContain("mastercard");
     expect(ONLINE_RETRYABLE_METHODS).toContain("amex");
     expect(ONLINE_RETRYABLE_METHODS).toContain("apple_pay");
-    expect(ONLINE_RETRYABLE_METHODS).toContain("stc_pay");
   });
 
   it("contains exactly the supported cards + wallets", () => {

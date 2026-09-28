@@ -74,11 +74,15 @@ describe("push", () => {
       mockSendNotification.mockResolvedValueOnce({});
       const mod = await push();
       await mod.sendPushToEndpoint("e", "p", "a", { title: "t", body: "b" });
-      expect(mockSetVapidDetails).toHaveBeenCalledWith(
-        expect.objectContaining({
-          subject: expect.stringContaining("mailto:"),
-        }),
-      );
+      // web-push's setVapidDetails takes three positional args
+      // (subject, publicKey, privateKey). The bundled types are wrong
+      // (object stub) so push.ts casts through `any` — see comment in
+      // src/lib/push.ts.
+      expect(mockSetVapidDetails).toHaveBeenCalledTimes(1);
+      const [subjectArg, pubArg, privArg] = mockSetVapidDetails.mock.calls[0];
+      expect(subjectArg).toEqual(expect.stringContaining("mailto:"));
+      expect(pubArg).toBe("BPub");
+      expect(privArg).toBe("priv");
     });
 
     it("respects an explicit VAPID_SUBJECT", async () => {
@@ -88,9 +92,11 @@ describe("push", () => {
       mockSendNotification.mockResolvedValueOnce({});
       const mod = await push();
       await mod.sendPushToEndpoint("e", "p", "a", { title: "t", body: "b" });
-      expect(mockSetVapidDetails).toHaveBeenCalledWith(
-        expect.objectContaining({ subject: "mailto:test@example.com" }),
-      );
+      expect(mockSetVapidDetails).toHaveBeenCalledTimes(1);
+      const [subjectArg, pubArg, privArg] = mockSetVapidDetails.mock.calls[0];
+      expect(subjectArg).toBe("mailto:test@example.com");
+      expect(pubArg).toBe("BPub");
+      expect(privArg).toBe("priv");
     });
   });
 
