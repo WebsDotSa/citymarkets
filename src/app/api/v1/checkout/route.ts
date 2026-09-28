@@ -713,17 +713,25 @@ export async function POST(request: NextRequest) {
     } catch {
       /* never let the dump itself break the user response */
     }
+    // Production: NEVER leak DB / pg constraint messages to clients.
+    // The canonical operator surface is the side-channel file at
+    // CHECKOUT_ERROR_LOG (lines 666–714 above). Dev/staging may opt in
+    // by setting DEBUG_CHECKOUT=1; HIDE_CHECKOUT_DEBUG=1 forces hide
+    // even in dev. This addresses docs/01 R7 ("checkout can include a
+    // DB-derived debug value in HTTP responses").
+    const showDebug =
+      process.env.NODE_ENV !== "production" &&
+      process.env.HIDE_CHECKOUT_DEBUG !== "1";
+    const debugPayload = showDebug
+      ? process.env.DEBUG_CHECKOUT === "1"
+        ? { debug: causeMsg ?? (error instanceof Error ? error.message : null) }
+        : {}
+      : {};
     return NextResponse.json(
       {
         success: false,
         error: "حدث خطأ في إنشاء الطلب",
-        // Even in production, surface the underlying pg message so the
-        // user can copy it to support — the message is non-sensitive
-        // (it never contains card or PII; just column/constraint names).
-        // Operators can hide this by setting HIDE_CHECKOUT_DEBUG=1.
-        ...(process.env.HIDE_CHECKOUT_DEBUG !== "1"
-          ? { debug: causeMsg ?? (error instanceof Error ? error.message : null) }
-          : {}),
+        ...debugPayload,
       },
       { status: 500 },
     );

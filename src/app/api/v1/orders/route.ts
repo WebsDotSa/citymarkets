@@ -988,20 +988,31 @@ export async function POST(request: NextRequest) {
     } catch {
       /* never let the dump itself break the user response */
     }
+    // Production: NEVER leak DB / pg constraint messages to clients.
+    // The canonical operator surface is the side-channel file dump above
+    // (writes to CHECKOUT_ERROR_LOG). Dev/staging may opt in by setting
+    // DEBUG_CHECKOUT=1; HIDE_CHECKOUT_DEBUG=1 forces hide even in dev.
+    // See docs/01 R7.
+    const showDebug =
+      process.env.NODE_ENV !== 'production' &&
+      process.env.HIDE_CHECKOUT_DEBUG !== '1';
+    const debugPayload = showDebug
+      ? process.env.DEBUG_CHECKOUT === '1'
+        ? {
+            debug:
+              (error as { cause?: { message?: unknown } })?.cause?.message
+                ? String((error as { cause: { message: unknown } }).cause.message)
+                : error instanceof Error
+                  ? error.message
+                  : null,
+          }
+        : {}
+      : {};
     return NextResponse.json(
       {
         success: false,
         error: 'حدث خطأ في إنشاء الطلب',
-        ...(process.env.HIDE_CHECKOUT_DEBUG !== '1'
-          ? {
-              debug:
-                (error as { cause?: { message?: unknown } })?.cause?.message
-                  ? String((error as { cause: { message: unknown } }).cause.message)
-                  : error instanceof Error
-                    ? error.message
-                    : null,
-            }
-          : {}),
+        ...debugPayload,
       },
       { status: 500 }
     );

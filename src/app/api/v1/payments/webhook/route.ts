@@ -7,6 +7,10 @@ import {
   getLoyaltySettings,
   resolveRedeemForOrder,
 } from '@/lib/loyalty';
+import {
+  recordPaymentEvent,
+  finalizePaymentEvent,
+} from '@/lib/payments/event-ledger';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
@@ -108,13 +112,44 @@ export async function POST(request: NextRequest) {
       // both pass the "already awarded?" check and credit loyalty points
       // twice. Released on COMMIT/ROLLBACK.
       await client.query('BEGIN');
+
+      // payment_events ledger (migration 073) — INSERT first so any
+      // gateway replay hits the UNIQUE (invoice_id, gateway, event_type)
+      // index and short-circuits the rest of the work. Atomic with the
+      // order updates via the surrounding transaction: if the order
+      // mutation rolls back, the ledger row rolls back too and a fresh
+      // replay gets to insert again. See docs/04-PAYMENTS-AND-CHECKOUT.md
+      // and src/lib/payments/event-ledger.ts.
+      const eventType =
+        typeof body.type === 'string' && body.type
+          ? String(body.type)
+          : typeof body.event_type === 'string' && body.event_type
+            ? String(body.event_type)
+            : 'payment.notification';
+      const ledgerResult = await recordPaymentEvent(client, {
+        invoiceId,
+        gateway: 'moyasar',
+        eventType,
+        raw: body,
+      });
+      if (ledgerResult === 'duplicate') {
+        logInfo(
+          `[webhook] duplicate event ${eventType} for ${invoiceId}; ` +
+            `idempotent ack without re-processing order`,
+        );
+        await client.query('COMMIT');
+        return NextResponse.json({ received: true, duplicate: true });
+      }
       const order = await client.query(
         'SELECT id, status, total, subtotal, catalog_subtotal, user_id, points_redeemed, guest_phone, guest_name FROM orders WHERE payment_reference = $1',
         [invoiceId]
       );
 
-      if (order.rows.length > 0) {
-        const orderId = order.rows[0].id;
+      // Hoisted so the post-processing finalize (payment_events.status)
+      // can see the order id even when the original SELECT returned 0 rows.
+      const orderId: string | undefined = order.rows[0]?.id;
+
+      if (orderId) {
 
         // Per-order advisory lock so concurrent callbacks for the same order
         // serialize. Released on COMMIT/ROLLBACK.
@@ -313,6 +348,24 @@ export async function POST(request: NextRequest) {
           }
         } catch (pushErr) {
           logError('[push] order status notification failed:', pushErr);
+        }
+      }
+
+      // Mark the ledger row as processed for the order we just updated.
+      // orderId is in scope from the SELECT above; if no matching order
+      // was found, leave order_id NULL and finalize anyway — operators
+      // can correlate from raw_payload.invoice_id.
+      if (typeof orderId === 'string') {
+        try {
+          await finalizePaymentEvent(client, {
+            invoiceId,
+            gateway: 'moyasar',
+            eventType,
+            status: 'processed',
+            orderId,
+          });
+        } catch (finalErr) {
+          logError('[event-ledger] finalize failed', finalErr, { invoiceId, orderId });
         }
       }
 

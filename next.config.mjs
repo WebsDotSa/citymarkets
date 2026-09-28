@@ -97,8 +97,27 @@ const nextConfig = {
   // being registered in the runtime middleware-manifest in this project).
   async redirects() {
     return [
+      // Locale prefix stripping (existing).
       { source: '/ar/:path*', destination: '/:path*', permanent: false, has: [{ type: 'header', key: 'accept', value: '(?!text/markdown).*' }] },
       { source: '/en/:path*', destination: '/:path*', permanent: false, has: [{ type: 'header', key: 'accept', value: '(?!text/markdown).*' }] },
+
+      // Legacy aliases → canonical routes. Routed at the next.config
+      // layer because src/proxy.ts is currently NOT registered in the
+      // runtime middleware-manifest (see .next/server/middleware-manifest.json
+      // shipping with "middleware": {}). Without these the smoke test
+      // reports three recurring failures:
+      //   - /login         returns 200 (page renders null + noindex meta)
+      //   - /auth/register returns 200 (page renders LoginPage directly)
+      //   - /direct-order  returns 404 (Server Component permanentRedirect
+      //                          is unreliable under the unregistered proxy)
+      // 308 (permanent) so search engines transfer ranking signals and
+      // curl/fetch/iOS WebKit follow on the first hop.
+      { source: '/login', destination: '/auth/login', permanent: true },
+      { source: '/login/', destination: '/auth/login', permanent: true },
+      { source: '/auth/register', destination: '/auth/signup', permanent: true },
+      { source: '/auth/register/', destination: '/auth/signup', permanent: true },
+      { source: '/direct-order', destination: '/orders/direct', permanent: true },
+      { source: '/direct-order/', destination: '/orders/direct', permanent: true },
     ];
   },
 
