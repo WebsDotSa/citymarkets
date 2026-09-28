@@ -13,7 +13,7 @@
  * Three of those knobs — `baseSar`, `includedKm`, `perExtraKmSar` — are
  * runtime-tunable from `/admin/delivery-settings` (persisted under the
  * `delivery_settings.pricing` JSONB column). When the caller omits them
- * we fall back to the constants exported below (3 SAR base, first 2 km
+ * we fall back to the constants exported below (3 SAR base, first 5 km
  * included, +1.5 SAR per extra km).
  *
  * Applies to every order — catalog-only, vendor-only, or mixed
@@ -27,7 +27,7 @@
  */
 
 export const DELIVERY_BASE_SAR = 3;
-export const DELIVERY_INCLUDED_KM = 2;
+export const DELIVERY_INCLUDED_KM = 5;
 export const DELIVERY_PER_EXTRA_KM_SAR = 1.5;
 
 /**

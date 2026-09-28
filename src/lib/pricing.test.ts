@@ -18,7 +18,7 @@ const basePricing = {
 
 describe('computeOrderFees', () => {
   it('charges the distance-based delivery fee for delivery mode', () => {
-    // 10 km → 3 + 1.5 × 8 = 15 SAR (first 2 km included in base)
+    // 10 km → 3 + 1.5 × 5 = 10.5 SAR (first 5 km included in base)
     const fees = computeOrderFees({
       subtotal: 100,
       discount: 0,
@@ -27,11 +27,11 @@ describe('computeOrderFees', () => {
       distanceKm: 10,
       pricing: { ...basePricing },
     });
-    expect(fees.deliveryFee).toBe(15);
-    expect(fees.total).toBe(100 + 15 + 3); // subtotal + delivery + service
+    expect(fees.deliveryFee).toBe(Number((3 + 1.5 * 5).toFixed(2)));
+    expect(fees.total).toBe(100 + Number((3 + 1.5 * 5).toFixed(2)) + 3); // subtotal + delivery + service
   });
 
-  it('charges the flat 3 SAR base fee within 2 km', () => {
+  it('charges the flat 3 SAR base fee within 5 km', () => {
     const fees = computeOrderFees({
       subtotal: 200,
       discount: 0,
@@ -43,14 +43,14 @@ describe('computeOrderFees', () => {
     expect(fees.deliveryFee).toBe(3);
   });
 
-  it('adds 1.5 SAR per km beyond the 2 km threshold', () => {
-    // 3 km → 3 + 1.5 × 1 = 4.5
+  it('adds 1.5 SAR per km beyond the 5 km threshold', () => {
+    // 6 km → 3 + 1.5 × 1 = 4.5
     const fees = computeOrderFees({
       subtotal: 100,
       discount: 0,
       deliveryMode: 'delivery',
       couponFreeDelivery: false,
-      distanceKm: 3,
+      distanceKm: 6,
       pricing: { ...basePricing },
     });
     expect(fees.deliveryFee).toBe(4.5);

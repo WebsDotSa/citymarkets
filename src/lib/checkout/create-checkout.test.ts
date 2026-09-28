@@ -74,7 +74,7 @@ class FakeClient {
     }
 
     // -- resolve-items: vendor SELECT FOR UPDATE on `vendors` --
-    if (norm.includes('FROM VENDORS V') && norm.includes('FOR UPDATE')) {
+    if (/FROM\s+VENDORS(\s|$)/.test(norm) && norm.includes('FOR UPDATE')) {
       if (this.mode === 'vendorInactive') {
         return {
           rows: [

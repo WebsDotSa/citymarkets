@@ -18,7 +18,7 @@ class FakeClient {
     if (/FROM products_unified/i.test(sql)) {
       return { rows: this.catalogResponse };
     }
-    if (/FROM vendors v/i.test(sql)) {
+    if (/FROM vendors(\s|$)/i.test(sql)) {
       return { rows: this.vendorResponse ? [this.vendorResponse] : [] };
     }
     if (/FROM vendor_products/i.test(sql)) {

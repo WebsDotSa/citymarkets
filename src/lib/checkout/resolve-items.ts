@@ -192,10 +192,11 @@ export async function resolveItems(
       slug: string;
       name_ar: string;
       is_active: boolean;
+      min_order_amount: number | string | null;
     }
     const vendor = await queryOne<VendorRow>(
       client as Queryable,
-      `SELECT id, slug, name_ar, is_active
+      `SELECT id, slug, name_ar, is_active, min_order_amount
          FROM vendors
         WHERE id = $1
         FOR UPDATE`,
@@ -283,16 +284,10 @@ export async function resolveItems(
       });
     }
 
-    // The `min_order_amount` lives in `vendor_settings` (not `vendors`).
-    // We FOR-UPDATE-locked `vendors` above; do a SEPARATE non-locking
-    // read for the settings so we don't violate PG's "FOR UPDATE cannot
-    // be applied to the nullable side of an outer join" rule.
-    const settingsRow = await queryOne<{ min_order_amount: number | string | null }>(
-      client as Queryable,
-      `SELECT min_order_amount FROM vendor_settings WHERE vendor_id = $1`,
-      [g.vendor_id],
-    );
-    const minOrder = Number(settingsRow?.min_order_amount ?? 0);
+    // `min_order_amount` lives on `vendors` (single source of truth —
+    // we already locked that row above with FOR UPDATE so a concurrent
+    // policy change can't race against this checkout).
+    const minOrder = Number(vendor.min_order_amount ?? 0);
     if (minOrder > 0 && subtotal < minOrder) {
       return {
         kind: "vendor_min_order",

@@ -14,7 +14,7 @@ describe('computeDistanceFee — universal distance-based delivery fee', () => {
   });
 
   it('applies the per-km formula beyond the included window', () => {
-    const distance = 7; // 5 extra km beyond the default 2-km window
+    const distance = 7; // 2 extra km beyond the default 5-km window
     const expected =
       DELIVERY_BASE_SAR +
       DELIVERY_PER_EXTRA_KM_SAR * (distance - DELIVERY_INCLUDED_KM);
@@ -22,10 +22,10 @@ describe('computeDistanceFee — universal distance-based delivery fee', () => {
   });
 
   it('rounds to 2 decimals for large distances', () => {
-    // 100 km → 3 + 1.5 × 98 = 150
-    expect(computeDistanceFee(100)).toBe(150);
-    // 950 km (Jeddah from Riyadh) → 3 + 1.5 × 948 = 1425
-    expect(computeDistanceFee(950)).toBe(1425);
+    // 100 km → 3 + 1.5 × 95 = 145.5
+    expect(computeDistanceFee(100)).toBe(Number((3 + 1.5 * 95).toFixed(2)));
+    // 950 km (Jeddah from Riyadh) → 3 + 1.5 × 945 = 1420.5
+    expect(computeDistanceFee(950)).toBe(Number((3 + 1.5 * 945).toFixed(2)));
   });
 
   it('treats null / undefined / Infinity / NaN / negatives as 0 (fail-safe)', () => {
@@ -37,8 +37,8 @@ describe('computeDistanceFee — universal distance-based delivery fee', () => {
   });
 
   it('strips floating-point drift via Number(...)', () => {
-    // 2.1 km → 3 + 1.5 × 0.1 = 3.15 (not 3.1499999999999995)
-    expect(computeDistanceFee(2.1)).toBe(3.15);
+    // 5.1 km → 3 + 1.5 × 0.1 = 3.15 (not 3.1499999999999995)
+    expect(computeDistanceFee(5.1)).toBe(3.15);
   });
 });
 
@@ -49,7 +49,7 @@ describe('computeDistanceFee — admin-tunable settings override', () => {
   });
 
   it('honours the includedKm override (widens the flat window)', () => {
-    // 9 km at default falls inside 2-km window → 3.
+    // 9 km at default falls inside 5-km window → 3.
     // With includedKm=10 it still falls inside → 3.
     // Move past the window to prove the override applies:
     expect(computeDistanceFee(11, { includedKm: 10 })).toBe(
@@ -59,27 +59,28 @@ describe('computeDistanceFee — admin-tunable settings override', () => {
   });
 
   it('honours the perExtraKmSar override', () => {
-    // 4 km with default 2-km window + 2 SAR per extra km
-    // → 3 + 2 × 2 = 7
+    // 9 km with default 5-km window + 2 SAR per extra km
+    // → 3 + 2 × 4 = 11
     expect(
-      computeDistanceFee(4, { perExtraKmSar: 2 }),
-    ).toBe(Number((3 + 2 * 2).toFixed(2)));
+      computeDistanceFee(9, { perExtraKmSar: 2 }),
+    ).toBe(Number((3 + 2 * 4).toFixed(2)));
   });
 
   it('falls back to the baked-in defaults when the override is bad', () => {
     // Negative / NaN / missing values → constant defaults still apply.
-    expect(computeDistanceFee(4, { baseSar: -1 })).toBe(
-      // defaults: 3 + 1.5 × 2 = 6
-      Number((3 + 1.5 * 2).toFixed(2)),
+    // 8 km at default falls outside the 5-km window
+    // → 3 + 1.5 × 3 = 7.5
+    expect(computeDistanceFee(8, { baseSar: -1 })).toBe(
+      Number((3 + 1.5 * 3).toFixed(2)),
     );
-    expect(computeDistanceFee(4, { baseSar: NaN })).toBe(
-      Number((3 + 1.5 * 2).toFixed(2)),
+    expect(computeDistanceFee(8, { baseSar: NaN })).toBe(
+      Number((3 + 1.5 * 3).toFixed(2)),
     );
-    expect(computeDistanceFee(4, { baseSar: null })).toBe(
-      Number((3 + 1.5 * 2).toFixed(2)),
+    expect(computeDistanceFee(8, { baseSar: null })).toBe(
+      Number((3 + 1.5 * 3).toFixed(2)),
     );
-    expect(computeDistanceFee(4, { includedKm: undefined })).toBe(
-      Number((3 + 1.5 * 2).toFixed(2)),
+    expect(computeDistanceFee(8, { includedKm: undefined })).toBe(
+      Number((3 + 1.5 * 3).toFixed(2)),
     );
   });
 
