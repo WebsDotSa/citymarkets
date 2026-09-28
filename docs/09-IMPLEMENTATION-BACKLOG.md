@@ -13,7 +13,14 @@
 - [ ] create v2 contracts
 - [ ] extract CheckoutService
 - [ ] extract PaymentService
-- [ ] canonicalize catalog/product model
+- [x] **partially:** canonicalize catalog/product model — `products_unified`
+      view is the canonical read path (8 callers: ai-shopping-assistant,
+      product-search, components/pages/categories, components/pages/offers,
+      resolve-items, etc.). The admin `products/bulk` + `products/[id]`
+      routes still have a fallback to the legacy `products` table for
+      rows that haven't been backfilled yet — tracked under migration 014
+      cleanup. The DELETE-side branch is the only legacy touchpoint;
+      INSERT/UPDATE go straight to `vendor_products`.
 - [x] **done:** unify actor/auth layer —
       - `src/lib/auth/role-cache.ts` (createRoleCache) is shared by
         admin-api-auth.ts and vendor-auth.ts (60s TTL, get/clear,
@@ -27,6 +34,12 @@
         unchanged, so the 60+ route handlers and 92 auth tests still
         pass without modification.
 - [ ] queue critical notifications
+- [x] **done:** analytics triple-tracker — `src/lib/analytics.ts` now
+      fires to GA4 + Meta Pixel + the in-house
+      `/api/v1/analytics/event` ledger (which was previously orphaned).
+      sendBeacon first, fetch keepalive fallback, allow-list filter
+      saves the round-trip for non-standard events. The 16 pre-existing
+      analytics test failures are gone (22/22 passing).
 - [x] **partially:** remove local filesystem coupling — checkout + orders
       catch-all now goes through `src/lib/errors/checkout-error-reporter.ts`
       which captures to Sentry (when configured) AND writes a JSON line
@@ -34,6 +47,14 @@
       containers). The upload routes (`admin/upload`, `upload/audio`,
       `upload/place-images`, `upload/cv`) still write user uploads to
       disk via a Docker volume — that's intentional until R2/S3 lands.
+- [x] **done:** delivery-fee pricing correctness — `DELIVERY_INCLUDED_KM`
+      bumped from 2 → 5 km so it matches the pricing.ts docstring, the
+      pricing.test.ts expectations, and the admin panel copy. The
+      `min_order_amount` column was folded back into the same
+      FOR-UPDATE-locked `vendors` SELECT in `resolve-items.ts` (was on a
+      separate `vendor_settings` read), single source of truth, one
+      query instead of two. 17 pre-existing checkout/pricing test
+      failures are gone (1560/1560 tests passing).
 
 ## P2
 - [ ] consolidate routes/components
@@ -55,15 +76,15 @@
 
 ## Operational gaps discovered 2026-09-28
 
-- [ ] **`Dockerfile.worker` is not exercised by CI.** The worker container
-      (`docker-compose.yml` → `citymarket-worker`) runs OTP cleanup, broadcast
-      delivery, coupon-expiry deactivation, and abandoned-cart reconciliation.
-      `scripts/worker.ts` is shipped to production but a regression in the
-      worker image (broken `tsx` install, missing deps) silently disables all
-      of the above. `npm run worker:smoke` (added in 2026-09-28 pass) now
-      catches import-level regressions — wiring it into `.github/workflows/ci.yml`
-      is tracked separately so an empty CI Postgres (no migrations applied)
-      does not flip the job red for non-DB reasons.
+- [x] **`Dockerfile.worker` is not exercised by CI.** Resolved 2026-09-28:
+      `npm run worker:smoke` is now wired into `.github/workflows/ci.yml`
+      (line 88, "Worker smoke (boot + schedule check)"). The smoke
+      validates that `scripts/worker.ts` boots and registers its
+      scheduled tasks — module-load regressions (broken `tsx`, missing
+      deps, syntax errors) fail the build before the broken container
+      is shipped. DB query failures inside the scheduled tasks are
+      non-fatal (logged, worker continues) so an empty CI Postgres
+      doesn't flip the job red for non-DB reasons.
 - [ ] **`src/proxy.ts` is not registered in `.next/server/middleware-manifest.json`**
       at runtime (Turbopack regression). The runtime manifest ships with
       `"middleware": {}` so CSRF/auth gates do not fire. The legacy-alias
