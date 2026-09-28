@@ -10,6 +10,7 @@ import { getClientIp } from '@/lib/request-ip';
 import { isAppleReviewUser } from '@/lib/apple-review';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { reportCheckoutError } from '@/lib/errors/checkout-error-reporter';
 import {
   parseSlotsConfig,
   riyadhWallClockToUtc,
@@ -947,52 +948,29 @@ export async function POST(request: NextRequest) {
       }
     }
     logError('Create order error:', error);
-    // Same diagnostic dump as the multi-vendor route — surfaces the
-    // real cause (pg code + message) on disk so support can triage.
-    try {
-      const fs = await import('node:fs/promises');
-      const path = await import('node:path');
-      const dumpPath = path.join(process.cwd(), 'logs', 'checkout-errors.log');
-      await fs.mkdir(path.dirname(dumpPath), { recursive: true });
-      const cause = (error as { cause?: unknown })?.cause;
-      const causeMsg =
-        cause && typeof cause === 'object' && 'message' in cause
-          ? String((cause as { message: unknown }).message)
-          : null;
-      // 'bodyItems' comes out of the outer destructure as `unknown` because
-      // the request body is typed as `Record<string, unknown>`. The catch
-      // block only needs the count, so a defensive narrowing keeps TS happy
-      // and protects the dump from a non-array payload.
-      const itemsCount = Array.isArray(bodyItems) ? bodyItems.length : 0;
-      const line = JSON.stringify({
-        ts: new Date().toISOString(),
-        route: 'POST /api/v1/orders (legacy)',
-        userId,
-        idempotencyKey,
-        itemsCount,
-        paymentMethod: paymentResolved,
-        deliveryType,
-        errorName: error instanceof Error ? error.name : typeof error,
-        errorMessage: error instanceof Error ? error.message : String(error),
-        pgCode:
-          cause && typeof cause === 'object' && 'code' in cause
-            ? String((cause as { code: unknown }).code)
-            : null,
-        pgMessage: causeMsg,
-        stack:
-          error instanceof Error
-            ? (error.stack ?? '').split('\n').slice(0, 8).join('\n')
-            : null,
-      });
-      await fs.appendFile(dumpPath, line + '\n', 'utf8');
-    } catch {
-      /* never let the dump itself break the user response */
-    }
+    // Same diagnostic payload as the multi-vendor checkout route — sent
+    // to Sentry (when configured) AND to a file on disk so on-call can
+    // triage either way. bodyItems comes out of the outer destructure
+    // as `unknown` because the request body is typed as
+    // `Record<string, unknown>`; defensive narrowing protects the
+    // helper from a non-array payload. See
+    // src/lib/errors/checkout-error-reporter.ts for dump-path
+    // resolution.
+    await reportCheckoutError(error, {
+      surface: 'orders',
+      route: 'POST /api/v1/orders (legacy)',
+      userId,
+      idempotencyKey: idempotencyKey ?? null,
+      itemsCount: Array.isArray(bodyItems) ? bodyItems.length : 0,
+      paymentMethod:
+        typeof paymentResolved === 'string' ? paymentResolved : null,
+      deliveryType: typeof deliveryType === 'string' ? deliveryType : null,
+    });
     // Production: NEVER leak DB / pg constraint messages to clients.
-    // The canonical operator surface is the side-channel file dump above
-    // (writes to CHECKOUT_ERROR_LOG). Dev/staging may opt in by setting
-    // DEBUG_CHECKOUT=1; HIDE_CHECKOUT_DEBUG=1 forces hide even in dev.
-    // See docs/01 R7.
+    // The canonical operator surface is now Sentry + the side-channel
+    // file at <tmpdir>/checkout-errors.log (via reportCheckoutError).
+    // Dev/staging may opt in by setting DEBUG_CHECKOUT=1;
+    // HIDE_CHECKOUT_DEBUG=1 forces hide even in dev. See docs/01 R7.
     const showDebug =
       process.env.NODE_ENV !== 'production' &&
       process.env.HIDE_CHECKOUT_DEBUG !== '1';

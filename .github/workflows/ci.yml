@@ -105,10 +105,9 @@ jobs:
         # Soft warning by design: the build emits "Proxy (Middleware)" but
         # the manifest ships empty due to a Turbopack regression. We log it
         # as ::warning so a developer notices but the rest of CI runs.
-        # Re-promote to ::error when the upstream bug is fixed.
-        run: |
-          test -s .next/server/middleware-manifest.json || (echo "::warning::no build yet or manifest missing" && exit 0)
-          node -e "const m=require('./.next/server/middleware-manifest.json');if(!m.middleware||Object.keys(m.middleware).length===0){console.warn('::warning::proxy.ts NOT registered in middleware-manifest.json (Turbopack regression — see docs/09)');process.exit(0)}"
+        # Re-promote to npm run proxy:guard (without --soft) when the
+        # upstream bug is fixed so a future regression fails the build.
+        run: npm run proxy:guard -- --soft
 
       - name: Upload coverage
         if: always()

@@ -10,6 +10,7 @@ import { applyCsrfProtection } from "@/lib/csrf";
 import { getClientIp } from "@/lib/request-ip";
 import { error as logError, info as logInfo, warn as logWarn } from "@/lib/logger";
 import { createCheckout, type CheckoutResult } from "@/lib/checkout/create-checkout";
+import { reportCheckoutError } from "@/lib/errors/checkout-error-reporter";
 import type { DeliveryAddressRow } from "@/lib/checkout/resolve-address";
 import type { CouponRow } from "@/lib/pricing";
 import { getLoyaltySettings } from "@/lib/loyalty";
@@ -663,62 +664,30 @@ export async function POST(request: NextRequest) {
       itemsCount: (v.items ?? []).length,
       vendorGroupsCount: (v.vendor_groups ?? []).length,
     });
-    // Persist the actual error to a side-channel file so on-call can
-    // see the real cause even when production hides the `debug` field.
-    // The catch-all above intentionally masks DB / network / constraint
-    // errors with a generic Arabic message; without this dump we can't
-    // triage from logs alone when the run is containerised and stdout
-    // is the only diagnostic surface. Best-effort: any FS error here
-    // is swallowed so the user-facing response still works.
-    //
-    // Path resolution: prefer a writable location in priority order —
-    //   1. `process.env.CHECKOUT_ERROR_LOG` (operator override, e.g.
-    //      bind-mount a host path)
-    //   2. `<cwd>/logs/checkout-errors.log` (dev / non-readonly hosts)
-    //   3. `<tmpdir>/checkout-errors.log` — always writable in Docker
-    //      because docker-compose mounts tmpfs at /tmp. Production
-    //      containers can `docker exec ... cat /tmp/checkout-errors.log`
-    //      to triage without restarting anything.
-    try {
-      const fs = await import("node:fs/promises");
-      const path = await import("node:path");
-      const tmpDir =
-        process.env.CHECKOUT_ERROR_LOG ??
-        path.join(process.cwd(), "logs", "checkout-errors.log");
-      await fs.mkdir(path.dirname(tmpDir), { recursive: true });
-      const dumpPath = tmpDir;
-      const line = JSON.stringify({
-        ts: new Date().toISOString(),
-        userId,
-        idempotencyKey: v.idempotency_key ?? null,
-        itemsCount: (v.items ?? []).length,
-        vendorGroupsCount: (v.vendor_groups ?? []).length,
-        paymentMethod: v.payment_method ?? null,
-        deliveryType: v.delivery_type ?? null,
-        errorName: error instanceof Error ? error.name : typeof error,
-        errorMessage: error instanceof Error ? error.message : String(error),
-        pgCode:
-          cause && typeof cause === "object" && "code" in cause
-            ? String((cause as { code: unknown }).code)
-            : null,
-        pgMessage: causeMsg,
-        // Keep the full stack at WARN level — useful when the same
-        // error recurs and we need to find the offending line.
-        stack:
-          error instanceof Error
-            ? (error.stack ?? "").split("\n").slice(0, 8).join("\n")
-            : null,
-      });
-      await fs.appendFile(dumpPath, line + "\n", "utf8");
-    } catch {
-      /* never let the dump itself break the user response */
-    }
+    // Send the same diagnostic payload to Sentry (when configured) AND
+    // to a file on disk — same shape on both surfaces so on-call
+    // tooling can grep either one. The helper is best-effort and never
+    // throws; failures inside it land on stderr. See
+    // src/lib/errors/checkout-error-reporter.ts for the dump-path
+    // resolution (prefers tmpdir in Docker because the production
+    // container runs read_only with a non-root user).
+    await reportCheckoutError(error, {
+      surface: "checkout",
+      route: "POST /api/v1/checkout",
+      userId,
+      idempotencyKey: v.idempotency_key ?? null,
+      itemsCount: (v.items ?? []).length,
+      vendorGroupsCount: (v.vendor_groups ?? []).length,
+      paymentMethod: v.payment_method ?? null,
+      deliveryType: v.delivery_type ?? null,
+    });
     // Production: NEVER leak DB / pg constraint messages to clients.
-    // The canonical operator surface is the side-channel file at
-    // CHECKOUT_ERROR_LOG (lines 666–714 above). Dev/staging may opt in
-    // by setting DEBUG_CHECKOUT=1; HIDE_CHECKOUT_DEBUG=1 forces hide
-    // even in dev. This addresses docs/01 R7 ("checkout can include a
-    // DB-derived debug value in HTTP responses").
+    // The canonical operator surface is now Sentry + the side-channel
+    // file at <tmpdir>/checkout-errors.log (via reportCheckoutError).
+    // Dev/staging may opt in by setting DEBUG_CHECKOUT=1;
+    // HIDE_CHECKOUT_DEBUG=1 forces hide even in dev. This addresses
+    // docs/01 R7 ("checkout can include a DB-derived debug value in
+    // HTTP responses").
     const showDebug =
       process.env.NODE_ENV !== "production" &&
       process.env.HIDE_CHECKOUT_DEBUG !== "1";

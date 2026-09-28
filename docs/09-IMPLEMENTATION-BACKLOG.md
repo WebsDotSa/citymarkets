@@ -1,12 +1,12 @@
 # City Markets — Implementation Backlog
 
 ## P0
-- [ ] remove production DB debug leakage
-- [ ] establish payment event/idempotency model
-- [ ] reconcile schema drift
-- [ ] verify stock concurrency
-- [ ] verify auth/vendor/admin isolation
-- [ ] make CI blocking
+- [x] remove production DB debug leakage
+- [x] establish payment event/idempotency model
+- [x] reconcile schema drift
+- [x] verify stock concurrency
+- [x] verify auth/vendor/admin isolation
+- [x] make CI blocking
 
 ## P1
 - [ ] create domain modules
@@ -16,7 +16,13 @@
 - [ ] canonicalize catalog/product model
 - [ ] unify actor/auth layer
 - [ ] queue critical notifications
-- [ ] remove local filesystem coupling
+- [x] **partially:** remove local filesystem coupling — checkout + orders
+      catch-all now goes through `src/lib/errors/checkout-error-reporter.ts`
+      which captures to Sentry (when configured) AND writes a JSON line
+      to `<tmpdir>/checkout-errors.log` (writable in Docker read_only
+      containers). The upload routes (`admin/upload`, `upload/audio`,
+      `upload/place-images`, `upload/cv`) still write user uploads to
+      disk via a Docker volume — that's intentional until R2/S3 lands.
 
 ## P2
 - [ ] consolidate routes/components
@@ -48,11 +54,9 @@
       requires either a Next.js patch upgrade or a downgrade to `middleware.ts`.
       Tracked in `.next/server/middleware-manifest.json` (read at build time).
 - [ ] **`src/proxy.ts` runtime registration guard** — added to CI in
-      the 2026-09-28 remediation pass. Currently a soft `::warning` because
-      the upstream Turbopack bug is unfixed; re-promote to `::error` when
-      resolved so a future regression fails the build instead of slipping
-      through.
-- [ ] **`scripts/proxy-runtime-guard.ts`** — referenced in the entry above
-      does not exist. The current guard is inline in `.github/workflows/ci.yml`.
-      Extracting it to a standalone script would let `npm run proxy:guard`
-      be run locally and would remove the inline Node one-liner from CI.
+      the 2026-09-28 remediation pass as `npm run proxy:guard` (run with
+      `--soft` in CI today). The script exits non-zero when the runtime
+      manifest is empty. Currently a soft `::warning` in CI because the
+      upstream Turbopack bug is unfixed; re-promote to a bare
+      `npm run proxy:guard` (no `--soft`) when resolved so a future
+      regression fails the build instead of slipping through.
