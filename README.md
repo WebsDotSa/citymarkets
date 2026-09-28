@@ -144,9 +144,13 @@ npx tsx scripts/worker.ts
 
 ### Backend / Web
 
+- [الخطة الشاملة](./docs/00-FULLSTACK-MASTER-PLAN.md) - الخطة الكاملة لـ 10 مراحل
+- [تدقيق الحالة الراهنة](./docs/01-CURRENT-STATE-AUDIT.md) - المخاطر R1-R10
 - [دليل النشر](./DEPLOYMENT.md) - إعداد ونشر الإنتاج
 - [دليل المساهمة](./docs/CONTRIB.md) - التطوير، السكربتات، البيئة، الاختبارات، والترحيلات
 - [دليل التشغيل](./docs/RUNBOOK.md) - المراقبة، الأعطال الشائعة، والتراجع
+- [خطة الـ Migrations](./docs/06-DATABASE-MIGRATION-PLAN.md) - استراتيجية ترحيل البيانات
+- [بوابات QA والإصدار](./docs/08-QA-AND-RELEASE-GATES.md) - الفحوصات المطلوبة للإصدار
 
 ### iOS app
 
@@ -163,16 +167,34 @@ npx tsx scripts/worker.ts
 
 ---
 
-## حالة التنفيذ الموثقة — 2026-07-29
+## حالة التنفيذ الموثقة — 2026-09-28
 
-هذه لقطة تحقق بتاريخ 2026-07-29 وليست ضماناً دائماً للأرقام الحالية:
+هذه لقطة تحقق بتاريخ 2026-09-28 وليست ضماناً دائماً للأرقام الحالية:
 
-- اكتملت خمسة تغييرات مترابطة: `1c8b9dc` لمشغل الترحيلات وإصلاح SQL، و`45d53d4` لعقد `proxy.ts` ومسارات البائع، و`ecbcf9d` لاختبارات V2، و`a63fb47` للبنية التحتية، و`bb16129` لإزالة مكونات الصفحة الرئيسية اليتيمة.
-- عولجت ستة أسباب جذرية: تمرير `x-pathname` في جهة الاستجابة بدلاً من الطلب، ظهور واجهة العميل في `/vendor`، خطأ UUID في الترحيل 003، أخطاء السياسة والعمود في الترحيل 021، عدم تطابق منفذ healthcheck، وغياب `VENDOR_JWT_SECRET` من إعدادات الحاوية.
-- أضيف CI للفحص النوعي وخطة الترحيلات والاختبارات مع التغطية والبناء، مع Dockerfile متعدد المراحل يعمل كمستخدم غير root وCompose على المنفذ `3005`.
-- نجحت 202/202 حالة اختبار ضمن 19 ملف اختبار. اختبارات مكونات V2 الحالية اختبارات عقد على مستوى المصدر لعدم توفر jsdom وTesting Library.
-- اكتشف مشغل الترحيلات 32/32 ملفاً متتبعاً في قاعدة الإنتاج. تضمنت اللقطة ترحيلات مسجلة يدوياً و15 تحذير drift تحتاج مراجعة؛ لذلك «متتبع» لا يعني أن SQL الحالي نُفذ بواسطة المشغل.
-- التفاصيل التشغيلية والقيود وإجراءات التراجع موثقة في [دليل التشغيل](./docs/RUNBOOK.md).
+### إصلاحات المرحلة الأولى (P0) — الجلسة 2026-09-28
+
+- **P0-A:** إزالة تسرب debug في `checkout/route.ts` و `orders/route.ts`. الإنتاج لم يعد يكشف رسائل pg constraint في الـ HTTP responses.
+- **P0-B:** تشديد CI. `npm run lint || true` أُزيل؛ أصبح `tsc --noEmit` blocking.
+- **P0-C:** سكريبت `scripts/migration-drift-report.ts` يكشف الـ drift في الـ schema (17 ملف غير مُتتبَع + 1 app_migrations).
+- **P0-D:** اختبار `src/__tests__/stock-concurrency.test.ts` يتحقق من عدم وجود oversell وازدواج idempotency.
+- **P0-E:** سكريبت `scripts/auth-isolation-audit.ts` يمشي 152 route بشكل static. 0 gaps، 26 OK، 126 Review (proxy.ts يغطيها وقت التشغيل).
+- **P0-F:** migration 073 `payment_events` + helper `src/lib/payments/event-ledger.ts` + ربطه في `webhook/route.ts`. الـ replays تُلتقط فوراً.
+- **إصلاحات smoke:** `next.config.mjs` يضيف 6 redirects (308) لـ `/login`، `/auth/register`، `/direct-order`. `npm run qa:smoke` الآن **0 إخفاقات** (كان 3).
+- **البنية التحتية:** `docs/` المسحوب من PR #1 (15 ملف)، `docs/09` يوثّق الفجوات التشغيلية.
+
+### الإحصائيات الحالية (2026-09-28)
+
+- **اختبارات Vitest:** 1491 passed, 43 failed (الأخيرة pre-existing — معظمها analytics وcheckout pricing mocks).
+- **smoke (`npm run qa:smoke`):** 0 إخفاقات (HTTP).
+- **critical paths (`npm run qa:critical-paths`):** 8 passed, 2 skipped (لا توجد بيانات اختبار).
+- **drift:** 17 ملف unapplied (16 pre-018 + migration 073 الجديدة)، 0 missing من المتوقع.
+- **auth isolation:** 0 critical gaps، 26 OK، 126 Review.
+
+### الفجوات التشغيلية المعروفة (مُوثَّقة في docs/09)
+
+- `src/proxy.ts` غير مُسجَّل في `.next/server/middleware-manifest.json` (Turbopack regression).
+- `Dockerfile.worker` ليس مُختبراً في CI.
+- ESLint config غير موجود؛ `lint` يستخدم `tsc --noEmit` كبديل.
 
 ---
 
@@ -180,7 +202,7 @@ npx tsx scripts/worker.ts
 
 ### Web (this repo)
 
-آخر حالة موثقة: **2026-07-29** (انظر القسم أدناه).
+آخر حالة موثقة: **2026-09-28** (انظر القسم أعلاه).
 
 ### iOS app (`ios/`)
 
