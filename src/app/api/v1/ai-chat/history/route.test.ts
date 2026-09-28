@@ -78,6 +78,7 @@ describe("PUT /api/v1/ai-chat/history rich message normalization", () => {
     expect(persisted[0].matchedProducts).toEqual([
       {
         productId: "product-1",
+        vendorId: null,
         name: "حليب كامل الدسم",
         imageUrl: "/images/milk.jpg",
         unit: "1 لتر",

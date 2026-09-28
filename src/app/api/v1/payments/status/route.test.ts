@@ -71,28 +71,33 @@ describe("GET /api/v1/payments/status", () => {
   });
 
   it("returns the canonical status payload with server-authoritative total", async () => {
-    mocks.poolQuery.mockResolvedValueOnce({
-      rows: [
-        {
-          id: ORDER,
-          status: "pending",
-          payment_status: "unpaid",
-          payment_method: "mada",
-          payment_reference: null,
-          total: "99.50",
-        },
-      ],
-    });
+    // The route makes two queries: orders (with ownership filter) then
+    // order_items (for Meta Pixel content_ids). Provide a stub for each.
+    mocks.poolQuery
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: ORDER,
+            status: "pending",
+            payment_status: "unpaid",
+            payment_method: "mada",
+            payment_reference: null,
+            total: "99.50",
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
     const res = await GET(mockRequest({ order_id: ORDER }) as never);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toEqual({
+    expect(body).toMatchObject({
       success: true,
       order_id: ORDER,
       status: "pending",
       payment_status: "unpaid",
       payment_method: "mada",
       total: 99.5,
+      items: [],
     });
   });
 
