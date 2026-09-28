@@ -5,6 +5,7 @@ import { getVendorJwtSecretBytes, isCookieSecure } from "@/lib/env";
 import { query } from "@/lib/db";
 import type { QueryResult } from "pg";
 import { VENDOR_SESSION_COOKIE } from "@/lib/auth-cookie-name";
+import { createRoleCache, type RoleCache } from "@/lib/auth/role-cache";
 
 export { VENDOR_SESSION_COOKIE };
 
@@ -87,28 +88,23 @@ export async function verifyVendorRequest(
   }
 }
 
+interface VendorSessionEntry {
+  role: VendorRole;
+  isActive: boolean;
+  vendorIsActive: boolean;
+  tokenVersion: number;
+}
+
 // Short-lived in-memory cache mirroring the admin pattern. Bounds the
 // blast radius of a stale role / `token_version` while keeping auth
-// checks off the DB hot path. 60s TTL is short enough that an admin
-// demoting or suspending a vendor takes effect within a minute.
-const vendorSessionCache = new Map<
-  string,
-  {
-    role: VendorRole;
-    isActive: boolean;
-    vendorIsActive: boolean;
-    tokenVersion: number;
-    expiresAt: number;
-  }
->();
-const CACHE_TTL_MS = 60 * 1000;
+// checks off the DB hot path. The shared `createRoleCache` factory is
+// the single source of truth for TTL semantics — see
+// src/lib/auth/role-cache.ts.
+const vendorSessionCache: RoleCache<VendorSessionEntry> =
+  createRoleCache<VendorSessionEntry>();
 
 export function clearVendorSessionCache(staffId?: string): void {
-  if (staffId) {
-    vendorSessionCache.delete(staffId);
-  } else {
-    vendorSessionCache.clear();
-  }
+  vendorSessionCache.clear(staffId);
 }
 
 export async function verifyVendorRequestWithDb(
@@ -122,7 +118,7 @@ export async function verifyVendorRequestWithDb(
   // in the DB immediately invalidates outstanding tokens (forced
   // logout, role demotion, vendor suspension).
   const cached = vendorSessionCache.get(session.staffId);
-  if (cached && cached.expiresAt > Date.now()) {
+  if (cached) {
     if (!cached.isActive || !cached.vendorIsActive) return null;
     // We don't have the JWT's token_version here because the JWT
     // doesn't carry it; trust the cache for role/active, the DB
@@ -140,13 +136,13 @@ export async function verifyVendorRequestWithDb(
   )) as QueryResult;
 
   if (result.rows.length === 0) {
-    vendorSessionCache.delete(session.staffId);
+    vendorSessionCache.clear(session.staffId);
     return null;
   }
 
   const staff = result.rows[0];
   if (!staff.is_active || !staff.vendor_is_active) {
-    vendorSessionCache.delete(session.staffId);
+    vendorSessionCache.clear(session.staffId);
     return null;
   }
 
@@ -154,7 +150,7 @@ export async function verifyVendorRequestWithDb(
   // reject so a demoted viewer cannot keep manager powers until the
   // JWT naturally expires (8h).
   if (staff.role !== session.role) {
-    vendorSessionCache.delete(session.staffId);
+    vendorSessionCache.clear(session.staffId);
     return null;
   }
 
@@ -163,7 +159,6 @@ export async function verifyVendorRequestWithDb(
     isActive: staff.is_active === true,
     vendorIsActive: staff.vendor_is_active === true,
     tokenVersion: staff.token_version ?? 1,
-    expiresAt: Date.now() + CACHE_TTL_MS,
   });
 
   return {

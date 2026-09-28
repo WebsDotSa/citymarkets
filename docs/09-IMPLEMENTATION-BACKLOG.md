@@ -14,7 +14,14 @@
 - [ ] extract CheckoutService
 - [ ] extract PaymentService
 - [ ] canonicalize catalog/product model
-- [ ] unify actor/auth layer
+- [x] **partially:** unify actor/auth layer — admin-api-auth.ts and
+      vendor-auth.ts now share `createRoleCache` from
+      `src/lib/auth/role-cache.ts` (single source of truth for TTL
+      semantics, eviction, value shape). The customer path stays
+      JWT-only — it has no DB-backed role cache and doesn't need one.
+      Remaining unification work: extract a common
+      `signJwt/verifyJwt` helper that subsumes the three near-identical
+      `sign*Token/verify*Request` pairs.
 - [ ] queue critical notifications
 - [x] **partially:** remove local filesystem coupling — checkout + orders
       catch-all now goes through `src/lib/errors/checkout-error-reporter.ts`

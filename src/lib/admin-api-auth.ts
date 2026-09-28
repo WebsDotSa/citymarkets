@@ -6,6 +6,7 @@ import {
 } from "@/lib/admin-types";
 import { verifyAdminRequest, type VerifiedAdminJwt } from "@/lib/admin-session";
 import { pool } from "@/lib/db";
+import { createRoleCache, type RoleCache } from "@/lib/auth/role-cache";
 
 export type { VerifiedAdminJwt as AdminAuthUser };
 
@@ -31,17 +32,21 @@ export function adminHasPermission(
   return Array.isArray(list) && list.includes(permission);
 }
 
+interface AdminRoleEntry {
+  role: AdminRole;
+  isActive: boolean;
+}
+
 // Short-lived in-memory cache so auth checks don't issue a DB query per
 // request. 60s is short enough to bound the impact of a stale role/badge
-// while still cheap enough to not require a separate cache store.
-const adminRoleCache = new Map<string, { role: AdminRole; isActive: boolean; expiresAt: number }>();
-const CACHE_TTL_MS = 60 * 1000;
+// while still cheap enough to not require a separate cache store. The
+// shared `createRoleCache` factory is the single source of truth for
+// TTL semantics — see src/lib/auth/role-cache.ts.
+const adminRoleCache: RoleCache<AdminRoleEntry> = createRoleCache<AdminRoleEntry>();
 
-async function fetchAdminFreshFromDb(id: string): Promise<{ role: AdminRole; isActive: boolean } | null> {
+async function fetchAdminFreshFromDb(id: string): Promise<AdminRoleEntry | null> {
   const cached = adminRoleCache.get(id);
-  if (cached && cached.expiresAt > Date.now()) {
-    return { role: cached.role, isActive: cached.isActive };
-  }
+  if (cached) return cached;
   try {
     const result = await pool.query(
       `SELECT role::text AS role, is_active FROM admin_users WHERE id = $1`,
@@ -49,21 +54,19 @@ async function fetchAdminFreshFromDb(id: string): Promise<{ role: AdminRole; isA
     );
     if (result.rows.length === 0) return null;
     const row = result.rows[0] as { role: string; is_active: boolean };
-    const role = row.role as AdminRole;
-    const isActive = row.is_active === true;
-    adminRoleCache.set(id, { role, isActive, expiresAt: Date.now() + CACHE_TTL_MS });
-    return { role, isActive };
+    const entry: AdminRoleEntry = {
+      role: row.role as AdminRole,
+      isActive: row.is_active === true,
+    };
+    adminRoleCache.set(id, entry);
+    return entry;
   } catch {
     return null;
   }
 }
 
 export function clearAdminRoleCache(id?: string): void {
-  if (id) {
-    adminRoleCache.delete(id);
-  } else {
-    adminRoleCache.clear();
-  }
+  adminRoleCache.clear(id);
 }
 
 /**
