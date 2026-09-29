@@ -67,6 +67,9 @@ const LEGACY_DEEP_IMPORTS: ReadonlySet<string> = new Set([
   "src/app/api/v1/payments/tamara/webhook/route.test.ts",
   "src/app/api/v1/payments/moyasar/confirm/route.ts",
   "src/app/api/v1/payments/moyasar/confirm/route.test.ts",
+  // vendor/products + vendor/orders deep-import identity/vendor-auth-with-db
+  "src/app/api/v1/vendor/products/route.test.ts",
+  "src/app/api/v1/vendor/orders/route.test.ts",
   "src/app/api/admin/payments/route.ts",
   "src/app/api/admin/settings/payments/route.ts",
   "src/app/api/v1/payments/initiate/route.test.ts",
