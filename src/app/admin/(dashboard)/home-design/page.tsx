@@ -2,14 +2,29 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Smartphone, Monitor, Save, Eye, RotateCcw, X, Loader2 } from "lucide-react";
 import { useToast, useConfirm } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/design/button";
-import { SectionEditor } from "@/components/admin/home-design/section-editor";
 import { SectionPalette } from "@/components/admin/home-design/section-palette";
 import { LayoutCanvas } from "@/components/admin/home-design/layout-canvas";
+// SectionEditor is 938 lines / 32 KB and only renders inside the editor
+// drawer (when the user clicks a section). Lazy-load it so the initial
+// admin /home-design payload skips it.
+const SectionEditor = dynamic(
+  () => import("@/components/admin/home-design/section-editor").then((m) => m.SectionEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center gap-2 text-gray-400 text-sm py-8 justify-center">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        جاري تحميل المحرر...
+      </div>
+    ),
+  },
+);
 import {
   DEVICE_TYPES,
   makeDefaultSection,
