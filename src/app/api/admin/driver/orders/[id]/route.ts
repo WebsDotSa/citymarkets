@@ -9,6 +9,7 @@ import {
 import {
   canTransition as stateMachineCanTransition,
   invalidTransitionMessage as stateMachineInvalidMessage,
+  PARENT_ORDER_TRANSITIONS_BY_ROLE,
 } from '@/lib/orders/state-machine';
 
 export const dynamic = "force-dynamic";
@@ -146,7 +147,15 @@ export async function PATCH(
   // _, status)` returning true for any valid `from`. We list the legal
   // target states here for the early-return 400 — the state machine
   // also enforces it once the order's current status is loaded.
-  const validStatuses = ["on_the_way", "delivered", "cancelled"];
+  // Derived from the state machine (audit C14) so any future new legal
+  // target state added to the driver table flows through automatically.
+  const validStatuses: readonly string[] = [
+    ...new Set(
+      Object.values(PARENT_ORDER_TRANSITIONS_BY_ROLE.driver).flatMap(
+        (targets) => [...targets],
+      ),
+    ),
+  ];
 
   if (!status || !validStatuses.includes(status)) {
     return NextResponse.json(
