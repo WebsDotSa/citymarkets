@@ -61,7 +61,7 @@ npx tsx scripts/worker.ts
 │   ├── APP_REVIEW.md          #   Apple submission checklist
 │   └── PERFORMANCE.md         #   budgets + قياس الأداء
 ├── scripts/                   # Shared backend scripts (migrate, smoke, …)
-├── migrations/                # SQL migrations (001-046)
+├── migrations/                # SQL migrations (001-077)
 └── docs/                      # Architecture / runbooks / ADRs
 ```
 
@@ -182,9 +182,9 @@ npx tsx scripts/worker.ts
 - **إصلاحات smoke:** `next.config.mjs` يضيف 6 redirects (308) لـ `/login`، `/auth/register`، `/direct-order`. `npm run qa:smoke` الآن **0 إخفاقات** (كان 3).
 - **البنية التحتية:** `docs/` المسحوب من PR #1 (15 ملف)، `docs/09` يوثّق الفجوات التشغيلية.
 
-### الإحصائيات الحالية (2026-09-28)
+### الإحصائيات الحالية (2026-09-30)
 
-- **اختبارات Vitest:** 1491 passed, 43 failed (الأخيرة pre-existing — معظمها analytics وcheckout pricing mocks).
+- **اختبارات Vitest:** 1944 tests passing (1 skipped) — `npm test` على آخر commit في `refactor/full-repository-consolidation`.
 - **smoke (`npm run qa:smoke`):** 0 إخفاقات (HTTP).
 - **critical paths (`npm run qa:critical-paths`):** 8 passed, 2 skipped (لا توجد بيانات اختبار).
 - **drift:** 17 ملف unapplied (16 pre-018 + migration 073 الجديدة)، 0 missing من المتوقع.
@@ -192,7 +192,7 @@ npx tsx scripts/worker.ts
 
 ### الفجوات التشغيلية المعروفة (مُوثَّقة في docs/09)
 
-- `src/proxy.ts` غير مُسجَّل في `.next/server/middleware-manifest.json` (Turbopack regression).
+- ~~`src/proxy.ts` غير مُسجَّل في `.next/server/middleware-manifest.json`~~ — مُصلَح في Phase 7 (commit `72bbc46`): تم rename إلى `src/middleware.ts` + nodejs runtime + `functions-config-manifest.json` guard.
 - `Dockerfile.worker` ليس مُختبراً في CI.
 - ESLint config غير موجود؛ `lint` يستخدم `tsc --noEmit` كبديل.
 
