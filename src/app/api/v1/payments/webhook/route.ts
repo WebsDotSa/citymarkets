@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { pool } from '@/lib/db';
-import { fetchPayment } from '@/lib/payments/moyasar';
+import { fetchPayment, mapMoyasarStatusToDb, isSarCurrency } from '@/lib/payments/moyasar';
 import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 import {
   recordPaymentEvent,
@@ -45,12 +45,10 @@ function verifyWebhookAuth(request: NextRequest): boolean {
   return safeEqual(token, secret);
 }
 
-/** Map Moyasar status → order.payment_status column. */
-function mapPaymentDbStatus(remote: string): string {
-  if (remote === 'paid' || remote === 'captured') return 'paid';
-  if (remote === 'failed' || remote === 'voided') return 'failed';
-  return 'pending';
-}
+// FIX (P1-4): mapPaymentDbStatus moved to @/lib/payments/moyasar as
+// `mapMoyasarStatusToDb` so the canonical webhook and the inline-confirm
+// helper share one source of truth. The previous local copy treated
+// 'refunded' as 'pending', which stranded the row after a refund event.
 
 export async function POST(request: NextRequest) {
   if (!verifyWebhookAuth(request)) {
@@ -96,10 +94,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const paymentDb = mapPaymentDbStatus(remote.status ?? '');
+    const paymentDb = mapMoyasarStatusToDb(remote.status ?? '');
     const remoteStatus = remote.status ?? '';
 
     const client = await pool.connect();
+    // Hoisted to outer scope so the post-COMMIT vendor push fan-out
+    // can read it without TS narrowing the inner try scope. The inner
+    // assignment below is the only place this is written.
+    let orderId: string | undefined;
+    // Captured inside the transaction so the post-COMMIT fan-out can
+    // read it without holding the client connection (client is released
+    // by the finally block below). Defaults to false; flipped to true
+    // when the parent order was found AND remoteStatus was paid/captured.
+    let shouldNotifyVendor = false;
 
     try {
       // SECURITY: Wrap per-order processing in a transaction with an
@@ -133,6 +140,21 @@ export async function POST(request: NextRequest) {
           `[webhook] duplicate event ${eventType} for ${invoiceId}; ` +
             `idempotent ack without re-processing order`,
         );
+        // FIX (P1-5): finalize the ledger row so subsequent replays do
+        // not see status='received' forever. orderId is intentionally
+        // NOT passed — we short-circuited before the SELECT. The schema
+        // allows order_id NULL (operators correlate from
+        // raw_payload.invoice_id).
+        try {
+          await finalizePaymentEvent(client, {
+            invoiceId,
+            gateway: 'moyasar',
+            eventType,
+            status: 'processed',
+          });
+        } catch (finalErr) {
+          logError('[event-ledger] duplicate finalize failed', finalErr, { invoiceId });
+        }
         await client.query('COMMIT');
         return NextResponse.json({ received: true, duplicate: true });
       }
@@ -143,7 +165,7 @@ export async function POST(request: NextRequest) {
 
       // Hoisted so the post-processing finalize (payment_events.status)
       // can see the order id even when the original SELECT returned 0 rows.
-      const orderId: string | undefined = order.rows[0]?.id;
+      orderId = order.rows[0]?.id;
 
       if (orderId) {
 
@@ -195,45 +217,56 @@ export async function POST(request: NextRequest) {
           // or marking the order paid. Without this check, a payment
           // made in a weaker currency could be accepted as "Paid" and
           // converted to loyalty at SAR face value.
+          //
+          // FIX (P0-3): guards do NOT early-return. They gate the
+          // lifecycle flip + loyalty crediting via `guardsOk`; the
+          // payment_status was already written above (gateway confirmed).
+          // finalizePaymentEvent still runs so the ledger reflects truth,
+          // and a replay short-circuited by the UNIQUE index sees the
+          // ledger already at status='processed' (P1-5 covers the
+          // duplicate-branch finalize explicitly).
           const orderRow = order.rows[0];
           const orderTotal = Number(orderRow.total);
 
-          if (
-            remote.currency &&
-            remote.currency.toUpperCase() !== "SAR"
-          ) {
+          const currencyOk = isSarCurrency(remote.currency);
+          const amountOk =
+            typeof remote.amountHalalas !== "number" ||
+            remote.amountHalalas / 100 + 0.01 >= orderTotal;
+
+          if (!currencyOk) {
             logWarn(
               `[webhook] order ${orderId} paid in ${remote.currency}, expected SAR — refusing to credit loyalty`,
             );
-            return NextResponse.json({ received: true });
           }
-          if (
-            typeof remote.amountHalalas === "number" &&
-            remote.amountHalalas / 100 + 0.01 < orderTotal
-          ) {
+          if (!amountOk) {
             logWarn(
-              `[webhook] order ${orderId} paid amount ${remote.amountHalalas / 100} < total ${orderTotal} — refusing to credit loyalty`,
+              `[webhook] order ${orderId} paid amount ${(remote.amountHalalas ?? 0) / 100} < total ${orderTotal} — refusing to credit loyalty`,
             );
-            return NextResponse.json({ received: true });
           }
+          const guardsOk = currencyOk && amountOk;
 
-          // Mirror into the lifecycle `status` column but never go back to
-          // a pre-paid status (e.g. 'pending' from a stale retry).
+          if (guardsOk) {
+            // Roll lifecycle forward: payment confirmed → 'confirmed'.
+          // NEVER set the fulfillment lifecycle to 'paid' — 'paid' is a
+          // payment_status only (matches the Tamara webhook invariant at
+          // src/app/api/v1/payments/tamara/webhook/route.ts:226-237).
+          // We use CASE so a late 'paid' webhook can never regress an
+          // already-confirmed/preparing/ready/etc. order back to pending.
           await client.query(
-            `UPDATE orders SET status = $1 WHERE id = $2 AND status NOT IN ('cancelled','refunded','delivered')`,
-            ['paid', orderId]
+            `UPDATE orders
+                SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
+              WHERE id = $1`,
+            [orderId]
           );
 
-          // Slice 3: mirror the same lifecycle flip onto every child
-          // vendor_order so the parent and N children stay in lockstep.
-          // The status enum on vendor_orders is a superset of the
-          // catalog one, so 'paid' is a valid value.
+          // Slice 3 fan-out: mirror the same lifecycle flip onto every
+          // child vendor_order. Same CASE-guard as the parent — never
+          // set fulfillment to 'paid'.
           await client.query(
             `UPDATE vendor_orders
-                SET status = $1
-              WHERE parent_order_id = $2
-                AND status NOT IN ('cancelled','refunded','delivered')`,
-            ['paid', orderId],
+                SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
+              WHERE parent_order_id = $1`,
+            [orderId]
           );
 
           // SECURITY (Pay-H): resolve any pending_redeem hold into a
@@ -276,6 +309,7 @@ export async function POST(request: NextRequest) {
               logError('[loyalty] earn failed for order', lpErr, { orderId });
             }
           }
+          } // end if (guardsOk)
 
           // Recover any abandoned carts that belong to this customer.
           // Idempotent — the helper uses intent_order_id <> recovered_order_id
@@ -357,17 +391,63 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      return NextResponse.json({ received: true });
+      // Capture fan-out intent BEFORE COMMIT. The post-COMMIT section
+      // below needs this flag to run vendor notify without holding the
+      // already-released client connection.
+      shouldNotifyVendor = Boolean(
+        orderId &&
+          (remoteStatus === 'paid' || remoteStatus === 'captured'),
+      );
+
+      // COMMIT inside the try (matches Tamara webhook pattern).
+      // Vendor push fan-out happens AFTER this commit + release.
+      await client.query('COMMIT');
+    } catch (e) {
+      try { await client.query('ROLLBACK'); } catch { /* noop */ }
+      throw e;
     } finally {
-      // Commit if a transaction is active; release regardless. The advisory
-      // lock is released automatically on COMMIT/ROLLBACK.
-      try {
-        await client.query('COMMIT');
-      } catch {
-        try { await client.query('ROLLBACK'); } catch { /* noop */ }
-      }
       client.release();
     }
+
+    // ---- Post-COMMIT side effects ----
+    //
+    // Vendor push notification (Gap D closure). Fires only on a successful
+    // payment and only once per (vendor, order) pair: the queue is keyed
+    // by `vendor:<vendorId>:order:<orderId>` so a webhook replay that
+    // re-enqueues hits BullMQ's idempotency guard. Fire-and-forget —
+    // never block the gateway ack on push dispatch.
+    //
+    // FIX (P0-2): this used to run BEFORE COMMIT (the COMMIT was in the
+    // `finally` block, after the vendor fan-out in the try body). If
+    // COMMIT failed, the vendor would still get a push for a rolled-back
+    // transaction; on a fast COMMIT, the worker could read the DB before
+    // the COMMIT propagated. Mirrors Tamara webhook's correct pattern.
+    if (shouldNotifyVendor && orderId) {
+      const orderIdLocal: string = orderId as string;
+      try {
+        const { enqueueNotifyVendorNewOrder } = await import('@/lib/queue');
+        // Use pool (fresh connection) — the transaction's client is
+        // already released above.
+        const vendorRows = await pool.query<{ vendor_id: string }>(
+          `SELECT vendor_id::text AS vendor_id
+             FROM vendor_orders
+            WHERE parent_order_id = $1`,
+          [orderIdLocal]
+        );
+        for (const row of vendorRows.rows) {
+          // void = fire-and-forget; the helper returns immediately
+          // (BullMQ enqueue or Redis-disabled inline fallback).
+          void enqueueNotifyVendorNewOrder({
+            vendorId: row.vendor_id,
+            orderId: orderIdLocal,
+          });
+        }
+      } catch (notifyErr) {
+        logError('[notify-vendor] enqueue failed', notifyErr, { orderId });
+      }
+    }
+
+    return NextResponse.json({ received: true });
   } catch (error) {
     logError('Webhook error:', error);
     return NextResponse.json({ received: true });

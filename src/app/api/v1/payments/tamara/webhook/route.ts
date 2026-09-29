@@ -187,6 +187,20 @@ export async function POST(request: NextRequest) {
           `[tamara] duplicate event ${eventType} for ${checkoutId}; ` +
             `idempotent ack without re-processing order`,
         );
+        // FIX (P1-5): finalize the ledger row so subsequent replays do
+        // not see status='received' forever. orderId is intentionally
+        // NOT passed — we short-circuited before the SELECT. Mirrors the
+        // same fix in the Moyasar webhook.
+        try {
+          await finalizePaymentEvent(client, {
+            invoiceId: checkoutId,
+            gateway: "tamara",
+            eventType,
+            status: "processed",
+          });
+        } catch (finalErr) {
+          logError('[event-ledger] duplicate finalize failed', finalErr, { invoiceId: checkoutId });
+        }
         await client.query("COMMIT");
         return NextResponse.json({ received: true, duplicate: true });
       }
@@ -330,6 +344,32 @@ export async function POST(request: NextRequest) {
       }
     } catch (e) {
       logError("[tamara] push notify failed", e);
+    }
+
+    // ---- 6b. Vendor push notification (Gap D closure) ----
+    // Fires only on a successful payment and only once per (vendor,
+    // order) pair: the queue is keyed by
+    // `vendor:<vendorId>:order:<orderId>` so a webhook replay that
+    // re-enqueues hits BullMQ's idempotency guard. Fire-and-forget —
+    // never block the gateway ack on push dispatch.
+    if (paymentDb === "paid") {
+      try {
+        const { enqueueNotifyVendorNewOrder } = await import("@/lib/queue");
+        const vendorRows = await pool.query<{ vendor_id: string }>(
+          `SELECT vendor_id::text AS vendor_id
+             FROM vendor_orders
+            WHERE parent_order_id = $1`,
+          [orderId]
+        );
+        for (const row of vendorRows.rows) {
+          void enqueueNotifyVendorNewOrder({
+            vendorId: row.vendor_id,
+            orderId,
+          });
+        }
+      } catch (notifyErr) {
+        logError("[tamara] vendor notify enqueue failed", notifyErr, { orderId });
+      }
     }
 
     // ---- 7. Fire-and-forget post-payment SMS ----

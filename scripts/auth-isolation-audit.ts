@@ -106,9 +106,7 @@ function classify(file: string): RouteVerdict {
   const isVendorAdmin = rel.startsWith("v1/vendor/");
   const isPaymentWebhook =
     rel === "v1/payments/webhook" ||
-    rel === "v1/payments/moyasar/callback" ||
-    rel === "v1/payments/tamara/webhook" ||
-    rel === "v1/vendors/payment/callback";
+    rel === "v1/payments/tamara/webhook";
 
   // Auth-establishing endpoints: login/logout/me/otp are exempt from the
   // admin/vendor auth requirement (they're the SESSION bootstrap, not

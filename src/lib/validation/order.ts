@@ -78,7 +78,11 @@ export const createOrderSchema = z.object({
 
 /**
  * Admin order status update enum — restricts status to known values
- * to prevent arbitrary DB writes.
+ * to prevent arbitrary DB writes. Mirrors the `order_status_enum`
+ * Postgres type defined in migrations/001_full_schema.sql and extended
+ * in migrations/033 (which added `'paid'`). `'paid'` is intentionally
+ * NOT included here — it is a payment_status only and must never be
+ * written to the lifecycle column.
  */
 export const orderStatusSchema = z.enum(
   [
@@ -112,11 +116,15 @@ export const updateOrderSchema = z.object({
  *   - updateOrderSchema   → status flip + notes only
  *   - orderEditSchema     → status + notes + price adjustments + item edit
  *
- * Kept as a SEPARATE schema to avoid silent rejection of valid price /
- * item edits when callers reach the PATCH endpoint with the simpler
- * schema (or vice-versa). Status enum here intentionally lists the
- * full admin-facing lifecycle, which is wider than
- * `orderStatusSchema` (the customer-facing subset).
+ * FIX (P0-4): previously the status enum here was the union of two
+ * different Postgres enums (orders.status + vendor_orders.status).
+ * That meant an admin POSTing `{status: "preparing"}` would pass Zod
+ * validation then crash at the DB with
+ * `invalid input value for enum order_status_enum`. Status here must
+ * match the parent's `order_status_enum` only — vendor-only values
+ * like `preparing`/`accepted`/`in_progress` belong on `vendor_orders`,
+ * never on `orders`. Reuses `orderStatusSchema` to keep one source
+ * of truth.
  */
 const orderEditItemSchema = z.object({
   itemId: z.string().uuid(),
@@ -126,18 +134,7 @@ const orderEditItemSchema = z.object({
 });
 
 export const orderEditSchema = z.object({
-  status: z
-    .enum([
-      "pending",
-      "shopping",
-      "preparing",
-      "accepted",
-      "in_progress",
-      "on_the_way",
-      "delivered",
-      "cancelled",
-    ])
-    .optional(),
+  status: orderStatusSchema.optional(),
   internal_notes: z.string().max(500).optional().nullable(),
   final_subtotal: z.number().min(0).max(1000000).optional(),
   final_delivery_fee: z.number().min(0).max(1000000).optional(),

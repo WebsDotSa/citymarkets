@@ -137,16 +137,13 @@ const CSRF_EXEMPT_PATHS = [
   "/api/v1/vendor/auth/otp", // Phase 3 vendor staff OTP (session-establishing, mirrors customer)
   "/api/v1/employment", // public anonymous form submission (delegate + /employment)
   "/api/v1/payments/initiate", // authenticated by JWT cookie
-  "/api/v1/payments/webhook", // authenticated by HMAC Bearer
-  "/api/v1/payments/moyasar/callback", // authenticated by HMAC
+  "/api/v1/payments/webhook", // authenticated by HMAC Bearer (canonical)
   "/api/v1/payments/tamara/webhook", // authenticated by Bearer (TAMARA_WEBHOOK_TOKEN)
-  // Vendor payment callback (Moyasar webhook + browser redirect). The
-  // webhook is authenticated by HMAC via x-moyasar-signature and the
-  // browser redirect is GET-only and carries no mutating payload, so
-  // neither path can carry a CSRF exploit. Without this exemption the
-  // vendor Moyasar callback is blocked by CSRF and vendor payments
-  // silently never complete (regression when multi-vendor went live).
-  "/api/v1/vendors/payment/callback",
+  // (2026-09-29) /api/v1/payments/moyasar/callback and
+  // /api/v1/vendors/payment/callback removed — replaced by the canonical
+  // HMAC-authenticated /api/v1/payments/webhook. /api/v1/vendors/[slug]/payment
+  // (the legacy single-vendor payment initiate) was also removed; the
+  // multi-vendor checkout pipeline is the only canonical payment path.
   "/api/v1/auth/me", // GET only
   "/api/v1/track-order", // guest lookup
   "/api/v1/delivery/quote", // stateless delivery-fee quote (guest-friendly)

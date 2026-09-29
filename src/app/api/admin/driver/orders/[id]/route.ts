@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import {
+  recordPaymentEvent,
+  finalizePaymentEvent,
+} from '@/lib/payments/event-ledger';
 
 export const dynamic = "force-dynamic";
 
@@ -215,6 +219,40 @@ export async function PATCH(
     const values: any[] = [];
     let paramIndex = 1;
 
+    // FIX (P1-1): when COD is collected on delivery, route the
+    // payment_status='paid' write through the payment_events ledger
+    // instead of mutating orders.payment_status directly. Previously
+    // a driver flipping status='delivered' bypassed the ledger — no
+    // audit row, no idempotency, and a network retry could either
+    // double-write (harmless) or be swallowed by a gateway-style
+    // collision that the ledger is designed to prevent.
+    //
+    // The `markingCodPaid` flag is consumed by both the claim and
+    // non-claim branches below; it gates whether to add
+    // `payment_status = 'paid'` to the UPDATE. The ledger INSERT
+    // happens BEFORE the UPDATE inside the same transaction so a
+    // duplicate INSERT short-circuits with rowCount=0 (via 23505) and
+    // the order update is skipped — leaving the prior successful
+    // COD row intact.
+    let markingCodPaid = false;
+    let codLedgerResult: "inserted" | "duplicate" | null = null;
+    if (status === "delivered" && orderCheck.rows[0].payment_status !== "paid") {
+      markingCodPaid = true;
+      codLedgerResult = await recordPaymentEvent(client, {
+        // For COD the invoice is the order itself — there is no
+        // gateway-issued invoice id to correlate against.
+        invoiceId: id,
+        gateway: "cod",
+        eventType: "cod.collected",
+        raw: {
+          order_id: id,
+          driver_admin_id: gate.admin.id,
+          driver_id: driverId,
+          collected_at: new Date().toISOString(),
+        },
+      });
+    }
+
     if (claim) {
       // Atomic claim: sets driver_id if NULL or already ours; refuses to
       // overwrite another driver's claim. If rowCount = 0, someone else
@@ -225,7 +263,7 @@ export async function PATCH(
       values.push(driverId);
       updates.push(`updated_at = NOW()`);
 
-      if (status === "delivered" && orderCheck.rows[0].payment_status !== "paid") {
+      if (markingCodPaid && codLedgerResult === "inserted") {
         updates.push(`payment_status = 'paid'`);
       }
 
@@ -253,7 +291,22 @@ export async function PATCH(
         );
       }
 
-      await client.query("COMMIT");
+      // FIX (P1-1): finalize the cod.collected ledger row after COMMIT
+      // so a subsequent replay of the same driver PATCH sees the row
+      // at status='processed' rather than 'received'. Mirrors the
+      // Moyasar / Tamara webhook finalize-after-COMMIT pattern.
+      if (markingCodPaid && codLedgerResult === "inserted") {
+        await client.query("COMMIT");
+        await finalizePaymentEvent(client, {
+          invoiceId: id,
+          gateway: "cod",
+          eventType: "cod.collected",
+          status: "processed",
+          orderId: id,
+        });
+      } else {
+        await client.query("COMMIT");
+      }
       // Audit log + coupon release run outside the txn so a missing log
       // table never blocks the actual status update.
       await client.query(
@@ -301,7 +354,13 @@ export async function PATCH(
     updates.push(`status = $${paramIndex++}`);
     values.push(status);
     updates.push(`updated_at = NOW()`);
-    if (status === "delivered" && orderCheck.rows[0].payment_status !== "paid") {
+    // FIX (P1-1): only add `payment_status = 'paid'` if the ledger
+    // INSERT above succeeded. If `codLedgerResult === 'duplicate'`,
+    // a previous COD collection was already recorded for this order;
+    // we leave the existing payment_status='paid' row alone and skip
+    // a second mutation. markingCodPaid / codLedgerResult were set
+    // earlier in this handler (before the claim branch).
+    if (markingCodPaid && codLedgerResult === "inserted") {
       updates.push(`payment_status = 'paid'`);
     }
     values.push(id);
@@ -314,6 +373,23 @@ export async function PATCH(
     );
 
     await client.query("COMMIT");
+
+    // FIX (P1-1): finalize the cod.collected ledger row so a replay
+    // of the same driver PATCH sees status='processed' instead of
+    // 'received'. Mirrors the Moyasar / Tamara webhook pattern.
+    if (markingCodPaid && codLedgerResult === "inserted") {
+      try {
+        await finalizePaymentEvent(client, {
+          invoiceId: id,
+          gateway: "cod",
+          eventType: "cod.collected",
+          status: "processed",
+          orderId: id,
+        });
+      } catch (finalErr) {
+        logError("[event-ledger] cod finalize failed", finalErr, { orderId: id });
+      }
+    }
 
     // Audit log + coupon release outside the txn.
     await client.query(

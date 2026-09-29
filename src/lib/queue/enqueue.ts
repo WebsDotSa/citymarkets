@@ -12,7 +12,7 @@
  *   - In both cases, the request is not blocked on the slow side
  *     (Twilio, WhatsApp click-to-chat, etc.).
  */
-import { getQueue, QUEUE_NAMES, makeNotifyAdminNewOrderOptions } from "./queues";
+import { getQueue, QUEUE_NAMES, makeNotifyAdminNewOrderOptions, makeNotifyVendorNewOrderOptions } from "./queues";
 import { isQueueEnabled } from "./redis";
 
 interface EnqueueResult {
@@ -65,6 +65,43 @@ export async function enqueueOrderPaidSms(orderId: string | number): Promise<Enq
   return { queued: true, jobId };
 }
 
+/**
+ * Enqueue a "new paid order" push notification for every active staff
+ * member of the given vendor. Closes Gap D from the production-completion
+ * audit — vendors used to learn about new orders only by refreshing the
+ * dashboard.
+ *
+ * The fan-out is per-vendor: a multi-vendor order calls this once per
+ * child vendor_order. Each (vendorId, orderId) pair becomes a distinct
+ * BullMQ job, idempotent on the `vendor:<vendorId>:order:<orderId>`
+ * key (see `makeNotifyVendorNewOrderOptions`) so a webhook replay never
+ * double-notifies the same vendor for the same order.
+ *
+ * Falls back to inline execution when Redis is unavailable (matches the
+ * admin-notify and order-paid-SMS fallback pattern).
+ */
+export async function enqueueNotifyVendorNewOrder(args: {
+  vendorId: string;
+  orderId: string | number;
+}): Promise<EnqueueResult> {
+  const jobId = `vendor:${args.vendorId}:order:${args.orderId}`;
+  if (!isQueueEnabled()) {
+    void runNotifyVendorNewOrder(args);
+    return { queued: false, jobId };
+  }
+  const queue = getQueue(QUEUE_NAMES.NOTIFY_VENDOR_NEW_ORDER);
+  if (!queue) {
+    void runNotifyVendorNewOrder(args);
+    return { queued: false, jobId };
+  }
+  await queue.add(
+    "notify",
+    { vendorId: args.vendorId, orderId: args.orderId },
+    makeNotifyVendorNewOrderOptions(args),
+  );
+  return { queued: true, jobId };
+}
+
 // ── Fallback direct-call paths (used when Redis is unavailable) ─────────
 
 async function runNotifyAdminNewOrder(orderId: string | number): Promise<void> {
@@ -84,6 +121,21 @@ async function runSendOrderPaidSms(orderId: string | number): Promise<void> {
     if (!args) return;
     const { sendOrderPaidConfirmationSms } = await import("@/lib/orders/order-paid-confirm");
     await sendOrderPaidConfirmationSms(args);
+  } catch {
+    /* helper logs internally; swallow */
+  }
+}
+
+async function runNotifyVendorNewOrder(args: {
+  vendorId: string;
+  orderId: string | number;
+}): Promise<void> {
+  try {
+    const { notifyVendorNewOrder } = await import("@/lib/orders/notify-vendor");
+    await notifyVendorNewOrder({
+      vendorId: args.vendorId,
+      parentOrderId: String(args.orderId),
+    });
   } catch {
     /* helper logs internally; swallow */
   }

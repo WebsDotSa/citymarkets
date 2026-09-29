@@ -7,6 +7,33 @@ Verdict: **PRODUCTION-READY** (with documented production prerequisites — see 
 
 ---
 
+## 0. Update 2026-09-29 — Production full-system repair branch
+
+The `production/full-system-repair` branch (HEAD `e764702`) closed every
+acceptance-checklist item in section 56 of the directive that was not
+already closed by the prior audits. See `docs/audits/2026-09-29-full-system-repair.md`
+for the per-item evidence.
+
+Summary of deltas from the main-branch audit:
+
+| Item | Before (main) | After (`production/full-system-repair`) |
+|---|---|---|
+| `vendor_orders.status='paid'` set by webhook | ❌ Bug A | ✅ CASE-guarded to `'confirmed'` |
+| Inline Moyasar confirm writes via ledger | ❌ Bug F | ✅ Uses `recordPaymentEvent` |
+| Vendor notification on payment confirmation | ❌ Gap D — code present but unreachable | ✅ Fan-out wired + regression tests |
+| Legacy payment routes | ⚠️ 3 duplicates live | ✅ All deleted; middleware cleaned |
+| Webhook HTTP route tests | 0 | ✅ 33 tests across 3 files |
+| Vendor lifecycle route tests | 0 | ✅ 40 tests across 4 files |
+| Golden-path E2E | n/a | ✅ `scripts/e2e-golden-path.mjs` + CI gate |
+
+The "what remains" lists below were accurate as of the main-branch audit;
+they remain accurate for `main`. The full-system-repair branch addresses
+them too (except for the explicit ops-only P1-1 / P1-2 / D14-impl / D17).
+
+---
+
+---
+
 ## 1. Executive Summary
 
 The City Markets codebase on `main` represents the post-Phase-7 state of the

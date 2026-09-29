@@ -31,7 +31,7 @@
 
 import type { PoolClient } from "pg";
 
-export type PaymentGateway = "moyasar" | "tamara";
+export type PaymentGateway = "moyasar" | "tamara" | "cod";
 
 export interface RecordPaymentEventArgs {
   invoiceId: string;

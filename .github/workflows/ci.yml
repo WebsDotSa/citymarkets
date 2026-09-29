@@ -178,6 +178,19 @@ jobs:
           BASE_URL: http://127.0.0.1:4050
         run: npm run qa:critical-paths
 
+      - name: Golden-path E2E (webhook → vendor lifecycle)
+        # Production-completion-2026-09-29 audit closure: full webhook
+        # HTTP route coverage for Bug A + Bug F + Gap D regression
+        # guards. The script seeds an order + vendor_order, fires the
+        # HMAC-signed canonical webhook, and asserts orders.status =
+        # 'confirmed' (NEVER 'paid'), vendor_orders.status = 'confirmed',
+        # payment_events ledger row exists, then progresses the vendor
+        # lifecycle to 'delivered'. Skips gracefully if BASE_URL or
+        # MOYASAR_WEBHOOK_SECRET are unavailable.
+        env:
+          BASE_URL: http://127.0.0.1:4050
+        run: npm run qa:golden-path
+
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4

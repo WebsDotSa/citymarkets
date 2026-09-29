@@ -44,6 +44,7 @@ import {
 import type { DeliveryAddressRow } from "./resolve-address";
 import type { CouponRow } from "../pricing";
 import { reportCheckoutError } from "@/lib/errors/checkout-error-reporter";
+import { markOrderPaymentFailed } from "@/lib/payments/payment-service";
 
 /** Caller identity resolved upstream by the route handler. */
 export interface CheckoutServiceCaller {
@@ -681,7 +682,7 @@ async function maybeInitiatePayment(args: {
         );
         return { kind: "ok", url: t.paymentUrl, inline: false };
       }
-      await markPaymentFailed(parentOrderId, vendorOrderIds);
+      await markOrderPaymentFailed(parentOrderId, vendorOrderIds);
       return {
         kind: "failure",
         error: t.error || "تعذّر فتح بوابة تمارا. لم يتم خصم أي مبلغ.",
@@ -714,28 +715,15 @@ async function maybeInitiatePayment(args: {
       return { kind: "ok", url: p.paymentUrl, inline: false };
     }
     logError("Payment init failed", p.error, { provider });
-    await markPaymentFailed(parentOrderId, vendorOrderIds);
+    await markOrderPaymentFailed(parentOrderId, vendorOrderIds);
     return {
       kind: "failure",
       error: p.error || "تعذّر فتح بوابة الدفع الإلكتروني. لم يتم خصم أي مبلغ.",
     };
   } catch (err) {
     logError("Payment init error:", err);
-    await markPaymentFailed(parentOrderId, vendorOrderIds);
+    await markOrderPaymentFailed(parentOrderId, vendorOrderIds);
     return { kind: "failure", error: "تعذّر الاتصال ببوابة الدفع. حاول مرة أخرى." };
-  }
-}
-
-async function markPaymentFailed(parentOrderId: string, vendorOrderIds: string[]) {
-  await pool.query(
-    `UPDATE orders SET payment_status = 'failed', status = 'cancelled' WHERE id = $1`,
-    [parentOrderId],
-  );
-  for (const childId of vendorOrderIds) {
-    await pool.query(
-      `UPDATE vendor_orders SET payment_status = 'failed', status = 'cancelled' WHERE id = $1`,
-      [childId],
-    );
   }
 }
 

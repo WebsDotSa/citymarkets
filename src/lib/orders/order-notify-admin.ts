@@ -3,8 +3,7 @@ import {
   fillOrderNotificationTemplate,
 } from "@/lib/app-settings";
 import { buildWhatsAppUrl } from "@/lib/utils";
-import { query } from "@/lib/db";
-import { error as logError } from "@/lib/logger";
+import { error as logError, info as logInfo } from "@/lib/logger";
 
 /** إشعار المدير بطلب جديد (واتساب — رابط جاهز للفتح) */
 export async function notifyAdminNewOrder(order: {
@@ -26,11 +25,16 @@ export async function notifyAdminNewOrder(order: {
 
     const whatsappUrl = buildWhatsAppUrl(settings.whatsapp_admin_phone, message);
 
-    await query(
-      `INSERT INTO payment_events (order_id, event_type, payload)
-       VALUES ($1, 'admin_notify_new_order', $2::jsonb)`,
-      [order.id, JSON.stringify({ whatsapp_url: whatsappUrl, message })]
-    ).catch(() => {});
+    // Audit: log to structured logger (NOT payment_events ledger — that
+    // table is reserved for payment-gateway events keyed by invoice_id,
+    // gateway, and event_type. Admin-notification audits are not payment
+    // events; an earlier version wrote here with the wrong column shape
+    // and a silent .catch, which masked the failure and polluted the
+    // canonical ledger on any schema reconciliation).
+    logInfo("[notify-admin] new-order whatsapp url built", {
+      orderId: order.id,
+      hasUrl: Boolean(whatsappUrl),
+    });
 
     return { whatsappUrl };
   } catch (e) {

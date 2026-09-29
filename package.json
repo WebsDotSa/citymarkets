@@ -15,6 +15,7 @@
     "domain:guard": "tsx scripts/check-domain-contracts.ts",
     "qa:smoke": "node scripts/qa-smoke.mjs",
     "qa:critical-paths": "node scripts/qa-critical-paths.mjs",
+    "qa:golden-path": "node scripts/e2e-golden-path.mjs",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:migrate:dry-run": "tsx scripts/migrate.ts --dry-run",
     "db:drift-report": "tsx scripts/migration-drift-report.ts"

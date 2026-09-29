@@ -49,6 +49,27 @@ vi.mock("@/lib/db", () => ({
       // Writes (UPDATEs, INSERT INTO payment_events) — return no rows.
       return { rows: [] };
     }),
+    // Bug F regression: the inline confirm now runs inside a transaction
+    // (recordPaymentEvent + UPDATE orders + finalize). Provide a minimal
+    // fake client that delegates query() to the same logic and tracks
+    // BEGIN/COMMIT/ROLLBACK so tests can assert on transaction shape.
+    connect: vi.fn(async () => ({
+      query: vi.fn(async (textOrObj: unknown, params: unknown[] = []) => {
+        const sql = typeof textOrObj === "string" ? textOrObj : (textOrObj as { text: string }).text;
+        calls.push({ sql, params });
+        if (throwOnOrderLookup && /FROM orders WHERE id = \$1/i.test(sql)) {
+          throw new Error("simulated DB outage");
+        }
+        if (/SELECT\s+status,\s+payment_status\s+FROM\s+orders/i.test(sql)) {
+          return { rows: finalRow ? [finalRow] : [] };
+        }
+        if (/FROM orders WHERE id = \$1/i.test(sql)) {
+          return { rows: orderRow ? [orderRow] : [] };
+        }
+        return { rows: [] };
+      }),
+      release: vi.fn(),
+    })),
   },
 }));
 
@@ -341,17 +362,21 @@ describe("confirmMoyasarPaymentForOrder", () => {
 
     await confirmMoyasarPaymentForOrder({ orderId: "ord-1", paymentId: "pay_cap" });
 
+    // Bug F regression: payment_events is now written via
+    // recordPaymentEvent(client, {invoiceId, gateway, eventType, raw}).
+    // Columns: (invoice_id, gateway, event_type, raw_payload::jsonb).
+    // Params: [paymentId, gateway, eventType, JSON(raw)].
     const audit = calls.find((c) => /INSERT INTO payment_events/i.test(c.sql));
     expect(audit).toBeDefined();
-    expect(audit!.params[0]).toBe("ord-1");
-    expect(audit!.params[1]).toBe("moyasar_captured");
-    const payload = JSON.parse(audit!.params[2] as string);
-    expect(payload).toEqual({
+    expect(audit!.params[0]).toBe("pay_cap"); // invoice_id = paymentId
+    expect(audit!.params[1]).toBe("moyasar");
+    expect(audit!.params[2]).toBe("moyasar.captured");
+    const payload = JSON.parse(audit!.params[3] as string);
+    expect(payload).toMatchObject({
       payment_id: "pay_cap",
       status: "captured",
       amount_halalas: 1000,
     });
-    expect(audit!.params[3]).toBe("pay_cap");
   });
 
   it("treats 'voided' and 'refunded' as failed", async () => {

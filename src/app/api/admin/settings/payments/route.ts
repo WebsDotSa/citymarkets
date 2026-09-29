@@ -17,7 +17,7 @@ export async function GET(request: Request) {
         configured: isMoyasarConfigured(),
         publishable_key_set: getMoyasarPublishableKey() !== null,
         secret_key_set: getMoyasarSecretKey() !== null,
-        callback_url: `${siteUrl}/api/v1/payments/moyasar/callback`,
+        callback_url: `${siteUrl}/api/v1/payments/webhook`,
         webhook_note:
           "أضف نفس رابط callback في لوحة ميسر مع رمز التحقق 96600 إن طُلب",
       },
