@@ -1,11 +1,21 @@
 import { pool } from '@/lib/db';
 import { fetchPayment, toHalalas } from './moyasar';
+import {
+  recordPaymentEvent,
+  finalizePaymentEvent,
+} from './event-ledger';
 
 export interface ConfirmMoyasarPaymentResult {
   success: boolean;
   payment_status?: string;
   order_status?: string;
   error?: string;
+  /**
+   * True when this call hit the payment_events UNIQUE (invoice_id,
+   * gateway, event_type) index and short-circuited — no order mutation.
+   * Mirrors the `duplicate` flag returned by the canonical webhooks.
+   */
+  duplicate?: boolean;
 }
 
 /** تحقق من دفع ميسر (نموذج MPF) وربطه بالطلب */
@@ -75,41 +85,98 @@ export async function confirmMoyasarPaymentForOrder(params: {
     paymentStatus = 'failed';
   }
 
-  await pool.query(
-    `UPDATE orders
-     SET payment_reference = $1,
-         payment_status = $2,
-         payment_method = COALESCE(NULLIF(payment_method, ''), 'moyasar')
-     WHERE id = $3`,
-    [paymentId, paymentStatus, orderId]
-  );
-
-  if (paymentStatus === 'paid') {
-    await pool.query(
-      `UPDATE orders
-       SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
-       WHERE id = $1`,
-      [orderId]
-    );
-  }
-
+  // Wrap payment mutation in a transaction so the payment_events ledger
+  // row is atomic with the orders UPDATE — same pattern as the canonical
+  // /api/v1/payments/webhook and /api/v1/payments/tamara/webhook handlers.
+  //
+  // Bug F: previously the function wrote to payment_events with a direct
+  // INSERT using columns (order_id, event_type, payload, payment_reference)
+  // that did NOT match the canonical ledger shape (invoice_id, gateway,
+  // event_type, raw_payload). The UNIQUE (invoice_id, gateway, event_type)
+  // index never saw these rows, so a double-fire of /confirm produced
+  // duplicate payment_events rows with no idempotency guarantee.
+  //
+  // By calling recordPaymentEvent(client, ...) FIRST, any retry / replay
+  // short-circuits on the UNIQUE index — mirroring the webhook contract.
+  const client = await pool.connect();
+  let recoveredCount = 0;
   try {
-    await pool.query(
-      `INSERT INTO payment_events (order_id, event_type, payload, payment_reference)
-       VALUES ($1, $2, $3::jsonb, $4)`,
-      [
-        orderId,
-        `moyasar_${payment.status}`,
-        JSON.stringify({
-          payment_id: paymentId,
-          status: payment.status,
-          amount_halalas: payment.amountHalalas,
-        }),
-        paymentId,
-      ]
+    await client.query('BEGIN');
+
+    // 1. Ledger INSERT FIRST (idempotency guard)
+    const eventType = `moyasar.${payment.status || 'notification'}`;
+    const ledgerResult = await recordPaymentEvent(client, {
+      invoiceId: paymentId,
+      gateway: 'moyasar',
+      eventType,
+      raw: {
+        payment_id: paymentId,
+        status: payment.status,
+        amount_halalas: payment.amountHalalas,
+      },
+    });
+    if (ledgerResult === 'duplicate') {
+      // Idempotent ack — payment_events already records this event.
+      await client.query('COMMIT');
+      const updated = await pool.query<{ status: string; payment_status: string }>(
+        `SELECT status, payment_status FROM orders WHERE id = $1`,
+        [orderId]
+      );
+      return {
+        success: true,
+        payment_status: updated.rows[0]?.payment_status || paymentStatus,
+        order_status: updated.rows[0]?.status,
+        duplicate: true,
+      };
+    }
+
+    // 2. Order UPDATE — never regress, matches the CASE-guarded pattern
+    //    used by both webhooks.
+    await client.query(
+      `UPDATE orders
+       SET payment_reference = $1,
+           payment_status = CASE
+             WHEN payment_status = 'paid'   THEN 'paid'
+             WHEN payment_status = 'failed' AND $2 = 'pending' THEN 'failed'
+             ELSE $2
+           END,
+           payment_method = COALESCE(NULLIF(payment_method, ''), 'moyasar'),
+           updated_at = NOW()
+       WHERE id = $3`,
+      [paymentId, paymentStatus, orderId]
     );
-  } catch {
-    /* optional audit */
+
+    if (paymentStatus === 'paid') {
+      // Lifecycle: roll status forward but never go backwards.
+      // Mirrors the Tamara webhook invariant (never set to 'paid').
+      await client.query(
+        `UPDATE orders
+         SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
+         WHERE id = $1`,
+        [orderId]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    // 3. Finalize the ledger row post-COMMIT (mirrors webhook pattern).
+    try {
+      await finalizePaymentEvent(client, {
+        invoiceId: paymentId,
+        gateway: 'moyasar',
+        eventType,
+        status: 'processed',
+        orderId,
+      });
+    } catch {
+      /* ledger finalize is best-effort; a failed finalize leaves the row
+         at status='received' and a subsequent replay will re-run. */
+    }
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch { /* noop */ }
+    throw e;
+  } finally {
+    client.release();
   }
 
   const updated = await pool.query<{ status: string; payment_status: string }>(
@@ -134,6 +201,7 @@ export async function confirmMoyasarPaymentForOrder(params: {
         user_id: order.user_id,
         guest_phone: guestPhone,
       });
+      recoveredCount = recovered_count;
 
       if (recovered_count > 0) {
         try {
