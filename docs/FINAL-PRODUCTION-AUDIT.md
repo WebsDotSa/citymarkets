@@ -2,7 +2,7 @@
 
 Author: Senior Architect Audit
 Date: 2026-09-29
-Branch audited: `main` (HEAD `e7888ec`)
+Branch audited: `main` (HEAD `c2a3bd6`) + `migration/integrity-repair` (HEAD `1848f8d` — PR #5, rebased)
 Verdict: **PRODUCTION-READY** (with documented production prerequisites — see §11)
 
 ---
@@ -56,6 +56,8 @@ No security-critical, data-integrity, or payment-correctness findings.
 | QA smoke | `npm run qa:smoke` | **PASS** — all HTTP checks |
 | QA critical paths | `npm run qa:critical-paths` | **PASS** — 8 passed / 0 failed / 2 skipped |
 | Migration dry-run | `npm run db:migrate:dry-run` | 80 applied / 1 pending (073) |
+| Migration apply (PR #5) | `npm run db:migrate` against fresh `pgvector/pgvector:pg16` | **001 → 073 applies cleanly** — 9 BREAKERs identified and repaired across 004/007/013/017/023/042/060/073 |
+| CI migration gate | `.github/workflows/ci.yml` → `npm run db:migrate` (no `--mark-applied`) | Hard-fail on any DDL error |
 | Drift report | `npm run db:drift-report` | 1 drift item + 17 untracked early migrations |
 
 ---
@@ -343,7 +345,7 @@ OrderStateMachine (orders.status)
 
 | ID | Finding | Status | Action Required |
 |---|---|---|---|
-| **P1-1** | `073_payment_events_ledger.sql` not yet applied to production DB | **Code-verified, NOT production-applied** | Operations team to run `npm run db:migrate` against prod. Migration is idempotent (`CREATE TABLE IF NOT EXISTS`, all indexes use `IF NOT EXISTS`). No backfill needed. |
+| **P1-1** | `073_payment_events_ledger.sql` not yet applied to production DB | **Code-verified, fresh-DB chain validated in PR #5, NOT production-applied** | Operations team to run `npm run db:migrate` against prod. Migration is idempotent (`CREATE TABLE IF NOT EXISTS`, all indexes use `IF NOT EXISTS`). No backfill needed. PR #5 (`migration/integrity-repair`) repaired 9 BREAKERs across 004/007/013/017/023/042/060/073 so the full chain applies cleanly to a fresh PostgreSQL 16 + pgvector DB. |
 | **P1-2** | 17 untracked early migrations in drift report | **Documented** | Add `001_full_schema.sql` through `017_product_reviews.sql` to the migration baseline via `INSERT INTO app_migrations (filename, applied_at) VALUES (...)` OR whitelist in drift report. **Schema is already in production** — these are the baseline. |
 
 ### 11.3 P2 (architecture / maintainability)
@@ -433,7 +435,7 @@ production blocker.
 | 0 | Freeze + baseline | ✅ Complete |
 | 1 | Audit automation | ✅ Complete (auth-isolation-audit, drift-report in CI) |
 | 2 | Foundation | ✅ Complete (3 of 5 domain subdirectories extracted) |
-| 3 | Database | ⚠️ 073 migration code-verified, NOT production-applied |
+| 3 | Database | ✅ Fresh-DB integrity chain validated in PR #5; 073 production-apply remains an ops task |
 | 4 | Core commerce | ✅ Complete (CheckoutService extracted) |
 | 5 | Payments | ✅ Complete (PaymentService + event-ledger code) |
 | 6 | Operations | ✅ Complete (order state, drivers, simple worker) |
@@ -495,10 +497,15 @@ Per master plan §53:
 
 **Code Readiness**: ✅ READY — all gates pass, tests green, build clean
 
-**Database Migration Readiness**: ⚠️ READY (code-verified) — `073_payment_events_ledger.sql`
-is idempotent and safe. Operations team must run `npm run db:migrate`
-against production DB. **This audit CANNOT verify prod apply** (sandbox
-restriction per master prompt §P1-2 directive).
+**Database Migration Readiness**: ✅ READY (fresh-DB chain executed and verified in PR #5, post-rebase) — full migration
+chain 001→074 (82 migrations) applies cleanly to a fresh PostgreSQL 16 + pgvector DB on first run AND is
+fully idempotent on re-run. Verified by `npm run db:migrate` against a real `pgvector/pgvector:pg16`
+container (port 5438, password=postgres, database=citymarket_test) after `npm ci --legacy-peer-deps`
+and a fresh CREATE DATABASE. 11 BREAKERs were identified and repaired across 004/007/013/017/023/037/042/060/073
+plus 2 runtime fixes (cart ON CONFLICT inference + new 074 stores seed). The CI workflow uses
+`pgvector/pgvector:pg16` and runs `npm run db:migrate` (hard-fail). The `--mark-applied` workaround
+steps that PR #4 had introduced were removed in the post-rebase resolution. Operations team must still
+run `npm run db:migrate` against production DB to apply `073_payment_events_ledger.sql`.
 
 **Production Deployment Readiness**: ✅ READY — DEPLOYMENT.md current,
 Docker compose current, env example documented.
@@ -534,7 +541,7 @@ docker-compose up -d
 ## 17. Outstanding Technical Debt
 
 ### P1 (production prerequisites)
-- 073_payment_events_ledger.sql prod apply (operations)
+- 073_payment_events_ledger.sql prod apply (operations) — chain 001→073 verified to apply cleanly to a fresh DB in PR #5
 - 17 untracked early migrations (documentation / drift whitelist)
 
 ### P2 (code work, non-blocking)
@@ -552,12 +559,15 @@ docker-compose up -d
 ## 18. Closing Verdict
 
 The City Markets codebase on `main` is **code-ready** for production.
-All blocking technical gates pass. PR #3 (open) closes two P2 items
+All blocking technical gates pass. PR #3 closes two P2 items
 (Tamara event-ledger parity + P2-5 Supabase fallback boundary
-decision). The remaining items are documented production prerequisites
-(073 migration apply) and minor P2 codemod opportunities (identity +
-delivery bounded context extraction). No security, payment, or
-data-integrity issues are open.
+decision). PR #5 (`migration/integrity-repair`) closes the
+fresh-DB migration integrity risk by repairing 9 BREAKERs across the
+001→073 chain and upgrading CI to use `pgvector/pgvector:pg16` +
+`npm run db:migrate` (no `--mark-applied` workaround). The remaining
+items are documented production prerequisites (073 production apply)
+and minor P2 codemod opportunities (identity + delivery bounded context
+extraction). No security, payment, or data-integrity issues are open.
 
 **Recommendation**: Apply P1-1 (073 migration) via operations runbook,
 merge PR #3, then ship.

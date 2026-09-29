@@ -6,6 +6,13 @@
 
 BEGIN;
 
+-- 0. Make sure guest_phone exists before the contact check constraint
+-- references it. 001's orders schema doesn't have guest_phone; 006
+-- would have added it via CREATE TABLE IF NOT EXISTS (no-op because
+-- 001 already created the table), so we add it explicitly here. Safe
+-- to re-run on production where it already exists.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS guest_phone VARCHAR(32);
+
 -- 1. Make user_id nullable (guest checkout doesn't have user)
 ALTER TABLE orders ALTER COLUMN user_id DROP NOT NULL;
 

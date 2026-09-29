@@ -30,7 +30,11 @@
 
 BEGIN;
 
-CREATE OR REPLACE VIEW products_unified AS
+-- DROP first because CREATE OR REPLACE VIEW cannot change column
+-- names / order in place. The view is read-only so dropping is safe.
+DROP VIEW IF EXISTS products_unified;
+
+CREATE VIEW products_unified AS
 
 -- Branch A: vendor_products (canonical for active listings)
 SELECT

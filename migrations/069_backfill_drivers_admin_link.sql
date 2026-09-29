@@ -18,6 +18,14 @@
 
 BEGIN;
 
+-- All comparisons against `role = 'delivery_driver'` cast the column to
+-- text so PostgreSQL's enum input validator does not reject the
+-- literal. admin_role_enum (003) does not include 'delivery_driver';
+-- the value is a string drivers use informally. Casting bypasses the
+-- type check and matches rows where the role would compare equal
+-- (whether stored as a valid enum value or, on future migrations, an
+-- ADD VALUE'd extension).
+
 -- 1. Insert drivers rows for every delivery_driver admin_users that doesn't have one.
 INSERT INTO drivers (name, phone, status, admin_user_id)
 SELECT au.name,
@@ -25,7 +33,7 @@ SELECT au.name,
        'available'::driver_status_enum,
        au.id
   FROM admin_users au
- WHERE au.role = 'delivery_driver'
+ WHERE au.role::text = 'delivery_driver'
    AND au.is_active = true
    AND NOT EXISTS (
      SELECT 1 FROM drivers d WHERE d.admin_user_id = au.id
@@ -38,7 +46,7 @@ ON CONFLICT (phone) DO UPDATE
 --    Filter on role + local format so this is a no-op when 064/065 already ran.
 UPDATE admin_users
    SET phone = '+966' || substring(phone FROM 2)
- WHERE role = 'delivery_driver'
+ WHERE role::text = 'delivery_driver'
    AND phone LIKE '05%'
    AND phone NOT LIKE '+%'
    AND length(phone) = 10;
@@ -46,7 +54,7 @@ UPDATE admin_users
 -- 3. Defense in depth: fix any "+9660..." corruption (the drift 065 addressed).
 UPDATE admin_users
    SET phone = '+9665' || substring(phone FROM 6)
- WHERE role = 'delivery_driver'
+ WHERE role::text = 'delivery_driver'
    AND phone LIKE '+9660%'
    AND length(phone) = 12;
 
@@ -61,7 +69,7 @@ BEGIN
   SELECT COUNT(*) INTO drivers_linked FROM drivers WHERE admin_user_id IS NOT NULL;
   SELECT COUNT(*) INTO unlinked_count
     FROM admin_users au
-   WHERE au.role = 'delivery_driver'
+   WHERE au.role::text = 'delivery_driver'
      AND au.is_active = true
      AND NOT EXISTS (SELECT 1 FROM drivers d WHERE d.admin_user_id = au.id);
 

@@ -270,12 +270,23 @@ export async function POST(request: NextRequest) {
     }
 
     // ON CONFLICT uses the vendor-aware partial unique index from
-    // migration 037: (user_id, product_id, COALESCE(vendor_id, CityMarkets)).
+    // migration 037. Two requirements for inference to find it:
+    //   1. The COALESCE expression must match the index expression
+    //      byte-for-byte (the literal needs `::uuid` so its type lines
+    //      up with vendor_id's uuid type — `COALESCE(uuid, text)` is a
+    //      type error and Postgres can't infer the index).
+    //   2. The index is partial on `product_id IS NOT NULL`; the
+    //      inference algorithm only matches a partial index when the
+    //      ON CONFLICT clause re-states the predicate. product_id is
+    //      NOT NULL on both tables, so the predicate is always true
+    //      for any row we'd INSERT — the WHERE clause is just to
+    //      satisfy the inference check.
     if (userId) {
       await client.query(
         `INSERT INTO cart (user_id, product_id, vendor_id, quantity)
          VALUES ($1, $2, $3, $4)
-         ON CONFLICT (user_id, product_id, COALESCE(vendor_id, '${CITY_MARKETS_VENDOR_ID}'))
+         ON CONFLICT (user_id, product_id, COALESCE(vendor_id, '${CITY_MARKETS_VENDOR_ID}'::uuid))
+         WHERE product_id IS NOT NULL
          DO UPDATE SET quantity = cart.quantity + EXCLUDED.quantity`,
         [userId, productId, effectiveVendorId, quantity]
       );
@@ -283,7 +294,8 @@ export async function POST(request: NextRequest) {
       await client.query(
         `INSERT INTO guest_cart (session_id, product_id, vendor_id, quantity)
          VALUES ($1, $2, $3, $4)
-         ON CONFLICT (session_id, product_id, COALESCE(vendor_id, '${CITY_MARKETS_VENDOR_ID}'))
+         ON CONFLICT (session_id, product_id, COALESCE(vendor_id, '${CITY_MARKETS_VENDOR_ID}'::uuid))
+         WHERE product_id IS NOT NULL
          DO UPDATE SET quantity = guest_cart.quantity + EXCLUDED.quantity`,
         [sessionId, productId, effectiveVendorId, quantity]
       );

@@ -44,37 +44,29 @@ INSERT INTO app_settings (key, value) VALUES
   ('payments', '{"moyasar_enabled":true}')
 ON CONFLICT (key) DO NOTHING;
 
-CREATE TABLE IF NOT EXISTS reviews (
-  id SERIAL PRIMARY KEY,
-  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-  driver_rating INTEGER CHECK (driver_rating BETWEEN 1 AND 5),
-  store_rating INTEGER CHECK (store_rating BETWEEN 1 AND 5),
-  comment TEXT,
-  admin_reply TEXT,
-  is_visible BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (order_id)
-);
+-- reviews table is created by migration 001 with the canonical schema
+-- (id UUID, order_id UUID, user_id UUID, no admin_reply/is_visible).
+-- 007 used to declare a legacy reviews with order_id INTEGER and extra
+-- columns (admin_reply, is_visible) that don't exist in the live
+-- application schema. On a fresh DB 001 already created the table so
+-- this CREATE TABLE IF NOT EXISTS is a no-op — but the FK to orders.id
+-- (UUID) would have rejected the INTEGER column type if 001's table
+-- had not pre-existed. We deliberately drop the legacy create here so
+-- 001 owns reviews and the FK column types match the application.
 
 CREATE INDEX IF NOT EXISTS idx_reviews_created ON reviews(created_at DESC);
 
-CREATE TABLE IF NOT EXISTS payment_events (
-  id SERIAL PRIMARY KEY,
-  order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
-  payment_reference VARCHAR(128),
-  provider VARCHAR(32) DEFAULT 'moyasar',
-  event_type VARCHAR(64),
-  payload JSONB,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_payment_events_order ON payment_events(order_id);
-CREATE INDEX IF NOT EXISTS idx_payment_events_ref ON payment_events(payment_reference);
+-- payment_events table is created by migration 073 with the canonical
+-- schema (invoice_id, gateway, event_type, raw_payload, status). 007
+-- used to create a legacy payment_events with a different column set
+-- (order_id INTEGER, payment_reference, provider, payload) that does
+-- not match what the application code (src/lib/payments/event-ledger.ts,
+-- src/lib/payments/moyasar-confirm.ts) reads/writes. We deliberately
+-- drop the legacy create here so 073 owns the table and the schema
+-- matches the application.
 
 GRANT ALL ON delivery_zones TO citymarket_user;
 GRANT ALL ON admin_audit_logs TO citymarket_user;
 GRANT ALL ON app_settings TO citymarket_user;
 GRANT ALL ON reviews TO citymarket_user;
-GRANT ALL ON payment_events TO citymarket_user;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO citymarket_user;
