@@ -409,29 +409,22 @@ export async function POST(request: NextRequest) {
     // of distance from the main store (`stores.is_main = true`) to the
     // customer's lat/lng, with no min-order, no free-delivery threshold,
     // and no zone polygon matching.
+    //
+    // P2-3: the four inline address SELECTs (default lookup, ownership
+    // check, lat, lng) collapse into a single `resolveOrderAddress` call
+    // that returns `{ id, lat, lng } | null`. Behaviour matches:
+    //   - `addressResolved` undefined → returns default address.
+    //   - `addressResolved` provided → verifies ownership in WHERE.
+    //   - Missing/foreign/unknown id → null (route maps to 400).
     let dbAddressId: string | null = null;
     let distanceKm: number | null = null;
+    let pointLat: number | null = null;
+    let pointLng: number | null = null;
     if (deliveryMode !== 'pickup') {
-      // Resolve user address first (we need its lat/lng)
+      // Resolve user address (id + lat + lng in one SELECT).
       if (userId) {
-        let resolvedAddr = addressResolved as string | undefined;
-        if (!resolvedAddr) {
-          const fb = await client.query(
-            `SELECT id FROM addresses WHERE user_id = $1
-             ORDER BY is_default DESC, created_at ASC LIMIT 1`,
-            [userId]
-          );
-          resolvedAddr = fb.rows[0]?.id != null ? String(fb.rows[0].id) : undefined;
-        }
-        if (!resolvedAddr) {
-          await client.query('ROLLBACK');
-          txOpen = false;
-          return NextResponse.json(
-            { success: false, error: 'لم يتم العثور على عنوان. أضِف عنوانًا من حسابك' },
-            { status: 400 }
-          );
-        }
-        if (!resolvedAddr || resolvedAddr.length < 32) {
+        const resolvedAddr = addressResolved as string | undefined;
+        if (resolvedAddr && resolvedAddr.length < 32) {
           await client.query('ROLLBACK');
           txOpen = false;
           return NextResponse.json(
@@ -439,34 +432,28 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        const addrResult = await client.query(
-          'SELECT id FROM addresses WHERE id = $1 AND user_id = $2::uuid',
-          [resolvedAddr, userId]
+        const addrRow = await resolveOrderAddress(
+          userId,
+          typeof resolvedAddr === 'string' ? resolvedAddr : null,
         );
-        if (addrResult.rows.length === 0) {
+        if (!addrRow) {
           await client.query('ROLLBACK');
           txOpen = false;
           return NextResponse.json(
-            { success: false, error: 'عنوان غير صالح' },
+            resolvedAddr
+              ? { success: false, error: 'عنوان غير صالح' }
+              : { success: false, error: 'لم يتم العثور على عنوان. أضِف عنوانًا من حسابك' },
             { status: 400 }
           );
         }
-        dbAddressId = String(addrResult.rows[0].id);
+        dbAddressId = addrRow.id;
+        pointLat = addrRow.lat;
+        pointLng = addrRow.lng;
+      } else {
+        // Guest checkout — the address is on the request, not in the DB.
+        pointLat = typeof guestInfo?.lat === 'number' ? guestInfo.lat : null;
+        pointLng = typeof guestInfo?.lng === 'number' ? guestInfo.lng : null;
       }
-
-      // Now we have either dbAddressId (user) or guestInfo.coords
-      const pointLat: number | null = dbAddressId
-        ? await client
-            .query('SELECT lat FROM addresses WHERE id = $1', [dbAddressId])
-            .then((r) => (r.rows[0] ? Number(r.rows[0].lat) : null))
-            .catch(() => null)
-        : (typeof guestInfo?.lat === 'number' ? guestInfo.lat : null);
-      const pointLng: number | null = dbAddressId
-        ? await client
-            .query('SELECT lng FROM addresses WHERE id = $1', [dbAddressId])
-            .then((r) => (r.rows[0] ? Number(r.rows[0].lng) : null))
-            .catch(() => null)
-        : (typeof guestInfo?.lng === 'number' ? guestInfo.lng : null);
 
       if (pointLat != null && pointLng != null) {
         // Main store is the source of distance — if it's not configured

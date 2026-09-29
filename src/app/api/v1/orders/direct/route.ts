@@ -142,16 +142,20 @@ export async function POST(request: NextRequest) {
     // first address, which is the right default for a one-off direct
     // order — the order pins the address by id so is_default doesn't
     // affect downstream behaviour.
+    //
+    // Title fallback: the direct-order Zod schema has no `title` field,
+    // so we let the service's resolveTitle ladder (title → description
+    // → label) compute it. We pass description explicitly so a caller
+    // who DID supply a description still ends up with a non-empty
+    // title column (the migration-049 contract).
     const addr = data.delivery_address;
     const addressOwner = userId
       ? { kind: "user" as const, userId }
       : { kind: "guest" as const, guestKey: sessionId! };
     const addrRow = await createAddressService(addressOwner, {
       label: addr.label,
-      title: typeof addr.description === "string" && addr.description.length > 0
-        ? addr.description
-        : null,
-      description: addr.description ?? null,
+      title: null,
+      description: typeof addr.description === "string" ? addr.description : null,
       lat: Number(addr.lat),
       lng: Number(addr.lng),
       address_text: addr.address_text,
