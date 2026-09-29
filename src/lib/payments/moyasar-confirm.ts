@@ -139,16 +139,9 @@ export async function confirmMoyasarPaymentForOrder(params: {
 
       if (recovered_count > 0) {
         try {
-          const { sendOrderPaidConfirmationSms } = await import(
-            '@/lib/order-paid-confirm'
-          );
-          void sendOrderPaidConfirmationSms({
-            phone: guestPhone,
-            customer_name: order.guest_name || null,
-            order_id: orderId,
-            total: Number(order.total),
-            recovered_from_abandoned_count: recovered_count,
-          });
+          const { enqueueOrderPaidSms } = await import('@/lib/queue');
+          // Worker re-fetches the order + recovered count, so just pass id.
+          void enqueueOrderPaidSms(orderId);
         } catch (smsErr) {
           /* helper logs internally; swallow */
         }

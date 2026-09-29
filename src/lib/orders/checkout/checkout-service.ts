@@ -782,8 +782,10 @@ async function notifySuccess(args: {
     /* push is optional */
   }
   try {
-    const { notifyAdminNewOrder } = await import("@/lib/order-notify-admin");
-    void notifyAdminNewOrder({ id: parentOrderId, total, customerName });
+    const { enqueueAdminNewOrder } = await import("@/lib/queue");
+    // Worker re-fetches the order to compute customerName + total, so
+    // we only pass the parent order id here.
+    void enqueueAdminNewOrder(parentOrderId);
   } catch {
     /* admin notify is optional */
   }

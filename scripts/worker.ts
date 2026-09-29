@@ -7,6 +7,7 @@
 import { pool } from '../src/lib/db';
 import { sendPushToUser } from '../src/lib/push';
 import { processBroadcasts } from '../src/lib/broadcasts/worker';
+import { registerQueueWorkers, closeQueueWorkers, isQueueEnabled } from '../src/lib/queue';
 
 interface ScheduledTask {
   name: string;
@@ -152,7 +153,22 @@ async function deactivateExpiredCoupons(): Promise<void> {
 
 async function runWorker(): Promise<void> {
   console.log('[Worker] Starting background worker...');
-  
+
+  // Phase 10.8: register BullMQ workers for queued notifications.
+  // When REDIS_URL is unset, this is a no-op and the enqueue helpers
+  // fall back to synchronous execution.
+  if (isQueueEnabled()) {
+    const result = registerQueueWorkers();
+    console.log(
+      `[Worker] Registered ${result.workers} queue worker(s) for ` +
+        `${result.queues} queue(s) (Redis-backed).`,
+    );
+  } else {
+    console.log(
+      '[Worker] Queue disabled (REDIS_URL not set). Notifications will run synchronously.',
+    );
+  }
+
   // Run each task on its own interval
   for (const task of tasks) {
     // Run immediately on startup
@@ -178,12 +194,14 @@ async function runWorker(): Promise<void> {
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('[Worker] Shutting down...');
+  await closeQueueWorkers();
   await pool.end();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('[Worker] Received SIGTERM...');
+  await closeQueueWorkers();
   await pool.end();
   process.exit(0);
 });

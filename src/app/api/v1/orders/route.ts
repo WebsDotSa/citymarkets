@@ -790,12 +790,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const { notifyAdminNewOrder } = await import('@/lib/order-notify-admin');
-    void notifyAdminNewOrder({
-      id: orderId,
-      total,
-      customerName: (guestInfo?.name as string | null) || (typeof name === 'string' ? name : null) || null,
-    });
+    const { enqueueAdminNewOrder } = await import('@/lib/queue');
+    void enqueueAdminNewOrder(orderId);
 
     // Abandoned-carts snapshot. Only for orders that need an online
     // payment gateway — cash on delivery / wallet orders have nothing

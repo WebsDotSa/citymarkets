@@ -304,16 +304,10 @@ export async function POST(request: NextRequest) {
             // hears about it once payment is confirmed by the gateway.
             if (recovered_count > 0) {
               try {
-                const { sendOrderPaidConfirmationSms } = await import(
-                  '@/lib/order-paid-confirm'
-                );
-                void sendOrderPaidConfirmationSms({
-                  phone: guestPhone,
-                  customer_name: orderRow.guest_name || null,
-                  order_id: orderId,
-                  total: orderTotal,
-                  recovered_from_abandoned_count: recovered_count,
-                });
+                const { enqueueOrderPaidSms } = await import('@/lib/queue');
+                // Worker re-fetches the order + address + recovered count,
+                // so we only need the orderId here.
+                void enqueueOrderPaidSms(orderId);
               } catch (smsErr) {
                 logError('[paid-confirm] sms dispatch failed', smsErr, { orderId });
               }

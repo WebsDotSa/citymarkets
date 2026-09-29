@@ -287,16 +287,9 @@ export async function POST(request: NextRequest) {
     // ---- 7. Fire-and-forget post-payment SMS ----
     if (paymentDb === "paid" && recoveredCount > 0) {
       try {
-        const { sendOrderPaidConfirmationSms } = await import(
-          "@/lib/order-paid-confirm"
-        );
-        void sendOrderPaidConfirmationSms({
-          phone: guestPhone,
-          customer_name: orderRow.guest_name || null,
-          order_id: orderId,
-          total: orderTotal,
-          recovered_from_abandoned_count: recoveredCount,
-        });
+        const { enqueueOrderPaidSms } = await import("@/lib/queue");
+        // Worker re-fetches the order + recovered count, so just pass orderId.
+        void enqueueOrderPaidSms(orderId);
       } catch (e) {
         logError("[tamara] paid-confirm sms dispatch failed", e, { orderId });
       }
