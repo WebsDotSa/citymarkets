@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthState, useAuthActions } from "@/contexts/auth-context";
+import { useWishlistState } from "@/contexts/wishlist-context";
 import { useDeliveryLocationActions } from "@/contexts/delivery-location-context";
 import { useConfirm } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
@@ -59,6 +60,7 @@ export function ProfileNew() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuthState();
   const { signOut } = useAuthActions();
+  const { itemCount: wishlistCount } = useWishlistState();
   const { openSheet } = useDeliveryLocationActions();
   const [loading, setLoading] = useState(true);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -133,7 +135,7 @@ export function ProfileNew() {
       title: "طلباتي",
       items: [
         { icon: <Package className="w-5 h-5" />, label: "الطلبات", href: "/orders", badge: ordersCount > 0 ? `${ordersCount}` : undefined, badgeColor: "bg-primary-100 text-primary-700" },
-        { icon: <Heart className="w-5 h-5" />, label: "المفضلة", href: "/wishlist" },
+        { icon: <Heart className="w-5 h-5" />, label: "المفضلة", href: "/wishlist", badge: wishlistCount > 0 ? `${wishlistCount}` : undefined, badgeColor: "bg-red-100 text-red-700" },
         { icon: <Star className="w-5 h-5" />, label: "مراجعاتي", href: "/profile/reviews" },
       ],
     },
@@ -191,8 +193,8 @@ export function ProfileNew() {
                 <p className="text-2xl font-bold text-amber-600">{ordersCount}</p>
                 <p className="text-xs text-gray-500">طلب</p>
               </Link>
-              <Link href="/wishlist" className="text-center p-3 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">
-                <p className="text-2xl font-bold text-red-500">0</p>
+              <Link href="/wishlist" className="text-center p-3 bg-red-50 rounded-xl hover:bg-red-100 transition-colors" data-testid="wishlist-count-tile">
+                <p className="text-2xl font-bold text-red-500" data-testid="wishlist-count-value">{wishlistCount}</p>
                 <p className="text-xs text-gray-500">مفضلة</p>
               </Link>
             </div>
