@@ -90,6 +90,83 @@
 - [ ] non-critical polish
 - [ ] naming/documentation cleanup
 
+## P1 — Production completion follow-ups (2026-09-29)
+
+Closed in PR #7 (`production-completion-2026-09-29` branch):
+
+- [x] **D9 — Cart → Wishlist button was disabled.** The Heart icon in
+      `src/components/pages/cart/cart-v2.tsx` rendered as a
+      `disabled` placeholder because the `onMoveToWishlist` callback
+      was never wired. Resolved by threading `useWishlistActions()` +
+      `useCartActions().removeItem()` + `useToast()` through the
+      `CartItemCardV2` component: clicking now adds to the wishlist,
+      removes from the cart (composite key `(vendor_id, product_id)`),
+      and toasts. The 4 outcome paths are pinned in
+      `src/components/pages/cart/cart-v2.test.tsx` (added, already_present,
+      full, and the composite-key contract).
+- [x] **D10 — Profile wishlist count was hardcoded `0`.**
+      `src/components/pages/profile/profile-new.tsx:195` rendered a
+      literal `0` regardless of wishlist contents. Replaced with
+      `useWishlistState().itemCount` so the count updates live as
+      items are added (the new `data-testid="wishlist-count-tile"` /
+      `wishlist-count-value` are pinned by 4 new tests in
+      `src/components/pages/profile/profile-new.test.tsx`).
+- [x] **D11 — `/api/v1/addresses/[id]` DELETE did not exist.**
+      The profile UI called `fetch("/api/v1/addresses/${id}", { method: "DELETE" })`
+      but the only DELETE handler lived on `/api/v1/addresses` with
+      a `?id=` query param. The fetch silently no-op'd. New route at
+      `src/app/api/v1/addresses/[id]/route.ts` handles the path-param
+      shape with `resolveCustomerUserIdFromRequest` + ownership SQL
+      pin (`id = $1::uuid AND user_id = $2::uuid`). 4 regression
+      tests in `route.test.ts` cover 401 / 404 / 200 / 500.
+- [x] **D12 — `/api/v1/addresses/[id]/default` POST did not exist.**
+      Same shape problem as D11; the toggle 404'd. New route at
+      `src/app/api/v1/addresses/[id]/default/route.ts` verifies
+      ownership → unsets other defaults → marks this one default
+      (mirrors `delivery-addresses/route.ts:99-107`). 5 regression
+      tests in `default/route.test.ts` cover 401 / 404 / happy /
+      DB error / "no UPDATEs on 404".
+- [x] **D13 — AddressFormModal posted non-canonical payload.**
+      The form sent `{label, address, building, floor, instructions}`
+      but the server's address validator only accepts canonical
+      fields (title, address_text, lat, lng, description). The POST
+      silently no-op'd. Resolved by canonicalizing the payload:
+      building/floor/instructions now merge into `description`
+      (the server has no such columns — verified against
+      migrations/001_full_schema.sql:72-81), lat/lng default to
+      Riyadh center `{24.7136, 46.6753}` when geolocation is denied
+      (new "Use my location" button calls
+      `navigator.geolocation.getCurrentPosition`). 1 new test in
+      `profile-new.test.tsx` pins the canonical shape via source-level
+      assertions (the server side is covered by the D11/D12 tests).
+
+Deferred to P1 follow-ups (not closed in this PR):
+
+- [ ] **D14-impl — APNs/FCM sender implementation.** PR #7 extracted
+      the provider abstraction (`src/lib/native-push/senders/`) and
+      standardised the env shape (`APNS_KEY_ID + APNS_TEAM_ID +
+      APNS_BUNDLE_ID + APNS_KEY_PATH`), but the actual `send()`
+      method still returns `{status: "skipped", reason: "sender_not_implemented"}`.
+      The dispatcher maps that reason to `native_push_sender_pending`
+      in `broadcasts/dispatcher.ts` so the audit trail is correct.
+      Adding the real sender requires installing `apn` or
+      `firebase-admin`, provisioning real certs/keys in `.env.local`,
+      and updating the Twilio admin console to verified numbers —
+      all out of scope for a UI/completion pass.
+- [ ] **D15 — Legacy query-param DELETE on `/api/v1/addresses`** is
+      still served alongside the new path-param DELETE for backward
+      compatibility with iOS `APIClient.swift`. Mark for deprecation
+      in a follow-up once the iOS client is updated to the path-param
+      shape.
+- [ ] **D17 — Server-backed wishlist.** Today's wishlist lives in
+      localStorage (`citymarket_wishlist:${userId ?? "guest"}`),
+      so the wishlist does not follow the user across devices and
+      guest→login merge is lost. Moving to a server-backed model
+      requires: a new `wishlists` + `wishlist_items` schema, a
+      `/api/v1/wishlist` GET/POST/DELETE surface, and a guest-merge
+      step on first authenticated login. The local UX (D9/D10) is
+      now correct; this is the next layer.
+
 ## Operational gaps discovered 2026-09-28
 
 - [x] **`Dockerfile.worker` is not exercised by CI.** Resolved 2026-09-28:

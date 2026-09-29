@@ -1,6 +1,7 @@
 # City Markets — Full-Stack Refactor Status
 
-Updated: 2026-09-29 (reflects `migration/integrity-repair` HEAD `94872b5`; main HEAD `e7888ec` + PR #5)
+Updated: 2026-09-29 (reflects `production-completion-2026-09-29` branch
++ PR #5 merged at 14:19 UTC; main HEAD post-PR #7 still pending merge)
 
 ## Phases (per docs/00-FULLSTACK-MASTER-PLAN.md)
 
@@ -39,6 +40,16 @@ Updated: 2026-09-29 (reflects `migration/integrity-repair` HEAD `94872b5`; main 
   because they predate the migration tracker. Schema is already in
   production; only the tracking records are missing. Either retroactively
   register in `app_migrations` OR whitelist in `migration-drift-report.ts`.
+- **P1-3** Production-completion follow-ups from PR #7
+  (`production-completion-2026-09-29`) — see
+  `docs/09-IMPLEMENTATION-BACKLOG.md` "P1 — Production completion
+  follow-ups (2026-09-29)" for the full list. Net effect of PR #7:
+  closes D9 (cart→wishlist), D10 (live wishlist count),
+  D11 (`/addresses/[id]` DELETE), D12 (`/addresses/[id]/default` POST),
+  D13 (canonical address form + geolocation), D14-partial
+  (native-push provider abstraction + env shape). **Deferred**:
+  D14-impl (real APNs/FCM sender), D15 (legacy query-param DELETE),
+  D17 (server-backed wishlist + guest-merge).
 
 ## Outstanding P2 (Code work, non-blocking)
 
@@ -67,12 +78,19 @@ Updated: 2026-09-29 (reflects `migration/integrity-repair` HEAD `94872b5`; main 
 ## Key Metrics (2026-09-29)
 
 - Source files: 126 .ts in `src/lib/` + 152 API routes
-- Test files: 141 (vitest)
-- Tests passing: 1577 / 1577
+- Test files: 147 (vitest) — 6 new files in PR #7:
+  - `src/components/pages/cart/cart-v2.test.tsx` (D9, 5 tests)
+  - `src/components/pages/profile/profile-new.test.tsx` (D10 + D13, 5 tests)
+  - `src/app/api/v1/addresses/[id]/route.test.ts` (D11, 4 tests)
+  - `src/app/api/v1/addresses/[id]/default/route.test.ts` (D12, 5 tests)
+  - `src/lib/native-push.test.ts` (C1, extended)
+  - `src/lib/native-push/senders/apns.test.ts` + `fcm.test.ts` (C1)
+- Tests passing: 1577 / 1577 (after PR #7, expected 1603 / 1603 — 26 new
+  tests across cart/profile/addresses/native-push)
 - TypeScript errors: 0
 - Build: passing
 - Domain subdirectories: 3 of 5 (catalog, orders, payments)
-- Migrations: 81 (chain 001→073 applies cleanly to fresh DB after PR #5; 80 recorded in app_migrations on prod, 073 not yet applied)
+- Migrations: 82 (chain 001→074 applies cleanly to fresh DB after PR #5; 80 recorded in app_migrations on prod, 073/074 not yet applied)
 
 ## Recent Verification (2026-09-29 — post-rebase)
 

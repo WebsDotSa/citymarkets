@@ -543,6 +543,21 @@ docker-compose up -d
 ### P1 (production prerequisites)
 - 073_payment_events_ledger.sql prod apply (operations) — chain 001→073 verified to apply cleanly to a fresh DB in PR #5
 - 17 untracked early migrations (documentation / drift whitelist)
+- **PR #7 follow-ups** (`production-completion-2026-09-29` branch) —
+  see `docs/09-IMPLEMENTATION-BACKLOG.md` "P1 — Production completion
+  follow-ups (2026-09-29)" for the full list. Net effect of PR #7:
+
+  | Issue | Resolution | Commit |
+  |---|---|---|
+  | D9 — Cart → Wishlist button disabled | Wired `useWishlistActions` + `useCartActions.removeItem` + `useToast`; 5 new tests | b82059a |
+  | D10 — Profile wishlist count hardcoded `0` | Live `useWishlistState().itemCount`; 4 new tests | 43088ec |
+  | D11 — `/api/v1/addresses/[id]` DELETE missing | New path-param route + ownership SQL pin; 4 new tests | 96805d0 |
+  | D12 — `/api/v1/addresses/[id]/default` POST missing | New route, verify ownership → unset others → set default; 5 new tests | 96805d0 |
+  | D13 — AddressFormModal non-canonical payload | Canonical `{label, title, address_text, lat, lng, description}`; Riyadh fallback; 1 new test | f4f63d7 |
+  | D14 (partial) — Native-push env shape + provider abstraction | `APNS_KEY_ID + APNS_TEAM_ID + APNS_BUNDLE_ID + APNS_KEY_PATH` + `NativePushSender` interface | e30d730 |
+  | D14-impl — Real APNs/FCM sender | **Deferred** — requires `apn` / `firebase-admin` libs + real certs | — |
+  | D15 — Legacy query-param DELETE on `/api/v1/addresses` | **Deferred** — iOS APIClient.swift compatibility | — |
+  | D17 — Server-backed wishlist | **Deferred** — needs `wishlists` + `wishlist_items` schema + guest-merge | — |
 
 ### P2 (code work, non-blocking)
 - ~~Add `recordPaymentEvent` to Tamara webhook (P2-1)~~ ✅ **RESOLVED in PR #3**
