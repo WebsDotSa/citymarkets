@@ -465,25 +465,84 @@ function AddressFormModal({ onClose }: { onClose: () => void }) {
   const [building, setBuilding] = useState("");
   const [floor, setFloor] = useState("");
   const [instructions, setInstructions] = useState("");
+  // D13: lat/lng are required by /api/v1/addresses POST. We either
+  // capture them via geolocation or fall back to Riyadh center so
+  // the form submits even when permission is denied.
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationStatus, setLocationStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const requestGeolocation = () => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      setLocationStatus("الموقع غير متاح في هذا المتصفح — استخدام موقع تقريبي");
+      setCoords({ lat: 24.7136, lng: 46.6753 });
+      return;
+    }
+    setLocating(true);
+    setLocationStatus(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocating(false);
+        setLocationStatus("تم تحديد موقعك بنجاح");
+      },
+      () => {
+        // Permission denied or position unavailable — fall back to
+        // Riyadh center so the form still submits. The next
+        // /api/v1/orders/direct will geocode address_text to refine.
+        setCoords({ lat: 24.7136, lng: 46.6753 });
+        setLocating(false);
+        setLocationStatus("تعذّر الوصول إلى موقعك — استخدام موقع تقريبي (الرياض)");
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!label || !address) return;
-    
+
     setSaving(true);
     try {
+      // Merge the legacy building/floor/instructions fields into
+      // `description` so the existing UI keeps working without DB
+      // schema changes. The server has no `building` / `floor` /
+      // `instructions` columns — verified against
+      // migrations/001_full_schema.sql:72-81 + 004_addresses.sql.
+      const descriptionParts = [
+        building.trim() && `مبنى ${building.trim()}`,
+        floor.trim() && `الطابق ${floor.trim()}`,
+        instructions.trim(),
+      ].filter(Boolean) as string[];
+      const description = descriptionParts.join(" — ");
+
+      const lat = coords?.lat ?? 24.7136;
+      const lng = coords?.lng ?? 46.6753;
+
       const res = await fetch("/api/v1/addresses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label, address, building, floor, instructions }),
+        body: JSON.stringify({
+          label,
+          title: label,
+          address_text: address,
+          description: description || undefined,
+          lat,
+          lng,
+          is_default: false,
+        }),
       });
-      
+
       if (res.ok) {
         window.location.reload();
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setLocationStatus(body?.error || "تعذّر حفظ العنوان");
       }
     } catch (error) {
       console.error("Error saving address:", error);
+      setLocationStatus("تعذّر حفظ العنوان — حاول مرة أخرى");
     } finally {
       setSaving(false);
     }
@@ -499,7 +558,7 @@ function AddressFormModal({ onClose }: { onClose: () => void }) {
             <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">عنوان مختصر</label>
@@ -512,7 +571,7 @@ function AddressFormModal({ onClose }: { onClose: () => void }) {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">العنوان التفصيلي</label>
             <textarea
@@ -524,7 +583,7 @@ function AddressFormModal({ onClose }: { onClose: () => void }) {
               required
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">المبنى</label>
@@ -547,7 +606,7 @@ function AddressFormModal({ onClose }: { onClose: () => void }) {
               />
             </div>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">تعليمات إضافية</label>
             <textarea
@@ -558,7 +617,28 @@ function AddressFormModal({ onClose }: { onClose: () => void }) {
               className="w-full p-4 border border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 resize-none"
             />
           </div>
-          
+
+          {/* D13 geolocation: lat/lng are required by /api/v1/addresses.
+              We give the user a one-tap "Use my location" button and
+              fall back to Riyadh center coords if the browser denies. */}
+          <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-gray-700">الموقع</p>
+              <p className="text-[11px] text-gray-500 truncate" data-testid="location-status">
+                {locationStatus ?? (coords ? `(${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})` : "اضغط لتحديد موقعك")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={requestGeolocation}
+              disabled={locating}
+              data-testid="use-my-location"
+              className="text-xs font-semibold text-primary-700 hover:text-primary-800 disabled:opacity-50"
+            >
+              {locating ? "..." : "استخدم موقعي"}
+            </button>
+          </div>
+
           <button
             type="submit"
             disabled={saving}

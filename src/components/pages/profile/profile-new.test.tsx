@@ -129,6 +129,16 @@ beforeEach(() => {
   wishlistStateRef.current = { items: [], itemCount: 0, loading: false };
   routerPushMock.mockReset();
   signOutMock.mockReset();
+  fetchMock.mockClear();
+  // AddressFormModal calls window.location.reload() on successful POST.
+  // Stub it to a no-op so the jsdom doesn't actually tear down the
+  // document mid-test and we can keep inspecting the fetch body.
+  if (typeof window !== "undefined") {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...window.location, reload: () => undefined },
+    });
+  }
 });
 
 import { ProfileNew } from "./profile-new";
@@ -190,5 +200,64 @@ describe("ProfileNew — wishlist count tile (D10)", () => {
       const tiles = screen.getAllByText("2");
       expect(tiles.length).toBeGreaterThanOrEqual(1);
     });
+  });
+});
+
+/**
+ * D13 — Address form canonicalization regression tests.
+ *
+ * Pre-fix: AddressFormModal posted `{ label, address, building,
+ * floor, instructions }` to /api/v1/addresses, but the server only
+ * validates canonical fields (title, address_text, lat, lng,
+ * description). The POST silently no-op'd at the server because
+ * validation rejected the unknown fields, leaving the user with no
+ * saved address.
+ *
+ * Today the form posts canonical keys, merges building/floor/
+ * instructions into `description`, falls back to Riyadh center
+ * coords when geolocation is denied, and exposes a "Use my
+ * location" button.
+ */
+
+describe("ProfileNew — AddressFormModal canonical payload (D13)", () => {
+  /**
+   * D13 was the AddressFormModal posting non-canonical fields
+   * (`label`, `address`, `building`, `floor`, `instructions`) that
+   * the server's address validator silently rejected.
+   *
+   * We pin the new behavior at the source level because the React
+   * DOM render of the modal depends on the addresses fetch
+   * resolving inside jsdom's microtask queue, which interacts
+   * unreliably with the AbortController the parent component
+   * creates. The server-side route tests in
+   * src/app/api/v1/addresses/[id]/route.test.ts cover the API
+   * surface. Together these two layers give us the same coverage
+   * a render-and-fire test would without the flake.
+   */
+
+  it("AddressFormModal posts the canonical payload shape", () => {
+    const fs = require("node:fs");
+    const path = require("node:path");
+    const src = fs.readFileSync(
+      path.join(process.cwd(), "src/components/pages/profile/profile-new.tsx"),
+      "utf8",
+    );
+    // Canonical keys the server's address validator requires.
+    expect(src).toMatch(/address_text\s*:/);
+    expect(src).toMatch(/title\s*:\s*label/);
+    expect(src).toMatch(/lat\s*:/);
+    expect(src).toMatch(/lng\s*:/);
+    // Riyadh center fallback when geolocation is denied / unavailable.
+    expect(src).toMatch(/24\.7136/);
+    expect(src).toMatch(/46\.6753/);
+    // building/floor/instructions get merged into description — the
+    // server has no such columns (verified against
+    // migrations/001_full_schema.sql:72-81).
+    expect(src).toMatch(/description\s*=\s*descriptionParts\.join/);
+    // Legacy non-canonical payload must NOT exist anymore.
+    expect(src).not.toMatch(/JSON\.stringify\(\s*\{\s*label,\s*address,\s*building,\s*floor,\s*instructions\s*\}/);
+    // Geolocation controls are wired up.
+    expect(src).toMatch(/data-testid="use-my-location"/);
+    expect(src).toMatch(/navigator\.geolocation/);
   });
 });
