@@ -7,6 +7,7 @@ import {
   canTransition as stateMachineCanTransition,
   invalidTransitionMessage as stateMachineInvalidMessage,
 } from '@/lib/orders/state-machine';
+import { vendorOrderStatusSchema } from '@/lib/validation/order';
 
 export async function PATCH(
   request: NextRequest,
@@ -22,7 +23,20 @@ export async function PATCH(
     if (unauthorized) return unauthorized;
 
     const { id } = await params;
-    const { status, notes } = await request.json();
+    const body = await request.json();
+    const { notes } = body as { notes?: string };
+
+    // P2-2 (production hardening 2): validate `status` against the
+    // canonical vendor-order status enum BEFORE the transition check.
+    // Previously a typo or random string would hit the DB and crash
+    // with `invalid input value for enum`. Now Zod rejects it at the
+    // boundary with the Arabic error message from the schema.
+    const statusResult = vendorOrderStatusSchema.safeParse((body as { status?: unknown })?.status);
+    if (!statusResult.success) {
+      const message = statusResult.error.issues[0]?.message ?? "حالة طلب المتجر غير صالحة";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    const status = statusResult.data;
 
     if (!status) {
       return NextResponse.json({ error: "الحالة مطلوبة" }, { status: 400 });
