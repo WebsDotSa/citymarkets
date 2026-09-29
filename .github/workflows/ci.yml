@@ -20,9 +20,13 @@ jobs:
 
     services:
       postgres:
-        # pgvector/pgvector:pg16 includes the `vector` extension required
-        # by migration 001 (product embeddings). Plain postgres:16-alpine
-        # lacks it and the migration runner aborts on CREATE EXTENSION.
+        # pgvector/pgvector:pg16 bundles the `vector` extension required
+        # by migration 001 (product embeddings + 073's event-ledger
+        # gateway indexes). Plain postgres:16-alpine lacks it and the
+        # runner aborts on CREATE EXTENSION vector. The Postgres image
+        # also exposes the pgvector SQL files under /usr/local/share;
+        # no extra setup is required — `CREATE EXTENSION IF NOT EXISTS
+        # vector` in 001 picks them up.
         image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: ci_user
@@ -71,8 +75,26 @@ jobs:
           test -f docs/09-IMPLEMENTATION-BACKLOG.md || (echo "::error::missing docs/09-IMPLEMENTATION-BACKLOG.md" && exit 1)
           test -f docs/13-ROLLOUT-CHECKLIST.md || (echo "::error::missing docs/13-ROLLOUT-CHECKLIST.md" && exit 1)
 
-      - name: Migration dry-run (validates files without touching DB)
+      - name: Migration dry-run (static file validation, no DB write)
+        # Cheap pre-flight: parses every .sql, computes checksums, lists
+        # pending migrations without writing. Catches SQL parse errors
+        # before the more expensive Apply step below.
         run: npm run db:migrate:dry-run
+
+      - name: Apply migrations to CI database (hard-fail)
+        # Runs the full migration chain (currently 001 → 074, count
+        # verified dynamically by the runner) against a fresh CI
+        # Postgres+pgvector. Any DDL failure (missing column, type
+        # mismatch, FK rejection, GRANT on a non-existent role, view
+        # referencing a missing table) MUST fail this job — the
+        # migration runner aborts on the first error and exits non-zero.
+        # This is the gate that prevented "schema-only-on-prod"
+        # regressions like the 004 addresses guest_key CREATE INDEX,
+        # the 007 reviews INTEGER-vs-UUID mismatch, and the 037 vendor
+        # cart COALESCE type error. We do NOT pass --mark-applied —
+        # every file must apply cleanly from a fresh DB. We do NOT use
+        # `|| echo` / `|| true` — migration failures are hard failures.
+        run: npm run db:migrate
 
       - name: Vitest with coverage
         run: npm run test:coverage
@@ -80,53 +102,14 @@ jobs:
       - name: Auth isolation audit (static route walk)
         run: npx tsx scripts/auth-isolation-audit.ts
 
-      - name: Apply CI database schema
-        # The migration set has a stale 004 (addresses.guest_key) that
-        # assumes a pre-existing column on a fresh DB. Production schema
-        # is already correct (001 was applied to an earlier state), but a
-        # clean CI DB trips on 004. The pragmatic fix: apply 001→003 (which
-        # produce all 21 tables qa-smoke expects), then mark 004→073 as
-        # already-applied. Schema-fix migration is tracked separately and
-        # is NOT in scope for this PR.
-        run: |
-          npm run db:migrate || echo "[ci] migrate aborted (expected on fresh DB — 004 stale)"
-          npm run db:migrate -- --mark-applied \
-            004_addresses.sql \
-            $(ls migrations/00[5-9]_*.sql migrations/0[1-6][0-9]_*.sql migrations/07[0-3]_*.sql 2>/dev/null)
-
-      - name: Apply CI database schema (best-effort)
-        # The migration set has a stale 004 (addresses.guest_key) plus
-        # similar CREATE-TABLE-IF-NOT-EXISTS / CREATE-INDEX shape in
-        # later files (006, 010, 032, 044, 053, ...) that assume a fresh
-        # DB state but 001 already created the base tables. Production's
-        # schema is correct (001 was applied to an earlier state), but a
-        # clean CI DB trips on these stale files.
-        #
-        # We try to apply everything; if migration aborts, we fall back
-        # to mark-applied for the remaining ones so app_migrations stays
-        # consistent. Schema-fix migration is tracked separately and is
-        # NOT in scope for this PR.
-        #
-        # KNOWN GAP: even with --mark-applied for 004-073, the CI schema
-        # lacks `products_unified_with_offers` and `categories.is_active`
-        # (added by 010/021 respectively). The qa:smoke /products and
-        # /categories checks will return 500 in this state. This is the
-        # same pre-existing migration issue — fixing it requires an
-        # ALTER/CREATE-VIEW sweep across the broken files, which is
-        # deliberately out of scope for the payment-ledger PR.
-        run: |
-          npm run db:migrate || echo "[ci] migrate aborted — applying mark-applied for remaining files"
-          npm run db:migrate -- --mark-applied \
-            $(ls migrations/*.sql 2>/dev/null | xargs -n1 basename | sort)
-
       - name: Worker smoke (boot + schedule check)
         # Catches Dockerfile.worker / scripts/worker.ts regressions that
         # would silently ship a broken container. The test only requires
         # the worker module to load and start — DB query failures inside
         # the scheduled tasks are non-fatal (they're logged and the worker
-        # continues). We don't apply migrations here; an empty CI Postgres
-        # is acceptable because the goal is module-load + schedule-register,
-        # not query success.
+        # continues). We don't apply migrations here; the migration
+        # service container is already provisioned by the Apply step
+        # above, so the worker can hit it if needed.
         run: npm run worker:smoke
 
       - name: Build
@@ -176,20 +159,21 @@ jobs:
           exit 1
 
       - name: QA smoke (HTTP routes + DB shape)
-        # Reports the current state of HTTP routes + DB shape. Will
-        # surface the pre-existing migration inconsistency (see step
-        # above) on /api/v1/products and /api/v1/categories until the
-        # migration sweep lands. We keep the gate visible so we don't
-        # regress the rest of the surface; the migration fix is
-        # deliberately tracked separately and is NOT in scope for this PR.
+        # After PR #5's migration sweep, this gate exercises the
+        # genuinely-migrated schema. /api/v1/products and
+        # /api/v1/categories return real data because all 001→074
+        # migrations applied cleanly. No "KNOWN GAP" remains.
         env:
           BASE_URL: http://127.0.0.1:4050
         run: npm run qa:smoke
 
       - name: QA critical paths (revenue + security endpoints)
-        # Coupon validation, cart round-trip, CSRF enforcement. Skips
-        # itself gracefully when DB lacks coupons/products/offers (fresh
-        # CI DB only has schema, not seed data).
+        # Coupon validation, cart round-trip, CSRF enforcement, delivery
+        # quote. After PR #5 the schema includes the City Markets HQ
+        # row (migration 074) so delivery/quote returns a numeric fee
+        # rather than 503. Cart POST round-trip works because the
+        # partial unique index in 037 + the cart route's ON CONFLICT
+        # expression are aligned (PR #5 round 2 fix).
         env:
           BASE_URL: http://127.0.0.1:4050
         run: npm run qa:critical-paths

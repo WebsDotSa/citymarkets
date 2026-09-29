@@ -48,6 +48,14 @@ ALTER TABLE guest_cart
   ADD COLUMN IF NOT EXISTS vendor_id UUID REFERENCES vendors(id) ON DELETE SET NULL;
 
 -- 3a. Replace cart's UNIQUE with a vendor-aware partial unique index.
+-- Expression must match the application's ON CONFLICT clause
+-- (src/app/api/v1/cart/route.ts) byte-for-byte modulo trivial casts.
+-- The application writes `COALESCE(vendor_id, '<UUID>')` with no
+-- explicit cast; an index expression using `::uuid` on the literal
+-- is treated by PostgreSQL as a *different* expression and ON
+-- CONFLICT inference fails with "there is no unique or exclusion
+-- constraint matching the ON CONFLICT specification". Keeping the
+-- cast off the index side keeps the inference working.
 ALTER TABLE cart DROP CONSTRAINT IF EXISTS cart_user_id_product_id_key;
 ALTER TABLE cart DROP CONSTRAINT IF EXISTS cart_user_product_unique;
 
