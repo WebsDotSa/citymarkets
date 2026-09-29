@@ -178,7 +178,9 @@ describe("createInvoice", () => {
     expect(body.idempotency_key).toBe("idem-abc-1234567890");
     expect(body.success_url).toContain("/checkout/success?order_id=");
     expect(body.back_url).toMatch(/\/checkout$/);
-    expect(body.callback_url).toContain("/api/v1/payments/moyasar/callback");
+    // Canonical HMAC-authenticated webhook (was /api/v1/payments/moyasar/callback,
+    // a legacy duplicate removed in the 2026-09-29 production-completion audit).
+    expect(body.callback_url).toContain("/api/v1/payments/webhook");
   });
 
   it("omits idempotency_key when not provided", async () => {
