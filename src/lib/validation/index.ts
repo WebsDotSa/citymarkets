@@ -8,7 +8,9 @@
  * top-level in the old file.
  *
  * Internal organization:
- *   - common.ts       — phone, uuid, pagination, search, coupon code
+ *   - schemas.ts      — phone, uuid, pagination, search, coupon code,
+ *                       payment method, + validateBody / validationError
+ *                       (folded from helpers.ts — audit H33)
  *   - auth.ts         — phone-OTP login, admin login, password, push
  *   - address.ts      — customer addresses
  *   - order.ts        — cart, order create/edit, direct order, reviews
@@ -18,11 +20,11 @@
  *   - admin.ts        — admin user/inventory/delivery/coupon/offer
  *   - broadcast.ts    — broadcasts, templates, realtime events
  *   - upload.ts       — MIME allowlist, size ceilings, magic bytes
- *   - helpers.ts      — validateBody, validationError
+ *   - home-layout.ts  — admin home-layout grid
  *   - primitives.ts   — internal Zod primitives (NOT re-exported)
  */
 
-export * from "./common";
+export * from "./schemas";
 export * from "./auth";
 export * from "./address";
 export * from "./order";
@@ -32,5 +34,4 @@ export * from "./vendor";
 export * from "./admin";
 export * from "./broadcast";
 export * from "./upload";
-export * from "./helpers";
 export * from "./home-layout";

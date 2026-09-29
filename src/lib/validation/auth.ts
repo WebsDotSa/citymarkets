@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { phoneSchema } from "./common";
+import { phoneSchema } from "./schemas";
 
 export const loginSchema = z.object({
   phone: phoneSchema,

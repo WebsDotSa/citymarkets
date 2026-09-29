@@ -110,10 +110,13 @@ export const DISABLED_METHODS: ReadonlySet<string> = new Set([
  * Methods that should bypass the inline Moyasar form (i.e. require no
  * card capture in checkout and no payment URL).
  *
- * `wallet` is also manual because the user's balance is debited server-side
- * at confirm time.
+ * `cash` and `wallet` are also manual because no gateway integration is
+ * involved — the user pays the driver / has their balance debited server-
+ * side at confirm time. `bank_transfer` is manual because the customer
+ * must upload a receipt and admin must confirm the deposit.
  */
 export const NON_ELECTRONIC_METHODS: ReadonlySet<string> = new Set([
+  'cash',
   'wallet',
   'bank_transfer',
   '',
@@ -133,3 +136,77 @@ export const ALLOWED_METHODS: ReadonlySet<string> = new Set([
   'wallet',
   'bank_transfer',
 ]);
+
+/**
+ * The subset of `PaymentMethodId` that the customer-facing "pay / retry"
+ * CTA can initiate via the online checkout or payment-retry endpoint.
+ *
+ * Operator decision (2026-09-20): stc_pay removed from the retry picker.
+ * `bank_transfer` is intentionally absent — manual bank transfers are not
+ * retryable via this endpoint; the customer must re-confirm through admin.
+ * `tamara` is a BNPL choice made at checkout, not a retryable method.
+ *
+ * Canonical source for membership. Exported as both:
+ *   - `ONLINE_RETRY_METHODS` (const tuple) for code that wants the literal
+ *     union narrowed (e.g. `(typeof ONLINE_RETRY_METHODS)[number]`).
+ *   - `ONLINE_RETRY_METHODS_SET` for code that wants `O(1)` `.has()` checks.
+ *
+ * Replaces the four previously-inline copies:
+ *   - src/lib/orders/order-payment-action.ts:39         (ONLINE_RETRYABLE_METHODS)
+ *   - src/lib/payments/payment-service.ts:51            (ONLINE_RETRY_METHODS)
+ *   - src/components/pages/checkout/checkout-new.tsx:78 (INLINE_MOYASAR_METHODS)
+ *   - src/components/pages/orders/order-payment-action.tsx (METHOD_OPTIONS subset)
+ */
+export const ONLINE_RETRY_METHODS = [
+  'mada',
+  'visa',
+  'mastercard',
+  'amex',
+  'apple_pay',
+] as const satisfies readonly PaymentMethodId[];
+
+export const ONLINE_RETRY_METHODS_SET: ReadonlySet<string> = new Set(
+  ONLINE_RETRY_METHODS,
+);
+
+/**
+ * The full canonical payment-method tuple — every member of `PaymentMethodId`.
+ * Exported as a runtime tuple so validation schemas can derive from a single
+ * source of truth (audit S6). Mirrors `PaymentMethodId` exactly.
+ */
+export const ALL_PAYMENT_METHODS = [
+  'mada',
+  'visa',
+  'mastercard',
+  'amex',
+  'apple_pay',
+  'wallet',
+  'bank_transfer',
+] as const satisfies readonly PaymentMethodId[];
+
+/**
+ * Legacy payment-method tokens that were removed from the customer-facing
+ * picker on 2026-09-20 but still appear in:
+ *
+ *   - historical `orders.payment_method` / `vendor_orders.payment_method`
+ *     rows from before the operator migration (the analytics layer groups
+ *     them by these buckets);
+ *   - the `createOrderSchema` validator (legacy `POST /api/v1/orders` path
+ *     still accepts `tamara`/`stc_pay`/`cash`/`card`/`moyasar` because
+ *     in-flight client builds may POST them);
+ *   - admin-side analytics / reporting endpoints that read these tokens
+ *     out of the DB and re-validate them before display.
+ *
+ * `paymentMethodSchema` in `validation/common.ts` derives from this tuple
+ * unioned with `ALL_PAYMENT_METHODS`. Do NOT add a token here without
+ * verifying that (a) existing DB rows can still be read back into the
+ * enum, and (b) the customer-facing picker still rejects it via
+ * `DISABLED_METHODS` so a stale client can't downgrade the UX.
+ */
+export const LEGACY_PAYMENT_METHODS = [
+  'cash',
+  'card',
+  'moyasar',
+  'stc_pay',
+  'tamara',
+] as const;

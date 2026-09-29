@@ -107,6 +107,12 @@ export async function POST(request: NextRequest) {
     // by the finally block below). Defaults to false; flipped to true
     // when the parent order was found AND remoteStatus was paid/captured.
     let shouldNotifyVendor = false;
+    // W1 fix: also fires post-COMMIT. Previously `enqueueOrderPaidSms`
+    // was called inside the transaction (around line 338) so the SMS
+    // worker could read DB state before COMMIT propagated; same race
+    // pattern that was already fixed for vendor push. Flipped when an
+    // abandoned cart was recovered on this payment.
+    let shouldEnqueueOrderPaidSms = false;
 
     try {
       // SECURITY: Wrap per-order processing in a transaction with an
@@ -328,18 +334,11 @@ export async function POST(request: NextRequest) {
                 guest_phone: guestPhone,
               },
             );
-            // Stash the count on a fire-and-forget SMS so the customer
-            // hears about it once payment is confirmed by the gateway.
-            if (recovered_count > 0) {
-              try {
-                const { enqueueOrderPaidSms } = await import('@/lib/queue');
-                // Worker re-fetches the order + address + recovered count,
-                // so we only need the orderId here.
-                void enqueueOrderPaidSms(orderId);
-              } catch (smsErr) {
-                logError('[paid-confirm] sms dispatch failed', smsErr, { orderId });
-              }
-            }
+            // W1 fix: capture the intent here (inside the transaction)
+            // and fire the SMS in the post-COMMIT side-effects block.
+            // Calling enqueueOrderPaidSms from inside the transaction
+            // risked the worker reading DB state before COMMIT propagated.
+            shouldEnqueueOrderPaidSms = recovered_count > 0;
           } catch (acErr) {
             logError('[abandoned-carts] recovery failed', acErr, { orderId });
           }
@@ -439,6 +438,20 @@ export async function POST(request: NextRequest) {
         }
       } catch (notifyErr) {
         logError('[notify-vendor] enqueue failed', notifyErr, { orderId });
+      }
+    }
+
+    // W1 fix: customer "your abandoned cart recovered" SMS, fired AFTER
+    // COMMIT so the worker can't read pre-commit DB state. Same pattern
+    // as the vendor fan-out above. Fire-and-forget — never block the
+    // gateway ack on SMS dispatch.
+    if (shouldEnqueueOrderPaidSms && orderId) {
+      const orderIdLocal: string = orderId as string;
+      try {
+        const { enqueueOrderPaidSms } = await import('@/lib/queue');
+        void enqueueOrderPaidSms(orderIdLocal);
+      } catch (smsErr) {
+        logError('[paid-confirm] sms dispatch failed', smsErr, { orderId: orderIdLocal });
       }
     }
 

@@ -18,7 +18,7 @@ import {
   paymentMethodSchema,
   phoneSchema,
   uuidSchema,
-} from "./common";
+} from "./schemas";
 import {
   ALL_ORDER_STATES,
   ALL_PAYMENT_STATES,

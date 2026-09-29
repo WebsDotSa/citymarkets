@@ -30,7 +30,7 @@ import {
   paymentMethodSchema,
   phoneSchema,
   uuidSchema,
-} from "./common";
+} from "./schemas";
 
 const vendorUuidSchema = uuidSchema.refine(
   (v) => v !== CITY_MARKETS_VENDOR_ID,

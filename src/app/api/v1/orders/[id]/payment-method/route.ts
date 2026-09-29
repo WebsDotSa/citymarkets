@@ -3,6 +3,7 @@ import { pool } from "@/lib/db";
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { applyCsrfProtection } from "@/lib/csrf";
 import { error as logError, info as logInfo } from "@/lib/logger";
+import { ALLOWED_METHODS } from "@/lib/payments/payment-methods";
 
 /**
  * PATCH /api/v1/orders/[id]/payment-method
@@ -31,17 +32,10 @@ import { error as logError, info as logInfo } from "@/lib/logger";
  * Operator decision (2026-09-20): `cash`, `stc_pay`, `tamara` removed from
  * the customer-facing picker. They are intentionally NOT in this set so a
  * legacy client cannot silently downgrade the UX back to those flows.
+ *
+ * Canonical source: imported from `@/lib/payments/payment-methods` to keep
+ * this route in sync with the server-wide allowlist (audit H2).
  */
-const ALLOWED_METHODS = new Set([
-  "mada",
-  "visa",
-  "mastercard",
-  "amex",
-  "apple_pay",
-  "wallet",
-  "bank_transfer",
-]);
-
 const LOCKED_PAYMENT_STATUSES = new Set(["paid", "failed", "refunded"]);
 
 export async function PATCH(

@@ -7,7 +7,7 @@
  */
 
 import { z } from "zod";
-import { couponCodeSchema } from "./common";
+import { couponCodeSchema } from "./schemas";
 import { hhmm } from "./primitives";
 
 // ──────────────────────────────────────────────────────────────────────
