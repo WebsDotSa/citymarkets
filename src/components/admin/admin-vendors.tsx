@@ -49,14 +49,23 @@ const validatePhone = (v: unknown) =>
 const validateEmail = (v: unknown) => runFieldValidator(optionalEmail, v);
 
 /**
- * Build the FIELDS array for the add/edit form. `ownerRequired` mirrors
- * the server-side rule "no owner row yet → phone + password are
- * required" (see `upsertVendorOwner` in `/api/admin/vendors/route.ts`).
- * On edit, when an owner row already exists, all three owner fields
- * are optional and an empty value means "leave the existing hash /
- * phone / email untouched".
+ * Build the FIELDS array for the add/edit form.
+ *
+ * Owner-credential rules (uniform across add and edit):
+ *   - login_phone: ALWAYS required. The login surface is phone + OTP
+ *     (with email/password fallback), so the admin must at least
+ *     identify who the merchant is. Empty submit on edit keeps the
+ *     existing phone.
+ *   - login_email: optional. Used as the email-signin fallback only.
+ *   - password: optional. Missing password on a brand-new vendor
+ *     means "no owner row created" — the admin can add the password
+ *     later via edit. Missing password on edit means "leave existing".
+ *
+ * On the server, `upsertVendorOwner` in `/api/admin/vendors/route.ts`
+ * mirrors this: it only INSERTs an owner row when phone + password are
+ * both provided, and skips otherwise.
  */
-function buildFields(ownerRequired: boolean): FormField[] {
+function buildFields(): FormField[] {
   return [
     { key: "name_ar", label: "اسم المتجر بالعربية", type: "text", required: true },
     { key: "name_en", label: "اسم المتجر بالإنجليزية", type: "text" },
@@ -111,34 +120,31 @@ function buildFields(ownerRequired: boolean): FormField[] {
       label: "رقم جوال المالك (لدخول المتجر)",
       type: "tel",
       placeholder: "5XXXXXXXX",
-      required: ownerRequired,
+      required: true,
       validate: (v) => {
-        if (!v) return ownerRequired ? "رقم الجوال مطلوب" : null;
+        if (!v) return "رقم الجوال مطلوب";
         return validatePhone(v);
       },
     },
     {
       key: "login_email",
-      label: "إيميل المالك",
+      label: "إيميل المالك (اختياري)",
       type: "email",
       placeholder: "owner@example.com",
-      required: true,
       validate: (v) => {
-        if (!v) return "البريد الإلكتروني للمالك مطلوب";
+        if (!v) return null;
         return validateEmail(v);
       },
     },
     {
       key: "password",
-      label: "كلمة مرور المالك (8 أحرف على الأقل)",
+      label: "كلمة مرور المالك (8 أحرف على الأقل — اختياري)",
       type: "password",
-      placeholder: ownerRequired
-        ? "مطلوب عند إنشاء متجر جديد"
-        : "اتركه فارغاً للإبقاء على الحالية",
-      required: ownerRequired,
+      placeholder:
+        "اتركه فارغاً إذا لم يُرد المالك دخولاً، أو للإبقاء على الحالية عند التعديل",
       validate: (v) => {
         const s = typeof v === "string" ? v : "";
-        if (!s) return ownerRequired ? "كلمة المرور مطلوبة" : null;
+        if (!s) return null;
         return s.length < 8 ? "كلمة المرور يجب أن تكون 8 أحرف على الأقل" : null;
       },
     },
@@ -434,10 +440,10 @@ function VendorFormView({
     is_featured: editing ? editing.is_featured === true : false,
     sort_order: editing?.sort_order ?? vendorsCount,
     vendor_type: editing?.vendor_type || "food_beverage",
-    // Pre-fill the owner's login phone (required when no owner row
-    // exists) and email (always required by the form). Password field
-    // intentionally stays empty — empty submit = leave the existing
-    // hash untouched.
+    // Pre-fill phone + email so the admin can see what's currently
+    // stored. Password field intentionally stays empty — empty submit
+    // = "no change to the password" (server keeps existing hash; on
+    // create with no password, the owner row is skipped entirely).
     login_phone: editing?.login_phone ?? "",
     login_email: editing?.login_email ?? "",
     password: "",
@@ -448,7 +454,7 @@ function VendorFormView({
       <AdminForm
         title={editing ? `تعديل المتجر: ${editing.name_ar}` : "متجر جديد"}
         subtitle="سيظهر المتجر في صفحة المتاجر وصفحة المنتج بهويته البصرية ولونه المميز."
-        fields={buildFields(ownerRequired)}
+        fields={buildFields()}
         initialValues={initial}
         onSubmit={handleSubmitWithImages}
         onCancel={onCancel}

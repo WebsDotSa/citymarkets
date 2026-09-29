@@ -58,19 +58,20 @@ function hasOwnerCredentials(
 /**
  * Upsert the vendor owner login row in `vendor_staff`.
  *
- * Phone is REQUIRED for the *first* owner row on a brand-new vendor
- * (login by phone is the default surface — both password and OTP).
- * Email is OPTIONAL. Behavior:
+ * Owner bootstrap rules (brand-new vendor, no existing owner row):
+ *   - phone + password (≥8 chars) → INSERT `vendor_staff` row.
+ *   - phone only (no password) → SKIP. Phone alone can't log in, so
+ *     the vendor is left without an owner row. The admin can fill in
+ *     the password later via edit (the list view shows a
+ *     "⚠ بدون حساب دخول" badge so this isn't invisible).
+ *   - no owner fields at all → SKIP (no-op).
  *
- *   - Creating a brand-new vendor with login info:
- *       → INSERT a `vendor_staff` row with role='owner' for this
- *         vendor. `phone` must be provided (`login_phone`); `email`
- *         may be omitted; `password` (≥8 chars) must be provided so
- *         the merchant can actually sign in.
- *   - Editing an existing vendor:
- *       → UPDATE only the fields the admin sent. Empty `password` =
- *         keep current hash. Empty `email` (=empty string) clears the
- *         stored email so the owner can sign in by phone only.
+ * Existing owner row (edit):
+ *   - UPDATE only the fields the admin sent. Empty `password` keeps
+ *     the current hash. Empty `login_email` (=empty string) clears the
+ *     stored email so the owner can sign in by phone only.
+ *
+ * Email is always optional.
  *
  * Returns an error string if validation failed, or null on success.
  * The caller surfaces the error via the API response.
@@ -119,13 +120,12 @@ async function upsertVendorOwner(
   );
 
   if (existing.rows.length === 0) {
-    // No owner yet → phone must be set, password must be set to bootstrap one.
-    if (!hasPhone) {
-      return "يجب إدخال رقم جوال المالك لإنشاء حساب دخول المتجر";
-    }
-    if (!hasPassword) {
-      return "يجب إدخال كلمة مرور (8 أحرف على الأقل) لإنشاء حساب المالك";
-    }
+    // No owner row yet → INSERT only when both phone AND password are
+    // provided. Phone alone can't sign in (no password), so we skip
+    // and leave the vendor without a merchant login; admin can add
+    // the password later via edit.
+    if (!hasPhone) return null;
+    if (!hasPassword) return null;
     const passwordHash = await hashPassword(password!);
     const emailValue = hasEmail ? loginEmail!.trim().toLowerCase() : null;
     await run(
