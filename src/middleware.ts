@@ -39,7 +39,7 @@ const CAT_CACHE_TTL = 5 * 60 * 1000;
 // call; this caches the result so the same admin/vendor token only runs HMAC
 // once per window. Only successful verifications are cached — invalid tokens
 // are re-verified every call to avoid cache poisoning. See
-// src/lib/auth/jwt-verify-cache.ts for the full safety contract.
+// src/lib/identity/auth/jwt-verify-cache.ts for the full safety contract.
 const _adminVerifyCache = createJwtVerifyCache<boolean>();
 const _vendorVerifyCache = createJwtVerifyCache<boolean>();
 

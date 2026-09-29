@@ -17,7 +17,7 @@ interface AdminRoleEntry {
 // request. 60s is short enough to bound the impact of a stale role/badge
 // while still cheap enough to not require a separate cache store. The
 // shared `createRoleCache` factory is the single source of truth for
-// TTL semantics — see src/lib/auth/role-cache.ts.
+// TTL semantics — see src/lib/identity/auth/role-cache.ts.
 const adminRoleCache: RoleCache<AdminRoleEntry> = createRoleCache<AdminRoleEntry>();
 
 function adminHasPermission(role: AdminRole, permission: string): boolean {
