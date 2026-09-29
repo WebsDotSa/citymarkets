@@ -18,7 +18,7 @@ import {
   hasMixedVendors,
   type VendorGroup,
   cartItemKey,
-} from "@/lib/cart-vendors";
+} from "@/lib/catalog";
 import { CITY_MARKETS_VENDOR_ID, type CouponValidateResult } from "@/lib/types";
 import { AvailableCoupons } from "@/components/pages/coupons/AvailableCoupons";
 import {

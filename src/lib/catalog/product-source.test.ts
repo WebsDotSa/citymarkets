@@ -5,7 +5,7 @@ import {
   parseProductCartKey,
   productCartKey,
   vendorFieldsFromProduct,
-} from "./product-source";
+} from "@/lib/catalog/product-source";
 
 describe("isCityMarketsVendor", () => {
   it("returns true for the canonical City Markets pseudo-vendor UUID", () => {

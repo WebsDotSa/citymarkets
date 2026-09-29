@@ -803,9 +803,7 @@ export async function POST(request: NextRequest) {
       paymentResolved !== 'cash' && paymentResolved !== 'wallet';
     if (requiresOnlinePaymentForSnapshot && orderItems.length > 0) {
       try {
-        const { snapshotAbandonedCartFromOrder } = await import(
-          '@/lib/abandoned-carts'
-        );
+        const { snapshotAbandonedCartFromOrder } = await import('@/lib/orders');
         await snapshotAbandonedCartFromOrder({
           user_id: userId || null,
           guest_session_id: sessionId || null,

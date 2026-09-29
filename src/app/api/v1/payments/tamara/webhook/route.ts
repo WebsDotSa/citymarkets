@@ -241,9 +241,7 @@ export async function POST(request: NextRequest) {
         // replay is safe — and we don't want a snapshot miss to block the
         // payment confirmation.
         try {
-          const { markAbandonedCartRecovered } = await import(
-            "@/lib/abandoned-carts"
-          );
+          const { markAbandonedCartRecovered } = await import('@/lib/orders');
           const { recovered_count } = await markAbandonedCartRecovered(
             orderId,
             {

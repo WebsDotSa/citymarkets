@@ -286,9 +286,7 @@ export async function POST(request: NextRequest) {
           // so re-running this branch on a webhook replay is safe.
           // Best-effort: a snapshot miss should never block the payment.
           try {
-            const { markAbandonedCartRecovered } = await import(
-              '@/lib/abandoned-carts'
-            );
+            const { markAbandonedCartRecovered } = await import('@/lib/orders');
             const guestPhone =
               orderRow.guest_phone != null && orderRow.guest_phone !== ''
                 ? String(orderRow.guest_phone)

@@ -13,7 +13,7 @@ import { BankTransferCard } from "@/components/checkout/bank-transfer-card";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
 import { apiFetch } from '@/lib/catalog';
-import { groupCartItems } from "@/lib/cart-vendors";
+import { groupCartItems } from "@/lib/catalog";
 import type { CouponValidateResult } from "@/lib/types";
 import { AvailableCoupons } from "@/components/pages/coupons/AvailableCoupons";
 import { trackBeginCheckout } from "@/lib/ga-events";

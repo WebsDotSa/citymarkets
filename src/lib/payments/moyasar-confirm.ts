@@ -125,9 +125,7 @@ export async function confirmMoyasarPaymentForOrder(params: {
   // response back to the caller.
   if (paymentStatus === 'paid') {
     try {
-      const { markAbandonedCartRecovered } = await import(
-        '@/lib/abandoned-carts'
-      );
+      const { markAbandonedCartRecovered } = await import('@/lib/orders');
       const guestPhone =
         order.guest_phone != null && order.guest_phone !== ''
           ? String(order.guest_phone)
