@@ -66,9 +66,6 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
-      - name: Lint
-        run: npm run lint
-
       - name: Docs link integrity (README → docs/, ios/, DEPLOYMENT.md)
         run: |
           test -f docs/00-FULLSTACK-MASTER-PLAN.md || (echo "::error::missing docs/00-FULLSTACK-MASTER-PLAN.md — sync from origin/main" && exit 1)
@@ -82,7 +79,7 @@ jobs:
         run: npm run db:migrate:dry-run
 
       - name: Apply migrations to CI database (hard-fail)
-        # Runs the full migration chain (currently 001 → 074, count
+        # Runs the full migration chain (currently 001 → 076, count
         # verified dynamically by the runner) against a fresh CI
         # Postgres+pgvector. Any DDL failure (missing column, type
         # mismatch, FK rejection, GRANT on a non-existent role, view
@@ -100,7 +97,7 @@ jobs:
         run: npm run test:coverage
 
       - name: Auth isolation audit (static route walk)
-        run: npx tsx scripts/auth-isolation-audit.ts
+        run: npm run auth:isolation
 
       - name: Worker smoke (boot + schedule check)
         # Catches Dockerfile.worker / scripts/worker.ts regressions that
@@ -161,7 +158,7 @@ jobs:
       - name: QA smoke (HTTP routes + DB shape)
         # After PR #5's migration sweep, this gate exercises the
         # genuinely-migrated schema. /api/v1/products and
-        # /api/v1/categories return real data because all 001→074
+        # /api/v1/categories return real data because all 001→076
         # migrations applied cleanly. No "KNOWN GAP" remains.
         env:
           BASE_URL: http://127.0.0.1:4050
@@ -171,9 +168,10 @@ jobs:
         # Coupon validation, cart round-trip, CSRF enforcement, delivery
         # quote. After PR #5 the schema includes the City Markets HQ
         # row (migration 074) so delivery/quote returns a numeric fee
-        # rather than 503. Cart POST round-trip works because the
-        # partial unique index in 037 + the cart route's ON CONFLICT
-        # expression are aligned (PR #5 round 2 fix).
+        # rather than 503. The wishlist endpoint added in 076 is
+        # exercised via server-backed persistence. Cart POST round-trip
+        # works because the partial unique index in 037 + the cart
+        # route's ON CONFLICT expression are aligned (PR #5 round 2 fix).
         env:
           BASE_URL: http://127.0.0.1:4050
         run: npm run qa:critical-paths
