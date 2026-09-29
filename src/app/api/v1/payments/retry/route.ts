@@ -64,7 +64,7 @@ function successResponse(body: Record<string, unknown>) {
 }
 
 export async function POST(request: NextRequest) {
-  const userId = await import("@/lib/customer-session").then((m) =>
+  const userId = await import('@/lib/identity').then((m) =>
     m.resolveCustomerUserIdFromRequest(request),
   );
   if (!userId) {

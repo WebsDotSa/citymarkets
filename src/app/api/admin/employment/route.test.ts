@@ -37,7 +37,7 @@ vi.mock("@/lib/db", () => ({
   }),
 }));
 
-vi.mock("@/lib/admin-api-auth", () => ({
+vi.mock('@/lib/identity', () => ({
   requireAdminApi: vi.fn(async (_req: Request, perm: string) => {
     if (perm !== "manage_store_settings") {
       throw new Error(`unexpected permission: ${perm}`);

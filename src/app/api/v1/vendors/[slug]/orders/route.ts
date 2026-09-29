@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomInt } from "node:crypto";
 import { query, pool } from "@/lib/db";
-import { getCustomerUserIdFromRequest } from "@/lib/customer-session";
+import { getCustomerUserIdFromRequest } from '@/lib/identity';
 import { checkRateLimit, createRateLimitHeaders, GENERAL_API_CONFIG } from "@/lib/rate-limit";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';

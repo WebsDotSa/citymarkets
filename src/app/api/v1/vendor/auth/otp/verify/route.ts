@@ -19,7 +19,7 @@ import {
   vendorSessionCookieOptions,
   VENDOR_SESSION_COOKIE,
   type VendorRole,
-} from "@/lib/vendor-auth";
+} from '@/lib/identity';
 import { error as logError, info as logInfo } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";

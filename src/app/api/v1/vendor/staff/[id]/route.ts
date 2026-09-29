@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, pool } from "@/lib/db";
-import { verifyVendorRequestWithDb, requireVendorRole, type VendorRole } from "@/lib/vendor-auth";
+import { verifyVendorRequestWithDb, requireVendorRole, type VendorRole } from '@/lib/identity';
 import { error as logError } from "@/lib/logger";
 import { logVendorAudit } from "@/lib/vendor-audit";
-import { clearVendorSessionCache } from "@/lib/vendor-auth";
+import { clearVendorSessionCache } from '@/lib/identity';
 
 const VALID_ROLES: VendorRole[] = ["owner", "manager", "staff", "viewer"];
 

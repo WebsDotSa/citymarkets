@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAdminApi } from "@/lib/admin-api-auth";
+import { requireAdminApi } from '@/lib/identity';
 import { generateSlug } from "@/lib/slug";
 import { cache } from "@/lib/cache";
 import { CITY_MARKETS_VENDOR_ID } from "@/lib/types";

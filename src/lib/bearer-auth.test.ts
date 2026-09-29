@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { extractBearerToken, getCustomerUserIdFromRequest, signCustomerToken, verifyCustomerToken } from "@/lib/customer-session";
+import { extractBearerToken, getCustomerUserIdFromRequest, signCustomerToken, verifyCustomerToken } from '@/lib/identity';
 
 function makeRequest(auth?: string, cookie?: string): NextRequest {
   const headers: Record<string, string> = {};

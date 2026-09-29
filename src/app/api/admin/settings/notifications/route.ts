@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminApi } from "@/lib/admin-api-auth";
+import { requireAdminApi } from '@/lib/identity';
 import {
   getNotificationSettings,
   setAppSetting,

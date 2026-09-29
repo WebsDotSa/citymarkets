@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { query } from '@/lib/db';
-import { getCustomerUserIdFromRequest } from '@/lib/customer-session';
+import { getCustomerUserIdFromRequest } from '@/lib/identity';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 

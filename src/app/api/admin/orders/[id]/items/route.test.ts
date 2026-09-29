@@ -66,7 +66,7 @@ vi.mock("@/lib/db", () => ({
   pool: { connect: (connectMock as unknown as (...a: unknown[]) => unknown) },
 }));
 
-vi.mock("@/lib/admin-api-auth", () => ({
+vi.mock('@/lib/identity', () => ({
   requireAdminApi: (requireAdminMock as unknown as (...a: unknown[]) => unknown),
 }));
 

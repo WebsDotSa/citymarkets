@@ -20,7 +20,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/db", () => ({ pool: { query: mocks.poolQuery } }));
-vi.mock("@/lib/customer-session", () => ({
+vi.mock('@/lib/identity', () => ({
   resolveCustomerUserIdFromRequest: mocks.resolveCustomerUserIdFromRequest,
 }));
 vi.mock("@/lib/logger", () => ({ error: mocks.logError }));

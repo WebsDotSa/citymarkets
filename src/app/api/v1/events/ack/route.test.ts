@@ -6,7 +6,7 @@ const { resolveMock, queryMock } = vi.hoisted(() => ({
   queryMock: vi.fn(),
 }));
 
-vi.mock("@/lib/customer-session", () => ({
+vi.mock('@/lib/identity', () => ({
   resolveCustomerUserIdFromRequest: resolveMock,
 }));
 vi.mock("@/lib/db", () => ({ pool: { query: queryMock } }));

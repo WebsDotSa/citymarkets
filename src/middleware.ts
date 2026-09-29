@@ -19,7 +19,7 @@ import {
   VENDOR_SESSION_COOKIE,
 } from "@/lib/auth-cookie-name";
 import { getAdminJwtSecretBytes, getVendorJwtSecretBytes } from "@/lib/env";
-import { getCustomerUserIdFromRequest } from "@/lib/customer-session";
+import { getCustomerUserIdFromRequest } from '@/lib/identity';
 import { sanitizeRedirectPath } from "@/lib/safe-redirect";
 import { query } from "@/lib/db";
 import {

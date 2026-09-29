@@ -44,7 +44,7 @@ let mockSession:
   | null = { vendorId: "v1", vendorSlug: "acme", role: "manager", staffId: "s1" };
 let mockRoleForbidden: NextResponse | null = null;
 
-vi.mock("@/lib/vendor-auth", () => ({
+vi.mock('@/lib/identity', () => ({
   verifyVendorRequestWithDb: vi.fn(async () => mockSession),
   requireVendorRole: vi.fn(() => mockRoleForbidden),
 }));

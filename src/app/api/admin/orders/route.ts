@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool, query } from '@/lib/db';
-import { requireAdminApi } from '@/lib/admin-api-auth';
+import { requireAdminApi } from '@/lib/identity';
 import { logAdminAction } from '@/lib/admin-audit';
 import { updateOrderSchema } from '@/lib/validation';
 import {

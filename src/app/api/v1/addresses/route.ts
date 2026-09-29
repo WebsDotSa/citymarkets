@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { resolveCustomerUserIdFromRequest } from '@/lib/customer-session';
+import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { sanitizePlaceImageUrls } from '@/lib/place-image';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';

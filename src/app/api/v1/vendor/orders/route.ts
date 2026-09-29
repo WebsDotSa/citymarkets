@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { verifyVendorRequestWithDb } from "@/lib/vendor-auth";
+import { verifyVendorRequestWithDb } from '@/lib/identity';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 

@@ -17,7 +17,7 @@
  */
 import { NextRequest } from "next/server";
 import { pool } from "@/lib/db";
-import { getCustomerUserIdFromRequest } from "@/lib/customer-session";
+import { getCustomerUserIdFromRequest } from '@/lib/identity';
 import { applyCsrfProtection } from "@/lib/csrf";
 import {
   ok,

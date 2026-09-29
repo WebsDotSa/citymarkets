@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyVendorRequestWithDb } from "@/lib/vendor-auth";
+import { verifyVendorRequestWithDb } from '@/lib/identity';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 

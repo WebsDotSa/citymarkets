@@ -12,7 +12,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { requireAdminApi } from "@/lib/admin-api-auth";
+import { requireAdminApi } from '@/lib/identity';
 import { homeLayoutInputSchema } from "@/lib/validation";
 import { error as logError } from "@/lib/logger";
 import { invalidateHomeLayout } from "@/lib/home-layout-cache";

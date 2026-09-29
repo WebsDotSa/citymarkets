@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireAdminApi } from '@/lib/admin-api-auth';
+import { requireAdminApi } from '@/lib/identity';
 import { error as logError } from '@/lib/logger';
 import { deleteFromR2, r2KeyFromUrl } from '@/lib/r2';
 import { CITY_MARKETS_VENDOR_ID } from '@/lib/types';

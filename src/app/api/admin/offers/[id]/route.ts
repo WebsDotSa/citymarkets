@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { requireAdminApi } from "@/lib/admin-api-auth";
+import { requireAdminApi } from '@/lib/identity';
 import { offerInputSchema } from "@/lib/validation";
 import { cache } from "@/lib/cache";
 import { error as logError } from "@/lib/logger";

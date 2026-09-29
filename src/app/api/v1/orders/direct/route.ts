@@ -3,7 +3,7 @@ import { pool, query } from '@/lib/db';
 import {
   resolveCustomerUserIdFromRequest,
   getGuestSessionIdFromRequest,
-} from '@/lib/customer-session';
+} from '@/lib/identity';
 import { createRateLimitHeaders, checkRateLimit, ORDER_CREATE_CONFIG } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';
 import { error as logError } from '@/lib/logger';

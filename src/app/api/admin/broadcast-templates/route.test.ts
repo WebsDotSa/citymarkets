@@ -16,7 +16,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-vi.mock("@/lib/admin-api-auth", () => ({
+vi.mock('@/lib/identity', () => ({
   requireAdminApi: vi.fn(),
 }));
 
@@ -32,7 +32,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 import { GET, POST } from "./route";
-import { requireAdminApi } from "@/lib/admin-api-auth";
+import { requireAdminApi } from '@/lib/identity';
 
 function makeReq(url: string, body?: unknown): Request {
   return {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, pool } from "@/lib/db";
-import { verifyVendorRequestWithDb, requireVendorRole, type VendorRole } from "@/lib/vendor-auth";
+import { verifyVendorRequestWithDb, requireVendorRole, type VendorRole } from '@/lib/identity';
 import { hashPassword } from "@/lib/password";
 import { error as logError } from "@/lib/logger";
 import { logVendorAudit } from "@/lib/vendor-audit";

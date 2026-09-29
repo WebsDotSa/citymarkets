@@ -33,7 +33,7 @@ function makeFakeClient(opts: {
 }
 
 vi.mock("@/lib/db", () => ({ pool: { connect: vi.fn() } }));
-vi.mock("@/lib/customer-session", () => ({
+vi.mock('@/lib/identity', () => ({
   resolveCustomerUserIdFromRequest: vi.fn(),
 }));
 vi.mock("@/lib/payments/moyasar", () => ({
@@ -46,7 +46,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 import { pool } from "@/lib/db";
-import { resolveCustomerUserIdFromRequest } from "@/lib/customer-session";
+import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { createInvoice } from "@/lib/payments/moyasar";
 import { POST } from "./route";
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getGuestSessionIdFromRequest,
   resolveCustomerUserIdFromRequest,
-} from "@/lib/customer-session";
+} from '@/lib/identity';
 import { checkRateLimit, ORDER_CREATE_CONFIG, createRateLimitHeaders } from "@/lib/rate-limit";
 import { applyCsrfProtection } from "@/lib/csrf";
 import { getClientIp } from "@/lib/request-ip";

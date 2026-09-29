@@ -62,7 +62,7 @@ vi.mock("@/lib/db", () => ({
   query: vi.fn(),
 }));
 
-vi.mock("@/lib/customer-session", () => ({
+vi.mock('@/lib/identity', () => ({
   resolveCustomerUserIdFromRequest: vi.fn(),
   getGuestSessionIdFromRequest: vi.fn(),
 }));
@@ -77,7 +77,7 @@ import { pool } from "@/lib/db";
 import {
   resolveCustomerUserIdFromRequest,
   getGuestSessionIdFromRequest,
-} from "@/lib/customer-session";
+} from '@/lib/identity';
 import { POST, GET } from "./route";
 import type { NextRequest } from "next/server";
 

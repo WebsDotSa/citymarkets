@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { requireAdminApi } from '@/lib/admin-api-auth';
+import { requireAdminApi } from '@/lib/identity';
 import { uploadToR2, r2PublicUrl, r2KeyFromUrl, deleteFromR2 } from '@/lib/r2';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';

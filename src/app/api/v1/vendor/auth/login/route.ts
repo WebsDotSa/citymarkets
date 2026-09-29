@@ -10,7 +10,7 @@ import {
   vendorSessionCookieOptions,
   VENDOR_SESSION_COOKIE,
   type VendorRole,
-} from "@/lib/vendor-auth";
+} from '@/lib/identity';
 
 /**
  * POST /api/v1/vendor/auth/login

@@ -4,7 +4,7 @@ vi.mock("@/lib/db", () => ({
   pool: { query: vi.fn(), connect: vi.fn() },
 }));
 
-vi.mock("@/lib/admin-api-auth", () => ({
+vi.mock('@/lib/identity', () => ({
   requireAdminApi: vi.fn(),
 }));
 
@@ -21,7 +21,7 @@ vi.mock("@/lib/twilio-messaging", () => ({
 }));
 
 import { GET } from "./route";
-import { requireAdminApi } from "@/lib/admin-api-auth";
+import { requireAdminApi } from '@/lib/identity';
 
 function makeReq(): Request {
   return { headers: { get: () => null }, url: "http://x" } as unknown as Request;

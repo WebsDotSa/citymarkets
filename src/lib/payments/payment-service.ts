@@ -29,7 +29,7 @@ import {
   createRateLimitHeaders,
 } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
-import { resolveCustomerUserIdFromRequest } from "@/lib/customer-session";
+import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { getOrderPaymentAction } from "@/lib/order-payment-action";
 import type { NextRequest } from "next/server";
 
