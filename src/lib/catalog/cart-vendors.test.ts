@@ -10,7 +10,7 @@ import {
   type VendorGroup,
 } from "./cart-vendors";
 import { CITY_MARKETS_VENDOR_ID } from "./product-source";
-import type { CartItem, Product } from "./types";
+import type { CartItem, Product } from "@/lib/types";
 
 const baseProduct = (overrides: Partial<Product> = {}): Product => ({
   id: "11111111-1111-1111-1111-111111111111",

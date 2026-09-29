@@ -3,7 +3,7 @@ import {
   buildDynamicGroups,
   emojiForCategoryName,
 } from "./dynamic-category-groups";
-import type { CategoryRow } from "./types";
+import type { CategoryRow } from "@/lib/types";
 
 /**
  * dynamic-category-groups is the small, pure utility that powers the
