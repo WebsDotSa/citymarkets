@@ -17,8 +17,11 @@ import { render, screen, waitFor } from "@testing-library/react";
  *      (verified by mutating the mocked state and re-rendering).
  */
 
+type WishlistItemShape = { product: { id: string; [k: string]: unknown }; addedAt: number };
+type WishlistStateShape = { items: WishlistItemShape[]; itemCount: number; loading: boolean };
+
 const { wishlistStateRef } = vi.hoisted(() => ({
-  wishlistStateRef: { current: { items: [], itemCount: 0, loading: false } },
+  wishlistStateRef: { current: { items: [] as WishlistItemShape[], itemCount: 0, loading: false } },
 }));
 
 vi.mock("@/contexts/wishlist-context", () => ({
@@ -126,7 +129,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  wishlistStateRef.current = { items: [], itemCount: 0, loading: false };
+  wishlistStateRef.current = { items: [], itemCount: 0, loading: false } as WishlistStateShape;
   routerPushMock.mockReset();
   signOutMock.mockReset();
   fetchMock.mockClear();
@@ -147,14 +150,14 @@ describe("ProfileNew — wishlist count tile (D10)", () => {
   it("renders the live itemCount, not a hardcoded 0", async () => {
     wishlistStateRef.current = {
       items: [
-        { product: { id: "p-1" } as never, addedAt: 1 },
-        { product: { id: "p-2" } as never, addedAt: 2 },
-        { product: { id: "p-3" } as never, addedAt: 3 },
-        { product: { id: "p-4" } as never, addedAt: 4 },
+        { product: { id: "p-1" }, addedAt: 1 },
+        { product: { id: "p-2" }, addedAt: 2 },
+        { product: { id: "p-3" }, addedAt: 3 },
+        { product: { id: "p-4" }, addedAt: 4 },
       ],
       itemCount: 4,
       loading: false,
-    };
+    } as WishlistStateShape;
     render(<ProfileNew />);
     await waitFor(() => {
       const tile = screen.getByTestId("wishlist-count-value");
@@ -163,7 +166,7 @@ describe("ProfileNew — wishlist count tile (D10)", () => {
   });
 
   it("renders 0 (not 'undefined') when wishlist is empty", async () => {
-    wishlistStateRef.current = { items: [], itemCount: 0, loading: false };
+    wishlistStateRef.current = { items: [], itemCount: 0, loading: false } as WishlistStateShape;
     render(<ProfileNew />);
     await waitFor(() => {
       const tile = screen.getByTestId("wishlist-count-value");
@@ -172,13 +175,13 @@ describe("ProfileNew — wishlist count tile (D10)", () => {
   });
 
   it("reflects itemCount changes without a reload (live update)", async () => {
-    wishlistStateRef.current = { items: [], itemCount: 2, loading: false };
+    wishlistStateRef.current = { items: [], itemCount: 2, loading: false } as WishlistStateShape;
     const { rerender } = render(<ProfileNew />);
     await waitFor(() => {
       expect(screen.getByTestId("wishlist-count-value").textContent).toBe("2");
     });
     // Simulate the cart → wishlist path bumping the count.
-    wishlistStateRef.current = { items: [], itemCount: 5, loading: false };
+    wishlistStateRef.current = { items: [], itemCount: 5, loading: false } as WishlistStateShape;
     rerender(<ProfileNew />);
     await waitFor(() => {
       expect(screen.getByTestId("wishlist-count-value").textContent).toBe("5");
@@ -188,12 +191,12 @@ describe("ProfileNew — wishlist count tile (D10)", () => {
   it("surfaces the count in the orders section badge", async () => {
     wishlistStateRef.current = {
       items: [
-        { product: { id: "p-1" } as never, addedAt: 1 },
-        { product: { id: "p-2" } as never, addedAt: 2 },
+        { product: { id: "p-1" }, addedAt: 1 },
+        { product: { id: "p-2" }, addedAt: 2 },
       ],
       itemCount: 2,
       loading: false,
-    };
+    } as WishlistStateShape;
     render(<ProfileNew />);
     await waitFor(() => {
       // The wishlist row badge in the orders section reads `2`.
