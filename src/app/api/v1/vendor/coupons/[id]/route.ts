@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { verifyVendorRequestWithDb, requireVendorRole } from '@/lib/identity';
-
+import { requireVendorRole } from "@/lib/identity";
+import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
 export async function PATCH(

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminApi } from '@/lib/identity';
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { getMoyasarPublishableKey, getMoyasarSecretKey, getSiteUrl } from "@/lib/env";
 import { isMoyasarConfigured } from "@/lib/payments/moyasar";
 

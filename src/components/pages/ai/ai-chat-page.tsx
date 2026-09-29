@@ -27,10 +27,8 @@ import { useCartActions } from "@/contexts/cart-context";
 import { useAuthState, useAuthActions } from "@/contexts/auth-context";
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder";
 import type { Product } from "@/lib/types";
-import type {
-  ChatInputMode,
-  MealSuggestion,
-} from '@/lib/catalog';
+import type { ChatInputMode } from '@/lib/catalog/ai-chat-client-types';
+import type { MealSuggestion } from '@/lib/catalog/ai-shopping-assistant';
 import { csrfFetch } from "@/lib/csrf-client";
 import {
   aiChatStorageKey,

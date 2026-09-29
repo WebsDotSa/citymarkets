@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { buildPageMetadata } from "@/lib/seo/site";
-import {
-  getCategoryForSeo,
-  getCategoryByNameAr,
-} from '@/lib/catalog';
+import { getCategoryForSeo } from '@/lib/catalog/seo/product';
+import { getCategoryByNameAr } from '@/lib/catalog/seo/product';
 import { CategoryJsonLd } from "@/components/seo/category-json-ld";
 import { CategoryDetailClient } from "@/components/pages/categories/category-detail-client";
 import { query } from "@/lib/db";

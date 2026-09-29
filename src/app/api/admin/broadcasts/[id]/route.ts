@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { requireAdminApi } from '@/lib/identity';
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { broadcastUpdateSchema, uuidSchema } from "@/lib/validation";
 import { logAdminAction } from "@/lib/admin-audit";
 import { error as logError } from "@/lib/logger";

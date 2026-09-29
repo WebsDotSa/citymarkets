@@ -31,7 +31,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { pool } from "@/lib/db";
-import { requireAdminApi } from '@/lib/identity';
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { logAdminAction } from "@/lib/admin-audit";
 import { generateSlug } from "@/lib/slug";
 

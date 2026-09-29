@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { requireAdminApi } from '@/lib/identity';
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { logAdminAction } from "@/lib/admin-audit";
-import {
-  DEFAULT_LOYALTY_SETTINGS,
-  getLoyaltySettings,
-  type LoyaltySettings,
-} from '@/lib/orders';
+import { DEFAULT_LOYALTY_SETTINGS, getLoyaltySettings, type LoyaltySettings } from '@/lib/orders/loyalty';
 import { error as logError } from "@/lib/logger";
 
 /**

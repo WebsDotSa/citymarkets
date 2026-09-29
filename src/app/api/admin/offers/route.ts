@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { requireAdminApi } from '@/lib/identity';
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { offerInputSchema } from "@/lib/validation";
 import { cache } from "@/lib/cache";
 import { error as logError } from "@/lib/logger";

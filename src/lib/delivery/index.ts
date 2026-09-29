@@ -41,17 +41,6 @@ export {
 } from "./delivery-distance-fee";
 export type { DeliveryDistanceFeeSettings } from "./delivery-distance-fee";
 
-// ── Delivery hours ──────────────────────────────────────────────────────
-export {
-  buildHoursStatus,
-  DEFAULT_DELIVERY_HOURS,
-  evaluateHours,
-  getDeliveryHours,
-  parseDeliveryHours,
-  RIYADH_TZ as DELIVERY_HOURS_RIYADH_TZ,
-} from "./delivery-hours";
-export type { DeliveryHours, HoursCheck, HoursStatus } from "./delivery-hours";
-
 // ── Delivery slots ──────────────────────────────────────────────────────
 export {
   addDays,
@@ -80,10 +69,8 @@ export {
 } from "./vendor-store-hours";
 export type { VendorHours, VendorOpenStatus } from "./vendor-store-hours";
 
-// ── Vendor closed gate (checkout blocker) ───────────────────────────────
-export { checkClosedVendorsInCart } from "./vendor-closed-gate";
-export type {
-  CheckClosedVendorsArgs,
-  ClosedVendor,
-  ClosedVendorGate,
-} from "./vendor-closed-gate";
+// Server-only (uses @/lib/db / pg). Deep import only from
+// `@/lib/delivery/delivery-hours` and `@/lib/delivery/vendor-closed-gate`.
+// Kept out of the public barrel so client bundles don't pull in pg.
+// export { getDeliveryHours, evaluateHours, parseDeliveryHours, buildHoursStatus, DEFAULT_DELIVERY_HOURS } from "./delivery-hours";
+// export { checkClosedVendorsInCart } from "./vendor-closed-gate";

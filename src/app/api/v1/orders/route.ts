@@ -17,13 +17,8 @@ import {
   toRiyadhDateKey,
   validateSlotSelection,
 } from '@/lib/delivery';
-import {
-  computeOrderFees,
-  computeCouponDiscount,
-  computeLoyaltyRedemption,
-  type PricingSettings,
-} from '@/lib/orders';
-import { getLoyaltySettings } from '@/lib/orders';
+import { computeOrderFees, computeCouponDiscount, computeLoyaltyRedemption, type PricingSettings } from '@/lib/orders';
+import { getLoyaltySettings } from '@/lib/orders/loyalty';
 import { haversineKm } from '@/lib/delivery';
 
 /**
@@ -803,7 +798,7 @@ export async function POST(request: NextRequest) {
       paymentResolved !== 'cash' && paymentResolved !== 'wallet';
     if (requiresOnlinePaymentForSnapshot && orderItems.length > 0) {
       try {
-        const { snapshotAbandonedCartFromOrder } = await import('@/lib/orders');
+        const { snapshotAbandonedCartFromOrder } = await import('@/lib/orders/abandoned-carts');
         await snapshotAbandonedCartFromOrder({
           user_id: userId || null,
           guest_session_id: sessionId || null,

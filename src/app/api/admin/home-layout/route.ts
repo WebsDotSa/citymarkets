@@ -12,10 +12,10 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { requireAdminApi } from '@/lib/identity';
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { homeLayoutInputSchema } from "@/lib/validation";
 import { error as logError } from "@/lib/logger";
-import { invalidateHomeLayout } from '@/lib/catalog';
+import { invalidateHomeLayout } from '@/lib/catalog/home-layout-cache';
 import type { DeviceType, Section } from '@/lib/catalog';
 
 const ALLOWED_DEVICES: DeviceType[] = ["mobile", "desktop"];

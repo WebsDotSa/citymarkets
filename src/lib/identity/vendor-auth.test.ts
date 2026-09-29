@@ -59,10 +59,12 @@ function fakeReq(cookieValue?: string): NextRequest {
 }
 
 let mod: typeof import("./vendor-auth");
+let modWithDb: typeof import("./vendor-auth-with-db");
 
 beforeEach(async () => {
   mockQuery.mockReset();
   mod = await import("./vendor-auth");
+  modWithDb = await import("./vendor-auth-with-db");
 });
 
 describe("signVendorSessionToken / verifyVendorRequest (JWT round-trip)", () => {
@@ -155,14 +157,14 @@ describe("vendorSessionCookieOptions", () => {
 
 describe("verifyVendorRequestWithDb", () => {
   it("returns null when verifyVendorRequest returns null", async () => {
-    expect(await mod.verifyVendorRequestWithDb(fakeReq())).toBeNull();
+    expect(await modWithDb.verifyVendorRequestWithDb(fakeReq())).toBeNull();
     expect(mockQuery).not.toHaveBeenCalled();
   });
 
   it("returns null when the DB has no row for the staff/vendor", async () => {
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
     const t = await mintToken({});
-    expect(await mod.verifyVendorRequestWithDb(fakeReq(t))).toBeNull();
+    expect(await modWithDb.verifyVendorRequestWithDb(fakeReq(t))).toBeNull();
   });
 
   it("returns null when staff is inactive", async () => {
@@ -184,7 +186,7 @@ describe("verifyVendorRequestWithDb", () => {
       ],
     });
     const t = await mintToken({});
-    expect(await mod.verifyVendorRequestWithDb(fakeReq(t))).toBeNull();
+    expect(await modWithDb.verifyVendorRequestWithDb(fakeReq(t))).toBeNull();
   });
 
   it("returns null when vendor is inactive", async () => {
@@ -206,7 +208,7 @@ describe("verifyVendorRequestWithDb", () => {
       ],
     });
     const t = await mintToken({});
-    expect(await mod.verifyVendorRequestWithDb(fakeReq(t))).toBeNull();
+    expect(await modWithDb.verifyVendorRequestWithDb(fakeReq(t))).toBeNull();
   });
 
   it("returns null when the DB role no longer matches the JWT (demoted)", async () => {
@@ -228,7 +230,7 @@ describe("verifyVendorRequestWithDb", () => {
       ],
     });
     const t = await mintToken({ role: "owner" });
-    expect(await mod.verifyVendorRequestWithDb(fakeReq(t))).toBeNull();
+    expect(await modWithDb.verifyVendorRequestWithDb(fakeReq(t))).toBeNull();
   });
 
   it("returns the vendor session on a healthy lookup", async () => {
@@ -252,7 +254,7 @@ describe("verifyVendorRequestWithDb", () => {
     });
     const t = await mintToken({});
     mod.clearVendorSessionCache();
-    const out = await mod.verifyVendorRequestWithDb(fakeReq(t));
+    const out = await modWithDb.verifyVendorRequestWithDb(fakeReq(t));
     expect(out).toMatchObject({
       vendorId: "v-1",
       vendorSlug: "vendor-one",

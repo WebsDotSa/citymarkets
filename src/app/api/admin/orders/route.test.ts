@@ -32,7 +32,13 @@ vi.mock('@/lib/identity', () => ({
   requireAdminApi: vi.fn().mockResolvedValue({
     admin: { id: "admin-1", permissions: ["manage_orders"] },
   }),
+}))
+vi.mock('@/lib/identity/admin-api-auth-db', () => ({
+  requireAdminApi: vi.fn().mockResolvedValue({
+    admin: { id: "admin-1", permissions: ["manage_orders"] },
+  }),
 }));
+;
 
 vi.mock("@/lib/admin-audit", () => ({
   logAdminAction: vi.fn(),

@@ -26,7 +26,13 @@ vi.mock('@/lib/identity', () => ({
   requireAdminApi: vi.fn().mockResolvedValue({
     admin: { id: "admin-1", permissions: ["manage_products"] },
   }),
+}))
+vi.mock('@/lib/identity/admin-api-auth-db', () => ({
+  requireAdminApi: vi.fn().mockResolvedValue({
+    admin: { id: "admin-1", permissions: ["manage_products"] },
+  }),
 }));
+;
 
 vi.mock("@/lib/app-settings", () => ({
   getInventorySettings: vi.fn().mockResolvedValue({ low_stock_threshold: 5 }),

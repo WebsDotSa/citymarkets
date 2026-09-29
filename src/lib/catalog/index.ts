@@ -5,8 +5,16 @@
  * give products / categories / search / home-layout / vendor storefront /
  * AI shopping a clear home.
  *
- * Internal organization:
- *   - product-search.ts          — fuzzy product search (DB)
+ * IMPORTANT: this barrel is safe to import from client components. It
+ * does NOT re-export anything that transitively pulls in `pg`, BullMQ,
+ * or Redis. Server-only helpers live behind deep-import paths:
+ *
+ *   - `@/lib/catalog/product-search`       — findProductForQuery, etc.
+ *   - `@/lib/catalog/ai-shopping-assistant` — runShoppingAssistant (LLM)
+ *   - `@/lib/catalog/seo/product`           — SEO row queries (DB)
+ *   - `@/lib/catalog/seo/sitemap-sources`   — sitemap entry queries (DB)
+ *
+ * Internal organization (client-safe):
  *   - product-source.ts          — City Markets vendor + cart-key helpers
  *   - categories/tree.ts         — category tree builder
  *   - category-media.ts          — category image / emoji fallback
@@ -18,24 +26,12 @@
  *   - vendor-product-mapper.ts   — vendor storefront → cart mapper
  *   - api.ts                     — public storefront fetch helpers
  *   - place-image.ts             — place image URL sanitizer
- *   - ai-shopping-assistant.ts   — server-side AI shopping (LLM + DB)
  *   - ai-chat-storage.ts         — localStorage helpers (browser)
  *   - ai-chat-client-types.ts    — chat message/result types (shared)
  *   - local-meal-assistant.ts    — browser-side AI shopping fallback
  *   - voice-order.ts             — Arabic voice transcript parser
- *   - home-layout-types.ts       — home page section types
- *   - home-layout-cache.ts       — cached fetch + invalidation
- *   - seo/product.ts             — product/category SEO rows (DB)
- *   - seo/sitemap-sources.ts     — sitemap entries for catalog content
+ *   - home-layout-types.ts       — home page section types (pure types)
  */
-
-// ── Product search ──────────────────────────────────────────────────────
-export {
-  findProductForQuery,
-  mapProductRow,
-  matchProductsFromList,
-} from "./product-search";
-export type { MatchedProduct } from "./product-search";
 
 // ── Product source helpers ──────────────────────────────────────────────
 export {
@@ -138,16 +134,6 @@ export {
   sanitizePlaceImageUrls,
 } from "./place-image";
 
-// ── AI shopping assistant (server) ──────────────────────────────────────
-export { runShoppingAssistant } from "./ai-shopping-assistant";
-export type {
-  AiAssistantPayload,
-  AiProductRequest,
-  ChatTurn,
-  MealIngredient,
-  MealSuggestion,
-} from "./ai-shopping-assistant";
-
 // ── AI chat storage (browser) ───────────────────────────────────────────
 export {
   AI_CHAT_WELCOME_ID,
@@ -213,30 +199,3 @@ export type {
   SectionType,
   StoresSettings,
 } from "./home-layout-types";
-
-// ── Home layout cache ───────────────────────────────────────────────────
-export {
-  getCachedHomeLayout,
-  HOME_LAYOUT_CACHE_KEY,
-  invalidateHomeLayout,
-} from "./home-layout-cache";
-
-// ── Catalog SEO ─────────────────────────────────────────────────────────
-export {
-  getCategoryByNameAr,
-  getCategoryForSeo,
-  getProductForSeo,
-  productAltText,
-  productDescription,
-} from "./seo/product";
-export type { CategorySeoRow, ProductSeoRow } from "./seo/product";
-
-// ── Sitemap sources (catalog-driven) ────────────────────────────────────
-export {
-  buildFullSitemap,
-  categorySitemapEntries,
-  offerSitemapEntries,
-  productSitemapEntries,
-  staticSitemapEntries,
-} from "./seo/sitemap-sources";
-export type { SitemapEntry } from "./seo/sitemap-sources";

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAdminApi } from '@/lib/identity';
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { getInventorySettings, setAppSetting } from "@/lib/app-settings";
 import { inventorySettingsSchema } from "@/lib/validation";
 import { logAdminAction } from "@/lib/admin-audit";

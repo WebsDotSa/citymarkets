@@ -5,11 +5,7 @@ import {
   getTamaraWebhookToken,
   verifyWebhookSignature,
 } from "@/lib/payments/tamara";
-import {
-  awardPointsForOrder,
-  getLoyaltySettings,
-  resolveRedeemForOrder,
-} from '@/lib/orders';
+import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 import { error as logError, warn as logWarn, info as logInfo } from "@/lib/logger";
 
 /**
@@ -241,7 +237,7 @@ export async function POST(request: NextRequest) {
         // replay is safe — and we don't want a snapshot miss to block the
         // payment confirmation.
         try {
-          const { markAbandonedCartRecovered } = await import('@/lib/orders');
+          const { markAbandonedCartRecovered } = await import('@/lib/orders/abandoned-carts');
           const { recovered_count } = await markAbandonedCartRecovered(
             orderId,
             {

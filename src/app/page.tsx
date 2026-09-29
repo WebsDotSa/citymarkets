@@ -9,8 +9,8 @@ import {
   HOME_LAYOUT_VERSION,
   type PublicHomeLayout,
   type Section,
-} from '@/lib/catalog';
-import { getCachedHomeLayout } from '@/lib/catalog';
+} from '@/lib/catalog/home-layout-types';
+import { getCachedHomeLayout } from '@/lib/catalog/home-layout-cache';
 
 export const metadata: Metadata = buildPageMetadata({
   title: "أسواق سيتي | منصة التسوق الذكية المتعددة المتاجر في السعودية",

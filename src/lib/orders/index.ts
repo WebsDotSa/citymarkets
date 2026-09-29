@@ -1,26 +1,32 @@
 /**
  * Public barrel for the Orders bounded context.
  *
- * Phase 10.4 (domain-modules refactor): extracted from `src/lib/` root
- * to give checkout, order lifecycle, payment actions, loyalty, abandoned
+ * Phase 10.4 (domain-modules refactor): extracted from `src/lib/` root to
+ * give checkout, order lifecycle, payment actions, loyalty, abandoned
  * carts, and pricing a clear home.
+ *
+ * IMPORTANT: this barrel is safe to import from client components. It
+ * does NOT re-export anything that transitively pulls in `pg`, BullMQ,
+ * or Redis (those would break Next.js client bundles). Server-only
+ * helpers live behind deep-import paths:
+ *
+ *   - `@/lib/orders/checkout/checkout-service` — runCheckout
+ *   - `@/lib/orders/checkout/create-checkout`  — createCheckout
+ *   - `@/lib/orders/checkout/resolve-items`    — resolveItems
+ *   - `@/lib/orders/checkout/resolve-address`  — pickUserAddress
+ *   - `@/lib/orders/checkout/pricing`          — computeCheckoutTotals (DB-backed)
+ *   - `@/lib/orders/loyalty`                   — earn/redeem (PoolClient)
+ *   - `@/lib/orders/abandoned-carts`           — markAbandonedCartRecovered (DB)
+ *   - `@/lib/orders/order-notify-admin`        — notifyAdminNewOrder (DB)
  *
  * Internal organization:
  *   - order-status.ts           — canonical status enums + Arabic labels
  *   - order-ownership.ts        — assert caller owns the order
- *   - order-paid-confirm.ts     — build + send "order paid" SMS
- *   - order-notify-admin.ts     — notify admin of new orders
+ *   - order-paid-confirm.ts     — build + send "order paid" SMS (no DB)
  *   - order-metrics.ts          — revenue SQL/constants
  *   - order-payment-action.ts   — determine retry-ability of failed orders
- *   - loyalty.ts                — loyalty settings + earn/redeem helpers
- *   - abandoned-carts.ts        — snapshot + recover abandoned carts
- *   - pricing.ts                — order fee calculator
- *   - checkout/                 — multi-vendor checkout orchestrator
- *     - checkout-service.ts     — main entry (idempotent, atomic)
- *     - create-checkout.ts      — build checkout from cart + address
- *     - pricing.ts              — per-vendor checkout pricing
- *     - resolve-address.ts      — pick address row for current user
- *     - resolve-items.ts        — resolve cart items against catalog
+ *   - pricing.ts                — order fee calculator (pure functions)
+ *   - checkout/pricing.ts       — pure per-vendor checkout pricing
  */
 
 // ── Order status (canonical enums + Arabic labels) ──────────────────────
@@ -37,7 +43,7 @@ export {
 } from "./order-status";
 export type { OrderStatusConfig, PaymentStatusConfig } from "./order-status";
 
-// ── Order ownership ─────────────────────────────────────────────────────
+// ── Order ownership (assertions — use only in route handlers) ──────────
 export {
   assertOrderOwnership,
   idempotencyKeyFromBody,
@@ -45,14 +51,11 @@ export {
 } from "./order-ownership";
 export type { OrderOwnership, OrderOwnershipInput } from "./order-ownership";
 
-// ── Order paid confirmation SMS ─────────────────────────────────────────
+// ── Order paid confirmation SMS (pure SMS body builder) ────────────────
 export {
   buildOrderPaidConfirmationBody,
   sendOrderPaidConfirmationSms,
 } from "./order-paid-confirm";
-
-// ── Notify admin of new orders ──────────────────────────────────────────
-export { notifyAdminNewOrder } from "./order-notify-admin";
 
 // ── Order revenue metrics ───────────────────────────────────────────────
 export {
@@ -63,7 +66,7 @@ export {
   SQL_REVENUE_ELIGIBLE,
 } from "./order-metrics";
 
-// ── Order payment action (retry-ability) ────────────────────────────────
+// ── Order payment action (retry-ability — pure) ────────────────────────
 export {
   getOrderPaymentAction,
   isRetryableOrderPayment,
@@ -74,30 +77,7 @@ export type {
   OrderPaymentActionInput,
 } from "./order-payment-action";
 
-// ── Loyalty ─────────────────────────────────────────────────────────────
-export {
-  awardPointsForOrder,
-  computeEarnPoints,
-  DEFAULT_LOYALTY_SETTINGS,
-  getLoyaltySettings,
-  resolveRedeemForOrder,
-} from "./loyalty";
-export type { LoyaltySettings } from "./loyalty";
-
-// ── Abandoned carts ─────────────────────────────────────────────────────
-export {
-  findAbandonedSnapshotByIntentOrder,
-  markAbandonedCartRecovered,
-  snapshotAbandonedCartFromOrder,
-} from "./abandoned-carts";
-export type {
-  AbandonedCartActor,
-  AbandonedCartItem,
-  AbandonedCartRecoveryResult,
-  AbandonedCartSnapshotInput,
-} from "./abandoned-carts";
-
-// ── Pricing (order fees) ────────────────────────────────────────────────
+// ── Pricing (order fees — pure functions) ───────────────────────────────
 export {
   computeCouponDiscount,
   computeLoyaltyRedemption,
@@ -110,27 +90,7 @@ export type {
   PricingSettings,
 } from "./pricing";
 
-// ── Checkout service (main orchestrator) ────────────────────────────────
-export { runCheckout } from "./checkout/checkout-service";
-export type {
-  CheckoutReplayBody,
-  CheckoutServiceCaller,
-  CheckoutServiceContext,
-  CheckoutServiceResult,
-  CheckoutSuccessBody,
-} from "./checkout/checkout-service";
-
-// ── Checkout create ─────────────────────────────────────────────────────
-export { createCheckout } from "./checkout/create-checkout";
-export type {
-  CheckoutFailure,
-  CheckoutInput,
-  CheckoutResult,
-  CheckoutSuccess,
-  CreateCheckoutArgs,
-} from "./checkout/create-checkout";
-
-// ── Checkout pricing (per-vendor) ───────────────────────────────────────
+// ── Checkout pricing (per-vendor — pure functions) ─────────────────────
 export {
   computeCheckoutTotals,
   computeParentServiceFee,
@@ -140,20 +100,3 @@ export type {
   CheckoutTotals,
   VendorCheckoutGroup,
 } from "./checkout/pricing";
-
-// ── Checkout resolve address ────────────────────────────────────────────
-export { pickUserAddress } from "./checkout/resolve-address";
-export type { DeliveryAddressRow } from "./checkout/resolve-address";
-
-// ── Checkout resolve items ──────────────────────────────────────────────
-export { resolveItems } from "./checkout/resolve-items";
-export type {
-  CatalogResolveInput,
-  ItemResolutionError,
-  ResolvedCatalogItem,
-  ResolvedCheckout,
-  ResolvedVendorGroup,
-  ResolvedVendorItem,
-  ResolveItemsArgs,
-  VendorGroupResolveInput,
-} from "./checkout/resolve-items";

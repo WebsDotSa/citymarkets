@@ -43,16 +43,18 @@ export {
 export type { VerifiedAdminJwt } from "./admin-session";
 
 // ── Admin API guard ─────────────────────────────────────────────────────
+// Pure helpers (no DB). `requireAdminApi` (DB-backed) lives in
+// `admin-api-auth-db.ts` — deep import from server code only.
 export {
   adminForbidden,
   adminHasPermission,
   adminUnauthorized,
-  clearAdminRoleCache,
-  requireAdminApi,
 } from "./admin-api-auth";
-export type { AdminAuthUser } from "./admin-api-auth";
+export type { AdminAuthUser } from "./admin-api-auth-db";
 
 // ── Vendor auth ─────────────────────────────────────────────────────────
+// `verifyVendorRequestWithDb` is server-only (uses @/lib/db / pg).
+// Deep import only from `@/lib/identity/vendor-auth`.
 export {
   clearVendorSessionCache,
   hasMinRole,
@@ -62,16 +64,14 @@ export {
   signVendorSessionToken,
   vendorSessionCookieOptions,
   verifyVendorRequest,
-  verifyVendorRequestWithDb,
 } from "./vendor-auth";
 export type { VendorRole, VendorSession } from "./vendor-auth";
 
 // ── Auth helpers (full user row) ────────────────────────────────────────
-export {
-  createServerSupabaseClientAsync,
-  getServerUser,
-  requireAuth,
-} from "./auth-helpers";
+// Server-only (`next/headers` + Supabase client). Not re-exported from the
+// public barrel to keep it out of the middleware + client-component bundles.
+// Import from `@/lib/identity/auth-helpers` directly when needed.
+// export { createServerSupabaseClientAsync, getServerUser, requireAuth } from "./auth-helpers";
 
 // ── Cookie names ────────────────────────────────────────────────────────
 export {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireAuth } from '@/lib/identity';
+import { requireAuth } from '@/lib/identity/auth-helpers';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 

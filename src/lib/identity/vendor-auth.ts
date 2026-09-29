@@ -1,8 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getVendorJwtSecretBytes, isCookieSecure } from "@/lib/env";
-import { query } from "@/lib/db";
-import type { QueryResult } from "pg";
 import { VENDOR_SESSION_COOKIE } from "./auth-cookie-name";
 import { createRoleCache, type RoleCache } from "./auth/role-cache";
 import { signJwt, verifyJwt } from "./auth/jwt-helper";
@@ -99,70 +97,12 @@ export function clearVendorSessionCache(staffId?: string): void {
   vendorSessionCache.clear(staffId);
 }
 
-export async function verifyVendorRequestWithDb(
-  request: NextRequest
-): Promise<VendorSession | null> {
-  const session = await verifyVendorRequest(request);
-  if (!session) return null;
-
-  // Verify vendor still exists, staff is still active, and the JWT's
-  // `token_version` still matches the DB. Incrementing `token_version`
-  // in the DB immediately invalidates outstanding tokens (forced
-  // logout, role demotion, vendor suspension).
-  const cached = vendorSessionCache.get(session.staffId);
-  if (cached) {
-    if (!cached.isActive || !cached.vendorIsActive) return null;
-    // We don't have the JWT's token_version here because the JWT
-    // doesn't carry it; trust the cache for role/active, the DB
-    // lookup below is what would surface a token_version bump.
-  }
-
-  const result = (await query(
-    `SELECT vs.id, vs.email, vs.full_name_ar, vs.full_name_en, vs.role, vs.permissions, vs.is_active,
-            vs.token_version,
-            v.id as vendor_id, v.slug as vendor_slug, v.is_active as vendor_is_active
-     FROM vendor_staff vs
-     JOIN vendors v ON vs.vendor_id = v.id
-     WHERE vs.id = $1 AND vs.vendor_id = $2`,
-    [session.staffId, session.vendorId]
-  )) as QueryResult;
-
-  if (result.rows.length === 0) {
-    vendorSessionCache.clear(session.staffId);
-    return null;
-  }
-
-  const staff = result.rows[0];
-  if (!staff.is_active || !staff.vendor_is_active) {
-    vendorSessionCache.clear(session.staffId);
-    return null;
-  }
-
-  // Role-change detection: if the JWT's role no longer matches the DB,
-  // reject so a demoted viewer cannot keep manager powers until the
-  // JWT naturally expires (8h).
-  if (staff.role !== session.role) {
-    vendorSessionCache.clear(session.staffId);
-    return null;
-  }
-
-  vendorSessionCache.set(session.staffId, {
-    role: staff.role as VendorRole,
-    isActive: staff.is_active === true,
-    vendorIsActive: staff.vendor_is_active === true,
-    tokenVersion: staff.token_version ?? 1,
-  });
-
-  return {
-    vendorId: staff.vendor_id,
-    vendorSlug: staff.vendor_slug,
-    staffId: staff.id,
-    email: staff.email,
-    fullName: staff.full_name_ar || staff.full_name_en || staff.email,
-    role: staff.role as VendorRole,
-    permissions: staff.permissions || [],
-  };
-}
+// `verifyVendorRequestWithDb` (DB-backed re-verification) lives in
+// `vendor-auth-with-db.ts` to keep `@/lib/db` (pg transitively) out of
+// this module — the barrel `@/lib/identity` re-exports functions from
+// here, and client components transitively pull in the barrel. Import
+// the DB-backed variant directly from
+// `@/lib/identity/vendor-auth-with-db` when needed.
 
 export function vendorSessionCookieOptions() {
   return {

@@ -27,8 +27,8 @@ import {
   type DeviceType,
   type PublicHomeLayout,
   type Section,
-} from '@/lib/catalog';
-import { getCachedHomeLayout } from '@/lib/catalog';
+} from '@/lib/catalog/home-layout-types';
+import { getCachedHomeLayout } from '@/lib/catalog/home-layout-cache';
 
 // Cache-Control: short so admin edits propagate fast even if the in-process
 // cache invalidation missed (e.g. across multiple instances).

@@ -25,13 +25,15 @@ vi.mock("@/lib/app-settings", () => ({
   getStoreStatusSettings: vi.fn(async () => ({ is_open: true, message: null })),
 }));
 
-vi.mock('@/lib/delivery', () => ({
+vi.mock('@/lib/delivery/delivery-hours', () => ({
   getDeliveryHours: vi.fn(async () => ({
     open_time: "08:00",
     close_time: "23:00",
     closed_message: null,
   })),
   evaluateHours: vi.fn(() => ({ open: true, message: null })),
+}));
+vi.mock('@/lib/delivery/vendor-closed-gate', () => ({
   checkClosedVendorsInCart: vi.fn(async () => ({ closed: [], message: null })),
 }));
 
@@ -92,9 +94,9 @@ vi.mock("@/lib/push", () => ({
   sendPushToUser: vi.fn(async () => undefined),
 }));
 
-import { runCheckout } from '@/lib/orders';
+import { runCheckout } from '@/lib/orders/checkout/checkout-service';
 import { getStoreStatusSettings } from "@/lib/app-settings";
-import { evaluateHours, getDeliveryHours } from '@/lib/delivery';
+import { evaluateHours, getDeliveryHours } from '@/lib/delivery/delivery-hours';
 
 beforeEach(() => {
   vi.clearAllMocks();

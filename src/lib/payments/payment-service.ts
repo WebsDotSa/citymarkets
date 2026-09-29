@@ -21,17 +21,26 @@
 // src/lib/checkout/checkout-service.ts.
 
 import type { PoolClient } from "pg";
-import { pool } from "@/lib/db";
-import {
-  checkRateLimit,
-  type RateLimitConfig,
-  type RateLimitResult,
-  createRateLimitHeaders,
-} from "@/lib/rate-limit";
+import type { RateLimitConfig, RateLimitResult } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { getOrderPaymentAction } from '@/lib/orders';
 import type { NextRequest } from "next/server";
+
+// Inlined from `@/lib/rate-limit` so this module can avoid a top-level
+// dep on the redis client (`@redis/client`). The barrel `@/lib/payments`
+// is imported by client components (bank-transfer-card.tsx → BANK_TRANSFER_DETAILS);
+// keeping redis out of that path matters for the Turbopack build.
+function buildRateLimitHeaders(result: RateLimitResult): Record<string, string> {
+  const headers: Record<string, string> = {
+    "X-RateLimit-Remaining": result.remaining.toString(),
+    "X-RateLimit-Reset": result.resetAt.toString(),
+  };
+  if (!result.allowed && result.retryAfterMs) {
+    headers["Retry-After"] = Math.ceil(result.retryAfterMs / 1000).toString();
+  }
+  return headers;
+}
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const MAX_IDEMPOTENCY_KEY = 64;
@@ -87,6 +96,10 @@ export async function applyPaymentRateLimits(
   | { kind: "ok" }
   | { kind: "rate_limited"; by: "user" | "ip"; result: RateLimitResult }
 > {
+  // Dynamic imports keep pg + redis out of the client/edge bundle. This
+  // file is re-exported from `@/lib/payments`, which client components
+  // (e.g. bank-transfer-card.tsx → BANK_TRANSFER_DETAILS) import from.
+  const { checkRateLimit } = await import("@/lib/rate-limit");
   const userLimit = await checkRateLimit(userId, userConfig);
   if (!userLimit.allowed) {
     return { kind: "rate_limited", by: "user", result: userLimit };
@@ -161,6 +174,7 @@ export async function authorizeOrderForPayment(args: {
   | { kind: "ineligible"; error: string }
   | { kind: "invalid_total" }
 > {
+  const { pool } = await import("@/lib/db");
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -251,7 +265,7 @@ export function rateLimitResponseHeaders(
   result: RateLimitResult,
 ): HeadersInit {
   const headers: Record<string, string> = {};
-  for (const [key, value] of Object.entries(createRateLimitHeaders(result))) {
+  for (const [key, value] of Object.entries(buildRateLimitHeaders(result))) {
     headers[key] = String(value);
   }
   headers["X-RateLimit-By"] = by;
@@ -268,6 +282,7 @@ export async function markOrderPaymentFailed(
   parentOrderId: string,
   vendorOrderIds: string[] = [],
 ): Promise<void> {
+  const { pool } = await import("@/lib/db");
   await pool.query(
     `UPDATE orders SET payment_status = 'failed', status = 'cancelled' WHERE id = $1`,
     [parentOrderId],

@@ -7,11 +7,8 @@ import {
   ShoppingCart,
   User,
 } from "lucide-react";
-import type {
-  ChatInputMode,
-  ChatProductResult,
-  MealSuggestion,
-} from '@/lib/catalog';
+import type { ChatInputMode, ChatProductResult } from '@/lib/catalog/ai-chat-client-types';
+import type { MealSuggestion } from '@/lib/catalog/ai-shopping-assistant';
 import { ChatProductResults } from "./chat-product-results";
 
 export type ChatMessage = {

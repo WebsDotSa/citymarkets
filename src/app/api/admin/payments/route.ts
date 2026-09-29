@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAdminApi } from '@/lib/identity';
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { SQL_REVENUE_ELIGIBLE } from '@/lib/orders';
 import { fetchInvoiceDetails, isMoyasarConfigured } from "@/lib/payments/moyasar";
 

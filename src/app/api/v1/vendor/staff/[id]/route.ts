@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, pool } from "@/lib/db";
-import { verifyVendorRequestWithDb, requireVendorRole, type VendorRole } from '@/lib/identity';
+import { requireVendorRole, type VendorRole } from "@/lib/identity";
+import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { error as logError } from "@/lib/logger";
 import { logVendorAudit } from "@/lib/vendor-audit";
-import { clearVendorSessionCache } from '@/lib/identity';
-
+import { clearVendorSessionCache } from "@/lib/identity";
 const VALID_ROLES: VendorRole[] = ["owner", "manager", "staff", "viewer"];
 
 interface RouteContext {

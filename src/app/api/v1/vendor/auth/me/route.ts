@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyVendorRequestWithDb } from '@/lib/identity';
-
+import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
 export async function GET(request: Request) {

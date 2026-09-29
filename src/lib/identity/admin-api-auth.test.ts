@@ -39,9 +39,8 @@ import {
   adminUnauthorized,
   adminForbidden,
   adminHasPermission,
-  clearAdminRoleCache,
-  requireAdminApi,
 } from "./admin-api-auth";
+import { clearAdminRoleCache, requireAdminApi } from "./admin-api-auth-db";
 
 describe("admin-api-auth helpers", () => {
   beforeEach(() => {

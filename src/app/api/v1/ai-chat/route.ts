@@ -3,9 +3,9 @@ import {
   runShoppingAssistant,
   type ChatTurn,
   type MealSuggestion,
-} from '@/lib/catalog';
+} from '@/lib/catalog/ai-shopping-assistant';
 import { runLocalShoppingAssistant } from '@/lib/catalog';
-import { matchProductsFromList, type MatchedProduct } from '@/lib/catalog';
+import { matchProductsFromList, type MatchedProduct } from "@/lib/catalog/product-search";
 import { parseVoiceTranscript } from '@/lib/catalog';
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { checkRateLimitSync } from "@/lib/rate-limit";

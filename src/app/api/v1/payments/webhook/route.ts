@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { pool } from '@/lib/db';
 import { fetchPayment } from '@/lib/payments/moyasar';
-import {
-  awardPointsForOrder,
-  getLoyaltySettings,
-  resolveRedeemForOrder,
-} from '@/lib/orders';
+import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 import {
   recordPaymentEvent,
   finalizePaymentEvent,
@@ -286,7 +282,7 @@ export async function POST(request: NextRequest) {
           // so re-running this branch on a webhook replay is safe.
           // Best-effort: a snapshot miss should never block the payment.
           try {
-            const { markAbandonedCartRecovered } = await import('@/lib/orders');
+            const { markAbandonedCartRecovered } = await import('@/lib/orders/abandoned-carts');
             const guestPhone =
               orderRow.guest_phone != null && orderRow.guest_phone !== ''
                 ? String(orderRow.guest_phone)

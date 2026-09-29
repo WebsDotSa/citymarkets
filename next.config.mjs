@@ -3,7 +3,20 @@ const nextConfig = {
   // TypeScript errors will now block the build (security/quality)
   // Only ignore in CI if needed: typescript: { ignoreBuildErrors: true }
 
-  serverExternalPackages: ['@supabase/supabase-js', '@supabase/ssr'],
+  serverExternalPackages: [
+    '@supabase/supabase-js',
+    '@supabase/ssr',
+    // Server-only deps that pull in Node built-ins (`dns`, `fs`, `net`,
+    // `child_process`, `tls`). Marked external so Turbopack never tries
+    // to bundle them for client components. Even when a barrel re-exports
+    // a server-only module, the bundler short-circuits at this point.
+    'pg',
+    'pg-connection-string',
+    'pgpass',
+    'ioredis',
+    'redis',
+    'bullmq',
+  ],
 
   // Runtime-writable upload subdirectories are populated by the API routes
   // (see src/app/api/admin/upload/route.ts and

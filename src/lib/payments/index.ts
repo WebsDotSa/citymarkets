@@ -37,8 +37,12 @@ export type {
 } from "./moyasar";
 
 // ── Moyasar confirm ─────────────────────────────────────────────────────
-export { confirmMoyasarPaymentForOrder } from "./moyasar-confirm";
-export type { ConfirmMoyasarPaymentResult } from "./moyasar-confirm";
+// Server-only (uses BullMQ via @/lib/queue + DB pool). Deep import only
+// from `@/lib/payments/moyasar-confirm`. Kept out of the public barrel
+// so client bundles (which import `BANK_TRANSFER_DETAILS` from this barrel
+// via bank-transfer-card.tsx) don't pull in Redis deps.
+// export { confirmMoyasarPaymentForOrder } from "./moyasar-confirm";
+// export type { ConfirmMoyasarPaymentResult } from "./moyasar-confirm";
 
 // ── Tamara ──────────────────────────────────────────────────────────────
 export {
@@ -76,20 +80,25 @@ export type {
 } from "./event-ledger";
 
 // ── Payment service (auth, rate limit, lock) ────────────────────────────
-export {
-  applyPaymentRateLimits,
-  authorizeOrderForPayment,
-  commitOrderLock,
-  markOrderPaymentFailed,
-  MAX_IDEMPOTENCY_KEY,
-  ONLINE_RETRY_METHODS,
-  parsePaymentBody,
-  rateLimitResponseHeaders,
-  resolveCaller,
-  rollbackOrderLock,
-  validateOrderId,
-} from "./payment-service";
-export type { AuthorizedOrder, PaymentServiceResult } from "./payment-service";
+// Server-only (uses @/lib/db + @/lib/rate-limit which transitively pulls
+// in redis). Deep import only from `@/lib/payments/payment-service`.
+// Kept out of the public barrel so client bundles (which import
+// `BANK_TRANSFER_DETAILS` via bank-transfer-card.tsx) don't pull in
+// pg or @redis/client.
+// export {
+//   applyPaymentRateLimits,
+//   authorizeOrderForPayment,
+//   commitOrderLock,
+//   markOrderPaymentFailed,
+//   MAX_IDEMPOTENCY_KEY,
+//   ONLINE_RETRY_METHODS,
+//   parsePaymentBody,
+//   rateLimitResponseHeaders,
+//   resolveCaller,
+//   rollbackOrderLock,
+//   validateOrderId,
+// } from "./payment-service";
+// export type { AuthorizedOrder, PaymentServiceResult } from "./payment-service";
 
 // ── Payment methods (UI constants) ─────────────────────────────────────
 export {
