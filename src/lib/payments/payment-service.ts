@@ -273,10 +273,22 @@ export function rateLimitResponseHeaders(
 }
 
 /**
- * Mark an order as payment-failed AND cascade the same status to every
+ * Mark an order's payment_status as failed and cascade the same to every
  * vendor_order child. Used by the checkout + retry routes when the
- * gateway invoice call rejects — keeps the row visible to the customer
- * (so they can retry) but signals the failure to the admin dashboard.
+ * gateway invoice call rejects.
+ *
+ * FIX (P0-5): previously this also wrote `status = 'cancelled'`, which
+ * collapsed the invariant that `payment_status` and `status` are
+ * independent axes. A customer whose Moyasar session failed to open a
+ * checkout URL had their order marked cancelled even though they could
+ * still retry. Worse, vendor children were force-cancelled without
+ * restocking — once a vendor started preparing, the cook never knew to
+ * stop. The retry route (`/api/v1/payments/retry`) now handles the
+ * lifecycle flip on its own.
+ *
+ * NOTE: this writes ONLY payment_status. The retry route is responsible
+ * for any status column change (it explicitly sets `status='pending'`
+ * before opening a new gateway session).
  */
 export async function markOrderPaymentFailed(
   parentOrderId: string,
@@ -284,12 +296,12 @@ export async function markOrderPaymentFailed(
 ): Promise<void> {
   const { pool } = await import("@/lib/db");
   await pool.query(
-    `UPDATE orders SET payment_status = 'failed', status = 'cancelled' WHERE id = $1`,
+    `UPDATE orders SET payment_status = 'failed' WHERE id = $1`,
     [parentOrderId],
   );
   for (const childId of vendorOrderIds) {
     await pool.query(
-      `UPDATE vendor_orders SET payment_status = 'failed', status = 'cancelled' WHERE id = $1`,
+      `UPDATE vendor_orders SET payment_status = 'failed' WHERE id = $1`,
       [childId],
     );
   }
