@@ -9,12 +9,24 @@
  *   - redis.ts       — ioredis singleton with graceful Redis-down fallback
  *   - queues.ts      — BullMQ Queue factory + idempotent job options
  *   - enqueue.ts     — public `enqueueAdminNewOrder` / `enqueueOrderPaidSms`
+ *                      / `enqueueNotifyVendorNewOrder` / `enqueueVendorFanout`
+ *   - loaders.ts     — canonical DB loaders shared by enqueue + workers
  *   - workers.ts     — Worker factory (registered from scripts/worker.ts)
+ *
+ * Server-only: the entire barrel pulls in BullMQ + ioredis. Importing
+ * from a client component would bloat the bundle and break the build
+ * (no `next/webpack` alias for these packages in the client compiler).
  */
+import "server-only";
 
 
 // ── Public enqueue API ──────────────────────────────────────────────────
-export { enqueueAdminNewOrder, enqueueOrderPaidSms, enqueueNotifyVendorNewOrder } from "./enqueue";
+export {
+  enqueueAdminNewOrder,
+  enqueueOrderPaidSms,
+  enqueueNotifyVendorNewOrder,
+  enqueueVendorFanout,
+} from "./enqueue";
 
 // ── Queue state introspection ───────────────────────────────────────────
 export { isQueueEnabled } from "./redis";

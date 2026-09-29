@@ -355,15 +355,12 @@ export async function POST(request: NextRequest) {
     if (paymentDb === "paid") {
       try {
         const { enqueueNotifyVendorNewOrder } = await import("@/lib/queue");
-        const vendorRows = await pool.query<{ vendor_id: string }>(
-          `SELECT vendor_id::text AS vendor_id
-             FROM vendor_orders
-            WHERE parent_order_id = $1`,
-          [orderId]
-        );
-        for (const row of vendorRows.rows) {
+        const { loadOrderVendorIds } = await import("@/lib/queue/loaders");
+        // Shared loader (same SQL as Moyasar webhook; canonical source).
+        const vendorIds = await loadOrderVendorIds(orderId);
+        for (const vendorId of vendorIds) {
           void enqueueNotifyVendorNewOrder({
-            vendorId: row.vendor_id,
+            vendorId,
             orderId,
           });
         }

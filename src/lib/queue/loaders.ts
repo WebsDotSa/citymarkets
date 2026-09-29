@@ -104,3 +104,23 @@ export async function loadPaidSmsArgs(
     recovered_from_abandoned_count: Number(row.recovered_count ?? 0),
   };
 }
+
+/**
+ * Load the list of vendor IDs that participate in a parent order.
+ *
+ * Replaces the verbatim SELECT + loop that previously lived inline in
+ * BOTH `payments/webhook/route.ts` and `payments/tamara/webhook/route.ts`.
+ * Both webhooks now iterate this list and call `enqueueNotifyVendorNewOrder`
+ * per vendor, with the per-vendor granularity preserved for test assertions.
+ *
+ * Returns string[] (vendor_id cast to text at the DB layer).
+ */
+export async function loadOrderVendorIds(
+  orderId: string | number,
+): Promise<string[]> {
+  const { rows } = await pool.query<{ vendor_id: string }>(
+    `SELECT vendor_id::text AS vendor_id FROM vendor_orders WHERE parent_order_id = $1`,
+    [orderId],
+  );
+  return rows.map((r) => r.vendor_id);
+}

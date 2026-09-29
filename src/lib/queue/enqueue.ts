@@ -103,6 +103,33 @@ export async function enqueueNotifyVendorNewOrder(args: {
   return { queued: true, jobId };
 }
 
+/**
+ * Fan-out: enqueue a "new order" notification to every vendor that
+ * participates in a given parent order.
+ *
+ * Replaces the duplicated 6-line vendor-fan-out block that previously
+ * lived inline in BOTH the Moyasar webhook (`payments/webhook/route.ts`)
+ * AND the Tamara webhook (`payments/tamara/webhook/route.ts`). Both
+ * paths now run identical SQL and identical enqueue semantics.
+ *
+ * Must be called AFTER `COMMIT` — enqueueing before commit risks a job
+ * pointing at an order that doesn't exist if the transaction rolls
+ * back. The webhooks invoke this from their post-commit block.
+ */
+export async function enqueueVendorFanout(
+  orderId: string | number,
+): Promise<{ vendors: number }> {
+  const { pool } = await import("@/lib/db");
+  const { rows } = await pool.query<{ vendor_id: string }>(
+    `SELECT vendor_id::text AS vendor_id FROM vendor_orders WHERE parent_order_id = $1`,
+    [orderId],
+  );
+  for (const v of rows) {
+    void enqueueNotifyVendorNewOrder({ vendorId: v.vendor_id, orderId });
+  }
+  return { vendors: rows.length };
+}
+
 // ── Fallback direct-call paths (used when Redis is unavailable) ─────────
 
 async function runNotifyAdminNewOrder(orderId: string | number): Promise<void> {

@@ -426,19 +426,14 @@ export async function POST(request: NextRequest) {
       const orderIdLocal: string = orderId as string;
       try {
         const { enqueueNotifyVendorNewOrder } = await import('@/lib/queue');
-        // Use pool (fresh connection) — the transaction's client is
-        // already released above.
-        const vendorRows = await pool.query<{ vendor_id: string }>(
-          `SELECT vendor_id::text AS vendor_id
-             FROM vendor_orders
-            WHERE parent_order_id = $1`,
-          [orderIdLocal]
-        );
-        for (const row of vendorRows.rows) {
+        const { loadOrderVendorIds } = await import('@/lib/queue/loaders');
+        // Shared loader (same SQL as Tamara webhook; canonical source).
+        const vendorIds = await loadOrderVendorIds(orderIdLocal);
+        for (const vendorId of vendorIds) {
           // void = fire-and-forget; the helper returns immediately
           // (BullMQ enqueue or Redis-disabled inline fallback).
           void enqueueNotifyVendorNewOrder({
-            vendorId: row.vendor_id,
+            vendorId,
             orderId: orderIdLocal,
           });
         }
