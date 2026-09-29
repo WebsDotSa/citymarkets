@@ -80,7 +80,7 @@ npm run db:migrate
 
 # 3. تحقق
 npm run db:drift-report
-npx tsx scripts/migration-diagnostics.ts
+npm run migration:diagnostics
 ```
 
 ### 2.4 تجهيز Object Storage (R2)

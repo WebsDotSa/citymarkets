@@ -49,7 +49,7 @@ psql "$DATABASE_URL" -c "SELECT pg_code, pg_message, COUNT(*) FROM logs.checkout
 
 # 3. تحقق من الـ migration drift
 npm run db:drift-report
-npx tsx scripts/migration-diagnostics.ts
+npm run migration:diagnostics
 ```
 
 **الإصلاح المعتاد:**
@@ -144,7 +144,7 @@ psql "$DATABASE_URL" -f migrations/<previous_known_good>.sql
 
 # 3. تحقق
 npm run db:drift-report
-npx tsx scripts/migration-diagnostics.ts
+npm run migration:diagnostics
 ```
 
 ### 3.2 تراجع deploy
