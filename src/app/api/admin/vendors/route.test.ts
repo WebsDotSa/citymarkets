@@ -182,6 +182,136 @@ describe("POST /api/admin/vendors", () => {
   });
 });
 
+describe("POST owner-row bootstrap (optional credentials)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(requireAdminApi).mockResolvedValue({ admin: ADMIN } as never);
+    vi.mocked(query).mockImplementation(async () => ({ rows: [] }) as never);
+  });
+
+  it("creates vendor + owner row when phone AND password are provided", async () => {
+    const txQuery = vi.fn(async (sql: string) => {
+      if (/INSERT INTO vendors/i.test(sql)) return { rows: [{ id: "v-uuid-1" }] };
+      return { rows: [] };
+    });
+    vi.mocked(pool.connect).mockImplementation(async () => ({
+      query: txQuery,
+      release: vi.fn(),
+    }));
+    const res = await POST(
+      jsonRequest("http://localhost/api/admin/vendors", "POST", {
+        name_ar: "اسم",
+        vendor_type: "food_beverage",
+        login_phone: "500000000",
+        password: "password123",
+      }) as never,
+    );
+    expect(res.status).toBe(200);
+    // The owner INSERT must have been issued on the transaction client.
+    expect(
+      txQuery.mock.calls.some((c) => /INSERT INTO vendor_staff/i.test(c[0] as string)),
+    ).toBe(true);
+  });
+
+  it("creates vendor without owner row when phone is given but password is missing", async () => {
+    const txQuery = vi.fn(async (sql: string) => {
+      if (/INSERT INTO vendors/i.test(sql)) return { rows: [{ id: "v-uuid-1" }] };
+      return { rows: [] };
+    });
+    vi.mocked(pool.connect).mockImplementation(async () => ({
+      query: txQuery,
+      release: vi.fn(),
+    }));
+    const res = await POST(
+      jsonRequest("http://localhost/api/admin/vendors", "POST", {
+        name_ar: "اسم",
+        vendor_type: "food_beverage",
+        login_phone: "500000000",
+      }) as never,
+    );
+    expect(res.status).toBe(200);
+    // The owner INSERT must NOT have been issued — phone alone can't
+    // log in, so we skip the row and the admin can fill the password
+    // in via edit.
+    expect(
+      txQuery.mock.calls.some((c) => /INSERT INTO vendor_staff/i.test(c[0] as string)),
+    ).toBe(false);
+    // The transaction must still COMMIT so the vendor row survives.
+    expect(
+      txQuery.mock.calls.some((c) => /^COMMIT$/i.test((c[0] as string).trim())),
+    ).toBe(true);
+  });
+
+  it("creates vendor without owner row when only login_email is provided (no phone)", async () => {
+    const txQuery = vi.fn(async (sql: string) => {
+      if (/INSERT INTO vendors/i.test(sql)) return { rows: [{ id: "v-uuid-1" }] };
+      return { rows: [] };
+    });
+    vi.mocked(pool.connect).mockImplementation(async () => ({
+      query: txQuery,
+      release: vi.fn(),
+    }));
+    const res = await POST(
+      jsonRequest("http://localhost/api/admin/vendors", "POST", {
+        name_ar: "اسم",
+        vendor_type: "food_beverage",
+        login_email: "owner@example.com",
+      }) as never,
+    );
+    expect(res.status).toBe(200);
+    expect(
+      txQuery.mock.calls.some((c) => /INSERT INTO vendor_staff/i.test(c[0] as string)),
+    ).toBe(false);
+  });
+
+  it("creates vendor without owner row when no owner fields are provided", async () => {
+    const txQuery = vi.fn(async (sql: string) => {
+      if (/INSERT INTO vendors/i.test(sql)) return { rows: [{ id: "v-uuid-1" }] };
+      return { rows: [] };
+    });
+    vi.mocked(pool.connect).mockImplementation(async () => ({
+      query: txQuery,
+      release: vi.fn(),
+    }));
+    const res = await POST(
+      jsonRequest("http://localhost/api/admin/vendors", "POST", {
+        name_ar: "اسم",
+        vendor_type: "food_beverage",
+      }) as never,
+    );
+    expect(res.status).toBe(200);
+    expect(
+      txQuery.mock.calls.some((c) => /INSERT INTO vendor_staff/i.test(c[0] as string)),
+    ).toBe(false);
+  });
+
+  it("rejects password shorter than 8 chars when provided (400)", async () => {
+    const txQuery = vi.fn(async (sql: string) => {
+      if (/INSERT INTO vendors/i.test(sql)) return { rows: [{ id: "v-uuid-1" }] };
+      return { rows: [] };
+    });
+    vi.mocked(pool.connect).mockImplementation(async () => ({
+      query: txQuery,
+      release: vi.fn(),
+    }));
+    const res = await POST(
+      jsonRequest("http://localhost/api/admin/vendors", "POST", {
+        name_ar: "اسم",
+        vendor_type: "food_beverage",
+        login_phone: "500000000",
+        password: "short",
+      }) as never,
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toMatch(/8 أحرف/);
+    // The transaction must ROLLBACK so the vendor row doesn't survive.
+    expect(
+      txQuery.mock.calls.some((c) => /^ROLLBACK$/i.test((c[0] as string).trim())),
+    ).toBe(true);
+  });
+});
+
 describe("PUT /api/admin/vendors?id=...", () => {
   beforeEach(() => {
     vi.clearAllMocks();
