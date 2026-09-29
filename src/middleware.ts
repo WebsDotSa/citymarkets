@@ -1,11 +1,16 @@
-// Markdown for Agents - Content Negotiation Proxy
+// Content-negotiation middleware — proxy layer for auth, CSRF, CSP nonce.
 // https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/
 // RFC 9727 Section 3
 
-// In Next.js 16, `middleware.ts` is deprecated in favour of `proxy.ts`.
-// Proxy defaults to the Node.js runtime — required here because the customer
-// session JWT is verified with the same `JWT_SECRET` available to Node API
-// routes (via `process.env.JWT_SECRET` populated by scripts/start.sh).
+// In Next.js 16, the new convention is `proxy.ts`, but Turbopack 16.2.11 has
+// a regression that does NOT register `proxy.ts` in
+// `.next/server/middleware-manifest.json` (it stays empty `{}`). The runtime
+// request pipeline reads the manifest, so the proxy never fires. Renaming
+// to the legacy `middleware.ts` (still supported in Next 16) restores
+// registration. Defaults to the Node.js runtime — required because the
+// customer session JWT is verified with the same `JWT_SECRET` available to
+// Node API routes (via `process.env.JWT_SECRET` populated by
+// scripts/start.sh).
 
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
@@ -506,8 +511,27 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
+  // Force Node.js runtime — the customer session JWT is verified with
+  // `process.env.JWT_SECRET` and the `pg` driver (transitively) reaches
+  // `node:util/types`. The Edge runtime doesn't expose those built-ins,
+  // which surfaces as `TypeError: Native module not found: node:util/types`
+  // on the very first request. `middleware.ts` defaults to Edge; the
+  // explicit `nodejs` here is required.
+  runtime: "nodejs",
   matcher: [
     // Apply to all routes
     "/((?!_next/static|_next/image|favicon.ico|images/|fonts/).*)",
   ],
 };
+
+// Next.js 16 prefers the `proxy.ts` filename + `proxy()` export, but
+// Turbopack 16.2.11 has a regression that does NOT register `proxy.ts`
+// in `.next/server/middleware-manifest.json` (it ships `"middleware": {}`).
+// Renaming the file to the legacy `src/middleware.ts` AND re-exporting
+// under the legacy `middleware` name restores registration. The function
+// is still named `proxy` because that's how every internal reference and
+// architectural doc talks about it.
+//
+// See scripts/proxy-runtime-guard.ts for the runtime check.
+export { proxy as middleware };
+export default proxy;

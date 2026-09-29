@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * Regression guard for the proxy.ts ↔ StoreChrome contract.
+ * Regression guard for the middleware/proxy ↔ StoreChrome contract.
  *
  * The known bug, recapped from project memory:
  *   - proxy.ts set x-pathname ONLY on `response.headers` (post-cycle).
@@ -14,13 +14,18 @@ import { join } from "node:path";
  * The fix moves x-pathname into the `forwardedHeaders` passed to
  * `NextResponse.next({ request: { headers } })`. These checks are
  * intentionally structural (source-level) rather than runtime because
- * proxy.ts depends on cookies, CSRF state, JWT — heavy to unit-test
+ * the middleware depends on cookies, CSRF state, JWT — heavy to unit-test
  * in isolation. We pin the contract here; a developer that touches
  * the forwardedHeaders block will break this test and have to read
  * the memory note explaining why.
+ *
+ * Note: file is now `src/middleware.ts` (was `src/proxy.ts`). The legacy
+ * filename is required because Turbopack 16.2.11 has a regression that
+ * drops `proxy.ts` from `.next/server/middleware-manifest.json`. See
+ * scripts/proxy-runtime-guard.ts for the runtime check.
  */
-describe("proxy.ts → StoreChrome pathname contract", () => {
-  const proxySrc = readFileSync(join(process.cwd(), "src/proxy.ts"), "utf8");
+describe("middleware → StoreChrome pathname contract", () => {
+  const proxySrc = readFileSync(join(process.cwd(), "src/middleware.ts"), "utf8");
 
   it("forwards x-pathname on the request headers (not just the response)", () => {
     // The contract: forwardedHeaders.set("x-pathname", ...) must exist.

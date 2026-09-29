@@ -10,7 +10,7 @@ const addAddressFlowSrc = readFileSync(
   join(process.cwd(), "src/components/location/add-address-flow.tsx"),
   "utf8",
 );
-const proxySrc = readFileSync(join(process.cwd(), "src/proxy.ts"), "utf8");
+const proxySrc = readFileSync(join(process.cwd(), "src/middleware.ts"), "utf8");
 
 describe("delivery address CSRF contract", () => {
   it("uses csrfFetch for address mutations", () => {

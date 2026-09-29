@@ -93,25 +93,16 @@ const nextConfig = {
   // non-API routes to /ar/<path>, but the project has no [locale] segment
   // so those 307s always 404. Strip the /ar/ and /en/ prefix transparently
   // so the user lands on the real route regardless of detected locale.
-  // This is a fallback that runs WITHOUT the proxy (which is not currently
-  // being registered in the runtime middleware-manifest in this project).
   async redirects() {
     return [
-      // Locale prefix stripping (existing).
+      // Locale prefix stripping.
       { source: '/ar/:path*', destination: '/:path*', permanent: false, has: [{ type: 'header', key: 'accept', value: '(?!text/markdown).*' }] },
       { source: '/en/:path*', destination: '/:path*', permanent: false, has: [{ type: 'header', key: 'accept', value: '(?!text/markdown).*' }] },
-
-      // Legacy aliases → canonical routes. Routed at the next.config
-      // layer because src/proxy.ts is currently NOT registered in the
-      // runtime middleware-manifest (see .next/server/middleware-manifest.json
-      // shipping with "middleware": {}). Without these the smoke test
-      // reports three recurring failures:
-      //   - /login         returns 200 (page renders null + noindex meta)
-      //   - /auth/register returns 200 (page renders LoginPage directly)
-      //   - /direct-order  returns 404 (Server Component permanentRedirect
-      //                          is unreliable under the unregistered proxy)
-      // 308 (permanent) so search engines transfer ranking signals and
-      // curl/fetch/iOS WebKit follow on the first hop.
+      // Legacy aliases (/login, /auth/register, /direct-order) → canonical
+      // routes. The proxy (src/middleware.ts) also handles these at runtime
+      // via the in-memory alias map; this layer is the build-time fallback
+      // for environments where the proxy is bypassed. Belt-and-braces —
+      // removing it should not change observed redirects.
       { source: '/login', destination: '/auth/login', permanent: true },
       { source: '/login/', destination: '/auth/login', permanent: true },
       { source: '/auth/register', destination: '/auth/signup', permanent: true },

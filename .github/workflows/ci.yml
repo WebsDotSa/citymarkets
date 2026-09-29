@@ -95,19 +95,16 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
 
-      - name: Proxy.ts runtime registration guard
+      - name: Middleware.ts runtime registration guard
         # Fails loudly if .next/server/middleware-manifest.json ships empty.
-        # Root cause of the /login + /auth/register smoke failures:
-        # src/proxy.ts is bundled but Turbopack drops the middleware
-        # registration (see docs/09 "Operational gaps"). Until that's fixed,
-        # CI pins the manifest must be non-empty.
-        #
-        # Soft warning by design: the build emits "Proxy (Middleware)" but
-        # the manifest ships empty due to a Turbopack regression. We log it
-        # as ::warning so a developer notices but the rest of CI runs.
-        # Re-promote to npm run proxy:guard (without --soft) when the
-        # upstream bug is fixed so a future regression fails the build.
-        run: npm run proxy:guard -- --soft
+        # Root cause of the previous /login + /auth/register smoke failures:
+        # the project used `proxy.ts` (Next 16's renamed middleware) but
+        # Turbopack 16.2.11 drops proxy.ts from the manifest. Renamed to
+        # `src/middleware.ts` (legacy name, still supported in Next 16) —
+        # that fixes registration and restores the CSRF/auth gates at
+        # runtime. The guard runs WITHOUT --soft now that the regression
+        # is fixed, so any future drift fails the build.
+        run: npm run proxy:guard
 
       - name: Upload coverage
         if: always()

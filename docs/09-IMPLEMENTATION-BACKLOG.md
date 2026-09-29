@@ -101,17 +101,21 @@
       is shipped. DB query failures inside the scheduled tasks are
       non-fatal (logged, worker continues) so an empty CI Postgres
       doesn't flip the job red for non-DB reasons.
-- [ ] **`src/proxy.ts` is not registered in `.next/server/middleware-manifest.json`**
-      at runtime (Turbopack regression). The runtime manifest ships with
-      `"middleware": {}` so CSRF/auth gates do not fire. The legacy-alias
-      smoke failures (`/direct-order`, `/login`, `/auth/register`) are
-      worked around by `next.config.mjs` redirects; the proxy root cause
-      requires either a Next.js patch upgrade or a downgrade to `middleware.ts`.
-      Tracked in `.next/server/middleware-manifest.json` (read at build time).
-- [ ] **`src/proxy.ts` runtime registration guard** — added to CI in
-      the 2026-09-28 remediation pass as `npm run proxy:guard` (run with
-      `--soft` in CI today). The script exits non-zero when the runtime
-      manifest is empty. Currently a soft `::warning` in CI because the
-      upstream Turbopack bug is unfixed; re-promote to a bare
-      `npm run proxy:guard` (no `--soft`) when resolved so a future
-      regression fails the build instead of slipping through.
+- [x] **`src/proxy.ts` is not registered in `.next/server/middleware-manifest.json`**
+      at runtime (Turbopack regression). **Resolved 2026-09-29 by renaming
+      `src/proxy.ts` → `src/middleware.ts`.** Next.js 16 still recognises
+      the legacy filename and now correctly populates both manifest files
+      (`middleware-manifest.json` and `middleware/middleware-manifest.json`)
+      with the middleware entry, matchers, and `nodejs` runtime. The
+      proxy's `x-session-id`, `x-nonce`, and `x-pathname` headers are
+      observed at runtime; `/login` → 308 → `/auth/login`, `/direct-order`
+      → 308 → `/orders/direct`, `/auth/register` → 308 → `/auth/signup`.
+      CSRF double-submit gate and CSP nonce per-request injection are
+      active again.
+- [x] **`proxy.ts` runtime registration guard** — added to CI in
+      the 2026-09-28 remediation pass as `npm run proxy:guard`. The
+      2026-09-29 fix promoted it from `--soft` to a bare `npm run proxy:guard`
+      so a future regression fails the build instead of slipping through.
+      The guard now also inspects the entry's `name` field (Next 16
+      convention) rather than only the manifest key, so it works against
+      either filename.
