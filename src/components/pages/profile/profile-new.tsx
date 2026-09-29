@@ -1,5 +1,16 @@
 "use client";
 
+/**
+ * ProfileNew — customer profile page with order history + wishlist + addresses.
+ *
+ * The `-new` suffix is intentional (audit H34): this file replaced an
+ * older single-page `profile.tsx` flow during the profile-page redesign.
+ * The legacy file was removed; the new one kept the `-new` discriminator
+ * so the route import at src/app/profile/page.tsx + the existing test
+ * file at ./profile-new.test.tsx don't need to change. Do NOT rename
+ * without auditing the 2 importers.
+ */
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

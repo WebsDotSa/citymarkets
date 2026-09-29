@@ -1,5 +1,15 @@
 "use client";
 
+/**
+ * OrdersNew — customer-facing order list with timeline + retry CTAs.
+ *
+ * The `-new` suffix is intentional (audit H34): this file replaced an
+ * older single-page `orders.tsx` flow during the orders-page redesign
+ * (see docs/01). The legacy file was removed; the new one kept the
+ * `-new` discriminator so the route import at src/app/orders/page.tsx
+ * doesn't need to change. Do NOT rename without auditing the 1 importer.
+ */
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

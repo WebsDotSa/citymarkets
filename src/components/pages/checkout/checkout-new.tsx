@@ -1,5 +1,17 @@
 "use client";
 
+/**
+ * CheckoutNew — the unified multi-vendor checkout experience.
+ *
+ * The `-new` suffix is intentional (audit H34): this file replaced an
+ * older single-vendor `checkout.tsx` flow during the Slice 3 checkout
+ * consolidation (see docs/01). The legacy file was removed; the new
+ * one kept the `-new` discriminator so existing route imports at
+ * src/app/checkout/page.tsx don't need to change. Do NOT rename this
+ * file without auditing the 1 importer + any historical iOS deep links
+ * that may pin the symbol.
+ */
+
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
