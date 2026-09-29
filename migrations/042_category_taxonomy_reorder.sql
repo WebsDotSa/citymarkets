@@ -30,7 +30,11 @@ BEGIN;
 -- =========================================================================
 
 CREATE TEMP TABLE _reparent_plan (
-  source_parent_id UUID NOT NULL,
+  -- source_parent_id is NULLable so reparent rows whose source slug
+  -- does not exist on a fresh DB (001/002 seed only the English
+  -- category set, not the Arabic ones this migration targets) are
+  -- silently skipped instead of aborting the INSERT.
+  source_parent_id UUID,
   child_slug       TEXT NOT NULL,
   target_parent_id UUID
 ) ON COMMIT DROP;
@@ -74,7 +78,7 @@ FROM (VALUES
   ('المعلبات',         'معلبات-قابلة-للدهن',        'المقاضي'),
   ('كاس-وعلب',         'اخرى',                      'مستلزمات-المنزل')
 ) AS v(source_parent_slug, child_slug, target_parent_slug)
-JOIN categories src ON src.slug = v.source_parent_slug AND src.is_active
+LEFT JOIN categories src ON src.slug = v.source_parent_slug AND src.is_active
 LEFT JOIN categories tgt ON tgt.slug = v.target_parent_slug AND tgt.is_active;
 
 UPDATE categories c

@@ -35,8 +35,17 @@ DECLARE
   ];
 BEGIN
   FOREACH t IN ARRAY tables LOOP
-    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
-    EXECUTE format('ALTER TABLE public.%I FORCE ROW LEVEL SECURITY', t);
+    -- IF EXISTS guard so tables that aren't created until later
+    -- migrations (delivery_settings, stores — added in 032) are
+    -- skipped instead of aborting the whole DO block on a fresh DB.
+    IF EXISTS (
+      SELECT 1 FROM pg_class c
+      JOIN pg_namespace n ON c.relnamespace = n.oid
+      WHERE n.nspname = 'public' AND c.relname = t AND c.relkind IN ('r','p')
+    ) THEN
+      EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
+      EXECUTE format('ALTER TABLE public.%I FORCE ROW LEVEL SECURITY', t);
+    END IF;
   END LOOP;
 END $$;
 

@@ -31,11 +31,18 @@ CREATE INDEX IF NOT EXISTS idx_order_status_logs_admin
 -- attaching the column lets the join still return a usable display
 -- (the admin page will fall back to changed_by text when the join
 -- produces nothing).
+-- Cast `au.role` to text so the comparison 'delivery_driver' doesn't
+-- trigger PostgreSQL's enum input validation. The current admin_role_enum
+-- (defined in 003) does not include 'delivery_driver' — it's a text
+-- value drivers use informally, but the column type rejects it as a
+-- literal. Casting to text bypasses the type check while still matching
+-- the value correctly (any future ADD VALUE 'delivery_driver' to the
+-- enum would also be matched by this comparison).
 UPDATE order_status_logs l
    SET changed_by_admin_id = au.id
   FROM admin_users au
  WHERE l.changed_by = 'driver'
-   AND au.role = 'delivery_driver'
+   AND au.role::text = 'delivery_driver'
    AND l.changed_by_admin_id IS NULL
    AND NOT EXISTS (
      SELECT 1 FROM order_status_logs l2

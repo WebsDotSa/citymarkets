@@ -1,4 +1,13 @@
 -- Delivery addresses (supports logged-in user_id or guest_key)
+--
+-- 001 created `addresses` without a `guest_key` column (guest checkout
+-- was added later). The CREATE INDEX below needs that column. To make
+-- this migration apply cleanly on a fresh DB produced by 001 (and
+-- idempotently on production where the column already exists), we
+-- ADD COLUMN IF NOT EXISTS first. Safe to re-run.
+
+ALTER TABLE addresses ADD COLUMN IF NOT EXISTS guest_key VARCHAR(64);
+
 CREATE TABLE IF NOT EXISTS addresses (
   id SERIAL PRIMARY KEY,
   user_id TEXT,

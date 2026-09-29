@@ -22,6 +22,17 @@ CREATE TABLE IF NOT EXISTS loyalty_points (
   updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 001 already created loyalty_transactions with id (UUID), user_id,
+-- points, type (enum), ref_order_id, created_at. The CREATE TABLE
+-- below is a no-op on a fresh DB, but the indexes that follow need
+-- `reason`, `balance_after`, and an `order_id` column. Add them as
+-- ADD COLUMN IF NOT EXISTS so the indexes always have a column to
+-- point at. Safe to re-run on production where the columns already
+-- exist (005 added internal_notes to orders with the same pattern).
+ALTER TABLE loyalty_transactions ADD COLUMN IF NOT EXISTS reason        TEXT;
+ALTER TABLE loyalty_transactions ADD COLUMN IF NOT EXISTS balance_after INTEGER;
+ALTER TABLE loyalty_transactions ADD COLUMN IF NOT EXISTS order_id      UUID;
+
 CREATE TABLE IF NOT EXISTS loyalty_transactions (
   id             BIGSERIAL PRIMARY KEY,
   user_id        UUID NOT NULL,

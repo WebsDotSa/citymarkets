@@ -39,5 +39,27 @@ DROP POLICY IF EXISTS product_reviews_delete ON product_reviews;
 CREATE POLICY product_reviews_delete ON product_reviews
   FOR DELETE USING (true);
 
-GRANT SELECT ON product_reviews TO citymarket_user, marketing_user, ads_labs, popup_user, gadeh_user, safar_user, paperclip, webs_user, medusa, mesh;
+-- Read-only GRANT to a list of historical role names. Some are dead
+-- (ads_labs, popup_user, gadeh_user, safar_user, paperclip, webs_user,
+-- medusa, mesh) and only exist in the original production env. We
+-- wrap each in a per-role DO block so an undefined role on a fresh DB
+-- raises and is swallowed instead of aborting the whole GRANT.
+DO $$
+DECLARE
+  r text;
+  reader_roles TEXT[] := ARRAY[
+    'marketing_user', 'ads_labs', 'popup_user', 'gadeh_user',
+    'safar_user', 'paperclip', 'webs_user', 'medusa', 'mesh'
+  ];
+BEGIN
+  FOREACH r IN ARRAY reader_roles LOOP
+    BEGIN
+      EXECUTE format('GRANT SELECT ON product_reviews TO %I', r);
+    EXCEPTION WHEN undefined_object THEN
+      RAISE NOTICE 'role % does not exist — skipping GRANT', r;
+    END;
+  END LOOP;
+END $$;
+
+GRANT SELECT ON product_reviews TO citymarket_user;
 GRANT INSERT, UPDATE, DELETE ON product_reviews TO citymarket_user;

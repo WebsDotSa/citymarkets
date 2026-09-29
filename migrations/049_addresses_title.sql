@@ -17,6 +17,13 @@
 -- last resort) so nothing renders empty after the deploy.
 -- ════════════════════════════════════════════════════════════════════════════
 
+-- 001's addresses table does not have `description` (it was added in
+-- 004 via CREATE TABLE IF NOT EXISTS, which is a no-op on a fresh DB
+-- because 001 already created addresses). Add it here so the back-fill
+-- below has a column to read from. Safe to re-run on production.
+ALTER TABLE addresses
+  ADD COLUMN IF NOT EXISTS description TEXT;
+
 ALTER TABLE addresses
   ADD COLUMN IF NOT EXISTS title TEXT;
 
