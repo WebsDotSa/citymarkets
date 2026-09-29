@@ -177,7 +177,6 @@ describe("GET /api/v1/vendor/orders", () => {
     const calls = vi.mocked(query).mock.calls;
     const startCall = calls.find((c) => String(c[1]).includes("2026-01-01"));
     const endCall = calls.find((c) =>
-      String(c[1]).some?.((s: string) => s?.includes("2026-01-31")) ||
       String(c[1]).includes("2026-01-31"),
     );
     expect(startCall).toBeDefined();

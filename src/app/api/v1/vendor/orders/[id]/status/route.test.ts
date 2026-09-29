@@ -14,6 +14,7 @@
  *   9. UPDATE WHERE always pins vendor_id to session.vendorId
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
 
 const SESSION = {
   vendorId: "00000000-0000-0000-0000-0000000000a3",
@@ -70,7 +71,7 @@ import { query } from "@/lib/db";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { PATCH } from "./route";
 
-function patchReq(orderId: string, body: unknown): Request {
+function patchReq(orderId: string, body: unknown): NextRequest {
   return new Request(
     `http://localhost/api/v1/vendor/orders/${orderId}/status`,
     {
@@ -78,7 +79,7 @@ function patchReq(orderId: string, body: unknown): Request {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     },
-  );
+  ) as unknown as NextRequest;
 }
 
 function setupSmartMock(opts: {
@@ -86,43 +87,42 @@ function setupSmartMock(opts: {
   items?: { product_id: string | null; quantity: number }[];
 }) {
   let currentStatus = opts.initialOrderStatus ?? "pending";
-  vi.mocked(query).mockImplementation(
-    async (sql: string, params: unknown[] = []) => {
-      const norm = String(sql).replace(/\s+/g, " ").trim().toUpperCase();
+  const impl = async (sql: string, params: unknown[] = []) => {
+    const norm = String(sql).replace(/\s+/g, " ").trim().toUpperCase();
 
-      // SELECT current status
-      if (norm.startsWith("SELECT") && norm.includes("FROM VENDOR_ORDERS") && !norm.includes("DAILY_STATS")) {
-        return { rows: [{ id: ORDER.id, status: currentStatus }] };
-      }
+    // SELECT current status
+    if (norm.startsWith("SELECT") && norm.includes("FROM VENDOR_ORDERS") && !norm.includes("DAILY_STATS")) {
+      return { rows: [{ id: ORDER.id, status: currentStatus }] };
+    }
 
-      // SELECT items for stock restore
-      if (norm.includes("FROM VENDOR_ORDER_ITEMS")) {
-        const items = opts.items ?? [];
-        return { rows: items.filter((i) => i.product_id != null) };
-      }
+    // SELECT items for stock restore
+    if (norm.includes("FROM VENDOR_ORDER_ITEMS")) {
+      const items = opts.items ?? [];
+      return { rows: items.filter((i) => i.product_id != null) };
+    }
 
-      // UPDATE vendor_orders status (RETURNING)
-      if (norm.startsWith("UPDATE VENDOR_ORDERS")) {
-        const newStatus = String(params[0] ?? "");
-        currentStatus = newStatus;
-        return {
-          rows: [{ ...ORDER_UPDATED, status: newStatus }],
-        };
-      }
+    // UPDATE vendor_orders status (RETURNING)
+    if (norm.startsWith("UPDATE VENDOR_ORDERS")) {
+      const newStatus = String(params[0] ?? "");
+      currentStatus = newStatus;
+      return {
+        rows: [{ ...ORDER_UPDATED, status: newStatus }],
+      };
+    }
 
-      // UPDATE vendor_products stock (no return)
-      if (norm.startsWith("UPDATE VENDOR_PRODUCTS")) {
-        return { rows: [] };
-      }
-
-      // INSERT/UPDATE vendor_daily_stats
-      if (norm.includes("VENDOR_DAILY_STATS")) {
-        return { rows: [] };
-      }
-
+    // UPDATE vendor_products stock (no return)
+    if (norm.startsWith("UPDATE VENDOR_PRODUCTS")) {
       return { rows: [] };
-    },
-  );
+    }
+
+    // INSERT/UPDATE vendor_daily_stats
+    if (norm.includes("VENDOR_DAILY_STATS")) {
+      return { rows: [] };
+    }
+
+    return { rows: [] };
+  };
+  (vi.mocked(query) as unknown as { mockImplementation: (fn: typeof impl) => void }).mockImplementation(impl);
 }
 
 describe("PATCH /api/v1/vendor/orders/[id]/status — auth & validation", () => {
