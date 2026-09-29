@@ -23,6 +23,26 @@ export interface ConfirmMoyasarPaymentResult {
   duplicate?: boolean;
 }
 
+/**
+ * Load the canonical (status, payment_status) tuple for an order.
+ *
+ * P3-2 (duplicate SQL loader): three call sites in this file used
+ * to issue the same `SELECT status, payment_status FROM orders WHERE
+ * id = $1` query inline. Centralising it here means a future schema
+ * change (e.g. moving to a read replica, splitting read/write pools)
+ * touches one function instead of three.
+ */
+async function fetchOrderStatuses(orderId: string): Promise<{
+  status: string;
+  payment_status: string;
+}> {
+  const result = await pool.query<{ status: string; payment_status: string }>(
+    `SELECT status, payment_status FROM orders WHERE id = $1`,
+    [orderId],
+  );
+  return result.rows[0] ?? { status: "unknown", payment_status: "unknown" };
+}
+
 /** تحقق من دفع ميسر (نموذج MPF) وربطه بالطلب */
 export async function confirmMoyasarPaymentForOrder(params: {
   orderId: string;
@@ -121,14 +141,11 @@ export async function confirmMoyasarPaymentForOrder(params: {
     if (ledgerResult === 'duplicate') {
       // Idempotent ack — payment_events already records this event.
       await client.query('COMMIT');
-      const updated = await pool.query<{ status: string; payment_status: string }>(
-        `SELECT status, payment_status FROM orders WHERE id = $1`,
-        [orderId]
-      );
+      const updated = await fetchOrderStatuses(orderId);
       return {
         success: true,
-        payment_status: updated.rows[0]?.payment_status || paymentStatus,
-        order_status: updated.rows[0]?.status,
+        payment_status: updated.payment_status || paymentStatus,
+        order_status: updated.status,
         duplicate: true,
       };
     }
@@ -182,10 +199,7 @@ export async function confirmMoyasarPaymentForOrder(params: {
     client.release();
   }
 
-  const updated = await pool.query<{ status: string; payment_status: string }>(
-    `SELECT status, payment_status FROM orders WHERE id = $1`,
-    [orderId]
-  );
+  const updated = await fetchOrderStatuses(orderId);
 
   // Recover any abandoned carts that belong to this customer.
   // Idempotent on retry — the helper uses
@@ -222,7 +236,7 @@ export async function confirmMoyasarPaymentForOrder(params: {
 
   return {
     success: true,
-    payment_status: updated.rows[0]?.payment_status || paymentStatus,
-    order_status: updated.rows[0]?.status,
+    payment_status: updated.payment_status || paymentStatus,
+    order_status: updated.status,
   };
 }
