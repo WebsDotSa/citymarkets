@@ -276,9 +276,11 @@ export function CatalogPage() {
             <p className="text-xs text-gray-400 mb-2 font-medium">الأقسام الفرعية</p>
             <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
               <button
-                onClick={() => setSelectedCategory(selectedCategory.split(',')[0])}
+                onClick={() => setSelectedCategory(activeGroup?.slugs?.[0] || "")}
                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  !selectedCategory.includes(',') ? "bg-primary text-white" : "bg-gray-100 text-gray-600"
+                  selectedCategory === "" || selectedCategory === (activeGroup?.slugs?.[0] ?? null)
+                    ? "bg-primary text-white"
+                    : "bg-gray-100 text-gray-600"
                 }`}
               >
                 الكل

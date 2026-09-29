@@ -104,7 +104,11 @@ describe("confirmMoyasarPaymentForOrder", () => {
       paymentId: "pay_1",
     });
     expect(res.success).toBe(false);
-    expect(res.error).toBe("Moyasar HTTP 404");
+    // BUGFIX (audit 2026-09-29): the raw "Moyasar HTTP 404" string
+    // used to leak from the gateway. fetchPayment now sanitises it
+    // to the generic Arabic 4xx message; the raw form is logged
+    // server-side only.
+    expect(res.error).toBe("تعذّر إنشاء الفاتورة، حاول مرة أخرى");
     // No DB writes should have happened.
     expect(calls.find((c) => /UPDATE orders/i.test(c.sql))).toBeUndefined();
   });

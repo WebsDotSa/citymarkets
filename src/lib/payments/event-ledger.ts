@@ -46,8 +46,35 @@ export async function recordPaymentEvent(
   client: PoolClient,
   args: RecordPaymentEventArgs,
 ): Promise<RecordPaymentEventResult> {
-  const rawPayload =
-    typeof args.raw === "string" ? args.raw : JSON.stringify(args.raw);
+  // BUGFIX (audit 2026-09-29): wrap JSON.stringify so a circular ref or
+  // BigInt in the gateway payload doesn't bubble up as an unhandled
+  // exception that hides the real webhook failure from operators. We
+  // log the failure path but persist a safe placeholder so the ledger
+  // stays complete (the INSERT is the whole point — losing it would
+  // break idempotency on the next replay).
+  let rawPayload: string;
+  if (typeof args.raw === "string") {
+    rawPayload = args.raw;
+  } else {
+    try {
+      rawPayload = JSON.stringify(args.raw);
+    } catch (serialiseErr) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[payment-events] raw payload not JSON-serialisable, storing placeholder",
+        { invoiceId: args.invoiceId, gateway: args.gateway, eventType: args.eventType },
+        serialiseErr,
+      );
+      rawPayload = JSON.stringify({
+        __unserialisable: true,
+        type: typeof args.raw,
+        constructor:
+          args.raw && typeof args.raw === "object"
+            ? (args.raw as { constructor?: { name?: string } }).constructor?.name
+            : null,
+      });
+    }
+  }
   try {
     await client.query(
       `INSERT INTO payment_events

@@ -92,6 +92,18 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           { status: 403 }
         );
       }
+      // BUGFIX (audit 2026-09-29): managers can edit staff at-or-below
+      // their own level. They cannot promote another staff member TO
+      // manager — that would let a single compromised manager create a
+      // peer co-manager with the same privileges (privilege escalation
+      // via the role-change surface). Only owners can mint managers.
+      if (body.role === "manager" && session.role !== "owner") {
+        await client.query("ROLLBACK");
+        return NextResponse.json(
+          { error: "فقط المالك يمكنه ترقية أحد إلى مدير" },
+          { status: 403 }
+        );
+      }
       updates.push(`role = $${p++}`);
       values.push(body.role);
       roleChanged = true;

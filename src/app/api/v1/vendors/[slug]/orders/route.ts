@@ -3,6 +3,9 @@ import { randomInt } from "node:crypto";
 import { query, pool } from "@/lib/db";
 import { getCustomerUserIdFromRequest } from '@/lib/identity';
 import { checkRateLimit, createRateLimitHeaders, GENERAL_API_CONFIG } from "@/lib/rate-limit";
+// BUGFIX (audit 2026-09-29): replace the local isStoreOpen helper with
+// the canonical Riyadh-tz-aware one. See siblings.
+import { isVendorOpen, parseVendorHours } from "@/lib/delivery/vendor-store-hours";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
@@ -277,7 +280,7 @@ export async function POST(
     const vendor = vendorResult.rows[0];
 
     // Check if store is open
-    if (!isStoreOpen(vendor.open_time, vendor.close_time)) {
+    if (!isVendorOpen(parseVendorHours(vendor))) {
       return NextResponse.json(
         { error: "المتجر مغلق حالياً. أوقات العمل: " + vendor.open_time + " - " + vendor.close_time },
         { status: 400 }
@@ -302,6 +305,13 @@ export async function POST(
 
     // Get products and calculate totals
     const productIds = items.map((i: { productId: string }) => String(i.productId));
+    // BUGFIX (audit 2026-09-29): the BEGIN used to live AFTER the
+    // validation/ROLLBACK block — those ROLLBACKs were therefore
+    // no-ops (pg emits a NOTICE, no error). Open the transaction
+    // before the first `client.query` so a missing product, a
+    // stock-exceeded product, or a min-order violation actually
+    // releases the implicit statement-level resources we're holding.
+    await client.query("BEGIN");
     const productsResult = await client.query<VendorProductRow>(
       `SELECT id, name_ar, price, discount_price, stock_quantity, track_stock, image_urls
        FROM vendor_products
@@ -351,8 +361,8 @@ export async function POST(
     }
 
     // Calculate delivery fee
-    let deliveryFee = vendor.delivery_fee_override 
-      ? parseFloat(vendor.delivery_fee_override) 
+    let deliveryFee = vendor.delivery_fee_override
+      ? parseFloat(vendor.delivery_fee_override)
       : 0;
 
     // Check minimum order
@@ -366,7 +376,8 @@ export async function POST(
 
     const total = subtotal + deliveryFee;
 
-    await client.query("BEGIN");
+    // BUGFIX (audit 2026-09-29): BEGIN was here. It's been moved above
+    // so the validation ROLLBACKs actually unwind the transaction.
 
     // Create order — link to authenticated user so it appears in their
     // "my orders" view. Previously customer_id was hardcoded NULL, which
@@ -446,23 +457,6 @@ export async function POST(
   } finally {
     client.release();
   }
-}
-
-function isStoreOpen(openTime: string, closeTime: string): boolean {
-  const now = new Date();
-  const currentTime = now.getHours() * 60 + now.getMinutes();
-  
-  const [openHour, openMin] = openTime.split(":").map(Number);
-  const [closeHour, closeMin] = closeTime.split(":").map(Number);
-  
-  const open = openHour * 60 + openMin;
-  const close = closeHour * 60 + closeMin;
-  
-  if (close < open) {
-    return currentTime >= open || currentTime < close;
-  }
-  
-  return currentTime >= open && currentTime < close;
 }
 
 function buildTimeline(order: {

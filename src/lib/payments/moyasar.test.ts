@@ -248,7 +248,9 @@ describe("createInvoice", () => {
 
     const res = await createInvoice({ amount: 10, orderId: "o1", description: "d" });
     expect(res.success).toBe(false);
-    expect(res.error).toBe("Bad amount");
+    // BUGFIX (audit 2026-09-29): "amount" maps to a sanitised Arabic
+    // message instead of echoing "Bad amount" to the customer.
+    expect(res.error).toBe("قيمة الطلب غير صحيحة");
   });
 
   it("falls back to field errors when no top-level message", async () => {
@@ -258,13 +260,20 @@ describe("createInvoice", () => {
 
     const res = await createInvoice({ amount: 10, orderId: "o1", description: "d" });
     expect(res.success).toBe(false);
-    expect(res.error).toBe("too low");
+    // BUGFIX (audit 2026-09-29): the field-errors branch joins the
+    // values ("too low") — that string doesn't contain "amount" or
+    // "currency" keywords so it falls through to the generic 4xx
+    // Arabic message rather than echoing the raw English value.
+    expect(res.error).toBe("تعذّر إنشاء الفاتورة، حاول مرة أخرى");
   });
 
   it("falls back to HTTP status when no message and no errors", async () => {
     mockFetch(async () => new Response("{}", { status: 500 }));
     const res = await createInvoice({ amount: 10, orderId: "o1", description: "d" });
-    expect(res.error).toMatch(/Moyasar HTTP 500/);
+    // BUGFIX (audit 2026-09-29): 5xx → friendly "gateway temporarily
+    // unavailable" Arabic. The previous `Moyasar HTTP 500` leak was
+    // shipping the gateway name + status to end users.
+    expect(res.error).toBe("بوابة الدفع غير متاحة مؤقتاً، حاول بعد قليل");
   });
 
   it("returns error when response is missing id or url", async () => {
@@ -282,7 +291,10 @@ describe("createInvoice", () => {
     });
     const res = await createInvoice({ amount: 10, orderId: "o1", description: "d" });
     expect(res.success).toBe(false);
-    expect(res.error).toBe("ECONNRESET");
+    // BUGFIX (audit 2026-09-29): the previous version returned
+    // `error.message` ("ECONNRESET") to the caller — replaced with a
+    // generic Arabic message.
+    expect(res.error).toBe("تعذّر الاتصال بميسر");
   });
 });
 
@@ -307,7 +319,10 @@ describe("fetchInvoiceDetails / fetchInvoice", () => {
     );
     const res = await fetchInvoiceDetails("inv_missing");
     expect(res.success).toBe(false);
-    expect(res.error).toBe("not found");
+    // BUGFIX (audit 2026-09-29): we no longer echo the raw gateway
+    // message — it's logged server-side and translated to a friendly
+    // Arabic message. 404 falls into the generic 4xx bucket.
+    expect(res.error).toBe("تعذّر إنشاء الفاتورة، حاول مرة أخرى");
   });
 
   it("fetchInvoice returns just the status", async () => {
@@ -363,7 +378,9 @@ describe("fetchPayment", () => {
     );
     const res = await fetchPayment("pay_bad");
     expect(res.success).toBe(false);
-    expect(res.error).toBe("forbidden");
+    // BUGFIX (audit 2026-09-29): 401/403 → Arabic "auth gateway" message,
+    // raw gateway text is logged but never returned to the caller.
+    expect(res.error).toBe("تعذّر التحقق من بوابة الدفع");
   });
 
   it("returns error when no secret key", async () => {

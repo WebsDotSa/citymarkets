@@ -106,7 +106,78 @@ export async function PATCH(
       metadata: "metadata",
     };
 
-    for (const [key, dbField] of Object.entries(allowedFields)) {
+    // BUGFIX (audit 2026-09-29): validate categoryId (if present) is an
+// ACTIVE row — POST already does this but PATCH was silently accepting
+// archived category UUIDs and leaving products stranded in a hidden
+// section of the storefront. Symmetric to POST at vendor/products/route.ts.
+if (body.categoryId !== undefined && body.categoryId !== null && body.categoryId !== "") {
+  const catRes = await query(
+    `SELECT id FROM categories WHERE id = $1 AND is_active = TRUE LIMIT 1`,
+    [body.categoryId],
+  );
+  if (catRes.rows.length === 0) {
+    return NextResponse.json(
+      { error: "القسم المختار غير متاح. اختر قسماً آخر." },
+      { status: 400 },
+    );
+  }
+}
+
+// BUGFIX (audit 2026-09-29): enforce the same numeric bounds on PATCH
+// that POST enforces — a vendor who can edit a product shouldn't be
+// able to set price=-100 by editing it.
+if (body.price !== undefined && body.price !== null) {
+  if (typeof body.price !== "number" || !Number.isFinite(body.price) || body.price < 0) {
+    return NextResponse.json(
+      { error: "السعر يجب أن يكون رقماً موجباً أو صفراً" },
+      { status: 400 },
+    );
+  }
+  if (body.price > 1_000_000) {
+    return NextResponse.json(
+      { error: "السعر يتجاوز الحد الأقصى (1,000,000)" },
+      { status: 400 },
+    );
+  }
+}
+if (body.discountPrice !== undefined && body.discountPrice !== null && body.discountPrice !== "") {
+  const dp = Number(body.discountPrice);
+  if (!Number.isFinite(dp) || dp < 0) {
+    return NextResponse.json(
+      { error: "سعر الخصم يجب أن يكون رقماً موجباً أو صفراً" },
+      { status: 400 },
+    );
+  }
+  // Compare against the new price if present, else the row's current price.
+  const effectivePrice =
+    body.price !== undefined && body.price !== null
+      ? Number(body.price)
+      : parseFloat(
+          (
+            await query(
+              "SELECT price FROM vendor_products WHERE id = $1",
+              [id],
+            )
+          ).rows[0]?.price ?? "0",
+        );
+  if (dp >= effectivePrice) {
+    return NextResponse.json(
+      { error: "سعر الخصم يجب أن يكون أقل من السعر الأصلي" },
+      { status: 400 },
+    );
+  }
+}
+if (body.stockQuantity !== undefined && body.stockQuantity !== null && body.stockQuantity !== "") {
+  const sq = Number(body.stockQuantity);
+  if (!Number.isInteger(sq) || sq < 0) {
+    return NextResponse.json(
+      { error: "الكمية يجب أن تكون عدداً صحيحاً غير سالب" },
+      { status: 400 },
+    );
+  }
+}
+
+for (const [key, dbField] of Object.entries(allowedFields)) {
       if (body[key] !== undefined) {
         updates.push(`${dbField} = $${paramIndex}`);
         values.push(body[key]);

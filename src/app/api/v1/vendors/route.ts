@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+// BUGFIX (audit 2026-09-29): consolidate the three duplicated `isStoreOpen`
+// implementations (vendors route, vendors/[slug], vendors/[slug]/orders)
+// onto the canonical Riyadh-tz-aware helper that already handles the
+// overnight case, the kill-switch, and the unconfigured-hours edge case.
+import { isVendorOpen, parseVendorHours } from "@/lib/delivery/vendor-store-hours";
 
 export async function GET() {
   try {
@@ -34,7 +39,7 @@ export async function GET() {
       address: v.address_ar,
       openTime: v.open_time,
       closeTime: v.close_time,
-      isOpen: isStoreOpen(v.open_time, v.close_time),
+      isOpen: isVendorOpen(parseVendorHours(v)),
     }));
 
     return NextResponse.json({ vendors });
@@ -45,22 +50,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
-
-function isStoreOpen(openTime: string, closeTime: string): boolean {
-  const now = new Date();
-  const currentTime = now.getHours() * 60 + now.getMinutes();
-  
-  const [openHour, openMin] = openTime.split(":").map(Number);
-  const [closeHour, closeMin] = closeTime.split(":").map(Number);
-  
-  const open = openHour * 60 + openMin;
-  const close = closeHour * 60 + closeMin;
-  
-  if (close < open) {
-    // Overnight (e.g., 21:00 to 03:00)
-    return currentTime >= open || currentTime < close;
-  }
-  
-  return currentTime >= open && currentTime < close;
 }

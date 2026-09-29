@@ -112,8 +112,10 @@ export async function GET(request: NextRequest) {
     const inStock = searchParams.get('inStock');
     const vendorSlug = searchParams.get('vendor');
     const includeChildren = searchParams.get('include_children') === '1' || searchParams.get('includeChildren') === '1';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    // BUGFIX (audit 2026-09-29): clamp pagination. A client passing `limit=10000`
+    // used to walk the entire catalog; we cap at 100 rows per page and floor at 1.
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50') || 50));
     const offset = (page - 1) * limit;
 
     // Build WHERE clause and params.

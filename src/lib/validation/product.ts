@@ -16,8 +16,22 @@ export const productInputSchema = z.object({
   barcode: z.string().max(50).optional().nullable(),
   description: z.string().max(2000).optional().nullable(),
   category_id: z
+    // BUGFIX (audit 2026-09-29): DB column is uuid. Numbers used to slip
+    // through (some clients send JSON numbers for UUID-shaped IDs) and
+    // crashed Postgres with `invalid input syntax for type uuid` → 500.
+    // Coerce to string and require a UUID shape up-front so the failure
+    // is a clean 400 with an Arabic message instead.
     .union([z.string(), z.number()])
-    .refine((v) => v !== null && v !== undefined && v !== "", "الفئة مطلوبة"),
+    .transform((v) => (typeof v === "number" ? String(v) : v))
+    .pipe(
+      z
+        .string()
+        .min(1, "الفئة مطلوبة")
+        .regex(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+          "الفئة غير صالحة",
+        ),
+    ),
   price: z.number().positive("السعر يجب أن يكون موجبًا"),
   discount_price: z.number().positive().nullable().optional(),
   stock_qty: z.number().int().min(0).optional(),

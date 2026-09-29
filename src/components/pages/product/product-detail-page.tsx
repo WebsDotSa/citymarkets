@@ -437,9 +437,17 @@ export function ProductDetailPage() {
           </div>
         )}
 
-        {/* Stock Status */}
+        {/* Stock Status — BUGFIX (audit 2026-09-29): when the vendor doesn't
+            track stock (e.g. fresh produce, made-to-order) stock_qty=0 does
+            NOT mean "out of stock". Default the toggle to false so legacy
+            API consumers that don't yet expose the field keep buying. */}
         <div className="flex items-center gap-2">
-          {product.stock_qty > 0 ? (
+          {product.track_stock === false ? (
+            <span className="inline-flex items-center gap-1.5 text-sm text-green-600 bg-green-50 px-3 py-1.5 rounded-full">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              متوفر
+            </span>
+          ) : product.stock_qty > 0 ? (
             <span className="inline-flex items-center gap-1.5 text-sm text-green-600 bg-green-50 px-3 py-1.5 rounded-full">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               متوفر
