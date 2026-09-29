@@ -11,6 +11,7 @@ import {
   PAYMENT_METHOD_AR,
 } from '@/lib/orders';
 import { csrfFetch } from "@/lib/csrf-client";
+import { useVendorRole } from "../../_lib/vendor-role-context";
 
 interface OrderDetailPageProps {
   params: Promise<{ slug: string; id: string }>;
@@ -81,6 +82,8 @@ interface VendorInfo {
 export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) {
   const { slug, id } = use(params);
   const router = useRouter();
+  const { canDo, isReadOnly } = useVendorRole();
+  const canManage = canDo("manage_orders");
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [vendor, setVendor] = useState<VendorInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -416,12 +419,22 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
 
       {/* Actions */}
       <div className="sticky bottom-0 -mx-4 px-4 py-3 bg-white/95 backdrop-blur border-t border-slate-200 shadow-sm">
+        {isReadOnly && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900"
+          >
+            وضع القراءة فقط — لا يمكنك تغيير حالة هذا الطلب بهذه الصلاحية.
+          </div>
+        )}
         <div className="flex flex-col sm:flex-row gap-2">
           {nextStatus && (
             <button
               onClick={() => updateStatus(nextStatus)}
-              disabled={updating}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white hover:bg-primaryDark transition disabled:opacity-50"
+              disabled={updating || !canManage}
+              title={canManage ? undefined : "ليس لديك صلاحية"}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white hover:bg-primaryDark transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {updating ? (
                 <>
@@ -437,8 +450,9 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
           {!isTerminal && order.status !== "pending" && (
             <button
               onClick={() => updateStatus("cancelled")}
-              disabled={updating}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 transition disabled:opacity-50"
+              disabled={updating || !canManage}
+              title={canManage ? undefined : "ليس لديك صلاحية"}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               إلغاء الطلب
             </button>

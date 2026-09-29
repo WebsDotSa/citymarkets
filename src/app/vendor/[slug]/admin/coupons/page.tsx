@@ -4,6 +4,7 @@ import { useEffect, useState, use } from "react";
 import { useConfirm } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
 import { Tag, Plus, Loader2, Copy, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
+import { useVendorRole } from "../_lib/vendor-role-context";
 
 interface CouponsPageProps {
   params: Promise<{ slug: string }>;
@@ -33,6 +34,8 @@ const inputClass =
 
 export default function VendorCouponsPage({ params }: CouponsPageProps) {
   use(params); // satisfies the param typing for the layout
+  const { canDo, isReadOnly } = useVendorRole();
+  const canManage = canDo("manage_coupons");
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalState>({ kind: "closed" });
@@ -101,6 +104,15 @@ export default function VendorCouponsPage({ params }: CouponsPageProps) {
 
   return (
     <div className="space-y-6">
+      {isReadOnly && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+        >
+          وضع القراءة فقط — هذه الصلاحية لا تسمح بإدارة الكوبونات.
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">الكوبونات</h1>
@@ -108,7 +120,9 @@ export default function VendorCouponsPage({ params }: CouponsPageProps) {
         </div>
         <button
           onClick={() => setModal({ kind: "create" })}
-          className="px-4 py-2 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition flex items-center gap-2"
+          disabled={!canManage}
+          title={canManage ? "إنشاء كوبون جديد" : "ليس لديك صلاحية"}
+          className="px-4 py-2 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="w-4 h-4" />
           إنشاء كوبون جديد
@@ -190,8 +204,9 @@ export default function VendorCouponsPage({ params }: CouponsPageProps) {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => toggleActive(c)}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition"
-                    title={c.isActive ? "إيقاف" : "تفعيل"}
+                    disabled={!canManage}
+                    className="p-2 rounded-lg hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={canManage ? (c.isActive ? "إيقاف" : "تفعيل") : "ليس لديك صلاحية"}
                   >
                     {c.isActive ? (
                       <ToggleRight className="w-5 h-5 text-emerald-600" />
@@ -199,20 +214,24 @@ export default function VendorCouponsPage({ params }: CouponsPageProps) {
                       <ToggleLeft className="w-5 h-5 text-gray-400" />
                     )}
                   </button>
-                  <button
-                    onClick={() => setModal({ kind: "edit", coupon: c })}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
-                    title="تعديل"
-                  >
-                    تعديل
-                  </button>
-                  <button
-                    onClick={() => deleteCoupon(c)}
-                    className="p-2 rounded-lg hover:bg-red-50 transition text-red-600"
-                    title="حذف"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {canManage && (
+                    <>
+                      <button
+                        onClick={() => setModal({ kind: "edit", coupon: c })}
+                        className="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
+                        title="تعديل"
+                      >
+                        تعديل
+                      </button>
+                      <button
+                        onClick={() => deleteCoupon(c)}
+                        className="p-2 rounded-lg hover:bg-red-50 transition text-red-600"
+                        title="حذف"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -220,7 +239,7 @@ export default function VendorCouponsPage({ params }: CouponsPageProps) {
         )}
       </div>
 
-      {modal.kind !== "closed" && (
+      {modal.kind !== "closed" && canManage && (
         <CouponModal
           state={modal}
           submitting={submitting}

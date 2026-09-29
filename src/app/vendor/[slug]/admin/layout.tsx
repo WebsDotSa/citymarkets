@@ -9,6 +9,7 @@ import {
   type VendorHours,
 } from '@/lib/delivery';
 import { csrfFetch } from "@/lib/csrf-client";
+import { VendorRoleProvider, type VendorRole } from "./_lib/vendor-role-context";
 
 interface VendorLayoutProps {
   children: React.ReactNode;
@@ -147,15 +148,26 @@ export default function VendorAdminLayout({ children, params }: VendorLayoutProp
     return null;
   }
 
+  // Filter nav items by role — staff CRUD links must not surface to
+  // viewers (who can't mutate anything) and staff-management must
+  // only surface to owners. The matching capability predicates live
+  // in `_lib/vendor-role-context`.
+  const role = user.role as VendorRole;
+  const minRoleRank: Record<VendorRole, number> = {
+    owner: 4,
+    manager: 3,
+    staff: 2,
+    viewer: 1,
+  };
   const navItems = [
-    { href: `/vendor/${slug}/admin`, label: "لوحة التحكم", icon: "📊" },
-    { href: `/vendor/${slug}/admin/products`, label: "المنتجات", icon: "📦" },
-    { href: `/vendor/${slug}/admin/categories`, label: "الأقسام", icon: "🗂️" },
-    { href: `/vendor/${slug}/admin/orders`, label: "الأوردرات", icon: "📋" },
-    { href: `/vendor/${slug}/admin/coupons`, label: "الكوبونات", icon: "🎟️" },
-    { href: `/vendor/${slug}/admin/staff`, label: "الموظفون", icon: "👥" },
-    { href: `/vendor/${slug}/admin/settings`, label: "الإعدادات", icon: "⚙️" },
-  ];
+    { href: `/vendor/${slug}/admin`, label: "لوحة التحكم", icon: "📊", minRole: "viewer" as VendorRole },
+    { href: `/vendor/${slug}/admin/products`, label: "المنتجات", icon: "📦", minRole: "viewer" as VendorRole },
+    { href: `/vendor/${slug}/admin/categories`, label: "الأقسام", icon: "🗂️", minRole: "viewer" as VendorRole },
+    { href: `/vendor/${slug}/admin/orders`, label: "الأوردرات", icon: "📋", minRole: "viewer" as VendorRole },
+    { href: `/vendor/${slug}/admin/coupons`, label: "الكوبونات", icon: "🎟️", minRole: "viewer" as VendorRole },
+    { href: `/vendor/${slug}/admin/staff`, label: "الموظفون", icon: "👥", minRole: "owner" as VendorRole },
+    { href: `/vendor/${slug}/admin/settings`, label: "الإعدادات", icon: "⚙️", minRole: "viewer" as VendorRole },
+  ].filter((item) => minRoleRank[role] >= minRoleRank[item.minRole]);
 
   // Open/close status for the banner. Re-evaluated on every render so
   // the wall-clock minute boundary flips the badge without a manual
@@ -277,7 +289,9 @@ export default function VendorAdminLayout({ children, params }: VendorLayoutProp
               </Link>
             </div>
           )}
-          {children}
+          <VendorRoleProvider role={role}>
+            {children}
+          </VendorRoleProvider>
         </main>
       </div>
     </div>

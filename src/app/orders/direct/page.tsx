@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
 import { useAuthState } from '@/contexts/auth-context';
+import { csrfFetch } from '@/lib/csrf-client';
 import type { Address } from '@/lib/types';
 import {
   Mic,
@@ -19,12 +20,37 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
+// Payment values MUST match `directOrderSchema` in src/lib/validation/order.ts.
+// Mismatched values silently 400 every submission — see prompt bug D1.
 const PAYMENT_OPTIONS = [
-  { value: 'cash', label: 'دفع نقدي', icon: Banknote },
-  { value: 'card', label: 'بطاقة', icon: CreditCard },
-  { value: 'stc_pay', label: 'STC Pay', icon: Smartphone },
+  { value: 'mada', label: 'مدى', icon: CreditCard },
+  { value: 'visa', label: 'فيزا', icon: CreditCard },
+  { value: 'mastercard', label: 'ماستركارد', icon: CreditCard },
+  { value: 'amex', label: 'أمريكان إكسبريس', icon: CreditCard },
+  { value: 'apple_pay', label: 'Apple Pay', icon: Smartphone },
   { value: 'wallet', label: 'المحفظة', icon: Wallet },
+  { value: 'bank_transfer', label: 'تحويل بنكي', icon: Banknote },
 ] as const;
+
+/**
+ * Generate a client-side idempotency key. Crypto-strong, scoped to one
+ * page mount. Direct Order's API rejects guests without this key
+ * (see prompt bug D2 + src/app/api/v1/orders/direct/route.ts:77-85).
+ */
+function generateIdempotencyKey(): string {
+  const c = (globalThis as { crypto?: Crypto }).crypto;
+  if (c && typeof c.randomUUID === 'function') {
+    return `do-${c.randomUUID()}`;
+  }
+  if (c && typeof c.getRandomValues === 'function') {
+    const bytes = new Uint8Array(24);
+    c.getRandomValues(bytes);
+    return `do-${Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')}`;
+  }
+  // Last-resort for test environments — not secure, but only reached
+  // when no crypto primitive is available.
+  return `do-${Date.now()}-${Math.random().toString(36).slice(2, 18)}`;
+}
 
 const FEE = 4;
 const TAX_RATE = 0.15;
@@ -49,6 +75,10 @@ export default function DirectOrderCreatePage() {
   const [feeModalOpen, setFeeModalOpen] = useState(false);
   const [feeAcknowledged, setFeeAcknowledged] = useState(false);
   const [config, setConfig] = useState<{ fee: number; notesLimit: number } | null>(null);
+  // Generate one idempotency key per page mount. Re-using it across
+  // the retries within this session prevents double-tap / network-
+  // retry from creating duplicate order rows (F8 hardening).
+  const [idempotencyKey] = useState<string>(() => generateIdempotencyKey());
 
   useEffect(() => {
     fetch('/api/v1/orders/direct')
@@ -57,12 +87,15 @@ export default function DirectOrderCreatePage() {
         if (d.success) setConfig({ fee: d.fee, notesLimit: d.notesLimit });
       })
       .catch(() => {});
-    fetch('/api/v1/delivery-addresses', { credentials: 'include' })
+    // BUG D3 fix: the route returns `{ success, data: [...] }`. The
+    // previous code read `d.addresses`, which is always undefined, so
+    // the address list silently never populated.
+    csrfFetch('/api/v1/delivery-addresses', { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => {
-        if (d.success && Array.isArray(d.addresses)) {
-          setAddresses(d.addresses);
-          if (d.addresses.length > 0) setSelectedAddressId(d.addresses[0].id);
+        if (d.success && Array.isArray(d.data)) {
+          setAddresses(d.data);
+          if (d.data.length > 0) setSelectedAddressId(d.data[0].id);
         }
       })
       .catch(() => {});
@@ -144,7 +177,14 @@ export default function DirectOrderCreatePage() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/v1/orders/direct', {
+      // BUG D1 fix: `payment` is now guaranteed to be one of the 7
+      // tokens in `directOrderSchema` because we removed the
+      // non-schema values from `PAYMENT_OPTIONS` above.
+      // BUG D2 fix: idempotency_key is required for guests (the
+      // route returns 400 'مفتاح تأكيد الطلب مطلوب للضيوف' without
+      // it). We send it for every caller so the same key dedupes
+      // double-taps across both guest + authed sessions.
+      const res = await csrfFetch('/api/v1/orders/direct', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -155,6 +195,7 @@ export default function DirectOrderCreatePage() {
           voice_note_duration: voiceDuration || undefined,
           fee_acknowledged: true,
           fee_acknowledged_at: new Date().toISOString(),
+          idempotency_key: idempotencyKey,
           delivery_address: {
             label: addr.label,
             address_text: addr.address_text,

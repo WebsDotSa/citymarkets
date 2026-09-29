@@ -4,6 +4,7 @@ import { useEffect, useState, use, useMemo } from "react";
 import Link from "next/link";
 import { Tag, Plus, Loader2, FolderTree } from "lucide-react";
 import { csrfFetch } from "@/lib/csrf-client";
+import { useVendorRole } from "../_lib/vendor-role-context";
 
 interface CategoriesPageProps {
   params: Promise<{ slug: string }>;
@@ -33,6 +34,8 @@ interface Category {
  */
 export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
   const { slug } = use(params);
+  const { canDo, isReadOnly } = useVendorRole();
+  const canManage = canDo("manage_categories");
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -138,6 +141,15 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
           <Plus className="w-4 h-4 text-primary" />
           إضافة قسم جديد
         </h2>
+        {isReadOnly && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+          >
+            وضع القراءة فقط — لا يمكنك إنشاء أقسام جديدة بهذه الصلاحية.
+          </div>
+        )}
         <form onSubmit={handleCreate} className="space-y-3">
           <div>
             <label
@@ -187,7 +199,8 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
           )}
           <button
             type="submit"
-            disabled={creating || !nameAr.trim()}
+            disabled={creating || !nameAr.trim() || !canManage}
+            title={canManage ? undefined : "ليس لديك صلاحية لإنشاء أقسام"}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primaryDark transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {creating ? (

@@ -17,6 +17,7 @@ import {
   Mail,
   Clock,
 } from "lucide-react";
+import { useVendorRole } from "../_lib/vendor-role-context";
 
 interface StaffPageProps {
   params: Promise<{ slug: string }>;
@@ -56,6 +57,8 @@ const inputClass =
 
 export default function VendorStaffPage({ params }: StaffPageProps) {
   use(params);
+  const { canDo, isReadOnly } = useVendorRole();
+  const canManageStaff = canDo("manage_staff");
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,6 +101,11 @@ export default function VendorStaffPage({ params }: StaffPageProps) {
 
   const canAddManager = currentUser?.role === "owner";
   const canDelete = currentUser?.role === "owner";
+
+  // `manage_staff` capability is the source of truth for whether the
+  // UI surfaces any mutation controls on this page. Only owners pass
+  // the predicate; managers/staff/viewers see a read-only view.
+  const canManage = canManageStaff;
 
   async function toggleActive(s: StaffMember) {
     const action = s.isActive ? "إيقاف" : "تفعيل";
@@ -153,6 +161,15 @@ export default function VendorStaffPage({ params }: StaffPageProps) {
 
   return (
     <div className="space-y-6">
+      {isReadOnly && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+        >
+          وضع القراءة فقط — لا يمكنك إدارة الموظفين بهذه الصلاحية. فقط المالك يمكنه إضافة أو إزالة موظفين.
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">الموظفون</h1>
@@ -160,13 +177,15 @@ export default function VendorStaffPage({ params }: StaffPageProps) {
             إدارة صلاحيات دخول فريقك للوحة تحكم المتجر
           </p>
         </div>
-        <button
-          onClick={() => setModal({ kind: "create" })}
-          className="px-4 py-2 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          إضافة موظف
-        </button>
+        {canManage && (
+          <button
+            onClick={() => setModal({ kind: "create" })}
+            className="px-4 py-2 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            إضافة موظف
+          </button>
+        )}
       </div>
 
       {/* Role legend */}
@@ -263,8 +282,10 @@ export default function VendorStaffPage({ params }: StaffPageProps) {
 
                   <div className="flex items-center gap-1 shrink-0">
                     {/* Don't let a manager suspend/demote an owner —
-                        owners are protected from non-owners. */}
-                    {s.role !== "owner" || currentUser?.role === "owner" ? (
+                        owners are protected from non-owners. The whole
+                        control group is hidden when the current user
+                        lacks `manage_staff`. */}
+                    {canManage && (s.role !== "owner" || currentUser?.role === "owner") ? (
                       <>
                         <button
                           onClick={() => toggleActive(s)}
@@ -305,7 +326,7 @@ export default function VendorStaffPage({ params }: StaffPageProps) {
         )}
       </div>
 
-      {modal.kind !== "closed" && (
+      {modal.kind !== "closed" && canManage && (
         <StaffModal
           state={modal}
           submitting={submitting}

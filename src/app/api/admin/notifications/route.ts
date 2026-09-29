@@ -11,6 +11,9 @@ type NotificationItem = AdminAlert;
 export async function GET(request: NextRequest) {
   const gate = await requireAdminApi(request, "view_dashboard");
   if (gate instanceof NextResponse) return gate;
+  // gate is `{ admin }` on success — destructure the verified admin id
+  // so the read-state query below is scoped to the current admin only.
+  const { admin } = gate;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -27,6 +30,15 @@ export async function GET(request: NextRequest) {
     }
     const unreadOnly = parsedQuery.data.unread === "1";
     const limit = parsedQuery.data.limit;
+
+    // D6: load the persisted read-state for THIS admin. Without this
+    // join, every reload would reset every notification back to
+    // `is_read = false` (the legacy "computed" behavior).
+    const readsRes = await query<{ notification_id: string }>(
+      `SELECT notification_id FROM admin_notification_reads WHERE admin_id = $1`,
+      [admin.id],
+    );
+    const readIds = new Set(readsRes.rows.map((r) => r.notification_id));
 
     const items: NotificationItem[] = [];
 
@@ -52,9 +64,14 @@ export async function GET(request: NextRequest) {
 
       const name = row.customer_name || "عميل";
       const phone = row.guest_phone || row.user_phone || "";
+      const notifId = `order-${row.id}`;
+      // D6: a notification is read for THIS admin if it has a row in
+      // `admin_notification_reads`. Order-fulfillment updates (not
+      // pending/confirmed) are still unread until explicitly marked.
+      const isRead = !isNew || readIds.has(notifId);
 
       items.push({
-        id: `order-${row.id}`,
+        id: notifId,
         type: "new_order",
         title: isNew
           ? `طلب جديد ${row.status === "pending" ? "بانتظار التأكيد" : "بانتظار التجهيز"}`
@@ -63,7 +80,7 @@ export async function GET(request: NextRequest) {
         link: `/admin/orders/${row.id}`,
         severity: isNew ? "info" : "success",
         created_at: row.created_at,
-        is_read: !isNew,
+        is_read: isRead,
         meta: { orderId: row.id, status: row.status },
       });
     }
@@ -81,15 +98,16 @@ export async function GET(request: NextRequest) {
     );
 
     for (const row of lowStockRes.rows) {
+      const notifId = `lowstock-${row.id}`;
       items.push({
-        id: `lowstock-${row.id}`,
+        id: notifId,
         type: "low_stock",
         title: `مخزون منخفض: ${row.name_ar}`,
         message: `تبقى ${row.stock_qty} وحدة فقط في المخزون.`,
         link: `/admin/inventory`,
         severity: "warning",
         created_at: new Date().toISOString(),
-        is_read: false,
+        is_read: readIds.has(notifId),
         meta: { productId: row.id, stock: row.stock_qty },
       });
     }
@@ -105,15 +123,16 @@ export async function GET(request: NextRequest) {
     );
 
     for (const row of outStockRes.rows) {
+      const notifId = `outstock-${row.id}`;
       items.push({
-        id: `outstock-${row.id}`,
+        id: notifId,
         type: "out_of_stock",
         title: `نفد المخزون: ${row.name_ar}`,
         message: `المنتج غير متاح حالياً للعملاء.`,
         link: `/admin/inventory`,
         severity: "critical",
         created_at: new Date().toISOString(),
-        is_read: false,
+        is_read: readIds.has(notifId),
         meta: { productId: row.id },
       });
     }
@@ -150,20 +169,80 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Mark as read
+// Mark as read — D6 fix: previously a documented no-op. Now persists
+// to `admin_notification_reads` keyed by (admin_id, notification_id).
 export async function PUT(request: NextRequest) {
   const gate = await requireAdminApi(request, "view_dashboard");
   if (gate instanceof NextResponse) return gate;
+  const { admin } = gate;
   try {
     const body = await request.json();
     const { id, markAll } = body as { id?: string; markAll?: boolean };
 
-    // Read-state is currently per-session (computed). Provide a no-op
-    // success so the client can update locally. Future: persist a
-    // `notifications_read` table keyed by admin_id.
+    if (markAll) {
+      // D6: insert all currently-unread synthetic IDs into the
+      // read-state table. We materialize the same set the GET would
+      // synthesize so the user can clear everything in one call.
+      await materializeAllRead(admin.id);
+    } else if (id) {
+      // D6: insert a single (admin_id, notification_id) row. The
+      // UNIQUE constraint + ON CONFLICT DO NOTHING makes this
+      // idempotent — repeated calls don't error.
+      await query(
+        `INSERT INTO admin_notification_reads (admin_id, notification_id)
+         VALUES ($1, $2)
+         ON CONFLICT (admin_id, notification_id) DO NOTHING`,
+        [admin.id, id],
+      );
+    } else {
+      return NextResponse.json(
+        { success: false, error: "id أو markAll مطلوب" },
+        { status: 400 },
+      );
+    }
+
     return NextResponse.json({ success: true, id: id ?? "all", markAll: !!markAll });
   } catch (error) {
     logError("Notifications mark-read error:", error);
     return NextResponse.json({ success: false, error: "فشل" }, { status: 500 });
   }
+}
+
+/**
+ * Bulk-insert every currently-displayable notification id as read
+ * for this admin. Used by the "Mark all as read" button so the
+ * unread counter goes to zero immediately and stays at zero on
+ * reload.
+ */
+async function materializeAllRead(adminId: string): Promise<void> {
+  // Collect every synthetic ID the GET would surface.
+  const orderRows = await query<{ id: string }>(
+    `SELECT id FROM orders
+     WHERE created_at >= NOW() - INTERVAL '7 days'
+     ORDER BY created_at DESC LIMIT 30`,
+  );
+  const lowStockRows = await query<{ id: string }>(
+    `SELECT id FROM products_unified
+     WHERE is_active = true AND stock_qty IS NOT NULL
+       AND stock_qty > 0 AND stock_qty <= 5
+     ORDER BY stock_qty ASC LIMIT 20`,
+  );
+  const outStockRows = await query<{ id: string }>(
+    `SELECT id FROM products_unified
+     WHERE is_active = true AND COALESCE(stock_qty, 0) = 0
+     ORDER BY name_ar ASC LIMIT 20`,
+  );
+  const ids: string[] = [
+    ...orderRows.rows.map((r) => `order-${r.id}`),
+    ...lowStockRows.rows.map((r) => `lowstock-${r.id}`),
+    ...outStockRows.rows.map((r) => `outstock-${r.id}`),
+  ];
+  if (ids.length === 0) return;
+  // Bulk insert with ON CONFLICT DO NOTHING so it's idempotent.
+  await query(
+    `INSERT INTO admin_notification_reads (admin_id, notification_id)
+     SELECT $1, UNNEST($2::text[])
+     ON CONFLICT (admin_id, notification_id) DO NOTHING`,
+    [adminId, ids],
+  );
 }
