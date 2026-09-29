@@ -1,5 +1,10 @@
 import { pool } from '@/lib/db';
-import { fetchPayment, toHalalas } from './moyasar';
+import {
+  fetchPayment,
+  mapMoyasarStatusToDb,
+  isSarCurrency,
+  toHalalas,
+} from './moyasar';
 import {
   recordPaymentEvent,
   finalizePaymentEvent,
@@ -70,20 +75,18 @@ export async function confirmMoyasarPaymentForOrder(params: {
     return { success: false, error: 'مبلغ الدفع لا يطابق الطلب' };
   }
 
-  if (payment.currency && payment.currency !== 'SAR') {
+  if (payment.currency && !isSarCurrency(payment.currency)) {
     return { success: false, error: 'عملة الدفع غير مدعومة' };
   }
 
-  let paymentStatus = 'pending';
-  if (payment.status === 'paid' || payment.status === 'captured') {
-    paymentStatus = 'paid';
-  } else if (
-    payment.status === 'failed' ||
-    payment.status === 'voided' ||
-    payment.status === 'refunded'
-  ) {
-    paymentStatus = 'failed';
-  }
+  // FIX (P1-2/3/4): use the shared mapping helper so the canonical
+  // webhook and this inline-confirm path agree on every status. The
+  // previous inline mapping classified 'refunded' as 'pending' here
+  // while the webhook classified it as 'failed' — the same payment
+  // could land in two different payment_status states depending on
+  // which path confirmed it. The helper also collapses the
+  // case-sensitivity mismatch the old code had.
+  const paymentStatus = mapMoyasarStatusToDb(payment.status);
 
   // Wrap payment mutation in a transaction so the payment_events ledger
   // row is atomic with the orders UPDATE — same pattern as the canonical

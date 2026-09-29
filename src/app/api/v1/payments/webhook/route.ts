@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { pool } from '@/lib/db';
-import { fetchPayment } from '@/lib/payments/moyasar';
+import { fetchPayment, mapMoyasarStatusToDb, isSarCurrency } from '@/lib/payments/moyasar';
 import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 import {
   recordPaymentEvent,
@@ -45,12 +45,10 @@ function verifyWebhookAuth(request: NextRequest): boolean {
   return safeEqual(token, secret);
 }
 
-/** Map Moyasar status → order.payment_status column. */
-function mapPaymentDbStatus(remote: string): string {
-  if (remote === 'paid' || remote === 'captured') return 'paid';
-  if (remote === 'failed' || remote === 'voided') return 'failed';
-  return 'pending';
-}
+// FIX (P1-4): mapPaymentDbStatus moved to @/lib/payments/moyasar as
+// `mapMoyasarStatusToDb` so the canonical webhook and the inline-confirm
+// helper share one source of truth. The previous local copy treated
+// 'refunded' as 'pending', which stranded the row after a refund event.
 
 export async function POST(request: NextRequest) {
   if (!verifyWebhookAuth(request)) {
@@ -96,7 +94,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const paymentDb = mapPaymentDbStatus(remote.status ?? '');
+    const paymentDb = mapMoyasarStatusToDb(remote.status ?? '');
     const remoteStatus = remote.status ?? '';
 
     const client = await pool.connect();
@@ -230,9 +228,7 @@ export async function POST(request: NextRequest) {
           const orderRow = order.rows[0];
           const orderTotal = Number(orderRow.total);
 
-          const currencyOk =
-            !remote.currency ||
-            remote.currency.toUpperCase() === "SAR";
+          const currencyOk = isSarCurrency(remote.currency);
           const amountOk =
             typeof remote.amountHalalas !== "number" ||
             remote.amountHalalas / 100 + 0.01 >= orderTotal;

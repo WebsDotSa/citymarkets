@@ -148,6 +148,17 @@ vi.mock("@/lib/payments/moyasar", () => ({
   fetchPayment: vi.fn(),
   createInvoice: vi.fn(),
   toHalalas: vi.fn((n: number) => Math.round(n * 100)),
+  mapMoyasarStatusToDb: vi.fn((s: string) =>
+    s === "paid" || s === "captured"
+      ? "paid"
+      : s === "failed" || s === "voided" || s === "refunded"
+        ? "failed"
+        : "pending",
+  ),
+  isSarCurrency: vi.fn((c: string | undefined | null) => {
+    if (!c) return true;
+    return c.trim().toUpperCase() === "SAR";
+  }),
 }));
 vi.mock("@/lib/orders/loyalty", () => ({
   awardPointsForOrder: vi.fn(),

@@ -354,3 +354,43 @@ export async function fetchPayment(
     return { success: false, error: 'تعذّر الاتصال ببوابة الدفع' };
   }
 }
+
+/**
+ * FIX (P1-4): single source of truth for mapping a Moyasar payment
+ * status to our `orders.payment_status` column value. Previously the
+ * canonical webhook (`mapPaymentDbStatus`) and the inline-confirm helper
+ * (`moyasar-confirm.ts`) had two different maps: `refunded` mapped to
+ * `pending` in the webhook but to `failed` in inline-confirm. A refund
+ * event therefore ended up with inconsistent payment_status depending
+ * on which path the customer's gateway confirmed through.
+ *
+ * Mapping:
+ *   paid, captured        → 'paid'
+ *   failed, voided, refunded → 'failed'
+ *   anything else         → 'pending'  (initial webhook; awaiting terminal state)
+ *
+ * `refunded` is treated as `failed` because it's a terminal negative
+ * state from the customer's perspective (money is no longer with the
+ * marketplace). The webhook's previous 'pending' mapping would have
+ * left the row stuck at payment_status='pending' after a refund.
+ */
+export function mapMoyasarStatusToDb(remote: string): "paid" | "failed" | "pending" {
+  if (remote === "paid" || remote === "captured") return "paid";
+  if (remote === "failed" || remote === "voided" || remote === "refunded") return "failed";
+  return "pending";
+}
+
+/**
+ * FIX (P1-3): case-insensitive currency comparison shared by the
+ * webhook and inline-confirm. The previous webhook code did
+ * `remote.currency.toUpperCase() !== "SAR"` while confirm did
+ * `payment.currency !== 'SAR'` — a lowercase `"sar"` from the
+ * gateway passed confirm but failed the webhook.
+ *
+ * Returns `true` when the currency is SAR (or absent — gateways
+ * occasionally omit currency for refund/void events).
+ */
+export function isSarCurrency(currency: string | undefined | null): boolean {
+  if (!currency) return true;
+  return currency.trim().toUpperCase() === "SAR";
+}

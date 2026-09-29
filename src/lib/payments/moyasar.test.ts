@@ -26,6 +26,8 @@ import {
   fetchPayment,
   isMoyasarConfigured,
   isMoyasarInlineConfigured,
+  isSarCurrency,
+  mapMoyasarStatusToDb,
   toHalalas,
   getMoyasarPublishableKey,
   getMoyasarSiteUrl,
@@ -392,5 +394,52 @@ describe("fetchPayment", () => {
     const res = await mod.fetchPayment("pay_1");
     expect(res.success).toBe(false);
     expect(res.error).toMatch(/ميسر/);
+  });
+});
+
+describe("mapMoyasarStatusToDb (P1-2/3/4)", () => {
+  it("maps 'paid' and 'captured' to 'paid'", () => {
+    expect(mapMoyasarStatusToDb("paid")).toBe("paid");
+    expect(mapMoyasarStatusToDb("captured")).toBe("paid");
+  });
+
+  it("maps 'failed', 'voided', 'refunded' to 'failed'", () => {
+    // Regression for P1-4: the previous inline-confirm map treated
+    // 'refunded' as 'pending' while the webhook treated it as 'failed'.
+    // The shared helper now classifies every terminal-negative as
+    // 'failed' so the same payment cannot end up with two different
+    // payment_status values depending on which path confirmed it.
+    expect(mapMoyasarStatusToDb("failed")).toBe("failed");
+    expect(mapMoyasarStatusToDb("voided")).toBe("failed");
+    expect(mapMoyasarStatusToDb("refunded")).toBe("failed");
+  });
+
+  it("defaults unknown statuses to 'pending'", () => {
+    expect(mapMoyasarStatusToDb("initiated")).toBe("pending");
+    expect(mapMoyasarStatusToDb("")).toBe("pending");
+    expect(mapMoyasarStatusToDb("anything-else")).toBe("pending");
+  });
+});
+
+describe("isSarCurrency (P1-3)", () => {
+  it("returns true when currency is undefined or null (gateway may omit)", () => {
+    // Gateways occasionally omit currency for refund / void events.
+    // Treating absence as SAR lets the rest of the pipeline run.
+    expect(isSarCurrency(undefined)).toBe(true);
+    expect(isSarCurrency(null)).toBe(true);
+    expect(isSarCurrency("")).toBe(true);
+  });
+
+  it("accepts exact 'SAR' regardless of whitespace / casing", () => {
+    expect(isSarCurrency("SAR")).toBe(true);
+    expect(isSarCurrency("sar")).toBe(true);
+    expect(isSarCurrency("Sar")).toBe(true);
+    expect(isSarCurrency("  SAR  ")).toBe(true);
+  });
+
+  it("rejects non-SAR currencies", () => {
+    expect(isSarCurrency("USD")).toBe(false);
+    expect(isSarCurrency("KWD")).toBe(false);
+    expect(isSarCurrency("EUR")).toBe(false);
   });
 });
