@@ -34,6 +34,7 @@ import {
 } from "./resolve-address";
 import type { CouponRow } from "../pricing";
 import { haversineKm } from '@/lib/delivery';
+import { generateVendorOrderNumber } from "@/lib/orders/order-number";
 import {
   parseSlotsConfig,
   riyadhWallClockToUtc,
@@ -334,25 +335,49 @@ export async function createCheckout(
   // re-checked + locked in resolveItems; we still decrement here
   // inside the same transaction so a single ROLLBACK unwinds
   // everything).
+  //
+  // P2-6 (oversell guard): the UPDATE has `AND stock_quantity >=
+  // $1` so a concurrent checkout that reserved the last unit sees
+  // rowCount=0 and we return stock_insufficient — the route maps
+  // that to 409. Without this guard, two concurrent buyers at
+  // stock=1 each read stock=1 in resolveItems, both pass the
+  // pre-check, and the second UPDATE drives stock_quantity
+  // negative (oversell).
   for (const it of resolved.catalog) {
     if (it.track_stock) {
-      await client.query(
+      const dec = await client.query(
         `UPDATE vendor_products
             SET stock_quantity = stock_quantity - $1
-          WHERE id = $2 AND vendor_id = $3`,
+          WHERE id = $2 AND vendor_id = $3
+            AND stock_quantity >= $1`,
         [it.quantity, it.product_id, CITY_MARKETS_VENDOR_ID],
       );
+      if (dec.rowCount === 0) {
+        return {
+          success: false,
+          error: "نفد المخزون",
+          kind: "stock_insufficient",
+        };
+      }
     }
   }
   for (const g of resolved.vendorGroups) {
     for (const it of g.items) {
       if (it.track_stock) {
-        await client.query(
+        const dec = await client.query(
           `UPDATE vendor_products
               SET stock_quantity = stock_quantity - $1
-            WHERE id = $2 AND vendor_id = $3`,
+            WHERE id = $2 AND vendor_id = $3
+              AND stock_quantity >= $1`,
           [it.quantity, it.product_id, g.vendor_id],
         );
+        if (dec.rowCount === 0) {
+          return {
+            success: false,
+            error: "نفد المخزون",
+            kind: "stock_insufficient",
+          };
+        }
       }
     }
   }
@@ -536,15 +561,6 @@ export async function createCheckout(
     couponCode: coupon?.code ?? null,
     duplicate: false,
   };
-}
-
-function generateVendorOrderNumber(slug: string): string {
-  const year = new Date().getFullYear();
-  const random = Math.floor(Math.random() * 100000)
-    .toString()
-    .padStart(5, "0");
-  const prefix = slug.slice(0, 2).toUpperCase();
-  return `${prefix}-${year}-${random}`;
 }
 
 function mapItemError(err: ItemResolutionError): CheckoutFailure {
