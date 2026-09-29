@@ -5,7 +5,15 @@ import {
   getTamaraWebhookToken,
   verifyWebhookSignature,
 } from "@/lib/payments/tamara";
-import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
+import {
+  recordPaymentEvent,
+  finalizePaymentEvent,
+} from "@/lib/payments/event-ledger";
+import {
+  awardPointsForOrder,
+  getLoyaltySettings,
+  resolveRedeemForOrder,
+} from "@/lib/orders/loyalty";
 import { error as logError, warn as logWarn, info as logInfo } from "@/lib/logger";
 
 /**
@@ -156,6 +164,33 @@ export async function POST(request: NextRequest) {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+
+      // payment_events ledger (migration 073) — INSERT first so any
+      // gateway replay hits the UNIQUE (invoice_id, gateway, event_type)
+      // index and short-circuits the rest of the work. Mirrors the
+      // Moyasar webhook pattern. Atomic with the order updates via the
+      // surrounding transaction: if the order mutation rolls back, the
+      // ledger row rolls back too and a fresh replay gets to insert
+      // again. See src/lib/payments/event-ledger.ts.
+      const eventType =
+        typeof body.order_status === "string" && body.order_status
+          ? `tamara.${String(body.order_status)}`
+          : "tamara.notification";
+      const ledgerResult = await recordPaymentEvent(client, {
+        invoiceId: checkoutId,
+        gateway: "tamara",
+        eventType,
+        raw: body,
+      });
+      if (ledgerResult === "duplicate") {
+        logInfo(
+          `[tamara] duplicate event ${eventType} for ${checkoutId}; ` +
+            `idempotent ack without re-processing order`,
+        );
+        await client.query("COMMIT");
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+
       await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `order:${orderId}`,
       ]);
@@ -252,6 +287,25 @@ export async function POST(request: NextRequest) {
       }
 
       await client.query("COMMIT");
+
+      // Mark the ledger row as processed for the order we just updated.
+      // Done after COMMIT so the finalize reflects the post-commit truth;
+      // if finalize itself fails the ledger row stays at status='received'
+      // and a subsequent replay will re-run the whole handler.
+      try {
+        await finalizePaymentEvent(client, {
+          invoiceId: checkoutId,
+          gateway: "tamara",
+          eventType,
+          status: "processed",
+          orderId,
+        });
+      } catch (finalErr) {
+        logError("[event-ledger] finalize failed", finalErr, {
+          invoiceId: checkoutId,
+          orderId,
+        });
+      }
     } catch (e) {
       try {
         await client.query("ROLLBACK");
