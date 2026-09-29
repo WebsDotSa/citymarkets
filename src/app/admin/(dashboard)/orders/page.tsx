@@ -100,10 +100,11 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("");
-  // Default to paid-only. Unpaid online attempts live in
-  // /admin/abandoned-carts instead — keeping the orders list focused on
-  // revenue-bearing rows. Clear the filter to see in-flight / COD orders.
-  const [paymentFilter, setPaymentFilter] = useState<string>("paid");
+  // Default to "all payment statuses" so the admin sees every order on first
+  // load — paid and unpaid alike. Use the filter dropdown to narrow down to
+  // a specific payment state. Unpaid online attempts also live in
+  // /admin/abandoned-carts for a more focused view of revenue-at-risk.
+  const [paymentFilter, setPaymentFilter] = useState<string>("");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const { showToast } = useToast();
@@ -229,7 +230,7 @@ export default function AdminOrdersPage() {
           <div>
             <h1 className="text-2xl font-bold text-secondary">إدارة الطلبات</h1>
             <p className="text-sm text-gray-500 mt-1">
-              الطلبات المدفوعة فقط. الطلبات الإلكترونية غير المدفوعة تظهر في
+              جميع طلبات المتجر. استخدم الفلاتر أعلاه للبحث حسب الحالة أو طريقة الدفع. الطلبات الإلكترونية غير المدفوعة تظهر أيضاً في
               {" "}
               <Link
                 href="/admin/abandoned-carts"
