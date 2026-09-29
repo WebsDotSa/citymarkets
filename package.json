@@ -7,16 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "worker:smoke": "tsx scripts/worker-smoke.ts",
+    "proxy:guard": "tsx scripts/proxy-runtime-guard.ts",
+    "domain:guard": "tsx scripts/check-domain-contracts.ts",
     "qa:smoke": "node scripts/qa-smoke.mjs",
     "qa:critical-paths": "node scripts/qa-critical-paths.mjs",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:migrate:dry-run": "tsx scripts/migrate.ts --dry-run",
-    "db:drift-report": "tsx scripts/migration-drift-report.ts",
-    "worker:smoke": "tsx scripts/worker-smoke.ts",
-    "proxy:guard": "tsx scripts/proxy-runtime-guard.ts",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "db:drift-report": "tsx scripts/migration-drift-report.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",
