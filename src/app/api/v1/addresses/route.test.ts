@@ -14,7 +14,20 @@ type QueryCall = { sql: string; params: unknown[] };
 const calls: QueryCall[] = [];
 
 vi.mock("@/lib/db", () => ({
-  pool: { connect: vi.fn() },
+  pool: {
+    // P2-3: the address service uses pool.connect() for the
+    // is_default-toggle transaction. Provide a minimal client mock that
+    // delegates query() to the same logic as the top-level `query`
+    // mock, so test setups (mockRows) work for both code paths.
+    connect: vi.fn(async () => ({
+      query: vi.fn(async (sql: string, params: unknown[] = []) => {
+        calls.push({ sql, params });
+        if ((query as any).mockRows) return { rows: (query as any).mockRows };
+        return { rows: [], rowCount: 0 };
+      }),
+      release: vi.fn(),
+    })),
+  },
   query: vi.fn(async (sql: string, params: unknown[] = []) => {
     calls.push({ sql, params });
     if ((query as any).mockRows) return { rows: (query as any).mockRows };
