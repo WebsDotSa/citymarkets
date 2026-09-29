@@ -6,6 +6,15 @@ import { updateOrderSchema } from '@/lib/validation';
 import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { ALL_ORDER_STATES, ALL_PAYMENT_STATES } from '@/lib/orders/state-machine';
+import {
+  ORDER_BASE_COLUMNS,
+  ORDER_LIST_COLUMNS,
+  ORDER_ADDRESS_COLUMNS,
+  ORDER_USER_COLUMNS,
+  ORDER_DETAIL_JOINS,
+  ORDER_LIST_JOINS,
+} from '@/lib/orders/sql-fragments';
 
 function idCheck(url: URL) {
   const id = url.searchParams.get('id');
@@ -23,18 +32,11 @@ export async function GET(request: NextRequest) {
 
     if (singleId) {
       const ord = await query(
-        `SELECT o.id, o.status, o.subtotal::float as subtotal, o.delivery_fee::float as delivery_fee,
-                o.service_fee::float as service_fee, o.discount::float as discount, o.total::float as total,
-                o.notes, o.internal_notes, o.payment_method, o.payment_reference,
-                o.guest_name, o.guest_phone, o.guest_city, o.guest_district, o.guest_street, o.guest_building,
-                o.created_at, o.updated_at, o.address_id, o.user_id::text as user_id,
-                a.label as address_label, a.address_text, a.lat as address_lat, a.lng as address_lng,
-                a.description as address_description,
-                COALESCE(a.place_images, '{}') as address_place_images,
-                u.phone as user_phone, u.name as user_name
-         FROM orders o
-         LEFT JOIN addresses a ON o.address_id = a.id
-         LEFT JOIN users u ON o.user_id = u.id
+        `SELECT ${ORDER_BASE_COLUMNS},
+                o.address_id, o.user_id::text as user_id,
+                ${ORDER_ADDRESS_COLUMNS},
+                ${ORDER_USER_COLUMNS}
+         ${ORDER_DETAIL_JOINS}
          WHERE o.id = $1
          LIMIT 1`,
         [singleId]
@@ -95,11 +97,20 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')?.trim() || '';
 
     // Validate statusFilter against known values — silently ignore invalid filters
-    // instead of passing arbitrary strings to the SQL query.
-    const allowedStatuses = ['pending', 'confirmed', 'shopping', 'on_the_way', 'delivered', 'cancelled'];
-    const safeStatusFilter = allowedStatuses.includes(statusFilter) ? statusFilter : '';
-    // payment_status enum is wider (unpaid/pending/paid/failed/refunded); ignore unknowns.
-    const allowedPaymentStatuses = ['unpaid', 'pending', 'paid', 'failed', 'refunded'];
+    // instead of passing arbitrary strings to the SQL query. The canonical
+    // list lives in `@/lib/orders/state-machine` so the API stays in sync
+    // with the Postgres enum and the UI state machine.
+    const safeStatusFilter = (ALL_ORDER_STATES as readonly string[]).includes(statusFilter)
+      ? statusFilter
+      : '';
+    // payment_status enum is wider than the canonical `ALL_PAYMENT_STATES`
+    // because the legacy `unpaid` alias still exists in some rows (pre-migration
+    // state, kept for backwards compatibility in /api/payments/status). We
+    // explicitly union the canonical four with the legacy alias.
+    const allowedPaymentStatuses: readonly string[] = [
+      ...ALL_PAYMENT_STATES,
+      "unpaid",
+    ];
     const safePaymentStatusFilter = allowedPaymentStatuses.includes(paymentStatusFilter)
       ? paymentStatusFilter
       : '';
@@ -132,16 +143,10 @@ export async function GET(request: NextRequest) {
 
     const dataParams = [...params, limit, offset];
     const result = await query(
-      `SELECT o.id, o.status, o.payment_status, o.subtotal::float as subtotal, o.delivery_fee::float as delivery_fee,
-            o.service_fee::float as service_fee, o.discount::float as discount, o.total::float as total,
-            o.notes, o.payment_method, o.payment_reference,
-            o.guest_name, o.guest_phone,
-            o.created_at, o.updated_at,
+      `SELECT ${ORDER_LIST_COLUMNS},
             a.label as address_label, a.address_text, a.lat as address_lat, a.lng as address_lng,
-            u.phone as user_phone, u.name as user_name
-     FROM orders o
-     LEFT JOIN addresses a ON o.address_id = a.id
-     LEFT JOIN users u ON o.user_id = u.id
+            ${ORDER_USER_COLUMNS}
+     ${ORDER_LIST_JOINS}
      ${whereClause}
      ORDER BY o.created_at DESC
      LIMIT $${pi++} OFFSET $${pi++}`,

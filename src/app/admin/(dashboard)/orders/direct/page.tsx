@@ -5,19 +5,13 @@ import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
 import { Loader2, ChevronLeft, MessageCircle, Package, User } from 'lucide-react';
 import type { AdminDirectOrder } from '@/lib/admin-types';
+import { ORDER_STATUSES, getOrderStatusConfig } from '@/lib/orders';
 
+// Status labels are sourced from `ORDER_STATUSES` + `getOrderStatusConfig()`
+// (canonical state machine at `@/lib/orders/state-machine`). The previous
+// inline map held stale keys (`accepted`, `in_progress`) that are NOT
+// valid `orders.status` enum values and drifted from the central enum.
 type DirectOrderRow = AdminDirectOrder;
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'بانتظار التأكيد',
-  shopping: 'جارٍ التحضير',
-  preparing: 'جارٍ التحضير',
-  accepted: 'تم القبول',
-  in_progress: 'قيد التنفيذ',
-  on_the_way: 'في الطريق',
-  delivered: 'تم التوصيل',
-  cancelled: 'ملغي',
-};
 
 export default function AdminDirectOrdersPage() {
   const router = useRouter();
@@ -87,8 +81,8 @@ export default function AdminDirectOrdersPage() {
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
           >
             <option value="">جميع الحالات</option>
-            {Object.entries(STATUS_LABELS).map(([k, v]) => (
-              <option key={k} value={k}>{v}</option>
+            {Object.entries(ORDER_STATUSES).map(([k, v]) => (
+              <option key={k} value={k}>{v.label}</option>
             ))}
           </select>
         </div>
@@ -121,7 +115,7 @@ export default function AdminDirectOrdersPage() {
                           color: o.status === 'pending' ? '#92400E' : '#1E40AF',
                         }}
                       >
-                        {STATUS_LABELS[o.status] || o.status}
+                        {getOrderStatusConfig(o.status).label}
                       </span>
                       {o.unread_count > 0 && (
                         <span className="bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 flex items-center gap-1">

@@ -157,6 +157,18 @@ describe("PATCH /api/v1/vendor/orders/[id]/status — auth & validation", () => 
     expect(res.status).toBe(400);
   });
 
+  it("returns 400 when status is an unknown value (Zod rejects before DB)", async () => {
+    // P2-2: vendorOrderStatusSchema rejects values not in the canonical
+    // enum. Previously a typo would hit the DB and crash with
+    // `invalid input value for enum`. Now Zod short-circuits with 400.
+    const res = await PATCH(patchReq("vo-1", { status: "frobnicated" }), {
+      params: Promise.resolve({ id: "vo-1" }),
+    } as never);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toMatch(/حالة طلب المتجر/);
+  });
+
   it("returns 404 when order does not belong to this vendor", async () => {
     // Smart mock that always returns empty for the SELECT — simulates
     // the cross-tenant WHERE clause filter excluding the row.

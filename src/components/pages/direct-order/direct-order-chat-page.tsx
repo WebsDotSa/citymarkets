@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
+import { getOrderStatusConfig } from '@/lib/orders';
 import { ChatPanel } from '@/components/ui/chat-panel/chat-panel';
 import {
   ChevronLeft,
@@ -12,60 +13,24 @@ import {
   X,
   Loader2,
   AlertTriangle,
-  Clock,
-  Phone,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
   MessageCircle,
 } from 'lucide-react';
+import {
+  useOrderPolling,
+  addOrderItem,
+  removeOrderItem,
+  type OrderDetail,
+  type OrderItem,
+} from './shared';
 
-interface OrderDetail {
-  id: string;
-  orderNumber: string;
-  status: string;
-  type: 'catalog' | 'direct';
-  subtotal: number;
-  delivery_fee: number;
-  service_fee: number;
-  tax: number;
-  total: number;
-  payment_method: string;
-  payment_status: string;
-  notes?: string | null;
-  created_at: string;
-  voice_note_url?: string | null;
-  voice_note_duration?: number | null;
-  address: {
-    label: string;
-    text: string;
-    plus_code?: string | null;
-    city?: string | null;
-    district?: string | null;
-    place_images?: string[];
-  };
-}
-
-interface OrderItem {
-  id: string;
-  product_id?: string | null;
-  name_ar?: string | null;
-  image_url?: string | null;
-  free_text?: string | null;
-  quantity: number;
-  resolved_price?: number | null;
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'بانتظار التأكيد',
-  shopping: 'جارٍ التحضير',
-  preparing: 'جارٍ التحضير',
-  accepted: 'تم القبول',
-  in_progress: 'قيد التنفيذ',
-  on_the_way: 'في الطريق',
-  delivered: 'تم التوصيل',
-  cancelled: 'ملغي',
-};
+// Status label is sourced from `getOrderStatusConfig()` (canonical state
+// machine at `@/lib/orders/state-machine`).
+//
+// Polling + types + add/remove helpers live in `./shared.ts` so the
+// companion `/orders/direct/[id]` page can share them. Both pages were
+// near-duplicates; unified in P3-3 (audit 2026-09-29).
 
 /**
  * Dedicated chat page for a direct order. Shows:
@@ -80,48 +45,31 @@ const STATUS_LABELS: Record<string, string> = {
  */
 export function DirectOrderChatPage({ orderId }: { orderId: string }) {
   const router = useRouter();
-  const [order, setOrder] = useState<OrderDetail | null>(null);
-  const [items, setItems] = useState<OrderItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [addingItem, setAddingItem] = useState(false);
   const [newItemText, setNewItemText] = useState('');
   const [newItemQty, setNewItemQty] = useState(1);
   const [adding, setAdding] = useState(false);
 
-  async function fetchOrder() {
-    try {
-      const res = await fetch(`/api/v1/orders/${orderId}`, { credentials: 'include' });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل التحميل');
-      setOrder(data.order);
-      setItems(data.items || []);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchOrder();
-    const t = setInterval(fetchOrder, 15000);
-    return () => clearInterval(t);
-  }, [orderId]);
+  const {
+    order,
+    items,
+    loading,
+    error,
+    setError,
+    refetch: fetchOrder,
+  } = useOrderPolling(orderId, { intervalMs: 15000 });
 
   async function addItem() {
     if (!newItemText.trim()) return;
     setAdding(true);
     try {
-      const res = await fetch(`/api/v1/orders/${orderId}/items`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ free_text: newItemText.trim(), quantity: newItemQty }),
+      const result = await addOrderItem({
+        orderId,
+        freeText: newItemText.trim(),
+        quantity: newItemQty,
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل الإضافة');
+      if (!result.success) throw new Error(result.error || 'فشل الإضافة');
       setNewItemText('');
       setNewItemQty(1);
       setAddingItem(false);
@@ -135,15 +83,12 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
 
   async function removeItem(itemId: string) {
     if (!confirm('حذف هذا العنصر؟')) return;
-    try {
-      await fetch(`/api/v1/orders/${orderId}/items?itemId=${itemId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      await fetchOrder();
-    } catch (err) {
-      setError((err as Error).message);
+    const result = await removeOrderItem({ orderId, itemId });
+    if (!result.success) {
+      setError(result.error || 'فشل الحذف');
+      return;
     }
+    await fetchOrder();
   }
 
   if (loading) {
@@ -192,7 +137,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
           </div>
         </div>
         <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
-          {STATUS_LABELS[order.status] || order.status}
+          {getOrderStatusConfig(order.status).label}
         </span>
       </div>
 

@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
-import { ChatPanel, type ChatMessage } from '@/components/ui/chat-panel/chat-panel';
+import { ChatPanel } from '@/components/ui/chat-panel/chat-panel';
 import { InvoiceActions } from '@/components/orders/invoice-actions';
 import { getOrderStatusConfig } from '@/lib/orders';
 import {
@@ -17,128 +17,58 @@ import {
   CheckCircle2,
   Clock,
 } from 'lucide-react';
+import {
+  useOrderPolling,
+  addOrderItem,
+  removeOrderItem,
+  type OrderDetail,
+  type OrderItem,
+} from './shared';
 
-interface OrderDetail {
-  id: string;
-  orderNumber: string;
-  status: string;
-  type: 'catalog' | 'direct';
-  subtotal: number;
-  delivery_fee: number;
-  service_fee: number;
-  tax: number;
-  discount: number;
-  total: number;
-  payment_method: string;
-  payment_status: string;
-  notes?: string | null;
-  created_at: string;
-  updated_at: string;
-  scheduled?: boolean;
-  scheduled_for?: string | null;
-  slot_window?: string | null;
-  voice_note_url?: string | null;
-  voice_note_duration?: number | null;
-  customer_name?: string | null;
-  customer_phone?: string | null;
-  address: {
-    label: string;
-    text: string;
-    lat?: number | null;
-    lng?: number | null;
-    plus_code?: string | null;
-    description?: string | null;
-    place_images?: string[];
-    city?: string | null;
-    district?: string | null;
-  };
-  direct_meta?: {
-    customer_edited: boolean;
-    last_edited_at?: string | null;
-    fee_acknowledged: boolean;
-  } | null;
-}
-
-interface OrderItem {
-  id: string;
-  product_id?: string | null;
-  name_ar?: string | null;
-  image_url?: string | null;
-  price?: number | null;
-  free_text?: string | null;
-  quantity: number;
-  unit_price: number;
-  notes?: string | null;
-  resolved_price?: number | null;
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'بانتظار التأكيد',
-  shopping: 'جارٍ التحضير',
-  preparing: 'جارٍ التحضير',
-  accepted: 'تم القبول',
-  in_progress: 'قيد التنفيذ',
-  on_the_way: 'في الطريق',
-  delivered: 'تم التوصيل',
-  cancelled: 'ملغي',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: '#F59E0B',
-  shopping: '#3B82F6',
-  preparing: '#3B82F6',
-  accepted: '#10B981',
-  in_progress: '#8B5CF6',
-  on_the_way: '#0EA5E9',
-  delivered: '#10B981',
-  cancelled: '#EF4444',
-};
+// Status label + hex are sourced from `getOrderStatusConfig()` (canonical
+// state machine at `@/lib/orders/state-machine`). Inline fallback
+// `#6B7280` (gray-500) is used when the API returns an unknown status.
+//
+// Polling + types + add/remove helpers live in `./shared.ts` so the
+// companion `/orders/direct/[id]/chat` page can share them. The detail
+// page used to be a near-duplicate of the chat page; both were unified
+// in P3-3 (audit 2026-09-29).
 
 export function OrderDetailClient({ orderId }: { orderId: string }) {
   const router = useRouter();
-  const [order, setOrder] = useState<OrderDetail | null>(null);
-  const [items, setItems] = useState<OrderItem[]>([]);
-  const [chatUnread, setChatUnread] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [addingItem, setAddingItem] = useState(false);
   const [newItemText, setNewItemText] = useState('');
   const [newItemQty, setNewItemQty] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [chatUnread, setChatUnread] = useState(0);
 
-  async function fetchOrder() {
-    try {
-      const res = await fetch(`/api/v1/orders/${orderId}`, { credentials: 'include' });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل التحميل');
-      setOrder(data.order);
-      setItems(data.items || []);
-      setChatUnread(data.chat?.unread || 0);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
+  // The shared hook drives the poll loop. We pipe `onFetched` to grab
+  // the chat-unread counter that lives alongside the order payload.
+  const onFetched = useCallback((data: { raw: unknown }) => {
+    const raw = data.raw as { chat?: { unread?: number } } | undefined;
+    if (raw && typeof raw.chat?.unread === 'number') {
+      setChatUnread(raw.chat.unread);
     }
-  }
-
-  useEffect(() => {
-    fetchOrder();
-    const t = setInterval(fetchOrder, 12000);
-    return () => clearInterval(t);
-  }, [orderId]);
+  }, []);
+  const {
+    order,
+    items,
+    loading,
+    error,
+    setError,
+    refetch: fetchOrder,
+  } = useOrderPolling(orderId, { intervalMs: 12000, onFetched });
 
   async function addItem() {
     if (!newItemText.trim()) return;
     setAdding(true);
     try {
-      const res = await fetch(`/api/v1/orders/${orderId}/items`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ free_text: newItemText.trim(), quantity: newItemQty }),
+      const result = await addOrderItem({
+        orderId,
+        freeText: newItemText.trim(),
+        quantity: newItemQty,
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل الإضافة');
+      if (!result.success) throw new Error(result.error || 'فشل الإضافة');
       setNewItemText('');
       setNewItemQty(1);
       setAddingItem(false);
@@ -152,23 +82,19 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
 
   async function removeItem(itemId: string) {
     if (!confirm('حذف هذا العنصر؟')) return;
-    try {
-      const res = await fetch(`/api/v1/orders/${orderId}/items?itemId=${itemId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل الحذف');
-      await fetchOrder();
-    } catch (err) {
-      setError((err as Error).message);
+    const result = await removeOrderItem({ orderId, itemId });
+    if (!result.success) {
+      setError(result.error || 'فشل الحذف');
+      return;
     }
+    await fetchOrder();
   }
 
   const isDirect = order?.type === 'direct';
   const isLocked = Boolean(order && ['on_the_way', 'delivered', 'cancelled'].includes(order.status));
-  const statusColor = order ? (STATUS_COLORS[order.status] || '#6B7280') : '#6B7280';
-  const statusLabel = order ? (STATUS_LABELS[order.status] || order.status) : '';
+  const statusConfig = order ? getOrderStatusConfig(order.status) : null;
+  const statusColor = statusConfig?.hex ?? '#6B7280';
+  const statusLabel = statusConfig?.label ?? '';
 
   if (loading) {
     return (

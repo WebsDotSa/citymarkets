@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomInt } from "node:crypto";
 import { query, pool } from "@/lib/db";
 import { getCustomerUserIdFromRequest } from '@/lib/identity';
 import { checkRateLimit, createRateLimitHeaders, GENERAL_API_CONFIG } from "@/lib/rate-limit";
 // BUGFIX (audit 2026-09-29): replace the local isStoreOpen helper with
 // the canonical Riyadh-tz-aware one. See siblings.
 import { isVendorOpen, parseVendorHours } from "@/lib/delivery/vendor-store-hours";
+import { generateVendorOrderNumber } from "@/lib/orders/order-number";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
@@ -33,21 +33,6 @@ interface VendorProductRow {
   stock_quantity: number;
   track_stock: boolean;
   image_urls: string[] | null;
-}
-
-/**
- * SECURITY: order numbers must use a CSPRNG (not Math.random) so an
- * attacker cannot predict them. We also widen the random suffix to
- * 9 digits (10⁹ values) — collisions across a single vendor-year are
- * still extremely unlikely at the actual order volume, but 5 digits
- * (10⁵) had a birthday-paradox collision risk at scale.
- */
-function generateOrderNumber(vendorSlug: string): string {
-  const year = new Date().getFullYear();
-  // randomInt is exclusive on the upper bound — [0, 1_000_000_000).
-  const random = randomInt(0, 1_000_000_000).toString().padStart(9, "0");
-  const prefix = vendorSlug.slice(0, 2).toUpperCase() || "V";
-  return `${prefix}-${year}-${random}`;
 }
 
 export async function GET(
@@ -382,7 +367,7 @@ export async function POST(
     // Create order — link to authenticated user so it appears in their
     // "my orders" view. Previously customer_id was hardcoded NULL, which
     // made vendor orders invisible to the customer who placed them.
-    const orderNumber = generateOrderNumber(slug);
+    const orderNumber = generateVendorOrderNumber(slug);
     const orderResult = await client.query(
       `INSERT INTO vendor_orders
         (order_number, vendor_id, customer_id, customer_name, customer_phone, customer_email,

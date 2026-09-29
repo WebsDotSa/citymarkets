@@ -114,8 +114,12 @@ describe("PATCH /api/admin/driver/orders/[id] — COD paid through ledger (P1-1)
           return { rows: [{ id: "driver-1" }] };
         }
         if (s.startsWith("SELECT") && /FOR UPDATE/.test(s)) {
-          // pending order, not yet paid, no driver assigned yet
-          return { rows: [{ id: "ord-1", status: "pending", payment_status: "pending", driver_id: null }] };
+          // Order already picked up by the driver (status='on_the_way',
+          // driver_id=driver-1). The driver is now marking it delivered
+          // and collecting COD payment. The non-claim branch (claim:false
+          // would also work) is the realistic flow; we use claim:false
+          // because the driver already owns the order.
+          return { rows: [{ id: "ord-1", status: "on_the_way", payment_status: "pending", driver_id: "driver-1" }] };
         }
         // UPDATE orders ... RETURNING
         return { rows: [{ id: "ord-1", order_number: "TRK1", status: "delivered" }] };
@@ -126,7 +130,7 @@ describe("PATCH /api/admin/driver/orders/[id] — COD paid through ledger (P1-1)
     vi.mocked(pool.connect).mockResolvedValueOnce(fakeClient as never);
 
     await PATCH(
-      patchRequest({ status: "delivered", claim: true }) as never,
+      patchRequest({ status: "delivered" }) as never,
       { params: Promise.resolve({ id: "ord-1" }) } as never,
     );
 

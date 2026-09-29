@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { pool, query } from "@/lib/db";
 import { computeOrderFees } from '@/lib/orders';
 import { computeDistanceFee } from '@/lib/delivery';
-import { haversineKm } from '@/lib/delivery';
+import { getMainStoreAndDistance } from '@/lib/delivery/main-store';
 
 import { error as logError } from '@/lib/logger';
 
@@ -47,18 +47,7 @@ export async function POST(request: NextRequest) {
     const pricing =
       (settingsResult.rows[0]?.value as Record<string, unknown>) ?? {};
 
-    interface MainStoreRow {
-      lat: string | number | null;
-      lng: string | number | null;
-      is_active: boolean | null;
-    }
-    const storeResult = await query<MainStoreRow>(
-      `SELECT lat, lng, is_active FROM stores
-        WHERE is_main = true
-        ORDER BY is_active DESC NULLS LAST
-        LIMIT 1`,
-    );
-    const store = storeResult.rows[0];
+    const { store, distanceKm } = await getMainStoreAndDistance(pool, lat, lng);
     if (
       !store ||
       store.is_active === false ||
@@ -70,13 +59,12 @@ export async function POST(request: NextRequest) {
         { status: 503 },
       );
     }
-
-    const distanceKm = haversineKm(
-      Number(store.lat),
-      Number(store.lng),
-      lat,
-      lng,
-    );
+    if (distanceKm == null) {
+      return NextResponse.json(
+        { success: false, error: "تعذّر حساب مسافة التوصيل" },
+        { status: 503 },
+      );
+    }
     const deliveryFee =
       deliveryMode === 'pickup' ? 0 : computeDistanceFee(distanceKm);
 

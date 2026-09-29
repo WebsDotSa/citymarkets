@@ -45,6 +45,7 @@ import type { DeliveryAddressRow } from "./resolve-address";
 import type { CouponRow } from "../pricing";
 import { reportCheckoutError } from "@/lib/errors/checkout-error-reporter";
 import { markOrderPaymentFailed } from "@/lib/payments/payment-service";
+import { getMainStoreAndDistance } from "@/lib/delivery/main-store";
 
 /** Caller identity resolved upstream by the route handler. */
 export interface CheckoutServiceCaller {
@@ -523,19 +524,15 @@ async function loadPricingJson(client: PoolClient): Promise<Record<string, unkno
 }
 
 async function loadMainStore(client: PoolClient): Promise<{ lat: number; lng: number } | null> {
-  interface MainStoreRow {
-    lat: string | number | null;
-    lng: string | number | null;
-    is_active: boolean;
-  }
-  const r = await client.query<MainStoreRow>(
-    `SELECT lat, lng, is_active FROM stores WHERE is_main = true LIMIT 1`,
-  );
-  const row = r.rows[0];
-  if (!row) return null;
-  if (row.is_active === false) return null;
-  if (row.lat == null || row.lng == null) return null;
-  return { lat: Number(row.lat), lng: Number(row.lng) };
+  // Delegate to the canonical helper. We pass no customer point
+  // (distance is computed later inside `createCheckout` after the
+  // address is resolved). The helper returns `{ store, distanceKm }`
+  // where `distanceKm` is null when no point was supplied.
+  const { store } = await getMainStoreAndDistance(client, null, null);
+  if (!store) return null;
+  if (store.is_active === false) return null;
+  if (store.lat == null || store.lng == null) return null;
+  return { lat: Number(store.lat), lng: Number(store.lng) };
 }
 
 async function loadUserAddresses(

@@ -3,17 +3,11 @@ import { query } from "@/lib/db";
 import { requireVendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
-
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  pending: ["confirmed", "cancelled"],
-  confirmed: ["preparing", "cancelled"],
-  preparing: ["ready", "cancelled"],
-  ready: ["out_for_delivery", "cancelled"],
-  out_for_delivery: ["delivered", "cancelled"],
-  delivered: [],
-  cancelled: [],
-  refunded: [],
-};
+import {
+  canTransition as stateMachineCanTransition,
+  invalidTransitionMessage as stateMachineInvalidMessage,
+} from '@/lib/orders/state-machine';
+import { vendorOrderStatusSchema } from '@/lib/validation/order';
 
 export async function PATCH(
   request: NextRequest,
@@ -29,7 +23,20 @@ export async function PATCH(
     if (unauthorized) return unauthorized;
 
     const { id } = await params;
-    const { status, notes } = await request.json();
+    const body = await request.json();
+    const { notes } = body as { notes?: string };
+
+    // P2-2 (production hardening 2): validate `status` against the
+    // canonical vendor-order status enum BEFORE the transition check.
+    // Previously a typo or random string would hit the DB and crash
+    // with `invalid input value for enum`. Now Zod rejects it at the
+    // boundary with the Arabic error message from the schema.
+    const statusResult = vendorOrderStatusSchema.safeParse((body as { status?: unknown })?.status);
+    if (!statusResult.success) {
+      const message = statusResult.error.issues[0]?.message ?? "حالة طلب المتجر غير صالحة";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    const status = statusResult.data;
 
     if (!status) {
       return NextResponse.json({ error: "الحالة مطلوبة" }, { status: 400 });
@@ -47,11 +54,24 @@ export async function PATCH(
 
     const order = orderResult.rows[0];
 
-    // Validate transition
-    const allowed = VALID_TRANSITIONS[order.status] || [];
-    if (!allowed.includes(status)) {
+    // P2-1 (production hardening 2): the vendor-role transition table
+    // is now centralised in `@/lib/orders/state-machine`. The previous
+    // inline `VALID_TRANSITIONS` map was a duplicate of the same logic
+    // and could drift (e.g. adding `refunded` in one place but not the
+    // other). canTransition() is the single source of truth; the route
+    // returns the state machine's Arabic message on rejection so the
+    // user sees consistent wording regardless of where the violation
+    // originated.
+    if (!stateMachineCanTransition("vendor", "vendor_orders", order.status, status)) {
       return NextResponse.json(
-        { error: `لا يمكن تغيير الحالة من ${order.status} إلى ${status}` },
+        {
+          error: stateMachineInvalidMessage(
+            "vendor",
+            "vendor_orders",
+            order.status,
+            status,
+          ),
+        },
         { status: 400 }
       );
     }

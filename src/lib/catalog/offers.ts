@@ -73,7 +73,7 @@ export interface OfferTargetInfo {
 // ────────────────────────────────────────────────────────────────────
 
 /** Round to 2 decimals, mirroring the DB NUMERIC(10,2) precision. */
-function round2(n: number): number {
+export function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 

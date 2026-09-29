@@ -20,6 +20,22 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 type QueryCall = { sql: string; params: unknown[] };
 
+/**
+ * Build a minimal `pg.QueryResult` shape for mock returns. `vi.mocked(query)`
+ * rejects partial returns (it requires `command, rowCount, oid, fields` in
+ * addition to `rows`). These fields are unused by the route handlers — they
+ * only read `.rows` — so the placeholder values are fine.
+ */
+function qr<R>(rows: ReadonlyArray<R>) {
+  return {
+    rows: rows as R[],
+    command: "",
+    rowCount: rows.length,
+    oid: 0,
+    fields: [] as never[],
+  };
+}
+
 function makeFakeClient(opts: {
   readRows?: Array<{ notification_id: string }>;
   orders?: Array<{ id: string; status: string; total: number; payment_method: string | null; created_at: string; customer_name: string | null; guest_phone: string | null; user_phone: string | null }>;
@@ -39,9 +55,9 @@ function makeFakeClient(opts: {
         return { rows: (opts.orders ?? []).map((o) => ({ id: o.id })) };
       }
       if (upper.startsWith('SELECT ID FROM PRODUCTS_UNIFIED')) {
-        return { rows: [] };
+        return qr([]);
       }
-      return { rows: [] };
+      return qr([]);
     }),
     release: vi.fn(),
   };
@@ -89,7 +105,7 @@ describe("PUT /api/admin/notifications — D6 fix: read-state persistence", () =
     vi.mocked(query).mockImplementation(async (sql: string, params: unknown[] = []) => {
       const upper = sql.trim().toUpperCase();
       if (upper.startsWith('INSERT')) writes.push({ sql, params });
-      return { rows: [] };
+      return qr([]);
     });
 
     const res = await PUT(mockRequest({ id: 'order-abc-123' }) as never);
@@ -110,7 +126,7 @@ describe("PUT /api/admin/notifications — D6 fix: read-state persistence", () =
     vi.mocked(query).mockImplementation(async (sql: string, params: unknown[] = []) => {
       const upper = sql.trim().toUpperCase();
       if (upper.startsWith('INSERT')) writes.push({ sql, params });
-      return { rows: [] };
+      return qr([]);
     });
 
     // Same id, twice.
@@ -133,12 +149,12 @@ describe("PUT /api/admin/notifications — D6 fix: read-state persistence", () =
       if (upper.startsWith('INSERT')) writes.push({ sql, params });
       // Materialize call: synthesize two orders.
       if (upper.startsWith('SELECT ID FROM ORDERS')) {
-        return { rows: [{ id: 'o-1' }, { id: 'o-2' }] };
+        return qr([{ id: 'o-1' }, { id: 'o-2' }]);
       }
       if (upper.startsWith('SELECT ID FROM PRODUCTS_UNIFIED')) {
-        return { rows: [{ id: 'p-1' }, { id: 'p-2' }] };
+        return qr([{ id: 'p-1' }, { id: 'p-2' }]);
       }
-      return { rows: [] };
+      return qr([]);
     });
 
     const res = await PUT(mockRequest({ markAll: true }) as never);
@@ -163,7 +179,7 @@ describe("PUT /api/admin/notifications — D6 fix: read-state persistence", () =
     vi.mocked(query).mockImplementation(async (sql: string, params: unknown[] = []) => {
       const upper = sql.trim().toUpperCase();
       if (upper.startsWith('INSERT')) writes.push({ sql, params });
-      return { rows: [] };
+      return qr([]);
     });
 
     const res = await PUT(mockRequest({}) as never);
@@ -177,7 +193,7 @@ describe("PUT /api/admin/notifications — D6 fix: read-state persistence", () =
     vi.mocked(query).mockImplementation(async (sql: string, params: unknown[] = []) => {
       const upper = sql.trim().toUpperCase();
       if (upper.startsWith('INSERT')) writes.push({ sql, params });
-      return { rows: [] };
+      return qr([]);
     });
 
     await PUT(mockRequest({ id: 'order-1' }) as never);
@@ -203,9 +219,9 @@ describe("GET /api/admin/notifications — D6 fix: persists read state into the 
       const upper = sql.trim().toUpperCase();
       if (upper.startsWith('SELECT NOTIFICATION_ID FROM ADMIN_NOTIFICATION_READS')) {
         readsCalls.push({ sql, params });
-        return { rows: [] };
+        return qr([]);
       }
-      return { rows: [] };
+      return qr([]);
     });
 
     const res = await GET(mockRequest(undefined) as never);
@@ -221,25 +237,23 @@ describe("GET /api/admin/notifications — D6 fix: persists read state into the 
     vi.mocked(query).mockImplementation(async (sql: string) => {
       const upper = sql.trim().toUpperCase();
       if (upper.startsWith('SELECT NOTIFICATION_ID FROM ADMIN_NOTIFICATION_READS')) {
-        return { rows: [{ notification_id: 'order-ORDERXYZ' }] };
+        return qr([{ notification_id: 'order-ORDERXYZ' }]);
       }
       if (upper.startsWith('SELECT') && upper.includes('FROM ORDERS')) {
-        return {
-          rows: [
-            {
-              id: 'ORDERXYZ',
-              status: 'pending',
-              total: 50,
-              payment_method: 'cash',
-              created_at: new Date().toISOString(),
-              customer_name: 'Tester',
-              guest_phone: null,
-              user_phone: null,
-            },
-          ],
-        };
+        return qr([
+          {
+            id: 'ORDERXYZ',
+            status: 'pending',
+            total: 50,
+            payment_method: 'cash',
+            created_at: new Date().toISOString(),
+            customer_name: 'Tester',
+            guest_phone: null,
+            user_phone: null,
+          },
+        ]);
       }
-      return { rows: [] };
+      return qr([]);
     });
 
     const res = await GET(mockRequest(undefined) as never);
@@ -256,25 +270,23 @@ describe("GET /api/admin/notifications — D6 fix: persists read state into the 
     vi.mocked(query).mockImplementation(async (sql: string) => {
       const upper = sql.trim().toUpperCase();
       if (upper.startsWith('SELECT NOTIFICATION_ID FROM ADMIN_NOTIFICATION_READS')) {
-        return { rows: [] }; // no read state
+        return qr([]); // no read state
       }
       if (upper.startsWith('SELECT') && upper.includes('FROM ORDERS')) {
-        return {
-          rows: [
-            {
-              id: 'UNREADORDER',
-              status: 'pending',
-              total: 50,
-              payment_method: 'cash',
-              created_at: new Date().toISOString(),
-              customer_name: 'Tester',
-              guest_phone: null,
-              user_phone: null,
-            },
-          ],
-        };
+        return qr([
+          {
+            id: 'UNREADORDER',
+            status: 'pending',
+            total: 50,
+            payment_method: 'cash',
+            created_at: new Date().toISOString(),
+            customer_name: 'Tester',
+            guest_phone: null,
+            user_phone: null,
+          },
+        ]);
       }
-      return { rows: [] };
+      return qr([]);
     });
 
     const res = await GET(mockRequest(undefined) as never);

@@ -15,7 +15,7 @@ type QueryCall = { sql: string; params: unknown[] };
 class FakeClient {
   public queries: QueryCall[] = [];
   private nextId = 0;
-  private mode: 'happy' | 'replay' | 'productMissing' | 'stockShort' | 'vendorInactive' = 'happy';
+  private mode: 'happy' | 'replay' | 'productMissing' | 'stockShort' | 'vendorInactive' | 'oversell' = 'happy';
 
   setMode(m: typeof this.mode) {
     this.mode = m;
@@ -23,7 +23,7 @@ class FakeClient {
     this.nextId = 0;
   }
 
-  async query(sql: string, params: unknown[] = []): Promise<{ rows: unknown[] }> {
+  async query(sql: string, params: unknown[] = []): Promise<{ rows: unknown[]; rowCount?: number }> {
     this.queries.push({ sql, params });
     const norm = sql.trim().toUpperCase();
 
@@ -142,6 +142,14 @@ class FakeClient {
 
     // -- vendor_products stock decrement --
     if (norm.startsWith('UPDATE VENDOR_PRODUCTS')) {
+      // P2-6 (oversell guard): when the test sets `oversell` mode,
+      // simulate a concurrent buyer who reserved the last unit. The
+      // UPDATE returns 0 rows because the guard
+      // `AND stock_quantity >= $1` filters it out. The transaction
+      // should abort with `out_of_stock`.
+      if (this.mode === 'oversell') {
+        return { rows: [], rowCount: 0 };
+      }
       return { rows: [] };
     }
 
@@ -491,6 +499,38 @@ describe('createCheckout', () => {
       // payment_status is 'pending' for both online and offline orders
       // (the webhook advances it to 'paid' on successful capture).
       expect(card.paymentStatus).toBe('pending');
+    }
+  });
+});
+
+describe('createCheckout — oversell guard (P2-6)', () => {
+  let client: FakeClient;
+  beforeEach(() => {
+    client = new FakeClient();
+  });
+
+  it('aborts the transaction with out_of_stock when the decrement UPDATE misses (concurrent buyer)', async () => {
+    // Resolve-items passes (stock appears > 0), then a concurrent
+    // buyer takes the last unit between the pre-check and our
+    // decrement — our UPDATE returns rowCount=0 because of the
+    // `AND stock_quantity >= $1` guard. The transaction should
+    // abort cleanly with out_of_stock, not produce an oversold
+    // row.
+    client.setMode('oversell');
+    const result = await createCheckout({
+      client: client as unknown as PoolClient,
+      input: baseInput,
+      pricing: basePricing,
+      coupon: null,
+      mainStore: baseMainStore,
+      addresses: [baseAddress],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      // P2-6 reuses the existing stock_insufficient kind — the route
+      // already maps it to 409. The new guard adds the rowCount=0
+      // detection that wasn't there before.
+      expect(result.kind).toBe('stock_insufficient');
     }
   });
 });

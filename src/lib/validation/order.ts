@@ -19,6 +19,11 @@ import {
   phoneSchema,
   uuidSchema,
 } from "./common";
+import {
+  ALL_ORDER_STATES,
+  ALL_PAYMENT_STATES,
+  ALL_VENDOR_ORDER_STATES,
+} from "@/lib/orders/state-machine";
 
 /**
  * Cart item schema
@@ -83,17 +88,35 @@ export const createOrderSchema = z.object({
  * in migrations/033 (which added `'paid'`). `'paid'` is intentionally
  * NOT included here — it is a payment_status only and must never be
  * written to the lifecycle column.
+ *
+ * P2-1 (production hardening 2): the enum members are now derived from
+ * `ALL_ORDER_STATES` in `@/lib/orders/state-machine` so adding a new
+ * status requires a single edit in the state machine file rather than
+ * four edits across the boundary-validation + driver + vendor + UI layers.
  */
 export const orderStatusSchema = z.enum(
-  [
-    "pending",
-    "confirmed",
-    "shopping",
-    "on_the_way",
-    "delivered",
-    "cancelled",
-  ],
+  ALL_ORDER_STATES as unknown as [string, ...string[]],
   { errorMap: () => ({ message: "حالة الطلب غير صالحة" }) },
+);
+
+/**
+ * Vendor-order status enum — superset of the parent enum with vendor-only
+ * values (`preparing`, `ready`, `out_for_delivery`, `refunded`). Used by
+ * vendor-side PATCH endpoints that write to `vendor_orders.status`.
+ */
+export const vendorOrderStatusSchema = z.enum(
+  ALL_VENDOR_ORDER_STATES as unknown as [string, ...string[]],
+  { errorMap: () => ({ message: "حالة طلب المتجر غير صالحة" }) },
+);
+
+/**
+ * Payment-status enum — orthogonal to the lifecycle enum. Used by
+ * admin / system routes that explicitly write `payment_status`
+ * (e.g. refund endpoint, retry flow).
+ */
+export const paymentStatusSchema = z.enum(
+  ALL_PAYMENT_STATES as unknown as [string, ...string[]],
+  { errorMap: () => ({ message: "حالة الدفع غير صالحة" }) },
 );
 
 /**

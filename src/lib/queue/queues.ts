@@ -47,10 +47,6 @@ export function getQueue(name: QueueName): Queue | null {
   return queue;
 }
 
-export function notifyAdminNewOrderJobId(orderId: string | number): string {
-  return `order-${orderId}`;
-}
-
 export function makeNotifyAdminNewOrderOptions(orderId: string | number): JobsOptions {
   return defaultJobOptions(orderId);
 }

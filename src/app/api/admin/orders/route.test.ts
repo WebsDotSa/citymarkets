@@ -20,8 +20,9 @@ vi.mock("@/lib/db", () => ({
     const s = sql.trim().toUpperCase();
     // Single-order branch: first SELECT fetches the order row. Return a
     // stub so the route proceeds to the items subquery (the one that
-    // joins products_unified).
-    if (s.startsWith("SELECT O.ID, O.STATUS")) {
+    // joins products_unified). The SQL is composed from SQL fragments
+    // so we use a tolerant regex instead of an exact-prefix match.
+    if (/^\s*SELECT\s+O\.ID,\s+O\.STATUS\b/.test(s)) {
       return { rows: [{ id: "uuid-1", status: "pending" }] };
     }
     return { rows: [] };

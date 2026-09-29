@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
 import { apiFetch } from '@/lib/catalog';
 import { groupCartItems } from "@/lib/catalog";
+import { PAYMENT_METHODS_UI } from "@/lib/payments/payment-methods";
 import type { CouponValidateResult } from "@/lib/types";
 import { AvailableCoupons } from "@/components/pages/coupons/AvailableCoupons";
 import { trackBeginCheckout } from "@/lib/ga-events";
@@ -95,22 +96,30 @@ function isInlineMoyasarMethod(method: string): boolean {
 // the admin `PAYMENT_METHOD_AR` map and analytics queries. The online
 // card set (mada/visa/mastercard/amex/apple_pay) triggers the inline
 // Moyasar form; wallet + bank_transfer short-circuit at the confirm step.
+// Server canonical tokens (mada/visa/mastercard/amex/apple_pay/wallet/
+// bank_transfer) come from `PAYMENT_METHODS_UI` in `src/lib/payments/payment-methods.ts`.
+// That registry owns the canonical Arabic name + description + icon asset
+// path; the only thing this client component adds is the icon-component
+// resolution (string → React component). Keeping the strings in one
+// place avoids drift between the picker, the admin `PAYMENT_METHOD_AR`
+// map, and analytics queries.
 type CheckoutPaymentIcon = React.ComponentType<{ className?: string }>;
-const PAYMENT_METHODS: Array<{
-  id: string;
-  name: string;
-  icon: CheckoutPaymentIcon;
-  src?: string;
-  description: string;
-}> = [
-  { id: "mada", name: "بطاقة مدى", icon: CardIcon, src: "/images/partners/mada.svg", description: "ادفع ببطاقة مدى بسهولة وأمان" },
-  { id: "visa", name: "Visa", icon: VisaIcon, src: "/images/partners/visa-circle.svg", description: "ادفع ببطاقة فيزا" },
-  { id: "mastercard", name: "Mastercard", icon: MastercardIcon, src: "/images/partners/mastercard-circle.svg", description: "ادفع ببطاقة ماستركارد" },
-  { id: "amex", name: "American Express", icon: AmexIcon, description: "ادفع ببطاقة أمريكان إكسبريس" },
-  { id: "apple_pay", name: "Apple Pay", icon: ApplePayIcon, src: "/images/partners/apple_pay.svg", description: "ادفع بسرعة بأبل باي" },
-  { id: "wallet", name: "المحفظة", icon: WalletIcon, description: "ادفع من رصيد محفظتك" },
-  { id: "bank_transfer", name: "تحويل بنكي", icon: BankIcon, description: "حوّل المبلغ على حساب الراجحي وأرفق الإيصال" },
-];
+const PAYMENT_ICON_COMPONENTS: Record<string, CheckoutPaymentIcon> = {
+  mada: CardIcon,
+  visa: VisaIcon,
+  mastercard: MastercardIcon,
+  amex: AmexIcon,
+  apple_pay: ApplePayIcon,
+  wallet: WalletIcon,
+  bank_transfer: BankIcon,
+};
+const PAYMENT_METHODS = PAYMENT_METHODS_UI.map((m) => ({
+  id: m.id,
+  name: m.name,
+  icon: PAYMENT_ICON_COMPONENTS[m.id] ?? CardIcon,
+  src: m.src,
+  description: m.description,
+}));
 
 // Reusable section card — keeps the visual rhythm consistent across
 // delivery mode, address, payment, coupon, and summary. Each card

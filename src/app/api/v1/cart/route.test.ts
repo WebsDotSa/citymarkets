@@ -144,3 +144,134 @@ describe("GET /api/v1/cart — auth + products_unified_with_offers (regression)"
     expect(body.subtotal).toBe(0);
   });
 });
+
+describe("GET /api/v1/cart — subtotal reflects offer pricing (P2-5)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(resolveCustomerUserIdFromRequest).mockReset();
+    vi.mocked(getGuestSessionIdFromRequest).mockReset();
+  });
+
+  it("subtracts the active offer when the cart row carries one", async () => {
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(getGuestSessionIdFromRequest).mockReturnValue(null);
+
+    const { client } = makeFakeClient({
+      rows: [
+        {
+          id: "c-1",
+          product_id: "p-1",
+          name_ar: "Product 1",
+          price: 100,
+          discount_price: null,
+          image_url: null,
+          stock_qty: 10,
+          quantity: 2,
+          vendor_id: "v-1",
+          vendor_name: "Vendor 1",
+          vendor_slug: "v-1",
+          active_offer_id: "o-1",
+          active_offer_title_ar: "خصم 20%",
+          active_offer_type: "percentage",
+          active_offer_value: 20,
+          active_offer_max_discount: null,
+          active_offer_min_order: null,
+          active_offer_starts_at: "2026-01-01T00:00:00Z",
+          active_offer_ends_at: "2027-01-01T00:00:00Z",
+        },
+      ],
+    });
+    vi.mocked(pool.connect).mockReset();
+    vi.mocked(pool.connect).mockImplementation(async () => client as never);
+
+    const res = await GET(mockRequest() as never);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+
+    // 100 SAR * 20% off = 80 SAR per unit, * 2 = 160 SAR total.
+    // Without the offer this would be 200 SAR.
+    expect(body.subtotal).toBe(160);
+    expect(body.items[0].effective_price).toBe(80);
+    expect(body.items[0].total).toBe(160);
+  });
+
+  it("falls back to discount_price when no offer is present", async () => {
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(getGuestSessionIdFromRequest).mockReturnValue(null);
+
+    const { client } = makeFakeClient({
+      rows: [
+        {
+          id: "c-1",
+          product_id: "p-2",
+          name_ar: "Product 2",
+          price: 100,
+          discount_price: 75,
+          image_url: null,
+          stock_qty: 10,
+          quantity: 3,
+          vendor_id: "v-1",
+          vendor_name: "V",
+          vendor_slug: "v",
+          active_offer_id: null,
+          active_offer_title_ar: null,
+          active_offer_type: null,
+          active_offer_value: null,
+          active_offer_max_discount: null,
+          active_offer_min_order: null,
+          active_offer_starts_at: null,
+          active_offer_ends_at: null,
+        },
+      ],
+    });
+    vi.mocked(pool.connect).mockReset();
+    vi.mocked(pool.connect).mockImplementation(async () => client as never);
+
+    const res = await GET(mockRequest() as never);
+    const body = await res.json();
+
+    // 75 SAR * 3 = 225 SAR
+    expect(body.subtotal).toBe(225);
+    expect(body.items[0].effective_price).toBe(75);
+  });
+
+  it("prefers the offer over discount_price when offer is strictly cheaper", async () => {
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(getGuestSessionIdFromRequest).mockReturnValue(null);
+
+    const { client } = makeFakeClient({
+      rows: [
+        {
+          id: "c-1",
+          product_id: "p-3",
+          name_ar: "Product 3",
+          price: 100,
+          discount_price: 90,
+          image_url: null,
+          stock_qty: 5,
+          quantity: 1,
+          vendor_id: "v-1",
+          vendor_name: "V",
+          vendor_slug: "v",
+          active_offer_id: "o-2",
+          active_offer_title_ar: "Fixed 20",
+          active_offer_type: "fixed",
+          active_offer_value: 20,
+          active_offer_max_discount: null,
+          active_offer_min_order: null,
+          active_offer_starts_at: "2026-01-01T00:00:00Z",
+          active_offer_ends_at: "2027-01-01T00:00:00Z",
+        },
+      ],
+    });
+    vi.mocked(pool.connect).mockReset();
+    vi.mocked(pool.connect).mockImplementation(async () => client as never);
+
+    const res = await GET(mockRequest() as never);
+    const body = await res.json();
+
+    // offer=80 wins over discount_price=90
+    expect(body.subtotal).toBe(80);
+    expect(body.items[0].effective_price).toBe(80);
+  });
+});

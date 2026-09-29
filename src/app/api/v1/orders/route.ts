@@ -19,7 +19,7 @@ import {
 } from '@/lib/delivery';
 import { computeOrderFees, computeCouponDiscount, computeLoyaltyRedemption, type PricingSettings } from '@/lib/orders';
 import { getLoyaltySettings } from '@/lib/orders/loyalty';
-import { haversineKm } from '@/lib/delivery';
+import { getMainStoreAndDistance } from '@/lib/delivery/main-store';
 
 /**
  * Order item type for internal use
@@ -471,22 +471,12 @@ export async function POST(request: NextRequest) {
         // Main store is the source of distance — if it's not configured
         // we fall back to `null` distance and let `computeOrderFees`
         // charge 0 SAR (fail-safe; admin can set is_main in stores).
-        interface MainStoreRow {
-          lat: string | number | null;
-          lng: string | number | null;
-        }
-        const ms = await client.query<MainStoreRow>(
-          `SELECT lat, lng FROM stores WHERE is_main = true AND is_active = true LIMIT 1`,
+        const { distanceKm: d } = await getMainStoreAndDistance(
+          client,
+          pointLat,
+          pointLng,
         );
-        const row = ms.rows[0];
-        if (row && row.lat != null && row.lng != null) {
-          distanceKm = haversineKm(
-            Number(row.lat),
-            Number(row.lng),
-            pointLat,
-            pointLng,
-          );
-        }
+        if (d != null) distanceKm = d;
       }
     }
 
