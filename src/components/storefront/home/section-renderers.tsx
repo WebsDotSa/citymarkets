@@ -770,7 +770,7 @@ export function HtmlBlockRenderer({ settings }: { settings: HtmlBlockSettings })
 
 // ─── hero banner ────────────────────────────────────────────────
 
-export function HeroBannerRenderer({ settings }: { settings: import("@/lib/home-layout-types").HeroBannerSettings }) {
+export function HeroBannerRenderer({ settings }: { settings: import("@/lib/catalog").HeroBannerSettings }) {
   // Simple static hero with optional banner image — keeps parity with
   // the existing PromoStrip / StaticHero primitives.
   return (
