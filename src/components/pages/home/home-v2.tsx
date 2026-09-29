@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { Product, CategoryRow } from "@/lib/types";
-import { buildDynamicGroups } from "@/lib/dynamic-category-groups";
+import { buildDynamicGroups } from '@/lib/catalog';
 import { useCart } from "@/contexts/cart-context";
 import { useAuthState } from "@/contexts/auth-context";
 import { useDeliveryLocationActions } from "@/contexts/delivery-location-context";

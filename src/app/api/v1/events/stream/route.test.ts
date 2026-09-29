@@ -6,7 +6,7 @@ const { resolveMock, subscribeMock, heartbeatCommentMock } = vi.hoisted(() => ({
   heartbeatCommentMock: vi.fn(),
 }));
 
-vi.mock("@/lib/customer-session", () => ({
+vi.mock('@/lib/identity', () => ({
   resolveCustomerUserIdFromRequest: resolveMock,
 }));
 vi.mock("@/lib/sse", () => ({

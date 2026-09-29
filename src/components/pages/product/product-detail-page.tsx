@@ -11,7 +11,7 @@ import { useAuthState } from "@/contexts/auth-context";
 import { ProductCard } from "@/components/storefront/product-card";
 import { ProductReviews } from "@/components/storefront/product-reviews";
 import type { Product } from "@/lib/types";
-import { isCityMarketsVendor } from "@/lib/product-source";
+import { isCityMarketsVendor } from '@/lib/catalog';
 import { BRAND } from "@/lib/brand-theme";
 import { ProductDetailSkeleton } from "@/components/design/skeleton";
 import { formatPrice } from "@/lib/utils";

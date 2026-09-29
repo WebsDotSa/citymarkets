@@ -28,7 +28,7 @@ import type {
   Section,
   SectionType,
   StoresSettings,
-} from "@/lib/home-layout-types";
+} from '@/lib/catalog';
 
 interface SectionEditorProps {
   section: Section;

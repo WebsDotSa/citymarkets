@@ -11,7 +11,7 @@ import {
   useDeliveryLocationState,
   useDeliveryLocationActions,
 } from "@/contexts/delivery-location-context";
-import { shortAddressLabel } from "@/lib/delivery-address";
+import { shortAddressLabel } from '@/lib/delivery';
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Search,

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Search, Phone, Hash, Package, MapPin, ChevronLeft, Loader2, X } from "lucide-react";
-import { CUSTOMER_PROGRESS_STEPS, getOrderStatusConfig } from "@/lib/order-status";
+import { CUSTOMER_PROGRESS_STEPS, getOrderStatusConfig } from '@/lib/orders';
 
 interface TrackedItem {
   id: string;

@@ -13,12 +13,12 @@
 
 import Link from "next/link";
 import { ChevronLeft, X } from "lucide-react";
-import type { CategoryTreeNode } from "@/lib/categories/tree";
+import type { CategoryTreeNode } from '@/lib/catalog';
 import {
   getCategoryEmoji,
   resolveCategoryImageSrc,
-} from "@/lib/category-media";
-import { emojiForCategoryName } from "@/lib/dynamic-category-groups";
+} from '@/lib/catalog';
+import { emojiForCategoryName } from '@/lib/catalog';
 
 interface RootGridProps {
   root: CategoryTreeNode;

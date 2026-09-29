@@ -11,7 +11,7 @@
 // same interface — out of scope today (see plan).
 
 import { NextRequest } from "next/server";
-import { resolveCustomerUserIdFromRequest } from "@/lib/customer-session";
+import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { subscribe, heartbeatComment, type SseEvent } from "@/lib/sse";
 
 export const dynamic = "force-dynamic";

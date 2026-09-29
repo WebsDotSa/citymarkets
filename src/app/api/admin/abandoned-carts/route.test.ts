@@ -43,9 +43,9 @@ vi.mock("@/lib/db", () => ({
 }));
 
 const requireAdminApi = vi.fn();
-vi.mock("@/lib/admin-api-auth", () => ({
-  requireAdminApi: (...args: unknown[]) => requireAdminApi(...args),
-}));
+vi.mock('@/lib/identity', () => ({  }));
+vi.mock('@/lib/identity/admin-api-auth-db', () => ({ requireAdminApi: (...args: unknown[]) => requireAdminApi(...args), }));
+
 
 vi.mock("@/lib/logger", () => ({
   error: vi.fn(),

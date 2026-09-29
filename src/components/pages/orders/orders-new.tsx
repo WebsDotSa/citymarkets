@@ -24,8 +24,8 @@ import {
   PAYMENT_STATUS_AR,
   getOrderStatusConfig,
   getPaymentStatusConfig,
-} from "@/lib/order-status";
-import { apiFetch } from "@/lib/api";
+} from '@/lib/orders';
+import { apiFetch } from '@/lib/catalog';
 
 interface Order {
   id: string;

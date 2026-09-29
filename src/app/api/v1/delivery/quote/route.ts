@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { computeOrderFees } from "@/lib/pricing";
-import { computeDistanceFee } from "@/lib/delivery-distance-fee";
-import { haversineKm } from "@/lib/geo";
+import { computeOrderFees } from '@/lib/orders';
+import { computeDistanceFee } from '@/lib/delivery';
+import { haversineKm } from '@/lib/delivery';
 
 import { error as logError } from '@/lib/logger';
 

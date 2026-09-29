@@ -1,4 +1,4 @@
-import type { ProductSeoRow } from "@/lib/seo/product";
+import type { ProductSeoRow } from '@/lib/catalog/seo/product';
 import { absoluteUrl, SITE_NAME } from "@/lib/seo/site";
 
 interface FaqItem {

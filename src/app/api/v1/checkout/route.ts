@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getGuestSessionIdFromRequest,
   resolveCustomerUserIdFromRequest,
-} from "@/lib/customer-session";
+} from '@/lib/identity';
 import { checkRateLimit, ORDER_CREATE_CONFIG, createRateLimitHeaders } from "@/lib/rate-limit";
 import { applyCsrfProtection } from "@/lib/csrf";
 import { getClientIp } from "@/lib/request-ip";
-import { runCheckout, type CheckoutServiceResult } from "@/lib/checkout/checkout-service";
+import { runCheckout, type CheckoutServiceResult } from '@/lib/orders/checkout/checkout-service';
 
 /**
  * POST /api/v1/checkout — Slice 3 unified multi-vendor checkout.

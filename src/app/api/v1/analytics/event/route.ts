@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { error as logError, warn as logWarn } from "@/lib/logger";
-import { getGuestSessionIdFromRequest } from "@/lib/customer-session";
+import { getGuestSessionIdFromRequest } from '@/lib/identity';
 
 /**
  * POST /api/v1/analytics/event

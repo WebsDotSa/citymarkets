@@ -17,9 +17,9 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-vi.mock("@/lib/admin-api-auth", () => ({
-  requireAdminApi: vi.fn(),
-}));
+vi.mock('@/lib/identity', () => ({  }));
+vi.mock('@/lib/identity/admin-api-auth-db', () => ({ requireAdminApi: vi.fn(), }));
+
 
 vi.mock("@/lib/admin-audit", () => ({
   logAdminAction: vi.fn(),
@@ -33,8 +33,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 import { GET, POST } from "./route";
-import { requireAdminApi } from "@/lib/admin-api-auth";
-
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 function makeReq(url: string, body?: unknown): Request {
   const init: RequestInit = body ? { method: "POST", body: JSON.stringify(body) } : {};
   return { headers: { get: () => null }, url, json: async () => body } as unknown as Request;

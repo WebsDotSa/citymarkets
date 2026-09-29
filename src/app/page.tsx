@@ -9,7 +9,8 @@ import {
   HOME_LAYOUT_VERSION,
   type PublicHomeLayout,
   type Section,
-} from "@/lib/home-layout-types";
+} from '@/lib/catalog/home-layout-types';
+import { getCachedHomeLayout } from '@/lib/catalog/home-layout-cache';
 
 export const metadata: Metadata = buildPageMetadata({
   title: "أسواق سيتي | منصة التسوق الذكية المتعددة المتاجر في السعودية",
@@ -34,29 +35,36 @@ export const dynamic = "force-dynamic";
  * know the viewport server-side without UA sniffing).
  */
 async function loadInitialMobileLayout(): Promise<PublicHomeLayout | null> {
-  try {
-    const result = await pool.query<{
-      sections: Section[];
-      updated_at: string;
-    }>(
-      `SELECT sections, updated_at FROM home_layouts
-       WHERE device_type = 'mobile' AND is_active = TRUE
-       LIMIT 1`,
-    );
-    if (result.rows.length === 0) return null;
-    const row = result.rows[0];
-    const sections = Array.isArray(row.sections) ? row.sections : [];
-    if (sections.length === 0) return null;
-    return {
-      device_type: "mobile",
-      sections,
-      version: HOME_LAYOUT_VERSION,
-      updated_at: new Date(row.updated_at).toISOString(),
-    };
-  } catch {
-    // Don't break the home page if the layout table is unavailable.
-    return null;
-  }
+  // In-process cache via @/lib/home-layout-cache — admin PUT calls
+  // invalidateHomeLayout() so edits propagate within ~0ms; the 60s TTL
+  // is a safety net for missed invalidations. The home page itself
+  // stays `force-dynamic` for the per-request CSP nonce (see layout.tsx),
+  // but the DB read for the layout no longer fires on every reload.
+  return getCachedHomeLayout("mobile", HOME_LAYOUT_VERSION, async () => {
+    try {
+      const result = await pool.query<{
+        sections: Section[];
+        updated_at: string;
+      }>(
+        `SELECT sections, updated_at FROM home_layouts
+         WHERE device_type = 'mobile' AND is_active = TRUE
+         LIMIT 1`,
+      );
+      if (result.rows.length === 0) return null;
+      const row = result.rows[0];
+      const sections = Array.isArray(row.sections) ? row.sections : [];
+      if (sections.length === 0) return null;
+      return {
+        device_type: "mobile",
+        sections,
+        version: HOME_LAYOUT_VERSION,
+        updated_at: new Date(row.updated_at).toISOString(),
+      };
+    } catch {
+      // Don't break the home page if the layout table is unavailable.
+      return null;
+    }
+  });
 }
 
 export default async function HomePage() {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { BankIcon } from "@/components/icons/payment";
-import { BANK_TRANSFER_DETAILS } from "@/lib/payment-methods";
+import { BANK_TRANSFER_DETAILS } from '@/lib/payments/payment-methods';
 
 /**
  * Compact card that surfaces the canonical Al Rajhi bank account in the

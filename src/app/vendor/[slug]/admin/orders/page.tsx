@@ -3,7 +3,7 @@
 import { useEffect, useState, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { MoreVertical, Loader2, ArrowRight } from "lucide-react";
-import { ORDER_STATUS_DISPLAY, getOrderStatusConfig } from "@/lib/order-status";
+import { ORDER_STATUS_DISPLAY, getOrderStatusConfig } from '@/lib/orders';
 import { csrfFetch } from "@/lib/csrf-client";
 
 interface OrdersPageProps {

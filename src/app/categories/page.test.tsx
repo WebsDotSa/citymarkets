@@ -61,7 +61,7 @@ vi.mock("@/lib/safe-fetch", () => ({
 }));
 
 import { CategoriesBrowserV2 } from "@/components/pages/categories/categories-browser-v2";
-import type { CategoryTreeNode } from "@/lib/categories/tree";
+import type { CategoryTreeNode } from '@/lib/catalog';
 
 function makeNode(over: Partial<CategoryTreeNode> & { id: any; name_ar: string; slug: string; product_count?: number; children?: CategoryTreeNode[] }): CategoryTreeNode {
   return {

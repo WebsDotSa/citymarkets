@@ -5,7 +5,7 @@ import { ProductJsonLd } from "@/components/seo/product-json-ld";
 import {
   getProductForSeo,
   productDescription,
-} from "@/lib/seo/product";
+} from '@/lib/catalog/seo/product';
 import { buildPageMetadata } from "@/lib/seo/site";
 
 type PageProps = { params: Promise<{ id: string }> };

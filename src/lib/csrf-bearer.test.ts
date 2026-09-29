@@ -12,7 +12,7 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { validateCsrfRequest } from "@/lib/csrf";
-import { signCustomerToken } from "@/lib/customer-session";
+import { signCustomerToken } from '@/lib/identity';
 
 function makeRequest(opts: {
   origin?: string | null;

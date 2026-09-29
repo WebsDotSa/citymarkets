@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { hashPassword } from '@/lib/password';
-import { requireAdminApi, clearAdminRoleCache } from '@/lib/admin-api-auth';
+import { clearAdminRoleCache, requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { logAdminAction } from '@/lib/admin-audit';
 import { adminStaffCreateSchema, adminStaffUpdateSchema } from '@/lib/validation/admin';
 import { normalizeSaudiToE164 } from '@/lib/phone-format';

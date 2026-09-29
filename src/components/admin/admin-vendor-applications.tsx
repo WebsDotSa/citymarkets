@@ -30,7 +30,7 @@ import {
 import { safeFetchJson } from "@/lib/safe-fetch";
 import { csrfFetch } from "@/lib/csrf-client";
 import { useToast, useConfirm } from "@/components/ui/toast";
-import { VENDOR_TYPE_LABELS_AR } from "@/lib/vendors";
+import { VENDOR_TYPE_LABELS_AR } from '@/lib/catalog';
 
 type Status = "new" | "approved" | "rejected";
 

@@ -9,7 +9,7 @@ import {
   getPaymentStatusConfig,
   ORDER_STATUS_DISPLAY,
   PAYMENT_METHOD_AR,
-} from "@/lib/order-status";
+} from '@/lib/orders';
 import { csrfFetch } from "@/lib/csrf-client";
 
 interface OrderDetailPageProps {

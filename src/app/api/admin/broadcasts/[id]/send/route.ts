@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { requireAdminApi } from "@/lib/admin-api-auth";
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { uuidSchema, type BroadcastChannel } from "@/lib/validation";
 import { logAdminAction } from "@/lib/admin-audit";
 import { error as logError } from "@/lib/logger";

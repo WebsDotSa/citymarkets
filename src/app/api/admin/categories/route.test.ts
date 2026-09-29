@@ -22,11 +22,17 @@ vi.mock("@/lib/db", () => ({
   }),
 }));
 
-vi.mock("@/lib/admin-api-auth", () => ({
+vi.mock('@/lib/identity', () => ({
+  requireAdminApi: vi.fn().mockResolvedValue({
+    admin: { id: "admin-1", permissions: ["manage_categories"] },
+  }),
+}))
+vi.mock('@/lib/identity/admin-api-auth-db', () => ({
   requireAdminApi: vi.fn().mockResolvedValue({
     admin: { id: "admin-1", permissions: ["manage_categories"] },
   }),
 }));
+;
 
 import { GET } from "./route";
 

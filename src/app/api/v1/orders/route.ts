@@ -3,7 +3,7 @@ import { pool } from '@/lib/db';
 import {
   getGuestSessionIdFromRequest,
   resolveCustomerUserIdFromRequest,
-} from '@/lib/customer-session';
+} from '@/lib/identity';
 import { createOrderSchema, validationError } from '@/lib/validation';
 import { checkRateLimit, ORDER_CREATE_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';
@@ -16,15 +16,10 @@ import {
   riyadhWallClockToUtc,
   toRiyadhDateKey,
   validateSlotSelection,
-} from '@/lib/delivery-slots';
-import {
-  computeOrderFees,
-  computeCouponDiscount,
-  computeLoyaltyRedemption,
-  type PricingSettings,
-} from '@/lib/pricing';
-import { getLoyaltySettings } from '@/lib/loyalty';
-import { haversineKm } from '@/lib/geo';
+} from '@/lib/delivery';
+import { computeOrderFees, computeCouponDiscount, computeLoyaltyRedemption, type PricingSettings } from '@/lib/orders';
+import { getLoyaltySettings } from '@/lib/orders/loyalty';
+import { haversineKm } from '@/lib/delivery';
 
 /**
  * Order item type for internal use
@@ -790,12 +785,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const { notifyAdminNewOrder } = await import('@/lib/order-notify-admin');
-    void notifyAdminNewOrder({
-      id: orderId,
-      total,
-      customerName: (guestInfo?.name as string | null) || (typeof name === 'string' ? name : null) || null,
-    });
+    const { enqueueAdminNewOrder } = await import('@/lib/queue');
+    void enqueueAdminNewOrder(orderId);
 
     // Abandoned-carts snapshot. Only for orders that need an online
     // payment gateway — cash on delivery / wallet orders have nothing
@@ -807,9 +798,7 @@ export async function POST(request: NextRequest) {
       paymentResolved !== 'cash' && paymentResolved !== 'wallet';
     if (requiresOnlinePaymentForSnapshot && orderItems.length > 0) {
       try {
-        const { snapshotAbandonedCartFromOrder } = await import(
-          '@/lib/abandoned-carts'
-        );
+        const { snapshotAbandonedCartFromOrder } = await import('@/lib/orders/abandoned-carts');
         await snapshotAbandonedCartFromOrder({
           user_id: userId || null,
           guest_session_id: sessionId || null,

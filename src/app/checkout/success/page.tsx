@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle, Loader2, AlertCircle, CreditCard } from "lucide-react";
-import { PAYMENT_METHOD_AR } from "@/lib/order-status";
+import { PAYMENT_METHOD_AR } from '@/lib/orders';
 import { trackPurchase } from "@/lib/ga-events";
 
 function SuccessContent() {

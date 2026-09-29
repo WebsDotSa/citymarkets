@@ -5,7 +5,7 @@ import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logge
 import {
   getGuestSessionIdFromRequest,
   resolveCustomerUserIdFromRequest,
-} from '@/lib/customer-session';
+} from '@/lib/identity';
 import { CITY_MARKETS_VENDOR_ID } from '@/lib/types';
 import {
   checkRateLimit,

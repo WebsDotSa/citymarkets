@@ -2,7 +2,7 @@
 // Used by the Providers tab to render ✅/⚠ cards.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminApi } from "@/lib/admin-api-auth";
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { isEmailConfigured } from "@/lib/email";
 import { isNativePushConfigured } from "@/lib/native-push";
 import { isTwilioMessagingConfigured } from "@/lib/twilio-messaging";

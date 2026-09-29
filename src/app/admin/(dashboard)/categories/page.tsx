@@ -24,10 +24,10 @@ import {
   AlertTriangle,
   ArrowRightLeft,
 } from "lucide-react";
-import { resolveCategoryImageSrc } from "@/lib/category-media";
+import { resolveCategoryImageSrc } from '@/lib/catalog';
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from '@/lib/catalog';
 import type { AdminCategory } from "@/lib/admin-types";
 
 const adminCred = { credentials: "include" as const };

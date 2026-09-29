@@ -3,11 +3,11 @@ import {
   runShoppingAssistant,
   type ChatTurn,
   type MealSuggestion,
-} from "@/lib/ai-shopping-assistant";
-import { runLocalShoppingAssistant } from "@/lib/local-meal-assistant";
-import { matchProductsFromList, type MatchedProduct } from "@/lib/product-search";
-import { parseVoiceTranscript } from "@/lib/voice-order";
-import { resolveCustomerUserIdFromRequest } from "@/lib/customer-session";
+} from '@/lib/catalog/ai-shopping-assistant';
+import { runLocalShoppingAssistant } from '@/lib/catalog';
+import { matchProductsFromList, type MatchedProduct } from "@/lib/catalog/product-search";
+import { parseVoiceTranscript } from '@/lib/catalog';
+import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { checkRateLimitSync } from "@/lib/rate-limit";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';

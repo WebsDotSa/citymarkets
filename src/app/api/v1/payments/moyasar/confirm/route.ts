@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveCustomerUserIdFromRequest } from '@/lib/customer-session';
+import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { confirmMoyasarPaymentForOrder } from '@/lib/payments/moyasar-confirm';
 import { isMoyasarInlineConfigured } from '@/lib/payments/moyasar';
 

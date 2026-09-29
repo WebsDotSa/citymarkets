@@ -9,11 +9,11 @@ import React, {
   useState,
 } from "react";
 import type { CartItem, Product } from "@/lib/types";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from '@/lib/catalog';
 import {
   productCartKey,
   vendorFieldsFromProduct,
-} from "@/lib/product-source";
+} from '@/lib/catalog';
 import { trackAddToCart } from "@/lib/ga-events";
 
 // -------- State slice --------

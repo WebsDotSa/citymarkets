@@ -5,11 +5,7 @@ import {
   getTamaraWebhookToken,
   verifyWebhookSignature,
 } from "@/lib/payments/tamara";
-import {
-  awardPointsForOrder,
-  getLoyaltySettings,
-  resolveRedeemForOrder,
-} from "@/lib/loyalty";
+import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 import { error as logError, warn as logWarn, info as logInfo } from "@/lib/logger";
 
 /**
@@ -241,9 +237,7 @@ export async function POST(request: NextRequest) {
         // replay is safe — and we don't want a snapshot miss to block the
         // payment confirmation.
         try {
-          const { markAbandonedCartRecovered } = await import(
-            "@/lib/abandoned-carts"
-          );
+          const { markAbandonedCartRecovered } = await import('@/lib/orders/abandoned-carts');
           const { recovered_count } = await markAbandonedCartRecovered(
             orderId,
             {
@@ -287,16 +281,9 @@ export async function POST(request: NextRequest) {
     // ---- 7. Fire-and-forget post-payment SMS ----
     if (paymentDb === "paid" && recoveredCount > 0) {
       try {
-        const { sendOrderPaidConfirmationSms } = await import(
-          "@/lib/order-paid-confirm"
-        );
-        void sendOrderPaidConfirmationSms({
-          phone: guestPhone,
-          customer_name: orderRow.guest_name || null,
-          order_id: orderId,
-          total: orderTotal,
-          recovered_from_abandoned_count: recoveredCount,
-        });
+        const { enqueueOrderPaidSms } = await import("@/lib/queue");
+        // Worker re-fetches the order + recovered count, so just pass orderId.
+        void enqueueOrderPaidSms(orderId);
       } catch (e) {
         logError("[tamara] paid-confirm sms dispatch failed", e, { orderId });
       }

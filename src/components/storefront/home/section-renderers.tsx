@@ -22,7 +22,7 @@ import { CategoryCard } from "@/components/design/category-card";
 import { ProductCard } from "@/components/storefront/product-card";
 import { OfferCard, type OfferCardData } from "@/components/storefront/offer-card";
 import { OfferCountdown } from "@/components/storefront/offer-countdown";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from '@/lib/catalog';
 import type {
   BannersSettings,
   CategoriesSettings,
@@ -38,7 +38,7 @@ import type {
   ProductsSettings,
   Section,
   StoresSettings,
-} from "@/lib/home-layout-types";
+} from '@/lib/catalog';
 
 // ─── helpers ─────────────────────────────────────────────────────
 
@@ -770,7 +770,7 @@ export function HtmlBlockRenderer({ settings }: { settings: HtmlBlockSettings })
 
 // ─── hero banner ────────────────────────────────────────────────
 
-export function HeroBannerRenderer({ settings }: { settings: import("@/lib/home-layout-types").HeroBannerSettings }) {
+export function HeroBannerRenderer({ settings }: { settings: import("@/lib/catalog").HeroBannerSettings }) {
   // Simple static hero with optional banner image — keeps parity with
   // the existing PromoStrip / StaticHero primitives.
   return (

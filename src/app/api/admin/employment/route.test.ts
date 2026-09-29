@@ -37,7 +37,27 @@ vi.mock("@/lib/db", () => ({
   }),
 }));
 
-vi.mock("@/lib/admin-api-auth", () => ({
+vi.mock('@/lib/identity', () => ({
+  requireAdminApi: vi.fn(async (_req: Request, perm: string) => {
+    if (perm !== "manage_store_settings") {
+      throw new Error(`unexpected permission: ${perm}`);
+    }
+    if (adminGate === "unauth") {
+      return new (require("next/server").NextResponse)(
+        JSON.stringify({ success: false, error: "auth" }),
+        { status: 401 }
+      );
+    }
+    if (adminGate === "forbid") {
+      return new (require("next/server").NextResponse)(
+        JSON.stringify({ success: false, error: "forbidden" }),
+        { status: 403 }
+      );
+    }
+    return { admin: adminUser };
+  }),
+}))
+vi.mock('@/lib/identity/admin-api-auth-db', () => ({
   requireAdminApi: vi.fn(async (_req: Request, perm: string) => {
     if (perm !== "manage_store_settings") {
       throw new Error(`unexpected permission: ${perm}`);
@@ -57,6 +77,7 @@ vi.mock("@/lib/admin-api-auth", () => ({
     return { admin: adminUser };
   }),
 }));
+;
 
 vi.mock("@/lib/logger", () => ({
   error: vi.fn(),

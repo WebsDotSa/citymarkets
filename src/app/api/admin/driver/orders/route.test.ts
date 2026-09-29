@@ -28,11 +28,17 @@ vi.mock("@/lib/db", () => ({
   query: vi.fn(),
 }));
 
-vi.mock("@/lib/admin-api-auth", () => ({
+vi.mock('@/lib/identity', () => ({
+  requireAdminApi: vi.fn().mockResolvedValue({
+    admin: { id: "admin-1", permissions: ["view_delivery_orders"] },
+  }),
+}))
+vi.mock('@/lib/identity/admin-api-auth-db', () => ({
   requireAdminApi: vi.fn().mockResolvedValue({
     admin: { id: "admin-1", permissions: ["view_delivery_orders"] },
   }),
 }));
+;
 
 import { GET } from "./route";
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createRoleCache } from "@/lib/auth/role-cache";
+import { createRoleCache } from '@/lib/identity';
 
 describe("createRoleCache", () => {
   beforeEach(() => {

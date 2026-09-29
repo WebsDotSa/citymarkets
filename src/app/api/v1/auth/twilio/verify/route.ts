@@ -6,8 +6,8 @@ import {
   COOKIE_NAME,
   signCustomerToken,
   customerSessionCookieOptions,
-} from "@/lib/customer-session";
-import { mapDbUserRow } from "@/lib/map-db-user";
+} from '@/lib/identity';
+import { mapDbUserRow } from '@/lib/identity';
 import { checkRateLimit, OTP_VERIFY_CONFIG, OTP_VERIFY_IP_CONFIG, createRateLimitHeaders } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 import {

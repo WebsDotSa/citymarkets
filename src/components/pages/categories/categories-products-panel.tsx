@@ -17,7 +17,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Package, RefreshCcw } from "lucide-react";
-import type { CategoryTreeNode } from "@/lib/categories/tree";
+import type { CategoryTreeNode } from '@/lib/catalog';
 import type { Product } from "@/lib/types";
 import { safeFetchJson } from "@/lib/safe-fetch";
 import { ProductCard } from "@/components/storefront/product-card";

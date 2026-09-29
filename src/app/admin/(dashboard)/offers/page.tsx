@@ -7,7 +7,7 @@ import Image from "next/image";
 import { DataTable } from "@/components/admin/data-table";
 import { useToast, useConfirm } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from '@/lib/catalog';
 import { Sparkles, Plus, Filter, X } from "lucide-react";
 import type { AdminOffer } from "@/lib/admin-types";
 

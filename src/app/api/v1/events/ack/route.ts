@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { resolveCustomerUserIdFromRequest } from "@/lib/customer-session";
+import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { error as logError } from "@/lib/logger";
 import { eventsAckSchema as ackSchema } from "@/lib/validation";
 

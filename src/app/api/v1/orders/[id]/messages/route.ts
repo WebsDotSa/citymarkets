@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
-import { resolveCustomerUserIdFromRequest } from '@/lib/customer-session';
+import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import {
   assertOrderOwnership,
   idempotencyKeyFromBody,
   idempotencyKeyFromQuery,
-} from '@/lib/order-ownership';
+} from '@/lib/orders';
 import { checkRateLimit, ORDER_CREATE_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';
 import { error as logError } from '@/lib/logger';

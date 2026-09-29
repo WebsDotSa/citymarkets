@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { pool } from '@/lib/db';
 import { fetchPayment } from '@/lib/payments/moyasar';
-import {
-  awardPointsForOrder,
-  getLoyaltySettings,
-  resolveRedeemForOrder,
-} from '@/lib/loyalty';
+import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 import {
   recordPaymentEvent,
   finalizePaymentEvent,
@@ -286,9 +282,7 @@ export async function POST(request: NextRequest) {
           // so re-running this branch on a webhook replay is safe.
           // Best-effort: a snapshot miss should never block the payment.
           try {
-            const { markAbandonedCartRecovered } = await import(
-              '@/lib/abandoned-carts'
-            );
+            const { markAbandonedCartRecovered } = await import('@/lib/orders/abandoned-carts');
             const guestPhone =
               orderRow.guest_phone != null && orderRow.guest_phone !== ''
                 ? String(orderRow.guest_phone)
@@ -304,16 +298,10 @@ export async function POST(request: NextRequest) {
             // hears about it once payment is confirmed by the gateway.
             if (recovered_count > 0) {
               try {
-                const { sendOrderPaidConfirmationSms } = await import(
-                  '@/lib/order-paid-confirm'
-                );
-                void sendOrderPaidConfirmationSms({
-                  phone: guestPhone,
-                  customer_name: orderRow.guest_name || null,
-                  order_id: orderId,
-                  total: orderTotal,
-                  recovered_from_abandoned_count: recovered_count,
-                });
+                const { enqueueOrderPaidSms } = await import('@/lib/queue');
+                // Worker re-fetches the order + address + recovered count,
+                // so we only need the orderId here.
+                void enqueueOrderPaidSms(orderId);
               } catch (smsErr) {
                 logError('[paid-confirm] sms dispatch failed', smsErr, { orderId });
               }

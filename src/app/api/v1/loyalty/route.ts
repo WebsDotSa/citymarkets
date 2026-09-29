@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { resolveCustomerUserIdFromRequest } from "@/lib/customer-session";
-import { getLoyaltySettings } from "@/lib/loyalty";
+import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
+import { getLoyaltySettings } from '@/lib/orders/loyalty';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 

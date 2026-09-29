@@ -13,10 +13,15 @@ import {
   getInventorySettings,
   fillOrderNotificationTemplate,
 } from "./app-settings";
+import { cache } from "@/lib/cache";
 
 describe("getAppSetting", () => {
   beforeEach(() => {
     mockQuery.mockReset();
+    // getAppSetting caches results in the @/lib/cache singleton. Each
+    // test must start with an empty store so prior tests don't leak
+    // mockQuery.mockResolvedValueOnce values into the next test.
+    cache.clear();
   });
 
   it("returns the fallback when the row does not exist", async () => {
@@ -53,6 +58,7 @@ describe("getAppSetting", () => {
 describe("setAppSetting", () => {
   beforeEach(() => {
     mockQuery.mockReset();
+    cache.clear();
   });
 
   it("uses UPSERT syntax (ON CONFLICT DO UPDATE) so the same key can be re-set", async () => {
@@ -90,6 +96,7 @@ describe("setAppSetting", () => {
 describe("getNotificationSettings / getInventorySettings", () => {
   beforeEach(() => {
     mockQuery.mockReset();
+    cache.clear();
   });
 
   it("getNotificationSettings returns the default shape when nothing is stored", async () => {

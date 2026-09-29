@@ -17,9 +17,9 @@ import { jwtVerify } from "jose";
 import {
   ADMIN_SESSION_COOKIE,
   VENDOR_SESSION_COOKIE,
-} from "@/lib/auth-cookie-name";
+} from '@/lib/identity';
 import { getAdminJwtSecretBytes, getVendorJwtSecretBytes } from "@/lib/env";
-import { getCustomerUserIdFromRequest } from "@/lib/customer-session";
+import { getCustomerUserIdFromRequest } from '@/lib/identity';
 import { sanitizeRedirectPath } from "@/lib/safe-redirect";
 import { query } from "@/lib/db";
 import {
@@ -28,11 +28,20 @@ import {
   requiresCsrfProtection,
   validateCsrfRequest,
 } from "@/lib/csrf";
+import { createJwtVerifyCache } from '@/lib/identity';
 
 // Category name→slug cache for middleware-level redirects (5-min TTL)
 let _catCache: Map<string, string> | null = null;
 let _catCacheTs = 0;
 const CAT_CACHE_TTL = 5 * 60 * 1000;
+
+// JWT verify caches (60s TTL, max 500 entries). `jwtVerify` is ~0.5–1ms per
+// call; this caches the result so the same admin/vendor token only runs HMAC
+// once per window. Only successful verifications are cached — invalid tokens
+// are re-verified every call to avoid cache poisoning. See
+// src/lib/auth/jwt-verify-cache.ts for the full safety contract.
+const _adminVerifyCache = createJwtVerifyCache<boolean>();
+const _vendorVerifyCache = createJwtVerifyCache<boolean>();
 
 async function getCategorySlugMap(): Promise<Map<string, string>> {
   const now = Date.now();
@@ -219,13 +228,17 @@ function ensureCsrfCookie(
 async function verifyAdminToken(request: NextRequest): Promise<boolean> {
   const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
   if (!token) return false;
+  const cached = _adminVerifyCache.get(token);
+  if (cached !== null) return cached;
   try {
     await jwtVerify(token, getAdminJwtSecretBytes(), {
       issuer: "citymarket-admin",
       audience: "citymarket-admin-api",
     });
+    _adminVerifyCache.set(token, true);
     return true;
   } catch {
+    // Do NOT cache failures — see jwt-verify-cache contract.
     return false;
   }
 }
@@ -233,11 +246,14 @@ async function verifyAdminToken(request: NextRequest): Promise<boolean> {
 async function verifyVendorToken(request: NextRequest): Promise<boolean> {
   const token = request.cookies.get(VENDOR_SESSION_COOKIE)?.value;
   if (!token) return false;
+  const cached = _vendorVerifyCache.get(token);
+  if (cached !== null) return cached;
   try {
     await jwtVerify(token, getVendorJwtSecretBytes(), {
       issuer: "citymarket-vendor",
       audience: "citymarket-vendor-api",
     });
+    _vendorVerifyCache.set(token, true);
     return true;
   } catch {
     return false;

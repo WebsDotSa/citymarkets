@@ -20,7 +20,7 @@
 
 import { FormEvent } from "react";
 import { Loader2, Mic, MicOff, Send, Volume2 } from "lucide-react";
-import type { ChatInputMode } from "@/lib/ai-chat-client-types";
+import type { ChatInputMode } from '@/lib/catalog';
 import { SUGGESTIONS } from "./ai-chat-helpers";
 
 interface ChatComposerProps {

@@ -7,7 +7,7 @@ import { useToast, useConfirm } from "@/components/ui/toast";
 import { Users, Award, TrendingUp, UserCheck } from "lucide-react";
 import type { User } from "@/lib/types";
 import { csrfFetch } from "@/lib/csrf-client";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from '@/lib/catalog';
 import { formatDate } from "@/lib/utils";
 
 type View = "list" | "new" | "edit";

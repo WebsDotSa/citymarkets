@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { verifyVendorRequestWithDb, requireVendorRole } from "@/lib/vendor-auth";
+import { requireVendorRole } from "@/lib/identity";
+import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { generateSlug } from "@/lib/slug";
 import { cache } from "@/lib/cache";
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireAdminApi } from '@/lib/admin-api-auth';
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { adminUserInputSchema as userInputSchema } from '@/lib/validation';
 
 function idCheck(url: URL) {

@@ -20,8 +20,8 @@ import {
   useDeliveryLocationActions,
 } from "@/contexts/delivery-location-context";
 import { BRAND } from "@/lib/brand-theme";
-import type { AddressLabelType, DeliveryAddress } from "@/lib/delivery-address";
-import { ADDRESS_LABELS } from "@/lib/delivery-address";
+import type { AddressLabelType, DeliveryAddress } from '@/lib/delivery';
+import { ADDRESS_LABELS } from '@/lib/delivery';
 
 const LABEL_OPTIONS: { value: AddressLabelType; label: string; icon: typeof Home }[] = [
   { value: "home", label: "المنزل", icon: Home },

@@ -10,7 +10,7 @@ vi.mock("@/lib/db", () => ({
   pool: { query: mocks.poolQuery },
 }));
 
-vi.mock("@/lib/customer-session", () => ({
+vi.mock('@/lib/identity', () => ({
   resolveCustomerUserIdFromRequest: mocks.resolveUser,
 }));
 

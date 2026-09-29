@@ -15,7 +15,7 @@ import { SearchableSelect } from "@/components/admin/SearchableSelect";
 import {
   isCategoryImageUrl,
   resolveCategoryImageSrc,
-} from "@/lib/category-media";
+} from '@/lib/catalog';
 import { generateSlug } from "@/lib/slug";
 
 export interface CategoryFormValues {

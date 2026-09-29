@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { resolveCustomerUserIdFromRequest } from "@/lib/customer-session";
-import type { StoredChatMessage } from "@/lib/ai-chat-storage";
+import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
+import type { StoredChatMessage } from '@/lib/catalog';
 import type {
   ChatInputMode,
   ChatProductResult,
-} from "@/lib/ai-chat-client-types";
+} from '@/lib/catalog';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 

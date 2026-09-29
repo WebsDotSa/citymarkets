@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { SignJWT } from "jose";
-import { signJwt, verifyJwt, type SignConfig, type VerifyConfig } from "@/lib/auth/jwt-helper";
+import { signJwt, verifyJwt, type SignConfig, type VerifyConfig } from '@/lib/identity';
 
 const SECRET = new TextEncoder().encode("test-secret-min-32-characters-x");
 const OTHER_SECRET = new TextEncoder().encode("a-different-secret-min-32-chars-y");

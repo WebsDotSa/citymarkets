@@ -26,7 +26,7 @@ vi.mock("@/lib/rate-limit", () => ({
 vi.mock("@/lib/request-ip", () => ({
   getClientIp: vi.fn(() => "127.0.0.1"),
 }));
-vi.mock("@/lib/customer-session", () => ({
+vi.mock('@/lib/identity', () => ({
   resolveCustomerUserIdFromRequest: vi.fn(),
 }));
 vi.mock("@/lib/logger", () => ({

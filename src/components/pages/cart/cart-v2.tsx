@@ -11,14 +11,14 @@ import { useDeliveryQuote } from "@/hooks/use-delivery-quote";
 import { Button } from "@/components/design/button";
 import { EmptyCart } from "@/components/design/empty-state";
 import { csrfFetch } from "@/lib/csrf-client";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from '@/lib/catalog';
 import { formatPrice } from "@/lib/utils";
 import {
   groupCartItems,
   hasMixedVendors,
   type VendorGroup,
   cartItemKey,
-} from "@/lib/cart-vendors";
+} from "@/lib/catalog";
 import { CITY_MARKETS_VENDOR_ID, type CouponValidateResult } from "@/lib/types";
 import { AvailableCoupons } from "@/components/pages/coupons/AvailableCoupons";
 import {

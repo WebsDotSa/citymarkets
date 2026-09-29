@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CatalogPage } from "@/components/pages/catalog/catalog-page";
-import { getCategoryForSeo } from "@/lib/seo/product";
+import { getCategoryForSeo } from '@/lib/catalog/seo/product';
 import { buildPageMetadata, absoluteUrl, SITE_NAME } from "@/lib/seo/site";
 import { CategoryJsonLd } from "@/components/seo/category-json-ld";
 import { query } from "@/lib/db";

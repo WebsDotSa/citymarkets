@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   VENDOR_SESSION_COOKIE,
   vendorSessionCookieOptions,
-} from "@/lib/vendor-auth";
+} from '@/lib/identity';
 
 export async function POST() {
   const response = NextResponse.json({ success: true });

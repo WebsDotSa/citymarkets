@@ -7,7 +7,7 @@ import { Clock, AlertTriangle } from "lucide-react";
 import {
   buildVendorOpenStatus,
   type VendorHours,
-} from "@/lib/vendor-store-hours";
+} from '@/lib/delivery';
 import { csrfFetch } from "@/lib/csrf-client";
 
 interface VendorLayoutProps {

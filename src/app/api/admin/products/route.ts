@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireAdminApi } from '@/lib/admin-api-auth';
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { productInputSchema } from '@/lib/validation';
 import { CITY_MARKETS_VENDOR_ID } from '@/lib/types';
 import { deleteFromR2, r2KeyFromUrl } from '@/lib/r2';
+import { cache } from '@/lib/cache';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
@@ -160,6 +161,10 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json({ success: true, data: { id: result.rows[0].id } });
+    // Invalidate product SEO cache so the next `getProductForSeo(id)`
+    // returns the freshly-created row. Pattern invalidation is cheap
+    // (one in-process Map walk) and avoids shipping stale SEO metadata.
+    cache.invalidatePattern('product:seo:');
   } catch (error) {
     logError('Error creating product:', error);
     return NextResponse.json({ success: false, error: 'فشل إنشاء المنتج' }, { status: 500 });
@@ -221,6 +226,8 @@ export async function PUT(request: NextRequest) {
     );
 
     return NextResponse.json({ success: true });
+    // SEO cache invalidation (see POST handler above).
+    cache.invalidatePattern('product:seo:');
   } catch (error) {
     logError('Error updating product:', error);
     return NextResponse.json({ success: false, error: 'فشل تحديث المنتج' }, { status: 500 });
@@ -317,6 +324,8 @@ export async function DELETE(request: NextRequest) {
       r2Failed: r2Failures.length,
       r2Failures: r2Failures.length > 0 ? r2Failures : undefined,
     });
+    // SEO cache invalidation (see POST handler above).
+    cache.invalidatePattern('product:seo:');
   } catch (error) {
     logError('Error deleting product:', error);
     return NextResponse.json({ success: false, error: 'فشل حذف المنتج' }, { status: 500 });

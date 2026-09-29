@@ -6,14 +6,12 @@
  */
 
 import type { Product } from "@/lib/types";
-import type {
-  ChatProductResult,
-  MealSuggestion,
-} from "@/lib/ai-chat-client-types";
+import type { ChatProductResult } from '@/lib/catalog/ai-chat-client-types';
+import type { MealSuggestion } from '@/lib/catalog/ai-shopping-assistant';
 import {
   buildWelcomeMessage,
   type StoredChatMessage,
-} from "@/lib/ai-chat-storage";
+} from '@/lib/catalog';
 
 export type MatchedProduct = {
   product: Product;

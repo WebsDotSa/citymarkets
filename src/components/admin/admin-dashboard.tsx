@@ -22,8 +22,8 @@ import {
   Activity,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
-import { countsAsElectronicRevenue } from "@/lib/order-metrics";
-import { ORDER_STATUSES } from "@/lib/order-status";
+import { countsAsElectronicRevenue } from '@/lib/orders';
+import { ORDER_STATUSES } from '@/lib/orders';
 import { StatCard } from "@/components/admin/admin-header";
 
 const fetchOpts: RequestInit = { credentials: "include" };

@@ -1,4 +1,5 @@
 import { query } from "@/lib/db";
+import { cache, CACHE_TTL } from "@/lib/cache";
 
 export type NotificationSettings = {
   whatsapp_admin_phone: string;
@@ -42,15 +43,24 @@ export const DEFAULT_STORE_STATUS: StoreStatusSettings = {
 };
 
 export async function getAppSetting<T>(key: string, fallback: T): Promise<T> {
-  try {
-    const res = await query(`SELECT value FROM app_settings WHERE key = $1`, [
-      key,
-    ]);
-    if (res.rows.length === 0) return fallback;
-    return { ...fallback, ...(res.rows[0].value as T) };
-  } catch {
-    return fallback;
-  }
+  // 5-min TTL covers loyalty/inventory/store_status/notifications — all
+  // are admin-tunable values that change infrequently. setAppSetting
+  // invalidates this key on write so admin edits propagate immediately.
+  return cache.getOrSet(
+    `app_setting:${key}`,
+    async () => {
+      try {
+        const res = await query(`SELECT value FROM app_settings WHERE key = $1`, [
+          key,
+        ]);
+        if (res.rows.length === 0) return fallback;
+        return { ...fallback, ...(res.rows[0].value as T) };
+      } catch {
+        return fallback;
+      }
+    },
+    CACHE_TTL.MEDIUM,
+  );
 }
 
 export async function setAppSetting(
@@ -63,6 +73,9 @@ export async function setAppSetting(
      ON CONFLICT (key) DO UPDATE SET value = $2::jsonb, updated_at = NOW()`,
     [key, JSON.stringify(value)]
   );
+  // Invalidate the read cache so the next getAppSetting(key) returns the
+  // fresh value rather than the pre-write cached one.
+  cache.invalidatePattern(`app_setting:${key}`);
 }
 
 export async function getNotificationSettings(): Promise<NotificationSettings> {

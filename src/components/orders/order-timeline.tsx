@@ -13,7 +13,7 @@ import {
 import {
   CUSTOMER_PROGRESS_STEPS,
   getOrderStatusConfig,
-} from "@/lib/order-status";
+} from '@/lib/orders';
 
 /**
  * One row from `order_status_logs` joined with `admin_users` for the

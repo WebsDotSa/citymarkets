@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAdminApi } from "@/lib/admin-api-auth";
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { logAdminAction } from "@/lib/admin-audit";
 import {
   deliveryPricingSchema,
   deliverySlotsSchema,
   deliveryHoursSchema,
 } from "@/lib/validation";
-import { DEFAULT_DELIVERY_HOURS } from "@/lib/delivery-hours";
+import { DEFAULT_DELIVERY_HOURS } from '@/lib/delivery/delivery-hours';
 
 import { error as logError } from '@/lib/logger';
 

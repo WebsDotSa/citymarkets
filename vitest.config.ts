@@ -10,6 +10,14 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     include: ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.spec.ts"],
     exclude: ["node_modules", ".next", "dist"],
+    // Stub `server-only` so vitest can import modules marked with
+    // `import "server-only"` (Next.js uses this to throw at runtime if
+    // a client component pulls them in; vitest doesn't need that gate).
+    server: {
+      deps: {
+        inline: ["server-only"],
+      },
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],
@@ -34,6 +42,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
+      // Vitest stub for the server-only marker. Tests run in node, so we
+      // just no-op the import instead of throwing.
+      "server-only": resolve(__dirname, "./test-stubs/server-only.ts"),
     },
   },
 });

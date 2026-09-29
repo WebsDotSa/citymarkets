@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { cache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache';
-import { requireAdminApi } from '@/lib/admin-api-auth';
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { sanitizeHtml } from '@/lib/sanitize-html';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';

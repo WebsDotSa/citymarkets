@@ -6,7 +6,7 @@ import { ImageUploader } from "@/components/admin/image-uploader";
 import { SearchableSelect } from "@/components/admin/SearchableSelect";
 import { useToast, useConfirm } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from '@/lib/catalog';
 import Image from "next/image";
 import type { Banner } from "@/lib/types";
 import { ArrowUp, Save, Plus } from "lucide-react";

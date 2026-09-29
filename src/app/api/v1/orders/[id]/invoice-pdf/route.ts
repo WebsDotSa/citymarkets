@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { resolveCustomerUserIdFromRequest } from "@/lib/customer-session";
-import { requireAdminApi } from "@/lib/admin-api-auth";
+import { resolveCustomerUserIdFromRequest } from "@/lib/identity";
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import {
   assertOrderOwnership,
   idempotencyKeyFromQuery,
-} from "@/lib/order-ownership";
+} from '@/lib/orders';
 import {
   getPaymentStatusConfig,
   PAYMENT_METHOD_AR,
   ORDER_STATUS_DISPLAY,
-} from "@/lib/order-status";
+} from '@/lib/orders';
 import {
   renderInvoicePdf,
   invoiceFilename,

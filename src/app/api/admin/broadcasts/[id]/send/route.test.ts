@@ -13,7 +13,9 @@ const { queryMock, connectMock, requireAdminApiMock, checkRateLimitMock, logAdmi
 vi.mock("@/lib/db", () => ({
   pool: { query: queryMock, connect: connectMock },
 }));
-vi.mock("@/lib/admin-api-auth", () => ({ requireAdminApi: requireAdminApiMock }));
+vi.mock('@/lib/identity', () => ({  }));
+vi.mock('@/lib/identity/admin-api-auth-db', () => ({ requireAdminApi: requireAdminApiMock }));
+
 vi.mock("@/lib/admin-audit", () => ({ logAdminAction: logAdminActionMock }));
 vi.mock("@/lib/logger", () => ({
   error: vi.fn(),

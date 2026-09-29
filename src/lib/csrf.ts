@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createHash, timingSafeEqual as nodeTimingSafeEqual } from "node:crypto";
 import { isCookieSecure, isProd } from "@/lib/env";
-import { verifyCustomerToken } from "@/lib/customer-session";
+import { verifyCustomerToken } from '@/lib/identity';
 import { warn as logWarn } from "@/lib/logger";
 
 // CSRF cookie + header names live in their own module so the browser-side

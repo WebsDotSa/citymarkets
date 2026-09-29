@@ -19,7 +19,7 @@ import {
   Trash2,
   type LucideIcon,
 } from "lucide-react";
-import { getLibraryEntry, type Section, type SectionType } from "@/lib/home-layout-types";
+import { getLibraryEntry, type Section, type SectionType } from '@/lib/catalog';
 
 // Inline imports mirror the palette's ICON_MAP — keeps render cheap.
 import {

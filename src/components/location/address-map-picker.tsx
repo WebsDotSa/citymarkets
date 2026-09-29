@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Map as LeafletMap } from "leaflet";
-import { DEFAULT_MAP_CENTER } from "@/lib/delivery-address";
+import { DEFAULT_MAP_CENTER } from '@/lib/delivery';
 import { BRAND } from "@/lib/brand-theme";
 
 type Props = {

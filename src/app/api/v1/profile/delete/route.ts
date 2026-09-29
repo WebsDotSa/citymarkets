@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { requireAuth } from "@/lib/auth-helpers";
+import { requireAuth } from '@/lib/identity/auth-helpers';
 import {
   COOKIE_NAME,
   customerSessionCookieOptions,
-} from "@/lib/customer-session";
+} from '@/lib/identity';
 import { error as logError } from "@/lib/logger";
 
 // POST /api/v1/profile/delete

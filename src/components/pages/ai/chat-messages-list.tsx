@@ -14,7 +14,9 @@
  */
 
 import { ChefHat } from "lucide-react";
-import type { MealSuggestion } from "@/lib/ai-chat-client-types";
+import type {
+  MealSuggestion
+} from '@/lib/catalog/ai-shopping-assistant';
 import {
   ChatMessageBubble,
   type ChatMessage,

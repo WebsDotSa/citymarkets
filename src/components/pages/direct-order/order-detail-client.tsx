@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
 import { ChatPanel, type ChatMessage } from '@/components/ui/chat-panel/chat-panel';
 import { InvoiceActions } from '@/components/orders/invoice-actions';
-import { getOrderStatusConfig } from '@/lib/order-status';
+import { getOrderStatusConfig } from '@/lib/orders';
 import {
   ChevronLeft,
   MapPin,

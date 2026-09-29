@@ -7,7 +7,7 @@
  */
 
 import { z } from "zod";
-import { VENDOR_TYPES, HEX_COLOR_RE, isAllowedImageUrl } from "../vendors";
+import { VENDOR_TYPES, HEX_COLOR_RE, isAllowedImageUrl } from "@/lib/catalog";
 
 export const vendorTypeSchema = z.enum(
   VENDOR_TYPES as unknown as [string, ...string[]],

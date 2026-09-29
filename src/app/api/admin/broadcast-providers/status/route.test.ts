@@ -4,9 +4,9 @@ vi.mock("@/lib/db", () => ({
   pool: { query: vi.fn(), connect: vi.fn() },
 }));
 
-vi.mock("@/lib/admin-api-auth", () => ({
-  requireAdminApi: vi.fn(),
-}));
+vi.mock('@/lib/identity', () => ({  }));
+vi.mock('@/lib/identity/admin-api-auth-db', () => ({ requireAdminApi: vi.fn(), }));
+
 
 vi.mock("@/lib/email", () => ({
   isEmailConfigured: vi.fn().mockReturnValue(true),
@@ -21,8 +21,7 @@ vi.mock("@/lib/twilio-messaging", () => ({
 }));
 
 import { GET } from "./route";
-import { requireAdminApi } from "@/lib/admin-api-auth";
-
+import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 function makeReq(): Request {
   return { headers: { get: () => null }, url: "http://x" } as unknown as Request;
 }

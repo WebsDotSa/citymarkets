@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
-import { getOrderStatusConfig } from "@/lib/order-status";
+import { getOrderStatusConfig } from '@/lib/orders';
 
 interface DashboardPageProps {
   params: Promise<{ slug: string }>;
