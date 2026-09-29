@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { priceCartRow } from '@/lib/cart/pricing';
 
 import {
   getGuestSessionIdFromRequest,
@@ -107,40 +108,40 @@ export async function GET(request: NextRequest) {
       const listPrice = toNumOrZero(row.price);
       const legacySale = toNumOrNull(row.discount_price);
 
-      // Slice 5 — hydrate active offer + compute effective price.
-      let activeOffer = null;
-      let offerEffective = listPrice;
-      if (row.active_offer_id) {
-        const value = toNumOrZero(row.active_offer_value);
-        const maxDiscount = toNumOrNull(row.active_offer_max_discount);
-        let rawSavings: number;
-        if (row.active_offer_type === 'percentage') {
-          rawSavings = (listPrice * value) / 100;
-          if (maxDiscount != null) rawSavings = Math.min(rawSavings, maxDiscount);
-        } else {
-          rawSavings = Math.min(value, listPrice);
-        }
-        const savings = Math.min(Math.max(rawSavings, 0), listPrice);
-        offerEffective = Math.round((listPrice - savings) * 100) / 100;
-        activeOffer = {
-          offer_id: row.active_offer_id,
-          title_ar: row.active_offer_title_ar ?? '',
-          discount_type: row.active_offer_type,
-          discount_value: value,
-          max_discount: maxDiscount,
-          min_order: toNumOrNull(row.active_offer_min_order),
-          starts_at: row.active_offer_starts_at ?? '',
-          ends_at: row.active_offer_ends_at ?? '',
-        };
-      }
+      // P2-5: centralize the unit-price formula in `@/lib/cart/pricing`
+      // so the cart GET, the cart UI, and checkout all agree on the
+      // final number. The previous inlined formula lived here only.
+      const priced = priceCartRow({
+        product_id: row.product_id,
+        price: listPrice,
+        discount_price: legacySale,
+        quantity: row.quantity,
+        active_offer_id: row.active_offer_id ?? null,
+        active_offer_type: row.active_offer_type ?? null,
+        active_offer_value: row.active_offer_value ?? null,
+        active_offer_max_discount: row.active_offer_max_discount ?? null,
+        active_offer_min_order: row.active_offer_min_order ?? null,
+        active_offer_starts_at: row.active_offer_starts_at ?? null,
+        active_offer_ends_at: row.active_offer_ends_at ?? null,
+      });
 
-      // Best of (offer, legacy discount, list).
-      let unitPrice = listPrice;
-      if (offerEffective < listPrice) unitPrice = offerEffective;
-      if (legacySale != null && legacySale < listPrice && legacySale < unitPrice) {
-        unitPrice = legacySale;
-      }
-      const effectivePrice = unitPrice < listPrice ? unitPrice : null;
+      // Build the legacy `active_offer` payload for iOS / external
+      // consumers. The pricing module only carries an id; the route
+      // enriches with the title (from the JOIN).
+      const activeOffer = row.active_offer_id
+        ? {
+            offer_id: row.active_offer_id,
+            title_ar: row.active_offer_title_ar ?? '',
+            discount_type: row.active_offer_type,
+            discount_value: Number(row.active_offer_value) || 0,
+            max_discount: legacySale ? null : toNumOrNull(row.active_offer_max_discount),
+            min_order: toNumOrNull(row.active_offer_min_order),
+            starts_at: row.active_offer_starts_at ?? '',
+            ends_at: row.active_offer_ends_at ?? '',
+          }
+        : null;
+
+      const effectivePrice = priced.unit_price < listPrice ? priced.unit_price : null;
 
       return {
         id: row.id,
@@ -156,7 +157,7 @@ export async function GET(request: NextRequest) {
         vendor_slug: vendorSlug,
         active_offer: activeOffer,
         effective_price: effectivePrice,
-        total: unitPrice * row.quantity,
+        total: priced.line_total,
       };
     });
 
