@@ -2,7 +2,7 @@
 
 Author: Senior Architect Audit
 Date: 2026-09-29
-Branch audited: `main` (HEAD `e7888ec`) + `migration/integrity-repair` (HEAD `94872b5` — PR #5)
+Branch audited: `main` (HEAD `c2a3bd6`) + `migration/integrity-repair` (HEAD `1848f8d` — PR #5, rebased)
 Verdict: **PRODUCTION-READY** (with documented production prerequisites — see §11)
 
 ---
@@ -497,14 +497,15 @@ Per master plan §53:
 
 **Code Readiness**: ✅ READY — all gates pass, tests green, build clean
 
-**Database Migration Readiness**: ✅ READY (fresh-DB chain executed and verified in PR #5) — full migration
+**Database Migration Readiness**: ✅ READY (fresh-DB chain executed and verified in PR #5, post-rebase) — full migration
 chain 001→074 (82 migrations) applies cleanly to a fresh PostgreSQL 16 + pgvector DB on first run AND is
 fully idempotent on re-run. Verified by `npm run db:migrate` against a real `pgvector/pgvector:pg16`
-container (port 5438, password=postgres, database=citymarket_test). 11 BREAKERs were identified and
-repaired across 004/007/013/017/023/037/042/060/073 plus 2 runtime fixes (cart ON CONFLICT inference +
-new 074 stores seed). The CI workflow uses `pgvector/pgvector:pg16` and runs `npm run db:migrate`
-(hard-fail) instead of the legacy dry-run. Operations team must still run `npm run db:migrate` against
-production DB to apply `073_payment_events_ledger.sql`.
+container (port 5438, password=postgres, database=citymarket_test) after `npm ci --legacy-peer-deps`
+and a fresh CREATE DATABASE. 11 BREAKERs were identified and repaired across 004/007/013/017/023/037/042/060/073
+plus 2 runtime fixes (cart ON CONFLICT inference + new 074 stores seed). The CI workflow uses
+`pgvector/pgvector:pg16` and runs `npm run db:migrate` (hard-fail). The `--mark-applied` workaround
+steps that PR #4 had introduced were removed in the post-rebase resolution. Operations team must still
+run `npm run db:migrate` against production DB to apply `073_payment_events_ledger.sql`.
 
 **Production Deployment Readiness**: ✅ READY — DEPLOYMENT.md current,
 Docker compose current, env example documented.
