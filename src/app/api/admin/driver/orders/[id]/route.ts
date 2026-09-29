@@ -6,6 +6,10 @@ import {
   recordPaymentEvent,
   finalizePaymentEvent,
 } from '@/lib/payments/event-ledger';
+import {
+  canTransition as stateMachineCanTransition,
+  invalidTransitionMessage as stateMachineInvalidMessage,
+} from '@/lib/orders/state-machine';
 
 export const dynamic = "force-dynamic";
 
@@ -136,10 +140,12 @@ export async function PATCH(
     claim?: boolean;
   };
 
-  // Valid status transitions for driver. The order_status_enum has:
-  //   pending, confirmed, shopping, on_the_way, delivered, cancelled, paid.
-  // Drivers act on the delivery leg: pick up (`on_the_way`), complete
-  // (`delivered`), or mark cancelled with a reason.
+  // P2-1 (production hardening 2): the driver-role transition table
+  // now lives in `@/lib/orders/state-machine`. The set of legal `to`
+  // states is implicit in `stateMachineCanTransition('driver', 'orders',
+  // _, status)` returning true for any valid `from`. We list the legal
+  // target states here for the early-return 400 — the state machine
+  // also enforces it once the order's current status is loaded.
   const validStatuses = ["on_the_way", "delivered", "cancelled"];
 
   if (!status || !validStatuses.includes(status)) {
@@ -199,14 +205,18 @@ export async function PATCH(
 
     const currentStatus = orderCheck.rows[0].status;
     const currentDriverId = orderCheck.rows[0].driver_id as string | null;
-    const validCurrentStatuses = ["pending", "on_the_way"];
 
-    if (!validCurrentStatuses.includes(currentStatus)) {
+    // P2-1: defer to the central state machine for transition
+    // validation. The previous inline `validCurrentStatuses` check is
+    // subsumed by `canTransition` — if the driver role can't transition
+    // from `currentStatus` to `status`, we 400 with the Arabic message
+    // generated from the same source.
+    if (!stateMachineCanTransition("driver", "orders", currentStatus, status)) {
       await client.query("ROLLBACK");
       return NextResponse.json(
         {
           success: false,
-          error: `لا يمكن تحديث الطلب من الحالة الحالية "${currentStatus}"`,
+          error: stateMachineInvalidMessage("driver", "orders", currentStatus, status),
         },
         { status: 400 }
       );
