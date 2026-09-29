@@ -9,6 +9,11 @@ import { useToast, useConfirm } from "@/components/ui/toast";
 import { safeFetchJson } from "@/lib/safe-fetch";
 import { csrfFetch } from "@/lib/csrf-client";
 import { VENDOR_TYPE_LABELS_AR, type VendorType } from '@/lib/catalog';
+import {
+  optionalEmail,
+  optionalPhone,
+  slugSchema,
+} from "@/lib/validation/primitives";
 import type { FormField } from "./form-fields/form-field";
 import {
   vendorNameColumn,
@@ -26,43 +31,121 @@ const VENDOR_TYPE_OPTIONS = (
   Object.entries(VENDOR_TYPE_LABELS_AR) as [VendorType, string][]
 ).map(([value, label]) => ({ value, label }));
 
-const FIELDS: FormField[] = [
-  { key: "name_ar", label: "اسم المتجر بالعربية", type: "text", required: true },
-  { key: "name_en", label: "اسم المتجر بالإنجليزية", type: "text" },
-  { key: "slug", label: "المعرّف (slug)", type: "text", placeholder: "يُولّد تلقائياً من الاسم" },
-  {
-    key: "vendor_type",
-    label: "نوع المتجر",
-    type: "select",
-    options: VENDOR_TYPE_OPTIONS,
-    required: true,
-  },
-  { key: "category_slug", label: "slug الفئة", type: "text", placeholder: "مثل: specialty, fashion" },
-  { key: "description_ar", label: "الوصف بالعربية", type: "textarea", rows: 3 },
-  { key: "description_en", label: "الوصف بالإنجليزية", type: "textarea", rows: 3 },
-  { key: "logo_url", label: "رابط الشعار (Logo URL)", type: "text", help: "ارفع الصورة من قسم «رفع الصور» بالأسفل والصق الرابط هنا." },
-  { key: "banner_url", label: "رابط صورة الغلاف (Banner URL)", type: "text", help: "ارفع صورة الغلاف من قسم «رفع الصور» بالأسفل والصق الرابط هنا." },
-  { key: "primary_color", label: "اللون الرئيسي للهوية", type: "color", defaultValue: "#009345" },
-  { key: "contact_phone", label: "رقم الهاتف", type: "text" },
-  { key: "contact_whatsapp", label: "رقم واتساب", type: "text" },
-  { key: "contact_email", label: "البريد الإلكتروني", type: "text" },
-  { key: "address_ar", label: "العنوان", type: "text" },
-  { key: "pickup_lat", label: "خط العرض (Latitude)", type: "number" },
-  { key: "pickup_lng", label: "خط الطول (Longitude)", type: "number" },
-  { key: "sort_order", label: "ترتيب العرض", type: "number", defaultValue: 0 },
-  // Vendor owner login credentials. The API upserts a `vendor_staff`
-  // row with role='owner' so the merchant can sign in to their dashboard.
-  // Phone is OPTIONAL — you can create a store first and add the owner
-  // login later. When phone IS provided, password (≥8 chars) is also
-  // required to bootstrap the row. Email is OPTIONAL. Empty password on
-  // edit = leave unchanged. Owner phone must be a Saudi mobile
-  // (5XXXXXXXX).
-  { key: "login_phone", label: "رقم جوال المالك (لدخول المتجر) — اختياري", type: "tel", placeholder: "5XXXXXXXX" },
-  { key: "login_email", label: "إيميل المالك (اختياري)", type: "email", placeholder: "owner@example.com" },
-  { key: "password", label: "كلمة مرور المالك (8 أحرف على الأقل)", type: "password", placeholder: "اتركه فارغاً للإبقاء على الحالية" },
-  { key: "is_featured", label: "متجر مميز (يظهر في الصفحة الرئيسية)", type: "checkbox" },
-  { key: "is_active", label: "متجر نشط", type: "checkbox" },
-];
+/**
+ * Run a Zod schema against a form field value and return either null
+ * (valid) or the first issue's Arabic message. Used as the
+ * `FormField.validate` hook so the admin gets inline errors on submit
+ * without round-tripping to the server.
+ */
+function runFieldValidator(schema: import("zod").ZodTypeAny, value: unknown): string | null {
+  const result = schema.safeParse(value ?? "");
+  if (result.success) return null;
+  return result.error.issues[0]?.message ?? "قيمة غير صالحة";
+}
+
+const validateSlug = (v: unknown) => runFieldValidator(slugSchema, v);
+const validatePhone = (v: unknown) =>
+  runFieldValidator(optionalPhone, typeof v === "string" ? v.replace(/\s|-/g, "") : v);
+const validateEmail = (v: unknown) => runFieldValidator(optionalEmail, v);
+
+/**
+ * Build the FIELDS array for the add/edit form. `ownerRequired` mirrors
+ * the server-side rule "no owner row yet → phone + password are
+ * required" (see `upsertVendorOwner` in `/api/admin/vendors/route.ts`).
+ * On edit, when an owner row already exists, all three owner fields
+ * are optional and an empty value means "leave the existing hash /
+ * phone / email untouched".
+ */
+function buildFields(ownerRequired: boolean): FormField[] {
+  return [
+    { key: "name_ar", label: "اسم المتجر بالعربية", type: "text", required: true },
+    { key: "name_en", label: "اسم المتجر بالإنجليزية", type: "text" },
+    {
+      key: "slug",
+      label: "المعرّف (slug)",
+      type: "text",
+      placeholder: "يُولّد تلقائياً من الاسم (يدعم العربية)",
+      help: "حروف، أرقام، وشرطات. لا يبدأ أو ينتهي بشرطة.",
+      validate: (v) => {
+        // Empty slug is allowed on create — the server auto-fills it
+        // from name_ar. On edit an empty slug means "leave existing".
+        if (v === undefined || v === null || v === "") return null;
+        return validateSlug(v);
+      },
+    },
+    {
+      key: "vendor_type",
+      label: "نوع المتجر",
+      type: "select",
+      options: VENDOR_TYPE_OPTIONS,
+      required: true,
+    },
+    {
+      key: "category_slug",
+      label: "slug الفئة",
+      type: "text",
+      placeholder: "مثل: specialty, fashion",
+      validate: (v) => {
+        if (v === undefined || v === null || v === "") return null;
+        return validateSlug(v);
+      },
+    },
+    { key: "description_ar", label: "الوصف بالعربية", type: "textarea", rows: 3 },
+    { key: "description_en", label: "الوصف بالإنجليزية", type: "textarea", rows: 3 },
+    // Logo and banner URLs are NOT text fields — they're managed by
+    // the ImageUploader widgets in the section below. The vendor form
+    // view injects `logo_url` / `banner_url` into the payload from the
+    // uploader state at submit time (see handleSubmit). Removing the
+    // duplicate text inputs eliminates the "two widgets for the same
+    // value" confusion that prompted this audit.
+    { key: "primary_color", label: "اللون الرئيسي للهوية", type: "color", defaultValue: "#009345" },
+    { key: "contact_phone", label: "رقم الهاتف", type: "tel" },
+    { key: "contact_whatsapp", label: "رقم واتساب", type: "tel" },
+    { key: "contact_email", label: "البريد الإلكتروني (للاتصال)", type: "email" },
+    { key: "address_ar", label: "العنوان", type: "text" },
+    { key: "pickup_lat", label: "خط العرض (Latitude)", type: "number" },
+    { key: "pickup_lng", label: "خط الطول (Longitude)", type: "number" },
+    { key: "sort_order", label: "ترتيب العرض", type: "number", defaultValue: 0 },
+    {
+      key: "login_phone",
+      label: "رقم جوال المالك (لدخول المتجر)",
+      type: "tel",
+      placeholder: "5XXXXXXXX",
+      required: ownerRequired,
+      validate: (v) => {
+        if (!v) return ownerRequired ? "رقم الجوال مطلوب" : null;
+        return validatePhone(v);
+      },
+    },
+    {
+      key: "login_email",
+      label: "إيميل المالك",
+      type: "email",
+      placeholder: "owner@example.com",
+      required: true,
+      validate: (v) => {
+        if (!v) return "البريد الإلكتروني للمالك مطلوب";
+        return validateEmail(v);
+      },
+    },
+    {
+      key: "password",
+      label: "كلمة مرور المالك (8 أحرف على الأقل)",
+      type: "password",
+      placeholder: ownerRequired
+        ? "مطلوب عند إنشاء متجر جديد"
+        : "اتركه فارغاً للإبقاء على الحالية",
+      required: ownerRequired,
+      validate: (v) => {
+        const s = typeof v === "string" ? v : "";
+        if (!s) return ownerRequired ? "كلمة المرور مطلوبة" : null;
+        return s.length < 8 ? "كلمة المرور يجب أن تكون 8 أحرف على الأقل" : null;
+      },
+    },
+    { key: "is_featured", label: "متجر مميز (يظهر في الصفحة الرئيسية)", type: "checkbox" },
+    { key: "is_active", label: "متجر نشط", type: "checkbox" },
+  ];
+}
 
 export function AdminVendors() {
   const [view, setView] = useState<View>("list");
@@ -149,12 +232,14 @@ export function AdminVendors() {
       is_active: data.is_active !== false,
       is_featured: data.is_featured === true,
       sort_order: Number(data.sort_order) || 0,
-      // Owner login — only sent when provided so empty values on edit
-      // don't overwrite existing credentials.
-      //   - login_phone: REQUIRED on create; on edit the field is always
-      //     sent (the API rejects deletion of the only owner-phone).
-      //   - login_email: OPTIONAL; empty string clears it.
-      //   - password: empty string on edit = leave hash untouched.
+      // Owner login — sent as strings (including "") so the route's
+      // empty-string detection (`clearEmail`) survives. Undefined/null
+      // would skip the owner upsert and miss legitimate clear-email
+      // requests.
+      //   - login_phone: empty string = no signal (route treats as
+      //     "leave existing phone").
+      //   - login_email: empty string = "clear the stored email".
+      //   - password: empty string = "leave the existing hash".
       login_phone: data.login_phone ? String(data.login_phone).trim() : (editing ? "" : undefined),
       login_email: data.login_email
         ? String(data.login_email).trim()
@@ -297,8 +382,11 @@ export function AdminVendors() {
 }
 
 /**
- * New / edit view. Owns the live-image-upload state and forces the
- * form to re-initialise whenever a new image URL is produced.
+ * New / edit view. Owns the live-image-upload state for logo/banner
+ * (these are NOT FormFields — they're managed by the standalone
+ * ImageUploader widgets below to avoid the "duplicate text input +
+ * uploader" UX problem). At submit time the override URLs are
+ * injected into the form payload via `onSubmit`.
  */
 function VendorFormView({
   editing,
@@ -323,22 +411,31 @@ function VendorFormView({
   const handleImageUploaded = (kind: "logo" | "banner", url: string) => {
     if (kind === "logo") setLogoOverride(url);
     else setBannerOverride(url);
-    // AdminForm now merges new initialValues field-by-field (since the
-    // soft-merge fix), so uploading an image no longer wipes the user's
-    // other typed input. No `formKey` bump needed.
+  };
+
+  // When no owner row exists yet, login_phone + password become
+  // required (server enforces this in `upsertVendorOwner`). Once an
+  // owner exists, all three become optional and empty = "leave
+  // existing".
+  const ownerRequired = !editing?.has_owner;
+
+  const handleSubmitWithImages = async (data: Record<string, unknown>) => {
+    await onSubmit({
+      ...data,
+      logo_url: logoOverride ?? editing?.logo_url ?? null,
+      banner_url: bannerOverride ?? editing?.banner_url ?? null,
+    });
   };
 
   const initial = {
     ...(editing || {}),
-    logo_url: logoOverride ?? editing?.logo_url ?? "",
-    banner_url: bannerOverride ?? editing?.banner_url ?? "",
     primary_color: editing?.primary_color || "#009345",
     is_active: editing ? editing.is_active !== false : true,
     is_featured: editing ? editing.is_featured === true : false,
     sort_order: editing?.sort_order ?? vendorsCount,
     vendor_type: editing?.vendor_type || "food_beverage",
-    // Pre-fill the owner's login phone (required) and email (optional) so
-    // the admin can confirm what's currently configured. Password field
+    // Pre-fill the owner's login phone (required when no owner row
+    // exists) and email (always required by the form). Password field
     // intentionally stays empty — empty submit = leave the existing
     // hash untouched.
     login_phone: editing?.login_phone ?? "",
@@ -351,9 +448,9 @@ function VendorFormView({
       <AdminForm
         title={editing ? `تعديل المتجر: ${editing.name_ar}` : "متجر جديد"}
         subtitle="سيظهر المتجر في صفحة المتاجر وصفحة المنتج بهويته البصرية ولونه المميز."
-        fields={FIELDS}
+        fields={buildFields(ownerRequired)}
         initialValues={initial}
-        onSubmit={onSubmit}
+        onSubmit={handleSubmitWithImages}
         onCancel={onCancel}
         loading={submitting}
         previewTitle="معاينة بطاقة المتجر"
@@ -363,8 +460,9 @@ function VendorFormView({
       <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-5">
         <h3 className="font-bold text-secondary">رفع الصور</h3>
         <p className="text-xs text-gray-500">
-          ارفع الشعار أو صورة الغلاف — الرابط يُحقن تلقائياً في حقل النص
-          أعلاه، ويجب الضغط على <strong>حفظ</strong> لتسجيله في قاعدة البيانات.
+          ارفع الشعار أو صورة الغلاف — الرابط يُحقن تلقائياً في البيانات
+          عند الضغط على <strong>حفظ</strong>. اترك الحقل فارغاً في حالة
+          عدم الرغبة في تغيير الصورة الحالية.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>

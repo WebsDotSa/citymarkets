@@ -17,8 +17,8 @@
 // non-deterministically.
 
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
 import { resolveCustomerUserIdFromRequest } from "@/lib/identity";
+import { setDefaultAddress as setDefaultAddressService } from "@/lib/identity/address-service";
 import { error as logError } from "@/lib/logger";
 
 export async function POST(
@@ -42,32 +42,19 @@ export async function POST(
   }
 
   try {
-    // 1. Confirm ownership. Cheaper than running both updates in a
-    //    transaction and matches the rowCount pattern used by
-    //    /api/v1/addresses DELETE.
-    const own = await query(
-      "SELECT id FROM addresses WHERE id = $1::uuid AND user_id = $2::uuid",
-      [id, userId],
-    );
-    if (own.rowCount === 0) {
+    // P2-3: delegate to the address service. The service does ownership
+    // check + clear-others + set-target atomically in one transaction.
+    // Returning null means the address doesn't exist OR isn't owned
+    // by the caller; we surface 404 in both cases so the caller can't
+    // distinguish "row doesn't exist" from "not yours" (the latter
+    // would leak address ownership).
+    const row = await setDefaultAddressService({ kind: "user", userId }, id);
+    if (!row) {
       return NextResponse.json(
         { success: false, error: "العنوان غير موجود" },
         { status: 404 },
       );
     }
-
-    // 2. Unset other defaults. Idempotent: if no rows are currently
-    //    default, the UPDATE just touches zero rows.
-    await query(
-      "UPDATE addresses SET is_default = false WHERE user_id = $1::uuid AND id <> $2::uuid",
-      [userId, id],
-    );
-
-    // 3. Mark this row as default.
-    await query(
-      "UPDATE addresses SET is_default = true WHERE id = $1::uuid AND user_id = $2::uuid",
-      [id, userId],
-    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

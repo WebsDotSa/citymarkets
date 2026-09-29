@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { apiFetch, getBanners, getCategories, getProducts, getProduct } from "./api";
+import { apiFetch, getCategories, getProducts, getProduct } from "./api";
 
 describe("apiFetch", () => {
   const originalFetch = globalThis.fetch;
@@ -200,18 +200,6 @@ describe("convenience helpers", () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
-  });
-
-  it("getBanners hits /api/v1/banners", async () => {
-    const spy = vi.fn<typeof fetch>(async () =>
-      new Response(JSON.stringify({ success: true, data: [{ id: 1 }] }), {
-        status: 200,
-      }),
-    );
-    globalThis.fetch = spy as unknown as typeof fetch;
-    const out = await getBanners();
-    expect((spy.mock.calls[0][0] as unknown as string)).toMatch(/\/api\/v1\/banners$/);
-    expect(out.data).toEqual([{ id: 1 }]);
   });
 
   it("getCategories hits /api/v1/categories", async () => {

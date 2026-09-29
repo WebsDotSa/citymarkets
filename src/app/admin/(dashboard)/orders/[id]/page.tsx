@@ -17,6 +17,7 @@ import {
   ORDER_STATUS_DISPLAY,
   PAYMENT_METHOD_AR,
   PAYMENT_STATUS_AR,
+  canTransition,
   getOrderStatusConfig,
   getPaymentStatusConfig,
 } from '@/lib/orders';
@@ -358,6 +359,51 @@ export default function AdminOrderDetailPage() {
               <StatusIcon className="w-3.5 h-3.5" />
               {statusLabel}
             </span>
+            {/* Inline status editor — top of page, the primary place
+                admins flip status from. Options are filtered through the
+                centralized state machine (admin role). */}
+            <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-2 py-1">
+              <RefreshCw className="w-3.5 h-3.5 text-primary" />
+              <select
+                aria-label="تغيير حالة الطلب"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="bg-transparent text-sm font-medium text-secondary focus:outline-none cursor-pointer"
+              >
+                {STATUS_OPTIONS.map((s) => {
+                  const reachable = canTransition(
+                    "admin",
+                    "orders",
+                    String(order.status ?? ""),
+                    s.value,
+                  );
+                  const isCurrent = s.value === String(order.status);
+                  return (
+                    <option
+                      key={s.value}
+                      value={s.value}
+                      disabled={!reachable && !isCurrent}
+                    >
+                      {s.label}
+                      {!reachable && !isCurrent ? " (غير مسموح)" : ""}
+                    </option>
+                  );
+                })}
+              </select>
+              <button
+                type="button"
+                onClick={() => void handleSaveStatus()}
+                disabled={saving || status === String(order.status)}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-primary text-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+              >
+                {saving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Save className="w-3.5 h-3.5" />
+                )}
+                حفظ
+              </button>
+            </div>
             {abandonedSnapshot ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                 <ShoppingCart className="w-3.5 h-3.5" />
@@ -620,38 +666,27 @@ export default function AdminOrderDetailPage() {
           ) : null}
         </div>
 
-        {/* Right column: status editor + payment + customer + internal notes */}
+        {/* Right column: read-only status badge + payment + customer + notes */}
         <div className="space-y-5">
-          {/* Status Update */}
+          {/* Status (read-only — the inline editor at the top is the
+              primary control). Last change info + the OrderTimeline
+              below give the full status history. */}
           <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
             <h2 className="font-bold text-secondary flex items-center gap-2 mb-3">
               <RefreshCw className="w-4 h-4 text-primary" />
-              تحديث الحالة
+              حالة الطلب
             </h2>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary mb-3"
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusConfig.color}`}
             >
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => void handleSaveStatus()}
-              disabled={saving || status === String(order.status)}
-              className="w-full h-11 bg-primary text-white rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-            >
-              {saving ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              حفظ الحالة
-            </button>
+              <StatusIcon className="w-3.5 h-3.5" />
+              {statusLabel}
+            </span>
+            <p className="text-xs text-gray-500 mt-3">
+              غيّر الحالة من شريط الأدوات أعلى الصفحة. التغييرات تُسجَّل
+              في سجل الطلب.
+            </p>
+            <LastStatusChangeBadge change={lastStatusChange} />
           </div>
 
           {/* Payment Summary */}

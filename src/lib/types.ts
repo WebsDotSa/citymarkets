@@ -370,22 +370,6 @@ export type Notification = {
   created_at: string;
 };
 
-export type Banner = {
-  id: string;
-  image_url: string;
-  link_type: "product" | "category" | "external" | "none";
-  link_value: string | null;
-  active: boolean;
-  /**
-   * Legacy alias for `active` — older admin rows wrote `is_active`
-   * instead. The admin banner page reads both for backwards-compat
-   * with rows persisted before the rename.
-   */
-  is_active?: boolean;
-  sort_order: number;
-  created_at: string;
-};
-
 export type Review = {
   id: string;
   product_id: string;

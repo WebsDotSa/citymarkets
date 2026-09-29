@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PushOptIn } from "@/components/push-opt-in";
+import { PushOptIn } from "@/components/PushOptIn";
 
 const PREF_KEY = "cm-notif-prefs";
 

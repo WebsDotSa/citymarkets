@@ -10,6 +10,7 @@ import {
   getPaymentStatusConfig,
   PAYMENT_METHOD_AR,
   ORDER_STATUS_DISPLAY,
+  CUSTOMER_PROGRESS_STEPS,
 } from '@/lib/orders';
 import {
   ORDER_BASE_COLUMNS,
@@ -87,6 +88,7 @@ export async function GET(
     const ord = await client.query(
       `SELECT ${ORDER_BASE_COLUMNS},
               o.type, o.tracking_code,
+              o.guest_city, o.guest_district,
               ${ORDER_ADDRESS_COLUMNS_MINIMAL},
               ${ORDER_USER_COLUMNS}
        ${ORDER_DETAIL_JOINS}
@@ -132,6 +134,31 @@ export async function GET(
     const orderNumberShown =
       String(o.tracking_code || "").trim() || String(o.id || "");
 
+    // Build the public tracking URL with the LAST 4 DIGITS of the
+    // customer's phone only (privacy). The full phone never leaves
+    // the server. Falls back to null when neither code nor phone is
+    // available (e.g. legacy order without tracking_code).
+    const phoneForTracking = String(o.user_phone || o.guest_phone || "");
+    const phoneLast4 = phoneForTracking.replace(/\D/g, "").slice(-4);
+    const trackingCode = String(o.tracking_code || "").trim();
+    const siteOrigin =
+      process.env.NEXT_PUBLIC_SITE_URL || "https://citymarkets.sa";
+    const trackingUrl =
+      trackingCode && phoneLast4
+        ? `${siteOrigin}/orders/track?phone=****${phoneLast4}&code=${encodeURIComponent(trackingCode)}`
+        : null;
+
+    // Lifecycle progression steps for the "مسار الطلب" section. Mark a
+    // step as reached if the order's current status has reached it.
+    const stepOrder: Array<{ key: string; label: string }> =
+      CUSTOMER_PROGRESS_STEPS.map((s) => ({ key: s.status, label: s.label }));
+    const currentIdx = stepOrder.findIndex((s) => s.key === String(o.status));
+    const trackingSteps = stepOrder.map((s, idx) => ({
+      key: s.key,
+      label: s.label,
+      reached: currentIdx === -1 ? false : idx <= currentIdx,
+    }));
+
     // 4) Render PDF.
     const buffer = await renderInvoicePdf({
       orderNumber: orderNumberShown,
@@ -145,8 +172,8 @@ export async function GET(
       address: {
         label: o.address_label || null,
         text: o.address_text || null,
-        city: null,
-        district: null,
+        city: o.guest_city || null,
+        district: o.guest_district || null,
       },
       items: items.rows.map((it) => ({
         name: String(it.name_ar || it.free_text || "عنصر"),
@@ -161,6 +188,9 @@ export async function GET(
       discount: Number(o.discount ?? 0),
       total: Number(o.total ?? 0),
       variant,
+      trackingCode: trackingCode || null,
+      trackingUrl,
+      trackingSteps,
     });
 
     const filename = invoiceFilename(orderNumberShown);

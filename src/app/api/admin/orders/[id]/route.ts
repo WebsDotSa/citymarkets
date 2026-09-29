@@ -2,8 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pool, query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { logAdminAction } from '@/lib/admin-audit';
-import { error as logError } from '@/lib/logger';
+import { error as logError, warn as logWarn } from '@/lib/logger';
 import { orderEditSchema } from '@/lib/validation';
+import {
+  assertValidTransition,
+  invalidTransitionMessage,
+} from '@/lib/orders/state-machine';
+import {
+  ORDER_BASE_COLUMNS,
+  ORDER_ADDRESS_COLUMNS_MINIMAL,
+  ORDER_USER_COLUMNS,
+  ORDER_DETAIL_JOINS,
+} from '@/lib/orders/sql-fragments';
 
 /**
  * GET /api/admin/orders/[id]
@@ -19,19 +29,15 @@ export async function GET(
   const { id: orderId } = await ctx.params;
 
   try {
+    // Reuse the canonical column-list + JOIN fragment so adding a new
+    // order-detail column (e.g. scheduled, voice_note_url) only needs an
+    // edit in @/lib/orders/sql-fragments instead of every consumer.
     const ord = await query(
-      `SELECT o.id, o.tracking_code AS order_number, o.status, o.type,
-              o.subtotal::float as subtotal, o.delivery_fee::float as delivery_fee,
-              o.service_fee::float as service_fee, o.tax::float as tax,
-              o.discount::float as discount, o.total::float as total,
-              o.payment_method, o.payment_reference, o.payment_status,
-              o.notes, o.internal_notes, o.created_at, o.updated_at,
-              o.guest_name, o.guest_phone,
-              u.name as user_name, u.phone as user_phone,
-              a.label as address_label, a.address_text
-       FROM orders o
-       LEFT JOIN users u ON u.id = o.user_id
-       LEFT JOIN addresses a ON a.id = o.address_id
+      `SELECT ${ORDER_BASE_COLUMNS},
+              o.tracking_code AS order_number, o.type,
+              ${ORDER_ADDRESS_COLUMNS_MINIMAL},
+              ${ORDER_USER_COLUMNS}
+       ${ORDER_DETAIL_JOINS}
        WHERE o.id = $1
        LIMIT 1`,
       [orderId]
@@ -125,6 +131,35 @@ export async function PATCH(
     );
     if (ord.rows.length === 0) {
       return NextResponse.json({ success: false, error: 'الطلب غير موجود' }, { status: 404 });
+    }
+
+    // Centralized state-machine guard. Admins get the documented escape
+    // hatch (delivered → cancelled); everything else follows the role
+    // table in `@/lib/orders/state-machine`.
+    if (parsed.data.status) {
+      const currentStatus = String(ord.rows[0].status);
+      const targetStatus = String(parsed.data.status);
+      try {
+        assertValidTransition('admin', 'orders', currentStatus, targetStatus);
+      } catch (err) {
+        await client.query('ROLLBACK');
+        const message = invalidTransitionMessage(
+          'admin',
+          'orders',
+          currentStatus,
+          targetStatus,
+        );
+        logWarn('[admin/orders PATCH] rejected invalid transition', {
+          orderId,
+          from: currentStatus,
+          to: targetStatus,
+          reason: err instanceof Error ? err.message : String(err),
+        });
+        return NextResponse.json(
+          { success: false, error: message },
+          { status: 400 },
+        );
+      }
     }
 
     const updates: string[] = [];

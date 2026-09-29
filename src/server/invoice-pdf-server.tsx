@@ -16,11 +16,13 @@
 import * as React from "react";
 import fs from "node:fs";
 import path from "node:path";
+import QRCode from "qrcode";
 import {
   Document,
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
   Font,
   renderToBuffer,
@@ -72,6 +74,55 @@ Font.register({
   ],
 });
 
+// Resolve the site logo at module load. The PDF renderer renders the
+// image inline (data URI) so the runtime never needs to fetch anything.
+// If no logo file is found, the renderer falls back to text-only — the
+// brand name still appears in the header so the document stays valid.
+function resolveSiteLogoDataUri(): string | null {
+  const candidates = [
+    path.join(process.cwd(), "public", "citymarket-logo.png"),
+    path.join(process.cwd(), "public", "images", "city-markets-logo.png"),
+    path.resolve(__dirname, "..", "..", "..", "public", "citymarket-logo.png"),
+    path.resolve(
+      __dirname,
+      "..",
+      "..",
+      "public",
+      "citymarket-logo.png",
+    ),
+    "/app/public/citymarket-logo.png",
+  ];
+  for (const file of candidates) {
+    try {
+      if (fs.existsSync(file)) {
+        const bytes = fs.readFileSync(file);
+        return `data:image/png;base64,${bytes.toString("base64")}`;
+      }
+    } catch {
+      // continue searching
+    }
+  }
+  return null;
+}
+
+const LOGO_DATA_URI = resolveSiteLogoDataUri();
+
+/** Build a QR code PNG data URI for the tracking URL. Returns null on failure. */
+async function buildTrackingQrPngDataUri(url: string): Promise<string | null> {
+  try {
+    const pngBuffer = await QRCode.toBuffer(url, {
+      type: "png",
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 220,
+      color: { dark: "#009345", light: "#ffffff" },
+    });
+    return `data:image/png;base64,${pngBuffer.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
 export interface ServerInvoiceItem {
   name: string;
   quantity: number;
@@ -105,6 +156,13 @@ export interface ServerInvoiceProps {
   total: number;
   storeName?: string;
   variant: "customer" | "admin";
+  // Tracking path / order tracking section (مسار الطلب)
+  trackingCode?: string | null;
+  trackingUrl?: string | null;
+  /** Pre-built PNG data URI for the tracking URL QR code. */
+  trackingQrPngDataUri?: string | null;
+  /** Optional order lifecycle progression (e.g. pending → confirmed → delivered). */
+  trackingSteps?: Array<{ key: string; label: string; reached?: boolean }>;
 }
 
 const styles = StyleSheet.create({
@@ -248,6 +306,68 @@ const styles = StyleSheet.create({
   pillPending: { backgroundColor: "#fef3c7", color: "#92400e" },
   pillFailed: { backgroundColor: "#fee2e2", color: "#b91c1c" },
   pillDefault: { backgroundColor: "#e5e7eb", color: "#374151" },
+  // ── Header logo + tracking path styles ─────────────────────────────
+  logo: {
+    width: 64,
+    height: 64,
+    objectFit: "contain",
+    marginBottom: 4,
+  },
+  brandBlock: {
+    flexDirection: "column",
+    alignItems: "flex-end",
+  },
+  trackingCard: {
+    backgroundColor: "#f0fdf4",
+    borderRadius: 6,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+    marginBottom: 10,
+  },
+  trackingRow: {
+    flexDirection: "row-reverse",
+    gap: 12,
+    alignItems: "flex-start",
+  },
+  trackingInfo: {
+    flex: 1,
+  },
+  trackingQr: {
+    width: 96,
+    height: 96,
+    objectFit: "contain",
+  },
+  trackingUrl: {
+    fontSize: 9,
+    color: "#047857",
+    fontWeight: 700,
+    marginTop: 4,
+    textAlign: "right",
+    direction: "ltr",
+  },
+  trackingCodeMono: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#111827",
+    textAlign: "right",
+    letterSpacing: 1,
+  },
+  stepRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    marginTop: 6,
+    gap: 6,
+  },
+  stepDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  stepDotReached: { backgroundColor: "#009345" },
+  stepDotPending: { backgroundColor: "#e5e7eb" },
+  stepLabel: { fontSize: 9, color: "#374151" },
+  stepLabelPending: { color: "#9ca3af" },
 });
 
 function formatPrice(value: number): string {
@@ -303,6 +423,10 @@ function InvoicePdfServer(props: ServerInvoiceProps) {
     total,
     storeName = "أسواق سيتي",
     variant,
+    trackingCode,
+    trackingUrl,
+    trackingQrPngDataUri,
+    trackingSteps,
   } = props;
 
   const pillClass = paymentPillClass(paymentStatus);
@@ -320,7 +444,10 @@ function InvoicePdfServer(props: ServerInvoiceProps) {
     >
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <View>
+          <View style={styles.brandBlock}>
+            {LOGO_DATA_URI ? (
+              <Image src={LOGO_DATA_URI} style={styles.logo} />
+            ) : null}
             <Text style={styles.brand}>{storeName}</Text>
             <Text style={styles.brandSub}>منصة التسوق الذكية</Text>
           </View>
@@ -383,6 +510,62 @@ function InvoicePdfServer(props: ServerInvoiceProps) {
             </Text>
           </View>
         </View>
+
+        {(trackingCode || trackingUrl || (trackingSteps && trackingSteps.length > 0)) ? (
+          <>
+            <Text style={styles.sectionTitle}>مسار الطلب</Text>
+            <View style={styles.trackingCard}>
+              <View style={styles.trackingRow}>
+                <View style={styles.trackingInfo}>
+                  {trackingCode ? (
+                    <>
+                      <Text style={styles.infoTitle}>رقم التتبع</Text>
+                      <Text style={styles.trackingCodeMono}>
+                        {trackingCode}
+                      </Text>
+                    </>
+                  ) : null}
+                  {trackingUrl ? (
+                    <>
+                      <Text style={[styles.infoTitle, { marginTop: 6 }]}>
+                        رابط المتابعة
+                      </Text>
+                      <Text style={styles.trackingUrl}>{trackingUrl}</Text>
+                    </>
+                  ) : null}
+                </View>
+                {trackingQrPngDataUri ? (
+                  <Image
+                    src={trackingQrPngDataUri}
+                    style={styles.trackingQr}
+                  />
+                ) : null}
+              </View>
+              {trackingSteps && trackingSteps.length > 0 ? (
+                <View style={{ marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: "#bbf7d0" }}>
+                  {trackingSteps.map((s) => (
+                    <View key={s.key} style={styles.stepRow}>
+                      <View
+                        style={[
+                          styles.stepDot,
+                          s.reached ? styles.stepDotReached : styles.stepDotPending,
+                        ]}
+                      />
+                      <Text
+                        style={[
+                          styles.stepLabel,
+                          !s.reached ? styles.stepLabelPending : undefined,
+                        ]}
+                      >
+                        {s.label}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          </>
+        ) : null}
 
         <Text style={styles.sectionTitle}>العناصر</Text>
         <View style={styles.table}>
@@ -469,12 +652,28 @@ function InvoicePdfServer(props: ServerInvoiceProps) {
 /**
  * Render the invoice PDF server-side. Returns a Node Buffer ready to be
  * streamed as `application/pdf`.
+ *
+ * If `props.trackingUrl` is set and `props.trackingQrPngDataUri` is NOT
+ * already populated, a QR code will be generated and embedded
+ * automatically — callers that already pre-built the QR can pass it in.
  */
 export async function renderInvoicePdf(
   props: ServerInvoiceProps,
 ): Promise<Buffer> {
-  return renderToBuffer(<InvoicePdfServer {...props} />);
+  let qrDataUri = props.trackingQrPngDataUri ?? null;
+  if (!qrDataUri && props.trackingUrl) {
+    qrDataUri = await buildTrackingQrPngDataUri(props.trackingUrl);
+  }
+  return renderToBuffer(
+    <InvoicePdfServer
+      {...props}
+      trackingQrPngDataUri={qrDataUri ?? undefined}
+    />,
+  );
 }
+
+/** Exposed so callers (the invoice route) can pre-compute if desired. */
+export const buildTrackingQr = buildTrackingQrPngDataUri;
 
 /** Short, customer-friendly invoice filename: `invoice-ABC12345.pdf`. */
 export function invoiceFilename(orderNumber: string): string {

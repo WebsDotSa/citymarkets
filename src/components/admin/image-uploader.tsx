@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Upload, X, Image as ImageIcon, Loader2, AlertCircle } from "lucide-react";
 import { csrfFetch } from "@/lib/csrf-client";
 import { compressImageForUpload } from "@/lib/image-compress";
+import { ALLOWED_IMAGE_MIME, MAX_IMAGE_BYTES } from "@/lib/validation/upload";
 import { error as logError } from "@/lib/logger";
 
 interface ImageUploaderProps {
@@ -17,7 +18,7 @@ interface ImageUploaderProps {
 export function ImageUploader({
   value,
   onChange,
-  folder = "banners",
+  folder = "home_banners",
   placeholder = "اضغط لرفع صورة",
   aspectRatio = "aspect-video",
 }: ImageUploaderProps) {
@@ -29,12 +30,15 @@ export function ImageUploader({
     const original = e.target.files?.[0];
     if (!original) return;
 
-    // Validate
-    if (!original.type.startsWith("image/")) {
-      setError("الملف يجب أن يكون صورة");
+    // Validate. The MIME allowlist + size ceiling come from
+    // `@/lib/validation/upload` so client and server agree on what
+    // counts as an acceptable image. Server still re-sniffs magic
+    // bytes before persisting.
+    if (!ALLOWED_IMAGE_MIME.has(original.type)) {
+      setError("نوع الصورة غير مدعوم (JPEG / PNG / GIF / WebP / AVIF)");
       return;
     }
-    if (original.size > 10 * 1024 * 1024) {
+    if (original.size > MAX_IMAGE_BYTES) {
       setError("حجم الصورة يجب ألا يتجاوز 10 ميجابايت");
       return;
     }

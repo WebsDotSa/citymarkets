@@ -4,6 +4,7 @@ import {
   getGuestSessionIdFromRequest,
   resolveCustomerUserIdFromRequest,
 } from '@/lib/identity';
+import { resolveOrderAddress } from '@/lib/identity/address-service';
 import { createOrderSchema, validationError } from '@/lib/validation';
 import { checkRateLimit, ORDER_CREATE_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';

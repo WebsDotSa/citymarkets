@@ -3,6 +3,7 @@ import { query, pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { logAdminAction } from "@/lib/admin-audit";
 import { vendorCreateSchema, vendorUpdateSchema } from "@/lib/validation";
+import { optionalPhone, optionalEmail } from "@/lib/validation/primitives";
 import { hashPassword } from "@/lib/password";
 
 import { error as logError } from '@/lib/logger';
@@ -23,7 +24,10 @@ function idCheck(url: URL) {
 // verbatim with Arabic characters preserved (matching the historical
 // `vendors.slug` rows). Behaviour change would break lookups by slug
 // for vendors created before the transliteration was introduced.
-function slugify(input: string): string {
+//
+// Renamed from `slugify` to `slugifyKeepUnicode` to make the
+// divergence from `@/lib/slug.generateSlug` obvious at every call site.
+function slugifyKeepUnicode(input: string): string {
   return (input || "")
     .toString()
     .toLowerCase()
@@ -98,10 +102,10 @@ async function upsertVendorOwner(
 
   const run = client ? client.query : (sql: string, params?: unknown[]) => query(sql, params);
 
-  if (hasPhone && !/^(\+?966|0)?5\d{8}$/.test(loginPhone!.replace(/\s|-/g, ""))) {
+  if (hasPhone && !optionalPhone.safeParse(loginPhone!.replace(/\s|-/g, "")).success) {
     return "رقم جوال المالك غير صالح — مثال: 5XXXXXXXX";
   }
-  if (hasEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail!.trim())) {
+  if (hasEmail && !optionalEmail.safeParse(loginEmail!.trim()).success) {
     return "البريد الإلكتروني للمالك غير صالح";
   }
   if (hasPassword && password!.length < 8) {
@@ -215,7 +219,7 @@ export async function POST(request: NextRequest) {
     );
   }
   const v = parsed.data;
-  const slug = v.slug?.toString().trim() || slugify(v.name_ar);
+  const slug = v.slug?.toString().trim() || slugifyKeepUnicode(v.name_ar);
   if (!slug) {
     return NextResponse.json(
       { success: false, error: "تعذّر توليد slug من الاسم" },
@@ -364,7 +368,7 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-    const slug = v.slug?.toString().trim() || (v.name_ar ? slugify(v.name_ar) : undefined);
+    const slug = v.slug?.toString().trim() || (v.name_ar ? slugifyKeepUnicode(v.name_ar) : undefined);
 
     await query(
       // BUGFIX (audit 2026-09-29): wrap every column in COALESCE so a

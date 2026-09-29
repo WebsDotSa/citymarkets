@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { pool } from "@/lib/db";
 import { computeDistanceFee } from '@/lib/delivery';
-import { haversineKm } from '@/lib/delivery';
+import { getMainStoreAndDistance } from '@/lib/delivery/main-store';
 
 import { error as logError } from '@/lib/logger';
 
@@ -20,6 +20,13 @@ import { error as logError } from '@/lib/logger';
  * Response is wrapped under `data` for backwards-compat with the
  * existing client (the hook reads `data.deliveryFee`, `data.freeDelivery`,
  * `data.store`, etc.).
+ *
+ * F27: the main-store SELECT + haversine call now go through
+ * `getMainStoreAndDistance` (the canonical helper in
+ * `@/lib/delivery/main-store`). The previous inline version filtered
+ * `is_active = true` strictly; the helper falls back to inactive rows,
+ * so we still 503 here when the resolved store is inactive (matching
+ * the old behaviour exactly).
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -35,33 +42,26 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    interface MainStoreRow {
-      id: string;
-      name_ar: string;
-      lat: string | number | null;
-      lng: string | number | null;
-    }
-    const storeResult = await query<MainStoreRow>(
-      `SELECT id, name_ar, lat::float AS lat, lng::float AS lng
-         FROM stores
-        WHERE is_main = true AND is_active = true
-        LIMIT 1`,
-    );
-
-    const store = storeResult.rows[0];
-    if (!store || store.lat == null || store.lng == null) {
-      return NextResponse.json(
-        { success: false, error: "لا يوجد فرع رئيسي محدد" },
-        { status: 503 },
-      );
-    }
-
-    const distanceKm = haversineKm(
-      Number(store.lat),
-      Number(store.lng),
+    const { store, distanceKm } = await getMainStoreAndDistance(
+      pool,
       lat,
       lng,
     );
+
+    // Preserve the legacy strict-active behaviour: 503 unless the main
+    // store is present, active, and has lat/lng.
+    if (
+      !store ||
+      store.is_active === false ||
+      store.lat == null ||
+      store.lng == null ||
+      distanceKm == null
+    ) {
+      return NextResponse.json(
+        { success: false, error: "لا يوجد فرع رئيسي محدد" },
+        { status: 503 }
+      );
+    }
 
     // Pickup-mode callers shouldn't be hitting this endpoint, but we
     // still guard against it being passed through.
@@ -76,8 +76,8 @@ export async function GET(request: NextRequest) {
         freeDelivery,
         distance: Math.round(distanceKm * 100) / 100,
         store: {
-          id: store.id,
-          name: store.name_ar,
+          id: String(store.id ?? ""),
+          name: store.name_ar ?? null,
         },
       },
     });

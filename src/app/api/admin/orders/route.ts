@@ -6,7 +6,7 @@ import { updateOrderSchema } from '@/lib/validation';
 import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
-import { ALL_ORDER_STATES, ALL_PAYMENT_STATES } from '@/lib/orders/state-machine';
+import { ALL_ORDER_STATES, ALL_PAYMENT_STATES, assertValidTransition, invalidTransitionMessage } from '@/lib/orders/state-machine';
 import {
   ORDER_BASE_COLUMNS,
   ORDER_LIST_COLUMNS,
@@ -251,6 +251,32 @@ export async function PUT(request: NextRequest) {
     );
     const oldStatus = oldStatusRes.rows[0]?.status ?? null;
     const oldDriverId = oldStatusRes.rows[0]?.driver_id ?? null;
+
+    // Centralized state-machine guard. Admins get the documented escape
+    // hatch (delivered → cancelled); everything else follows the role
+    // table in `@/lib/orders/state-machine`.
+    if (status !== undefined && status !== null && oldStatus) {
+      try {
+        assertValidTransition('admin', 'orders', String(oldStatus), String(status));
+      } catch (err) {
+        const message = invalidTransitionMessage(
+          'admin',
+          'orders',
+          String(oldStatus),
+          String(status),
+        );
+        logWarn('[admin/orders PUT] rejected invalid transition', {
+          orderId: idCheckResult,
+          from: oldStatus,
+          to: status,
+          reason: err instanceof Error ? err.message : String(err),
+        });
+        return NextResponse.json(
+          { success: false, error: message },
+          { status: 400 },
+        );
+      }
+    }
 
     await query(
       `UPDATE orders SET ${sets.join(', ')} WHERE id = $${n}`,

@@ -5,21 +5,43 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
  *
  * Pre-fix: profile-new.tsx called this endpoint but the route did
  * not exist. The fetch 404'd and the toggle silently failed. Today
- * the route unsets every other default then sets `is_default=true`
- * on the target.
+ * the route delegates to the canonical address service, which performs
+ * the "clear-others + set-target" toggle inside one transaction.
+ *
+ * P2-3: the route no longer inlines the three queries (ownership check
+ * + clear-others UPDATE + set-this UPDATE). We mock pool.connect() so
+ * the service's transaction body runs against a fake client that
+ * returns the rowCount/rows the test wants.
  */
 
 type QueryCall = { sql: string; params: unknown[] };
 
-const calls: QueryCall[] = [];
+function makeFakeClient(opts?: { rows?: unknown[] }) {
+  const txCalls: QueryCall[] = [];
+  const client = {
+    query: vi.fn(async (sql: string, params: unknown[] = []) => {
+      txCalls.push({ sql, params });
+      const s = sql.trim().toUpperCase();
+      if (s.startsWith("BEGIN") || s.startsWith("ROLLBACK") || s.startsWith("COMMIT")) {
+        return { rows: [] };
+      }
+      // The service issues 2 UPDATEs:
+      //   1) SET is_default = false WHERE user_id = $1 AND id <> $2
+      //   2) SET is_default = true WHERE id = $2 AND user_id = $1 RETURNING ...
+      // We return rows only on the second one (the "this row became default" one).
+      if (s.includes("SET IS_DEFAULT = TRUE") && s.includes("RETURNING")) {
+        return { rows: opts?.rows ?? [{ id: "addr-1", is_default: true }], rowCount: 1 };
+      }
+      return { rows: [], rowCount: 0 };
+    }),
+    release: vi.fn(),
+  };
+  return { client, txCalls };
+}
 
 vi.mock("@/lib/db", () => ({
   pool: { connect: vi.fn() },
-  query: vi.fn(async (sql: string, params: unknown[] = []) => {
-    calls.push({ sql, params });
-    const q = query as unknown as { mockRowCount?: number };
-    return { rows: [], rowCount: q.mockRowCount ?? 0 };
-  }),
+  query: vi.fn(),
 }));
 
 vi.mock("@/lib/identity", () => ({
@@ -32,7 +54,7 @@ vi.mock("@/lib/logger", () => ({
   info: vi.fn(),
 }));
 
-import { query } from "@/lib/db";
+import { pool } from "@/lib/db";
 import { resolveCustomerUserIdFromRequest } from "@/lib/identity";
 import { POST } from "./route";
 import type { NextRequest } from "next/server";
@@ -49,8 +71,6 @@ const PARAMS = (id: string) => Promise.resolve({ id });
 describe("POST /api/v1/addresses/[id]/default (D12)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    calls.length = 0;
-    (query as unknown as { mockRowCount?: number }).mockRowCount = 0;
   });
 
   it("returns 401 when no customer is resolved", async () => {
@@ -60,12 +80,16 @@ describe("POST /api/v1/addresses/[id]/default (D12)", () => {
     const body = await res.json();
     expect(body.success).toBe(false);
     expect(body.error).toBe("غير مصرح");
-    expect(calls).toHaveLength(0);
+    // No DB activity — the auth gate fires first.
+    expect(vi.mocked(pool.connect)).not.toHaveBeenCalled();
   });
 
   it("returns 404 when the address does not belong to the caller", async () => {
     vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
-    (query as unknown as { mockRowCount?: number }).mockRowCount = 0;
+    // Service returns null when the target row isn't owned → 404.
+    const { client } = makeFakeClient({ rows: [] });
+    vi.mocked(pool.connect).mockResolvedValueOnce(client as never);
+
     const res = await POST(mockRequest() as never, { params: PARAMS("addr-1") });
     expect(res.status).toBe(404);
     const body = await res.json();
@@ -73,47 +97,48 @@ describe("POST /api/v1/addresses/[id]/default (D12)", () => {
     expect(body.error).toBe("العنوان غير موجود");
   });
 
-  it("unsets other defaults then sets this one as default", async () => {
+  it("toggles defaults via the service (clear-others + set-target in one tx)", async () => {
     vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
-    (query as unknown as { mockRowCount?: number }).mockRowCount = 1;
+    const { client, txCalls } = makeFakeClient({ rows: [{ id: "addr-1", is_default: true }] });
+    vi.mocked(pool.connect).mockResolvedValueOnce(client as never);
+
     const res = await POST(mockRequest() as never, { params: PARAMS("addr-1") });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
 
-    // First call: verify ownership
-    expect(calls[0].sql).toMatch(/SELECT id FROM addresses/);
-    expect(calls[0].sql).toMatch(/id = \$1::uuid AND user_id = \$2::uuid/);
-    expect(calls[0].params).toEqual(["addr-1", "user-1"]);
+    // Transaction body: BEGIN → clear UPDATE → set UPDATE → COMMIT.
+    // The service uses [userId, id] as params (owner first, then id).
+    const setFalse = txCalls.find(
+      (c) => /SET is_default = false/i.test(c.sql) && /id <> \$2::uuid/i.test(c.sql),
+    );
+    expect(setFalse).toBeDefined();
+    expect(setFalse!.params).toEqual(["user-1", "addr-1"]);
 
-    // Second call: unset other defaults — must filter id <> target
-    // so the row we're about to promote doesn't get zeroed first.
-    expect(calls[1].sql).toMatch(/SET is_default = false/);
-    expect(calls[1].sql).toMatch(/id <> \$2::uuid/);
-    expect(calls[1].params).toEqual(["user-1", "addr-1"]);
+    const setTrue = txCalls.find(
+      (c) => /SET is_default = true/i.test(c.sql) && /RETURNING/i.test(c.sql),
+    );
+    expect(setTrue).toBeDefined();
+    expect(setTrue!.params).toEqual(["user-1", "addr-1"]);
 
-    // Third call: set this row default
-    expect(calls[2].sql).toMatch(/SET is_default = true/);
-    expect(calls[2].sql).toMatch(/id = \$1::uuid AND user_id = \$2::uuid/);
-    expect(calls[2].params).toEqual(["addr-1", "user-1"]);
+    // The transaction must commit (not leave the rowCount=0 placeholder).
+    const commit = txCalls.find((c) => c.sql.trim().toUpperCase().startsWith("COMMIT"));
+    expect(commit).toBeDefined();
   });
 
-  it("returns 500 on DB error during ownership check", async () => {
+  it("returns 500 on DB error from the service", async () => {
     vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
-    vi.mocked(query).mockRejectedValueOnce(new Error("db_down"));
+    // Force pool.connect().query() to throw — exercises the catch-all.
+    const errorClient = {
+      query: vi.fn().mockRejectedValue(new Error("db_down")),
+      release: vi.fn(),
+    };
+    vi.mocked(pool.connect).mockResolvedValueOnce(errorClient as never);
+
     const res = await POST(mockRequest() as never, { params: PARAMS("addr-1") });
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.success).toBe(false);
     expect(body.error).toBe("فشل تحديد العنوان الافتراضي");
-  });
-
-  it("does not touch defaults when 404 (skip the two UPDATEs)", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
-    (query as unknown as { mockRowCount?: number }).mockRowCount = 0;
-    await POST(mockRequest() as never, { params: PARAMS("addr-1") });
-    // Only the ownership SELECT runs — no UPDATEs.
-    expect(calls).toHaveLength(1);
-    expect(calls[0].sql).toMatch(/SELECT/);
   });
 });

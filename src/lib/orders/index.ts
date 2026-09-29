@@ -43,6 +43,25 @@ export {
 } from "./order-status";
 export type { OrderStatusConfig, PaymentStatusConfig } from "./order-status";
 
+// ── Order state machine (transitions + assertions) ─────────────────────
+// Pure functions — safe to import from client components for filtering
+// dropdown options.
+export {
+  ALL_ORDER_STATES,
+  ALL_PAYMENT_STATES,
+  ALL_VENDOR_ORDER_STATES,
+  assertValidTransition,
+  canTransition,
+  invalidTransitionMessage,
+  InvalidTransitionError,
+} from "./state-machine";
+export type {
+  OrderState,
+  PaymentState,
+  Role,
+  VendorOrderState,
+} from "./state-machine";
+
 // ── Order ownership (assertions — use only in route handlers) ──────────
 export {
   assertOrderOwnership,

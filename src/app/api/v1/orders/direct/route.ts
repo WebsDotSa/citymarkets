@@ -4,6 +4,7 @@ import {
   resolveCustomerUserIdFromRequest,
   getGuestSessionIdFromRequest,
 } from '@/lib/identity';
+import { createAddress as createAddressService } from '@/lib/identity/address-service';
 import { createRateLimitHeaders, checkRateLimit, ORDER_CREATE_CONFIG } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';
 import { error as logError } from '@/lib/logger';
@@ -130,26 +131,33 @@ export async function POST(request: NextRequest) {
     }
 
     // 1) Upsert the address (customers often re-use the same label).
+    //
+    // P2-3: delegate to the canonical address service. The original
+    // inline INSERT was broken — it referenced plus_code / city /
+    // district columns that don't exist on the `addresses` table; the
+    // service writes only valid columns and stores plus_code/city/
+    // district in direct_order_meta below (the route's pre-existing
+    // behaviour for those fields is preserved). The service also
+    // auto-promotes the new row to default when it's the owner's
+    // first address, which is the right default for a one-off direct
+    // order — the order pins the address by id so is_default doesn't
+    // affect downstream behaviour.
     const addr = data.delivery_address;
-    const addrRes = await client.query(
-      `INSERT INTO addresses
-        (user_id, label, address_text, lat, lng, plus_code, city, district, description, place_images, is_default)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, FALSE)
-       RETURNING id`,
-      [
-        userId ?? null,
-        addr.label,
-        addr.address_text,
-        addr.lat,
-        addr.lng,
-        addr.plus_code ?? null,
-        addr.city ?? null,
-        addr.district ?? null,
-        addr.description ?? null,
-        addr.place_images ?? [],
-      ]
-    );
-    const addressId: string = addrRes.rows[0].id;
+    const addressOwner = userId
+      ? { kind: "user" as const, userId }
+      : { kind: "guest" as const, guestKey: sessionId! };
+    const addrRow = await createAddressService(addressOwner, {
+      label: addr.label,
+      title: typeof addr.description === "string" && addr.description.length > 0
+        ? addr.description
+        : null,
+      description: addr.description ?? null,
+      lat: Number(addr.lat),
+      lng: Number(addr.lng),
+      address_text: addr.address_text,
+      place_images: Array.isArray(addr.place_images) ? addr.place_images : [],
+    });
+    const addressId: string = addrRow.id;
 
     // 2) Compute totals — direct orders charge the customer ONLY the 4 SAR
     //    service fee + 15% VAT. Items' actual cost is reconciled by the

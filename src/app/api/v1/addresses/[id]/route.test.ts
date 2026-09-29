@@ -7,6 +7,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
  * the only DELETE handler lived on /api/v1/addresses with a `?id=`
  * query param. The fetch either 400'd or silently no-op'd. Today the
  * route is its own file with the path-param shape.
+ *
+ * P2-3: the route delegates to the address service instead of
+ * inlining the DELETE. The SQL is still exercised here via the
+ * @/lib/db mock so we keep the regression on "id + user_id in WHERE".
  */
 
 type QueryCall = { sql: string; params: unknown[] };
@@ -17,7 +21,9 @@ vi.mock("@/lib/db", () => ({
   pool: { connect: vi.fn() },
   query: vi.fn(async (sql: string, params: unknown[] = []) => {
     calls.push({ sql, params });
-    if ((query as any).mockRows) return { rows: (query as any).mockRows };
+    if ((query as any).mockRows) {
+      return { rows: (query as any).mockRows, rowCount: (query as any).mockRowCount ?? (query as any).mockRows.length };
+    }
     return { rows: [], rowCount: (query as any).mockRowCount ?? 0 };
   }),
 }));
@@ -83,13 +89,14 @@ describe("DELETE /api/v1/addresses/[id] (D11)", () => {
     const body = await res.json();
     expect(body.success).toBe(true);
 
-    // Verify the SQL pin includes both id and user_id (so a customer
-    // can't delete another customer's row even with a guessed UUID).
+    // The service pins both id AND user_id in the WHERE clause so a
+    // customer can't delete another customer's row with a guessed UUID.
+    // The service interpolates param positions ($1=userId, $2=id).
     const sql = calls[0].sql;
     expect(sql).toMatch(/DELETE FROM addresses/);
-    expect(sql).toMatch(/id = \$1::uuid/);
-    expect(sql).toMatch(/user_id = \$2::uuid/);
-    expect(calls[0].params).toEqual(["addr-1", "user-1"]);
+    expect(sql).toMatch(/user_id = \$1::uuid/);
+    expect(sql).toMatch(/id = \$2::uuid/);
+    expect(calls[0].params).toEqual(["user-1", "addr-1"]);
   });
 
   it("returns 500 on DB error", async () => {

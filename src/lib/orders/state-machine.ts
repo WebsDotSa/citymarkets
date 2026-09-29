@@ -105,6 +105,37 @@ const PARENT_TRANSITIONS: Readonly<Record<OrderState, ReadonlySet<OrderState>>> 
   cancelled: new Set([]),
 };
 
+/**
+ * Admin-only escape hatches (operational overrides). These exist so the
+ * admin can recover from real-world events that the normal flow doesn't
+ * anticipate — most importantly: a customer complaint AFTER delivery
+ * that requires the order to be cancelled and refunded out-of-band.
+ *
+ * The system role (webhooks, jobs) does NOT get these overrides: a
+ * webhook must never undo a delivered state.
+ */
+const ADMIN_PARENT_OVERRIDES: Readonly<Record<OrderState, ReadonlySet<OrderState>>> = {
+  pending: new Set([]),
+  confirmed: new Set([]),
+  shopping: new Set([]),
+  on_the_way: new Set([]),
+  delivered: new Set(["cancelled"]),
+  cancelled: new Set([]),
+};
+
+function mergeTransitions<S extends string>(
+  base: Readonly<Record<S, ReadonlySet<S>>>,
+  overrides: Readonly<Record<S, ReadonlySet<S>>>,
+): Readonly<Record<S, ReadonlySet<S>>> {
+  const out = {} as Record<S, ReadonlySet<S>>;
+  for (const key of Object.keys(base) as S[]) {
+    const merged = new Set<S>(base[key]);
+    for (const v of overrides[key] ?? []) merged.add(v);
+    out[key] = merged;
+  }
+  return out;
+}
+
 const VENDOR_TRANSITIONS: Readonly<Record<VendorOrderState, ReadonlySet<VendorOrderState>>> = {
   pending: new Set(["confirmed", "cancelled"]),
   confirmed: new Set(["preparing", "cancelled"]),
@@ -135,7 +166,7 @@ const PAYMENT_TRANSITIONS: Readonly<Record<PaymentState, ReadonlySet<PaymentStat
 export const PARENT_ORDER_TRANSITIONS_BY_ROLE: Readonly<
   Record<Role, Readonly<Record<OrderState, ReadonlySet<OrderState>>>>
 > = {
-  admin: PARENT_TRANSITIONS,
+  admin: mergeTransitions(PARENT_TRANSITIONS, ADMIN_PARENT_OVERRIDES),
   system: PARENT_TRANSITIONS, // webhooks, jobs
   driver: {
     // Drivers only claim from `pending` and act on orders they're already

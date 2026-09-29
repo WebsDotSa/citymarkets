@@ -12,10 +12,14 @@ import { QuickCategoriesSection } from "./sections/quick-categories-section";
 // `useEffect`/`useState`. The Hero + QuickCategories stay eager because
 // they are above-the-fold and the home page must paint them on first load
 // for the LCP budget.
-const BannersCarouselSection = dynamic(
-  () => import("./sections/banners-carousel-section").then((m) => m.BannersCarouselSection),
-  { ssr: false },
-);
+//
+// Note: the legacy "banners" carousel was retired when the standalone
+// /admin/banners page was replaced by the home-design JSONB layout
+// (admin/(dashboard)/home-design). Banners are now an element type
+// inside `home_layouts.sections` and are rendered by the dynamic
+// DynamicHomeLayout. The HomeRedesign below only renders when no
+// active layout exists in `home_layouts` — i.e. as a fallback for a
+// freshly-deployed DB before the admin has saved a layout.
 const StoresCarouselSection = dynamic(
   () => import("./sections/stores-carousel-section").then((m) => m.StoresCarouselSection),
   { ssr: false },
@@ -47,12 +51,14 @@ const JoinCta = dynamic(
  * 5-6 sections depending on auth state:
  *   - Hero with inline search + location (eager — above the fold)
  *   - Quick categories pills (eager — above the fold)
- *   - Banners carousel (lazy)
  *   - Stores carousel (lazy)
  *   - Featured offers (lazy, Slice 5)
  *   - Featured products carousel (lazy)
  *   - Coupons strip (lazy)
  *   - Personalization: WelcomeBack (logged-in) / JoinCta (guest) — lazy
+ *
+ * Used as the fallback when `home_layouts` has no active layout; the
+ * primary path is `DynamicHomeLayout` driven by /admin/home-design.
  */
 export function HomeRedesign() {
   const { user, loading } = useAuthState();
@@ -62,7 +68,6 @@ export function HomeRedesign() {
     <main className="min-h-screen bg-slate-50">
       <HeroSection />
       <QuickCategoriesSection />
-      <BannersCarouselSection />
       <StoresCarouselSection />
       <FeaturedOffersSection />
       <FeaturedProductsSection />

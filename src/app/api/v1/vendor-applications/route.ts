@@ -30,6 +30,7 @@ import {
   GENERAL_API_CONFIG,
 } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
+import { vendorTypeSchema } from "@/lib/validation/primitives";
 
 import { error as logError } from "@/lib/logger";
 
@@ -55,31 +56,11 @@ const PHONE_RE = /^[+\d][\d\s\-()]{5,20}$/;
 const applicationSchema = z.object({
   businessNameAr: z.string().trim().min(2).max(120),
   businessNameEn: z.string().trim().max(120).optional().or(z.literal("")),
-  vendorType: z.enum([
-    "food_beverage",
-    "fashion",
-    "gifts",
-    "electronics",
-    "services",
-    "grocery_supermarket",
-    "restaurant_cafe",
-    "sweets_bakery",
-    "pharmacy_health",
-    "beauty_cosmetics",
-    "flowers_plants",
-    "books_stationery",
-    "sports_fitness",
-    "home_appliances",
-    "furniture_home",
-    "jewelry_watches",
-    "cars_auto",
-    "pets_animals",
-    "kids_babies",
-    "music_instruments",
-    "tools_industrial",
-    "travel_tourism",
-    "real_estate",
-  ]),
+  // Single source of truth — `vendorTypeSchema` is the same enum used
+  // by `/api/admin/vendors` and the admin vendor form. Adding a new
+  // vendor type only requires updating `VENDOR_TYPES` in
+  // `src/lib/catalog/vendors.ts`.
+  vendorType: vendorTypeSchema,
   descriptionAr: z.string().trim().max(1000).optional().or(z.literal("")),
   descriptionEn: z.string().trim().max(1000).optional().or(z.literal("")),
 
