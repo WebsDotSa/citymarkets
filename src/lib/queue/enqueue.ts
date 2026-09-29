@@ -14,6 +14,7 @@
  */
 import { getQueue, QUEUE_NAMES, makeNotifyAdminNewOrderOptions, makeNotifyVendorNewOrderOptions } from "./queues";
 import { isQueueEnabled } from "./redis";
+import { loadOrderForNotification, loadPaidSmsArgs } from "./loaders";
 
 interface EnqueueResult {
   /** True if the job was placed on the queue; false if it ran synchronously. */
@@ -142,73 +143,6 @@ async function runNotifyVendorNewOrder(args: {
 }
 
 // ── DB loaders used by both worker handlers and fallback paths ──────────
-
-interface NotifyAdminOrder {
-  id: string | number;
-  total: number;
-  customerName?: string | null;
-}
-
-async function loadOrderForNotification(orderId: string | number): Promise<NotifyAdminOrder | null> {
-  const { pool } = await import("@/lib/db");
-  const { rows } = await pool.query<{
-    id: string | number;
-    total: number | string;
-    guest_name: string | null;
-    customer_name: string | null;
-  }>(
-    `SELECT o.id, o.total, o.guest_name, u.name AS customer_name
-       FROM orders o
-       LEFT JOIN users u ON u.id = o.user_id
-      WHERE o.id = $1
-      LIMIT 1`,
-    [orderId],
-  );
-  const row = rows[0];
-  if (!row) return null;
-  return {
-    id: row.id,
-    total: Number(row.total),
-    customerName: row.guest_name ?? row.customer_name ?? null,
-  };
-}
-
-async function loadPaidSmsArgs(orderId: string | number): Promise<{
-  phone: string | null;
-  customer_name?: string | null;
-  order_id: string | number;
-  total: number;
-  recovered_from_abandoned_count?: number;
-} | null> {
-  const { pool } = await import("@/lib/db");
-  const { rows } = await pool.query<{
-    id: string | number;
-    total: number | string;
-    guest_name: string | null;
-    guest_phone: string | null;
-    user_phone: string | null;
-    user_name: string | null;
-    recovered_count: number | string | null;
-  }>(
-    `SELECT o.id, o.total, o.guest_name, o.guest_phone,
-            u.name AS user_name, u.phone AS user_phone,
-            COALESCE((SELECT COUNT(*)::int FROM abandoned_carts ac
-                       WHERE ac.recovered_order_id = o.id), 0) AS recovered_count
-       FROM orders o
-       LEFT JOIN users u ON u.id = o.user_id
-      WHERE o.id = $1
-      LIMIT 1`,
-    [orderId],
-  );
-  const row = rows[0];
-  if (!row) return null;
-  const phone = row.guest_phone ?? row.user_phone ?? null;
-  if (!phone) return null;
-  return {
-    phone,
-    customer_name: row.guest_name ?? row.user_name ?? null,
-    order_id: row.id,
-    total: Number(row.total),
-    recovered_from_abandoned_count: Number(row.recovered_count ?? 0),
-  };
-}
+//
+// Moved to ./loaders.ts so that enqueue.ts and workers.ts share the same
+// SELECT and the same return shape. Import at the top of this file.
