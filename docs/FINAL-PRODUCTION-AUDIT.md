@@ -350,17 +350,63 @@ OrderStateMachine (orders.status)
 
 | ID | Finding | Recommendation |
 |---|---|---|
-| P2-1 | Tamara webhook does not call `recordPaymentEvent` (Moyasar webhook does) | Add the same `recordPaymentEvent` + `finalizePaymentEvent` pattern as Moyasar webhook. Improves dispute defense. See §9.3. |
+| P2-1 | Tamara webhook does not call `recordPaymentEvent` (Moyasar webhook does) | ✅ **RESOLVED in PR #3** — Tamara webhook now mirrors Moyasar pattern. See §9.3 + 11 new event-ledger regression tests in `src/lib/payments/event-ledger.test.ts`. |
 | P2-2 | Identity code (8 files: `customer-session.ts`, `admin-session.ts`, `vendor-auth.ts`, etc.) at `src/lib/` root instead of `src/lib/identity/` | Optional codemod + barrel extraction. Pure refactor, no functional change. |
 | P2-3 | Delivery code scattered (no `src/lib/delivery/` directory) | Optional codemod + barrel extraction. Pure refactor. |
 | P2-4 | `src/lib/queue/`, `src/lib/r2.ts`, `src/lib/logger.ts` could be renamed to `src/infrastructure/` | Optional. Low priority. |
-| P2-5 | Supabase auth fallback in `auth-helpers.ts` (2 routes) | Migrate OTP flow to issue JWT instead of Supabase session. Not blocking. |
+| P2-5 | Supabase auth fallback in `auth-helpers.ts` (2 routes) | ✅ **RESOLVED — DECIDED: do NOT remove**. See §P2-5 below for the documented compatibility boundary. |
 
 ### 11.4 P3 (optimization)
 
 | ID | Finding | Recommendation |
 |---|---|---|
 | P3-1 | 126 routes flagged "review" by auth-isolation-audit (no direct CSRF call in source) | Already covered by proxy at runtime (proxy guard passes). No action needed. |
+
+---
+
+### 11.5 P2-5 Decision: Supabase Fallback Boundary (documented, not removed)
+
+**Search performed**: `src/`, `src/app/api/v1/auth/`, `scripts/`, `.env.local.example`, `DEPLOYMENT.md`, `ios/`.
+
+**Production consumers found** (real, not legacy):
+
+| Consumer | Purpose | Status |
+|---|---|---|
+| `src/contexts/auth-context.tsx:237` | Client-side `supabase.auth.signInWithOtp` as fallback when Twilio is disabled | **Active production path** |
+| `src/lib/auth-helpers.ts` | Server-side fallback when cookie has Supabase session (no JWT) | **Active production path** (used by 2 routes) |
+| `src/lib/customer-session.ts` | Server-side edge-safe cookie validation includes Supabase fallback | **Active production path** |
+| `.env.local.example` | Documents Supabase as OPTIONAL (`if login is via JWT only; when absent, client depends on session cookie only`) | **Intentional configuration** |
+| `DEPLOYMENT.md` | Lists PostgreSQL can be self-hosted or Supabase-hosted | **Documented deployment option** |
+
+**Routes that depend on the Supabase fallback** (server side):
+
+- `src/app/api/v1/profile/route.ts` — uses `requireAuth()` (calls `getServerUser()` which checks Supabase first)
+- `src/app/api/v1/profile/delete/route.ts` — same
+
+**Conclusion**: Supabase is **not a legacy artifact**. It is an active
+production fallback when:
+1. Twilio Verify is disabled (env config) — clients fall back to Supabase OTP
+2. A user has a Supabase session from a prior sign-in — the server
+   resolves them via Supabase before falling through to JWT
+
+**Decision**: **Do NOT remove.** Document the boundary.
+
+**Compatibility boundary** (must remain until all of these change):
+
+1. `auth-context.tsx` keeps the Supabase fallback in `signInWithOtp`
+2. `customer-session.ts` keeps the Supabase cookie resolution
+3. `auth-helpers.ts` keeps the Supabase fallback for legacy sessions
+4. `.env.local.example` keeps Supabase as optional env var
+5. `DEPLOYMENT.md` keeps Supabase as documented PostgreSQL option
+
+**Path to removal** (future work, NOT in current PR):
+
+1. Make Twilio Verify mandatory for production deploys (config gate)
+2. Migrate any active Supabase sessions to JWT via one-time backfill
+3. Remove Supabase fallback from `customer-session.ts` and `auth-helpers.ts`
+4. Update `auth-context.tsx` to fail explicitly if Twilio is disabled
+5. Update `.env.local.example` to remove Supabase vars
+6. Remove `@supabase/ssr` and `@supabase/supabase-js` from `dependencies`
 
 ---
 
@@ -419,7 +465,7 @@ Per master plan §53:
 | Payment state machine centralized | ✅ | order-payment-action.ts |
 | Moyasar verified | ✅ | 22 tests |
 | Tamara verified | ✅ | tamara tests |
-| Webhooks idempotent | ⚠️ | Moyasar uses event ledger; Tamara does not (P2-1) |
+| Webhooks idempotent | ✅ | Moyasar + Tamara both use event ledger (PR #3); 11 replay regression tests |
 | Payment reconciliation | ⚠️ | Event ledger code-ready (073); prod apply pending (P1-1) |
 | Admin authorization verified | ✅ | requireAdminApi |
 | Vendor isolation verified | ✅ | requireVendorMatch |
@@ -492,11 +538,11 @@ docker-compose up -d
 - 17 untracked early migrations (documentation / drift whitelist)
 
 ### P2 (code work, non-blocking)
-- Add `recordPaymentEvent` to Tamara webhook (P2-1)
+- ~~Add `recordPaymentEvent` to Tamara webhook (P2-1)~~ ✅ **RESOLVED in PR #3**
 - Identity bounded context extraction (P2-2)
 - Delivery bounded context extraction (P2-3)
 - Infrastructure naming (P2-4)
-- Supabase auth fallback migration (P2-5)
+- ~~Supabase auth fallback migration (P2-5)~~ ✅ **RESOLVED — DECIDED: keep with documented boundary (see §11.5)**
 
 ### P3 (cosmetic)
 - Auth-isolation-audit "review" count (126 routes — proxy covers, no action)
@@ -506,10 +552,12 @@ docker-compose up -d
 ## 18. Closing Verdict
 
 The City Markets codebase on `main` is **code-ready** for production.
-All blocking technical gates pass. The remaining items are documented
-production prerequisites (073 migration apply) and minor P2 codemod
-opportunities. No security, payment, or data-integrity issues are open.
+All blocking technical gates pass. PR #3 (open) closes two P2 items
+(Tamara event-ledger parity + P2-5 Supabase fallback boundary
+decision). The remaining items are documented production prerequisites
+(073 migration apply) and minor P2 codemod opportunities (identity +
+delivery bounded context extraction). No security, payment, or
+data-integrity issues are open.
 
 **Recommendation**: Apply P1-1 (073 migration) via operations runbook,
-then ship. P2-1 (Tamara event ledger) is a 15-minute codemod that
-should be scheduled for the next hardening sprint.
+merge PR #3, then ship.
