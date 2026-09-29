@@ -101,7 +101,13 @@ export async function createInvoice(
   const amountHalalas = toHalalas(request.amount);
   const successUrl = `${SITE_URL}/checkout/success?order_id=${encodeURIComponent(orderIdStr)}`;
   const backUrl = `${SITE_URL}/checkout`;
-  const callbackUrl = `${SITE_URL}/api/v1/payments/moyasar/callback`;
+  // Server-side webhook callback — points at the canonical Moyasar
+  // webhook (HMAC-authenticated, writes to the payment_events ledger,
+  // awards loyalty, fans out to vendor_orders). The legacy browser
+  // callback route was retired as part of the 2026-09-29
+  // production-completion audit: it duplicated state changes without
+  // the ledger, silently dropping loyalty and fan-out.
+  const callbackUrl = `${SITE_URL}/api/v1/payments/webhook`;
 
   try {
     // Pass `methods` explicitly so the hosted invoice always shows every
