@@ -104,6 +104,11 @@ export async function POST(request: NextRequest) {
     // can read it without TS narrowing the inner try scope. The inner
     // assignment below is the only place this is written.
     let orderId: string | undefined;
+    // Captured inside the transaction so the post-COMMIT fan-out can
+    // read it without holding the client connection (client is released
+    // by the finally block below). Defaults to false; flipped to true
+    // when the parent order was found AND remoteStatus was paid/captured.
+    let shouldNotifyVendor = false;
 
     try {
       // SECURITY: Wrap per-order processing in a transaction with an
@@ -199,29 +204,38 @@ export async function POST(request: NextRequest) {
           // or marking the order paid. Without this check, a payment
           // made in a weaker currency could be accepted as "Paid" and
           // converted to loyalty at SAR face value.
+          //
+          // FIX (P0-3): guards do NOT early-return. They gate the
+          // lifecycle flip + loyalty crediting via `guardsOk`; the
+          // payment_status was already written above (gateway confirmed).
+          // finalizePaymentEvent still runs so the ledger reflects truth,
+          // and a replay short-circuited by the UNIQUE index sees the
+          // ledger already at status='processed' (P1-5 covers the
+          // duplicate-branch finalize explicitly).
           const orderRow = order.rows[0];
           const orderTotal = Number(orderRow.total);
 
-          if (
-            remote.currency &&
-            remote.currency.toUpperCase() !== "SAR"
-          ) {
+          const currencyOk =
+            !remote.currency ||
+            remote.currency.toUpperCase() === "SAR";
+          const amountOk =
+            typeof remote.amountHalalas !== "number" ||
+            remote.amountHalalas / 100 + 0.01 >= orderTotal;
+
+          if (!currencyOk) {
             logWarn(
               `[webhook] order ${orderId} paid in ${remote.currency}, expected SAR — refusing to credit loyalty`,
             );
-            return NextResponse.json({ received: true });
           }
-          if (
-            typeof remote.amountHalalas === "number" &&
-            remote.amountHalalas / 100 + 0.01 < orderTotal
-          ) {
+          if (!amountOk) {
             logWarn(
-              `[webhook] order ${orderId} paid amount ${remote.amountHalalas / 100} < total ${orderTotal} — refusing to credit loyalty`,
+              `[webhook] order ${orderId} paid amount ${(remote.amountHalalas ?? 0) / 100} < total ${orderTotal} — refusing to credit loyalty`,
             );
-            return NextResponse.json({ received: true });
           }
+          const guardsOk = currencyOk && amountOk;
 
-          // Roll lifecycle forward: payment confirmed → 'confirmed'.
+          if (guardsOk) {
+            // Roll lifecycle forward: payment confirmed → 'confirmed'.
           // NEVER set the fulfillment lifecycle to 'paid' — 'paid' is a
           // payment_status only (matches the Tamara webhook invariant at
           // src/app/api/v1/payments/tamara/webhook/route.ts:226-237).
@@ -284,6 +298,7 @@ export async function POST(request: NextRequest) {
               logError('[loyalty] earn failed for order', lpErr, { orderId });
             }
           }
+          } // end if (guardsOk)
 
           // Recover any abandoned carts that belong to this customer.
           // Idempotent — the helper uses intent_order_id <> recovered_order_id
@@ -365,50 +380,63 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Vendor push notification (Gap D closure — production-completion
-      // audit). Fires only on a successful payment and only once per
-      // (vendor, order) pair: the queue is keyed by
-      // `vendor:<vendorId>:order:<orderId>` so a webhook replay that
-      // re-enqueues hits BullMQ's idempotency guard. Fire-and-forget —
-      // never block the gateway ack on push dispatch. Runs AFTER
-      // finalizePaymentEvent so we only notify on successfully-processed
-      // orders (operators can replay ledgers without re-spamming vendors).
-      if (orderId && (remoteStatus === 'paid' || remoteStatus === 'captured')) {
-        // `orderId` is narrowed to `string` by the if-check; use a
-        // local const to keep the narrowing across the awaited DB query.
-        const orderIdLocal: string = orderId as string;
-        try {
-          const { enqueueNotifyVendorNewOrder } = await import('@/lib/queue');
-          const vendorRows = await client.query<{ vendor_id: string }>(
-            `SELECT vendor_id::text AS vendor_id
-               FROM vendor_orders
-              WHERE parent_order_id = $1`,
-            [orderIdLocal]
-          );
-          for (const row of vendorRows.rows) {
-            // void = fire-and-forget; the helper returns immediately
-            // (BullMQ enqueue or Redis-disabled inline fallback).
-            void enqueueNotifyVendorNewOrder({
-              vendorId: row.vendor_id,
-              orderId: orderIdLocal,
-            });
-          }
-        } catch (notifyErr) {
-          logError('[notify-vendor] enqueue failed', notifyErr, { orderId });
-        }
-      }
+      // Capture fan-out intent BEFORE COMMIT. The post-COMMIT section
+      // below needs this flag to run vendor notify without holding the
+      // already-released client connection.
+      shouldNotifyVendor = Boolean(
+        orderId &&
+          (remoteStatus === 'paid' || remoteStatus === 'captured'),
+      );
 
-      return NextResponse.json({ received: true });
+      // COMMIT inside the try (matches Tamara webhook pattern).
+      // Vendor push fan-out happens AFTER this commit + release.
+      await client.query('COMMIT');
+    } catch (e) {
+      try { await client.query('ROLLBACK'); } catch { /* noop */ }
+      throw e;
     } finally {
-      // Commit if a transaction is active; release regardless. The advisory
-      // lock is released automatically on COMMIT/ROLLBACK.
-      try {
-        await client.query('COMMIT');
-      } catch {
-        try { await client.query('ROLLBACK'); } catch { /* noop */ }
-      }
       client.release();
     }
+
+    // ---- Post-COMMIT side effects ----
+    //
+    // Vendor push notification (Gap D closure). Fires only on a successful
+    // payment and only once per (vendor, order) pair: the queue is keyed
+    // by `vendor:<vendorId>:order:<orderId>` so a webhook replay that
+    // re-enqueues hits BullMQ's idempotency guard. Fire-and-forget —
+    // never block the gateway ack on push dispatch.
+    //
+    // FIX (P0-2): this used to run BEFORE COMMIT (the COMMIT was in the
+    // `finally` block, after the vendor fan-out in the try body). If
+    // COMMIT failed, the vendor would still get a push for a rolled-back
+    // transaction; on a fast COMMIT, the worker could read the DB before
+    // the COMMIT propagated. Mirrors Tamara webhook's correct pattern.
+    if (shouldNotifyVendor && orderId) {
+      const orderIdLocal: string = orderId as string;
+      try {
+        const { enqueueNotifyVendorNewOrder } = await import('@/lib/queue');
+        // Use pool (fresh connection) — the transaction's client is
+        // already released above.
+        const vendorRows = await pool.query<{ vendor_id: string }>(
+          `SELECT vendor_id::text AS vendor_id
+             FROM vendor_orders
+            WHERE parent_order_id = $1`,
+          [orderIdLocal]
+        );
+        for (const row of vendorRows.rows) {
+          // void = fire-and-forget; the helper returns immediately
+          // (BullMQ enqueue or Redis-disabled inline fallback).
+          void enqueueNotifyVendorNewOrder({
+            vendorId: row.vendor_id,
+            orderId: orderIdLocal,
+          });
+        }
+      } catch (notifyErr) {
+        logError('[notify-vendor] enqueue failed', notifyErr, { orderId });
+      }
+    }
+
+    return NextResponse.json({ received: true });
   } catch (error) {
     logError('Webhook error:', error);
     return NextResponse.json({ received: true });

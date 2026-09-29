@@ -127,6 +127,14 @@ function makeFakeClient(opts: {
     }),
     release: vi.fn(),
   };
+  // Post-COMMIT vendor fan-out uses pool.query (client is released).
+  // Mock pool.query to return the configured vendorIds so the fan-out
+  // fires the configured number of enqueues.
+  if (opts.vendorIds) {
+    vi.mocked(pool.query).mockResolvedValue({
+      rows: opts.vendorIds.map((vid) => ({ vendor_id: vid })),
+    } as never);
+  }
   return { client, calls };
 }
 
@@ -202,6 +210,18 @@ function signedRequest(body: unknown, token = "test-secret") {
     },
     body: JSON.stringify(body),
   });
+}
+
+/**
+ * Post-COMMIT vendor fan-out runs via `pool.query` (the transaction's
+ * `client` is already released). This helper mocks a single
+ * `pool.query` call to return the configured vendor_ids for the
+ * fan-out's `SELECT vendor_id::text FROM vendor_orders WHERE parent_order_id = $1`.
+ */
+function mockPoolVendorQuery(vendorIds: string[]) {
+  vi.mocked(pool.query).mockResolvedValueOnce({
+    rows: vendorIds.map((vid) => ({ vendor_id: vid })),
+  } as never);
 }
 
 describe("POST /api/v1/payments/webhook — auth", () => {
@@ -475,5 +495,99 @@ describe("POST /api/v1/payments/webhook — currency / amount guards", () => {
 
     const res = await POST(signedRequest({ id: "inv-paid-1" }) as never);
     expect(res.status).toBe(200);
+  });
+});
+
+describe("POST /api/v1/payments/webhook — COMMIT ordering (P0-2 regression)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.MOYASAR_WEBHOOK_SECRET = "test-secret";
+  });
+
+  it("vendor push enqueue is called AFTER COMMIT (Bug A, Gap D commit-ordering regression)", async () => {
+    // Capture the order of operations by recording the index of COMMIT
+    // and the index of enqueueNotifyVendorNewOrder.
+    const opOrder: string[] = [];
+    const { client } = makeFakeClient({
+      order: PARENT_ORDER,
+      paymentEventResult: "inserted",
+      vendorIds: ["vendor-1"],
+    });
+    // Wrap client.query so we can detect the COMMIT call.
+    const wrapped = vi.fn(async (sql: string, params: unknown[] = []) => {
+      const s = sql.trim().toUpperCase();
+      if (s.startsWith("COMMIT")) opOrder.push("COMMIT");
+      return client.query(sql, params);
+    });
+    const wrappedClient = { ...client, query: wrapped };
+    vi.mocked(pool.connect).mockResolvedValueOnce(wrappedClient as never);
+    vi.mocked(fetchPayment).mockResolvedValueOnce(PAID_REMOTE);
+    vi.mocked(recordPaymentEvent).mockResolvedValueOnce("inserted");
+    vi.mocked(enqueueNotifyVendorNewOrder).mockImplementation(() => {
+      opOrder.push("enqueueNotifyVendorNewOrder");
+      return Promise.resolve();
+    });
+
+    await POST(signedRequest({ id: "inv-paid-1" }) as never);
+
+    const commitIdx = opOrder.indexOf("COMMIT");
+    const enqueueIdx = opOrder.indexOf("enqueueNotifyVendorNewOrder");
+    expect(commitIdx).toBeGreaterThanOrEqual(0);
+    expect(enqueueIdx).toBeGreaterThanOrEqual(0);
+    expect(commitIdx).toBeLessThan(enqueueIdx);
+  });
+});
+
+describe("POST /api/v1/payments/webhook — guards do NOT short-circuit finalize (P0-3 regression)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.MOYASAR_WEBHOOK_SECRET = "test-secret";
+  });
+
+  it("currency mismatch still finalizes ledger + fires vendor notify (P0-3 fix)", async () => {
+    const { client } = makeFakeClient({
+      order: PARENT_ORDER,
+      paymentEventResult: "inserted",
+      vendorIds: ["vendor-1"],
+    });
+    vi.mocked(pool.connect).mockResolvedValueOnce(client as never);
+    vi.mocked(fetchPayment).mockResolvedValueOnce({
+      ...PAID_REMOTE,
+      currency: "KWD", // currency guard fails
+    });
+    vi.mocked(recordPaymentEvent).mockResolvedValueOnce("inserted");
+
+    const res = await POST(signedRequest({ id: "inv-paid-1" }) as never);
+    expect(res.status).toBe(200);
+
+    // FIX (P0-3): the ledger row MUST be finalized even when the
+    // currency guard fails. Previously the early-return skipped
+    // finalizePaymentEvent AND the vendor notify, leaving the ledger
+    // stuck at status='received' and the vendor uninformed.
+    expect(vi.mocked(finalizePaymentEvent)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(enqueueNotifyVendorNewOrder)).toHaveBeenCalledTimes(1);
+  });
+
+  it("underpayment still finalizes ledger + fires vendor notify (P0-3 fix)", async () => {
+    const { client } = makeFakeClient({
+      order: PARENT_ORDER,
+      paymentEventResult: "inserted",
+      vendorIds: ["vendor-1", "vendor-2"],
+    });
+    vi.mocked(pool.connect).mockResolvedValueOnce(client as never);
+    vi.mocked(fetchPayment).mockResolvedValueOnce({
+      ...PAID_REMOTE,
+      amountHalalas: 100, // way under 99.5 SAR order total
+    });
+    vi.mocked(recordPaymentEvent).mockResolvedValueOnce("inserted");
+
+    const res = await POST(signedRequest({ id: "inv-paid-1" }) as never);
+    expect(res.status).toBe(200);
+
+    // FIX (P0-3): same as above — guard fail must NOT skip finalize
+    // or vendor notify. payment_status='paid' is gateway-confirmed;
+    // the lifecycle flip (status='confirmed') is the only thing gated.
+    expect(vi.mocked(finalizePaymentEvent)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(enqueueNotifyVendorNewOrder)).toHaveBeenCalledTimes(2);
   });
 });
