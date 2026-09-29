@@ -9,11 +9,11 @@ import type { Product } from "@/lib/types";
 import type {
   ChatProductResult,
   MealSuggestion,
-} from "@/lib/ai-chat-client-types";
+} from '@/lib/catalog';
 import {
   buildWelcomeMessage,
   type StoredChatMessage,
-} from "@/lib/ai-chat-storage";
+} from '@/lib/catalog';
 
 export type MatchedProduct = {
   product: Product;

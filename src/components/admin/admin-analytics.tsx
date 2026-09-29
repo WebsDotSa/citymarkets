@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { safeFetchJsonStrict } from "@/lib/safe-fetch";
-import { getOrderStatusConfig, PAYMENT_METHOD_AR } from "@/lib/order-status";
+import { getOrderStatusConfig, PAYMENT_METHOD_AR } from '@/lib/orders';
 import {
   ANALYTICS_TABS,
   getCountryAr,

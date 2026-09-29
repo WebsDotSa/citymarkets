@@ -5,7 +5,7 @@ import { buildPageMetadata } from "@/lib/seo/site";
 import {
   getCategoryForSeo,
   getCategoryByNameAr,
-} from "@/lib/seo/product";
+} from '@/lib/catalog';
 import { CategoryJsonLd } from "@/components/seo/category-json-ld";
 import { CategoryDetailClient } from "@/components/pages/categories/category-detail-client";
 import { query } from "@/lib/db";

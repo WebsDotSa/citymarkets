@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { buildPageMetadata } from "@/lib/seo/site";
 import { query } from "@/lib/db";
-import { buildCategoryTree, type CategoryTreeNode } from "@/lib/categories/tree";
+import { buildCategoryTree, type CategoryTreeNode } from '@/lib/catalog';
 import { CategoriesBrowserV2 } from "@/components/pages/categories/categories-browser-v2";
 
 export const dynamic = "force-dynamic";

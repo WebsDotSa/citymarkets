@@ -25,52 +25,56 @@ vi.mock("@/lib/app-settings", () => ({
   getStoreStatusSettings: vi.fn(async () => ({ is_open: true, message: null })),
 }));
 
-vi.mock("@/lib/delivery-hours", () => ({
+vi.mock('@/lib/delivery', () => ({
   getDeliveryHours: vi.fn(async () => ({
     open_time: "08:00",
     close_time: "23:00",
     closed_message: null,
   })),
   evaluateHours: vi.fn(() => ({ open: true, message: null })),
-}));
-
-vi.mock("@/lib/vendor-closed-gate", () => ({
   checkClosedVendorsInCart: vi.fn(async () => ({ closed: [], message: null })),
 }));
 
-vi.mock("@/lib/loyalty", () => ({
-  getLoyaltySettings: vi.fn(async () => ({
-    redeem_value_per_point: 0.05,
-    max_redeem_percent: 50,
-  })),
-}));
-
-vi.mock("@/lib/checkout/create-checkout", () => ({
-  createCheckout: vi.fn(async () => ({
-    success: true,
-    parentOrderId: "p1",
-    vendorOrderIds: ["v1"],
-    duplicate: false,
-    requiresOnlinePayment: false,
-    paymentMethod: "cash",
-    totals: {
-      catalogSubtotal: 10,
-      vendorSubtotals: {},
-      catalogDeliveryFee: 3,
-      vendorDeliveryFees: {},
-      totalDeliveryFee: 3,
-      serviceFee: 0,
-      discount: 0,
-      couponDiscount: 0,
-      pointsDiscount: 0,
-      pointsRedeemed: 0,
-      total: 13,
-      vendorTotals: {},
-      catalogTotal: 13,
-      distanceKm: 1,
-    },
-  })),
-}));
+vi.mock(import('@/lib/orders'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    getLoyaltySettings: vi.fn(async () => ({
+      enabled: true,
+      earn_points_per_sar: 0.1,
+      redeem_value_per_point: 0.05,
+      min_redeem_points: 100,
+      max_redeem_percent: 50,
+    })),
+    createCheckout: vi.fn(async () => ({
+      success: true as const,
+      parentOrderId: "p1",
+      vendorOrderIds: ["v1"],
+      duplicate: false,
+      requiresOnlinePayment: false,
+      paymentMethod: "cash",
+      paymentStatus: "pending" as const,
+      couponCode: null,
+      totals: {
+        catalogSubtotal: 10,
+        vendorSubtotals: {},
+        catalogDeliveryFee: 3,
+        vendorDeliveryFees: {},
+        totalDeliveryFee: 3,
+        serviceFee: 0,
+        discount: 0,
+        couponDiscount: 0,
+        pointsDiscount: 0,
+        pointsRedeemed: 0,
+        total: 13,
+        vendorTotals: {},
+        catalogTotal: 13,
+        distanceKm: 1,
+      },
+    })),
+    notifyAdminNewOrder: vi.fn(async () => ({ whatsappUrl: null })),
+  };
+});
 
 vi.mock("@/lib/errors/checkout-error-reporter", () => ({
   reportCheckoutError: vi.fn(async () => {}),
@@ -88,13 +92,9 @@ vi.mock("@/lib/push", () => ({
   sendPushToUser: vi.fn(async () => undefined),
 }));
 
-vi.mock("@/lib/order-notify-admin", () => ({
-  notifyAdminNewOrder: vi.fn(async () => undefined),
-}));
-
-import { runCheckout } from "@/lib/checkout/checkout-service";
+import { runCheckout } from '@/lib/orders';
 import { getStoreStatusSettings } from "@/lib/app-settings";
-import { evaluateHours, getDeliveryHours } from "@/lib/delivery-hours";
+import { evaluateHours, getDeliveryHours } from '@/lib/delivery';
 
 beforeEach(() => {
   vi.clearAllMocks();

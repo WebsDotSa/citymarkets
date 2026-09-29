@@ -28,7 +28,7 @@ import {
   type CouponRow,
   type PricingSettings,
 } from "../pricing";
-import { computeDistanceFee } from "@/lib/delivery-distance-fee";
+import { computeDistanceFee } from '@/lib/delivery';
 
 /** One vendor's resolved group. */
 export interface VendorCheckoutGroup {

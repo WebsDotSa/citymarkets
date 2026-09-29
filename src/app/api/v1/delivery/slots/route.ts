@@ -45,7 +45,7 @@ import {
   toRiyadhDateKey,
   DEFAULT_SLOTS_CONFIG,
   type SlotWindow,
-} from "@/lib/delivery-slots";
+} from '@/lib/delivery';
 
 export const dynamic = "force-dynamic";
 

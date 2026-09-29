@@ -41,12 +41,12 @@ import {
   useState,
 } from "react";
 import { Search } from "lucide-react";
-import type { CategoryTreeNode } from "@/lib/categories/tree";
+import type { CategoryTreeNode } from '@/lib/catalog';
 import {
   useDeliveryLocationActions,
   useDeliveryLocationState,
 } from "@/contexts/delivery-location-context";
-import { shortAddressLabel } from "@/lib/delivery-address";
+import { shortAddressLabel } from '@/lib/delivery';
 import { safeFetchJson } from "@/lib/safe-fetch";
 import type { SearchedProduct } from "./categories-helpers";
 import { PageHero } from "./categories-page-hero";

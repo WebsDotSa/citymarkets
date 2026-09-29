@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminRequest } from "@/lib/admin-session";
+import { verifyAdminRequest } from '@/lib/identity';
 import { query } from "@/lib/db";
 
 export async function GET(request: NextRequest) {

@@ -23,7 +23,7 @@ import {
   Megaphone,
   type LucideIcon,
 } from "lucide-react";
-import { SECTION_LIBRARY, type SectionType } from "@/lib/home-layout-types";
+import { SECTION_LIBRARY, type SectionType } from '@/lib/catalog';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   ImageIcon,

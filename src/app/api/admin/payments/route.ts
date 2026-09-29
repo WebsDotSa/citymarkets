@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { requireAdminApi } from '@/lib/identity';
-import { SQL_REVENUE_ELIGIBLE } from "@/lib/order-metrics";
+import { SQL_REVENUE_ELIGIBLE } from '@/lib/orders';
 import { fetchInvoiceDetails, isMoyasarConfigured } from "@/lib/payments/moyasar";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';

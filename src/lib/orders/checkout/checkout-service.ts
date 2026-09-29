@@ -34,8 +34,8 @@ import { pool } from "@/lib/db";
 import { multiVendorCheckoutSchema } from "@/lib/validation";
 import { error as logError, info as logInfo, warn as logWarn } from "@/lib/logger";
 import { getStoreStatusSettings } from "@/lib/app-settings";
-import { getDeliveryHours, evaluateHours } from "@/lib/delivery-hours";
-import { checkClosedVendorsInCart } from "@/lib/vendor-closed-gate";
+import { getDeliveryHours, evaluateHours } from '@/lib/delivery';
+import { checkClosedVendorsInCart } from '@/lib/delivery';
 import { getLoyaltySettings } from "../loyalty";
 import {
   createCheckout,

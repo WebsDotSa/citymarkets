@@ -3,7 +3,7 @@
 import {
   getCategoryEmoji,
   resolveCategoryImageSrc,
-} from "@/lib/category-media";
+} from '@/lib/catalog';
 
 interface CategoryThumbProps {
   iconUrl?: string | null;

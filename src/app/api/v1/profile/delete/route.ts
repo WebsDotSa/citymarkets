@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { requireAuth } from "@/lib/auth-helpers";
+import { requireAuth } from '@/lib/identity';
 import {
   COOKIE_NAME,
   customerSessionCookieOptions,

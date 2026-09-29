@@ -8,7 +8,7 @@ import { ImageUploader } from "@/components/admin/image-uploader";
 import { useToast, useConfirm } from "@/components/ui/toast";
 import { safeFetchJson } from "@/lib/safe-fetch";
 import { csrfFetch } from "@/lib/csrf-client";
-import { VENDOR_TYPE_LABELS_AR, type VendorType } from "@/lib/vendors";
+import { VENDOR_TYPE_LABELS_AR, type VendorType } from '@/lib/catalog';
 import type { FormField } from "./form-fields/form-field";
 import {
   vendorNameColumn,

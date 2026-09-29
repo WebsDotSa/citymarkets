@@ -7,7 +7,7 @@ import {
   deliverySlotsSchema,
   deliveryHoursSchema,
 } from "@/lib/validation";
-import { DEFAULT_DELIVERY_HOURS } from "@/lib/delivery-hours";
+import { DEFAULT_DELIVERY_HOURS } from '@/lib/delivery';
 
 import { error as logError } from '@/lib/logger';
 

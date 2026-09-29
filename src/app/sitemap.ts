@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { buildFullSitemap, productSitemapEntries } from "@/lib/seo/sitemap-sources";
+import { buildFullSitemap, productSitemapEntries } from '@/lib/catalog';
 import { absoluteUrl } from "@/lib/seo/site";
 import { query } from "@/lib/db";
 import { warn as logWarn } from "@/lib/logger";

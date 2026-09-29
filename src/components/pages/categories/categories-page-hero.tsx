@@ -22,7 +22,7 @@ import {
   Package,
   ArrowRight,
 } from "lucide-react";
-import type { CategoryTreeNode } from "@/lib/categories/tree";
+import type { CategoryTreeNode } from '@/lib/catalog';
 import {
   collectCategoryMatches,
   type SearchedProduct,

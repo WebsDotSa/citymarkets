@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { pool } from "@/lib/db";
 import { COOKIE_NAME, verifyCustomerToken } from '@/lib/identity';
-import { mapDbUserRow } from "@/lib/map-db-user";
+import { mapDbUserRow } from '@/lib/identity';
 
 export async function GET() {
   const cookieStore = await cookies();

@@ -6,7 +6,7 @@ import {
   DEFAULT_LOYALTY_SETTINGS,
   getLoyaltySettings,
   type LoyaltySettings,
-} from "@/lib/loyalty";
+} from '@/lib/orders';
 import { error as logError } from "@/lib/logger";
 
 /**

@@ -36,8 +36,15 @@ vi.mock("@/components/ui/toast", () => ({
   useToast: () => ({ showToast: mocks.showToast }),
 }));
 
-vi.mock("@/lib/geocode", () => ({
+vi.mock('@/lib/delivery', () => ({
   reverseGeocode: mocks.reverseGeocode,
+  DEFAULT_MAP_CENTER: { lat: 24.7136, lng: 46.6753 },
+  ADDRESS_LABELS: [
+    { type: "home", label: "المنزل", icon: "🏠" },
+    { type: "work", label: "العمل", icon: "🏢" },
+    { type: "rest", label: "الاستراحة", icon: "☕" },
+    { type: "other", label: "تصنيف آخر", icon: "✏️" },
+  ],
 }));
 
 import { DeliveryAddressSheet } from "./delivery-address-sheet";

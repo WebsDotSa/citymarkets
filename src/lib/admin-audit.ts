@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { query } from "@/lib/db";
 import { error as logError } from "@/lib/logger";
-import type { VerifiedAdminJwt } from "@/lib/admin-session";
+import type { VerifiedAdminJwt } from '@/lib/identity';
 import { getClientIp } from "@/lib/request-ip";
 
 export async function logAdminAction(

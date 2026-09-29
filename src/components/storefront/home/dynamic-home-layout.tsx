@@ -13,7 +13,7 @@
 
 import { useEffect, useState } from "react";
 import { useIsDesktop } from "@/hooks/use-media-query";
-import type { DeviceType, Section } from "@/lib/home-layout-types";
+import type { DeviceType, Section } from '@/lib/catalog';
 import { renderSection } from "./section-renderers";
 
 interface LayoutResponse {

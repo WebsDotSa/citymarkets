@@ -19,7 +19,7 @@ import {
   PAYMENT_STATUS_AR,
   getOrderStatusConfig,
   getPaymentStatusConfig,
-} from "@/lib/order-status";
+} from '@/lib/orders';
 import {
   ArrowRight,
   Camera,

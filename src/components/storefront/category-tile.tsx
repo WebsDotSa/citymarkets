@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   getCategoryEmoji,
   resolveCategoryImageSrc,
-} from "@/lib/category-media";
+} from '@/lib/catalog';
 
 interface CategoryTileProps {
   name: string;

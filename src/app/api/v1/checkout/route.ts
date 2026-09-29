@@ -6,7 +6,7 @@ import {
 import { checkRateLimit, ORDER_CREATE_CONFIG, createRateLimitHeaders } from "@/lib/rate-limit";
 import { applyCsrfProtection } from "@/lib/csrf";
 import { getClientIp } from "@/lib/request-ip";
-import { runCheckout, type CheckoutServiceResult } from "@/lib/checkout/checkout-service";
+import { runCheckout, type CheckoutServiceResult } from '@/lib/orders';
 
 /**
  * POST /api/v1/checkout — Slice 3 unified multi-vendor checkout.

@@ -11,7 +11,7 @@ import type {
   ChatInputMode,
   ChatProductResult,
   MealSuggestion,
-} from "@/lib/ai-chat-client-types";
+} from '@/lib/catalog';
 import { ChatProductResults } from "./chat-product-results";
 
 export type ChatMessage = {

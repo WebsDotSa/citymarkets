@@ -4,7 +4,7 @@ import {
   DELIVERY_BASE_SAR,
   DELIVERY_INCLUDED_KM,
   DELIVERY_PER_EXTRA_KM_SAR,
-} from '@/lib/delivery-distance-fee';
+} from '@/lib/delivery';
 
 describe('computeDistanceFee — universal distance-based delivery fee', () => {
   it('returns the flat base when distance is within the included window', () => {

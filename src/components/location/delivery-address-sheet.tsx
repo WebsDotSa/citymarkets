@@ -12,8 +12,8 @@ import {
   ADDRESS_LABELS,
   DEFAULT_MAP_CENTER,
   type AddressLabelType,
-} from "@/lib/delivery-address";
-import { reverseGeocode } from "@/lib/geocode";
+} from '@/lib/delivery';
+import { reverseGeocode } from '@/lib/delivery';
 import { BRAND } from "@/lib/brand-theme";
 import { useToast } from "@/components/ui/toast";
 

@@ -6,7 +6,7 @@ import {
   awardPointsForOrder,
   getLoyaltySettings,
   resolveRedeemForOrder,
-} from '@/lib/loyalty';
+} from '@/lib/orders';
 import {
   recordPaymentEvent,
   finalizePaymentEvent,

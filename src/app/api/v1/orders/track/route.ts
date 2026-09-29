@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getOrderStatusConfig, PAYMENT_STATUS_AR } from "@/lib/order-status";
+import { getOrderStatusConfig, PAYMENT_STATUS_AR } from '@/lib/orders';
 import { checkRateLimit, createRateLimitHeaders } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 

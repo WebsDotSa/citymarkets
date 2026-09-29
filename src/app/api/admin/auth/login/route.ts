@@ -5,7 +5,7 @@ import {
   signAdminSessionToken,
   ADMIN_SESSION_COOKIE,
   adminSessionCookieOptions,
-} from '@/lib/admin-session';
+} from '@/lib/identity';
 import type { AdminRole } from '@/lib/admin-types';
 import { checkRateLimit, ADMIN_LOGIN_CONFIG, ADMIN_LOGIN_IP_CONFIG, OTP_VERIFY_CONFIG, OTP_VERIFY_IP_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';

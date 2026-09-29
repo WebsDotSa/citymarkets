@@ -9,7 +9,7 @@ import {
   awardPointsForOrder,
   getLoyaltySettings,
   resolveRedeemForOrder,
-} from "@/lib/loyalty";
+} from '@/lib/orders';
 import { error as logError, warn as logWarn, info as logInfo } from "@/lib/logger";
 
 /**

@@ -8,8 +8,8 @@ import {
   getOrderPaymentAction,
   ONLINE_RETRYABLE_METHODS,
   type OrderPaymentAction,
-} from "@/lib/order-payment-action";
-import { PAYMENT_METHOD_AR } from "@/lib/order-status";
+} from '@/lib/orders';
+import { PAYMENT_METHOD_AR } from '@/lib/orders';
 
 /**
  * Customer-facing payment / retry CTA for the order detail view.

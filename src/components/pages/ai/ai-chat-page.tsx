@@ -30,7 +30,7 @@ import type { Product } from "@/lib/types";
 import type {
   ChatInputMode,
   MealSuggestion,
-} from "@/lib/ai-chat-client-types";
+} from '@/lib/catalog';
 import { csrfFetch } from "@/lib/csrf-client";
 import {
   aiChatStorageKey,
@@ -41,7 +41,7 @@ import {
   saveChatToLocalStorage,
   toStoredMessages,
   type StoredChatMessage,
-} from "@/lib/ai-chat-storage";
+} from '@/lib/catalog';
 import {
   type AiChatResponse,
   type MatchedProduct,

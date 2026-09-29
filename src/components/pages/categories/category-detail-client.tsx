@@ -18,8 +18,8 @@ import { BRAND } from "@/lib/brand-theme";
 import {
   getCategoryEmoji,
   resolveCategoryImageSrc,
-} from "@/lib/category-media";
-import { emojiForCategoryName } from "@/lib/dynamic-category-groups";
+} from '@/lib/catalog';
+import { emojiForCategoryName } from '@/lib/catalog';
 import type { Product, CategoryRow } from "@/lib/types";
 
 type Sort = "popular" | "price-asc" | "price-desc" | "newest";

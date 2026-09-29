@@ -6,7 +6,7 @@ import { Plus, Check, Heart, Store, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/contexts/cart-context";
 import { useWishlistActions } from "@/contexts/wishlist-context";
-import { isCityMarketsVendor } from "@/lib/product-source";
+import { isCityMarketsVendor } from '@/lib/catalog';
 import type { Product } from "@/lib/types";
 
 interface ProductCardProps {

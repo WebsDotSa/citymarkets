@@ -20,7 +20,7 @@
 import {
   computeDistanceFee,
   type DeliveryDistanceFeeSettings,
-} from '@/lib/delivery-distance-fee';
+} from '@/lib/delivery';
 
 export interface PricingSettings extends DeliveryDistanceFeeSettings {
   serviceFeeEnabled?: boolean;

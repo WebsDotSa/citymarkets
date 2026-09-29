@@ -1,6 +1,6 @@
 import { absoluteUrl, SITE_NAME } from "@/lib/seo/site";
-import type { ProductSeoRow } from "@/lib/seo/product";
-import { productDescription } from "@/lib/seo/product";
+import type { ProductSeoRow } from '@/lib/catalog';
+import { productDescription } from '@/lib/catalog';
 
 interface ProductJsonLdProps {
   product: ProductSeoRow;

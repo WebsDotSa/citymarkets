@@ -4,7 +4,7 @@ import Image from "next/image";
 import { query } from "@/lib/db";
 import { buildPageMetadata } from "@/lib/seo/site";
 import { SafeImage } from "@/components/ui/safe-image";
-import { vendorTypeLabel, vendorTypeIcon } from "@/lib/vendor-types";
+import { vendorTypeLabel, vendorTypeIcon } from '@/lib/catalog';
 
 export const metadata: Metadata = buildPageMetadata({
   title: "المتاجر",

@@ -35,7 +35,11 @@ export {
 export type { CustomerJwtPayload } from "./customer-session";
 
 // ── Admin session ───────────────────────────────────────────────────────
-export { verifyAdminRequest } from "./admin-session";
+export {
+  adminSessionCookieOptions,
+  signAdminSessionToken,
+  verifyAdminRequest,
+} from "./admin-session";
 export type { VerifiedAdminJwt } from "./admin-session";
 
 // ── Admin API guard ─────────────────────────────────────────────────────
@@ -92,3 +96,6 @@ export {
   createRoleCache,
 } from "./auth/role-cache";
 export type { RoleCache, RoleCacheEntry, RoleCacheOptions } from "./auth/role-cache";
+
+// ── Auth dev (NODE_ENV !== production bypass) ───────────────────────────
+export { isAuthDevBypass } from "./auth-dev";

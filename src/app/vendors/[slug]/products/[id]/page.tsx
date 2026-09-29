@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCartActions } from "@/contexts/cart-context";
-import { vendorProductToCartProduct } from "@/lib/vendor-product-mapper";
+import { vendorProductToCartProduct } from '@/lib/catalog';
 
 interface Product {
   id: string;

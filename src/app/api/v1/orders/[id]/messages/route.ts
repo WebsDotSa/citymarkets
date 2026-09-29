@@ -5,7 +5,7 @@ import {
   assertOrderOwnership,
   idempotencyKeyFromBody,
   idempotencyKeyFromQuery,
-} from '@/lib/order-ownership';
+} from '@/lib/orders';
 import { checkRateLimit, ORDER_CREATE_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';
 import { error as logError } from '@/lib/logger';

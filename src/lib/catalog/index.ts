@@ -186,17 +186,32 @@ export type { ParsedVoiceLine } from "./voice-order";
 export {
   DEFAULT_DEVICE,
   DEVICE_TYPES,
-  SECTION_TYPES,
+  HOME_LAYOUT_VERSION,
+  SECTION_LIBRARY,
+  getLibraryEntry,
+  makeDefaultSection,
 } from "./home-layout-types";
 export type {
   BannersLayout,
   BannersSettings,
   CategoriesSettings,
+  CategorySectionSettings,
+  CtaSettings,
+  CouponsSettings,
   DeviceType,
   HeroBannerSettings,
+  HtmlBlockSettings,
   InlineBannerItem,
+  LightningDealsSettings,
+  OffersGridSettings,
+  OffersStripSettings,
+  ProductSource,
+  ProductsSettings,
+  PublicHomeLayout,
   Section,
+  SectionLibraryEntry,
   SectionType,
+  StoresSettings,
 } from "./home-layout-types";
 
 // ── Home layout cache ───────────────────────────────────────────────────

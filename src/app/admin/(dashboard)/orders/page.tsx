@@ -27,7 +27,7 @@ import {
   PAYMENT_STATUS_AR,
   PAYMENT_STATUSES_CONFIG,
   getOrderStatusConfig,
-} from "@/lib/order-status";
+} from '@/lib/orders';
 import type { AdminPagination } from "@/lib/admin-types";
 
 const STATUS_OPTIONS = ORDER_STATUS_DISPLAY;

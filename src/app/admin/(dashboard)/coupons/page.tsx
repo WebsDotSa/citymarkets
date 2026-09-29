@@ -6,7 +6,7 @@ import { DataTable } from "@/components/admin/data-table";
 import { AdminForm } from "@/components/admin/admin-form";
 import { useToast, useConfirm } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from '@/lib/catalog';
 import type { Coupon } from "@/lib/types";
 
 const adminCred: RequestInit = { credentials: "include" };

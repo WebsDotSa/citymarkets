@@ -17,7 +17,7 @@ import { jwtVerify } from "jose";
 import {
   ADMIN_SESSION_COOKIE,
   VENDOR_SESSION_COOKIE,
-} from "@/lib/auth-cookie-name";
+} from '@/lib/identity';
 import { getAdminJwtSecretBytes, getVendorJwtSecretBytes } from "@/lib/env";
 import { getCustomerUserIdFromRequest } from '@/lib/identity';
 import { sanitizeRedirectPath } from "@/lib/safe-redirect";
@@ -28,7 +28,7 @@ import {
   requiresCsrfProtection,
   validateCsrfRequest,
 } from "@/lib/csrf";
-import { createJwtVerifyCache } from "@/lib/auth/jwt-verify-cache";
+import { createJwtVerifyCache } from '@/lib/identity';
 
 // Category name→slug cache for middleware-level redirects (5-min TTL)
 let _catCache: Map<string, string> | null = null;

@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { Smartphone, Monitor, Save, Eye, RotateCcw, X, Loader2 } from "lucide-react";
 import { useToast, useConfirm } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from '@/lib/catalog';
 import { Button } from "@/components/design/button";
 import { SectionPalette } from "@/components/admin/home-design/section-palette";
 import { LayoutCanvas } from "@/components/admin/home-design/layout-canvas";
@@ -31,7 +31,7 @@ import {
   type DeviceType,
   type Section,
   type SectionType,
-} from "@/lib/home-layout-types";
+} from '@/lib/catalog';
 
 type AdminLayoutResponse = {
   id: string;

@@ -15,8 +15,8 @@ import { pool } from "@/lib/db";
 import { requireAdminApi } from '@/lib/identity';
 import { homeLayoutInputSchema } from "@/lib/validation";
 import { error as logError } from "@/lib/logger";
-import { invalidateHomeLayout } from "@/lib/home-layout-cache";
-import type { DeviceType, Section } from "@/lib/home-layout-types";
+import { invalidateHomeLayout } from '@/lib/catalog';
+import type { DeviceType, Section } from '@/lib/catalog';
 
 const ALLOWED_DEVICES: DeviceType[] = ["mobile", "desktop"];
 

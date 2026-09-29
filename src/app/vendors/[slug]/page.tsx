@@ -6,9 +6,9 @@ import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import { useCartActions } from "@/contexts/cart-context";
-import { vendorProductToCartProduct } from "@/lib/vendor-product-mapper";
+import { vendorProductToCartProduct } from '@/lib/catalog';
 import { SafeImage } from "@/components/ui/safe-image";
-import { vendorTypeLabel, vendorTypeIcon } from "@/lib/vendor-types";
+import { vendorTypeLabel, vendorTypeIcon } from '@/lib/catalog';
 
 interface Vendor {
   id: string;

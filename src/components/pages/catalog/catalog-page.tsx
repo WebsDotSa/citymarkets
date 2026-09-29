@@ -21,7 +21,7 @@ interface LegacyCategoryGroup {
 }
 const CATEGORY_GROUPS: LegacyCategoryGroup[] = [];
 const getGroupForSlug = (_slug: string): LegacyCategoryGroup | undefined => undefined;
-import { getCategoryEmoji } from "@/lib/category-media";
+import { getCategoryEmoji } from '@/lib/catalog';
 import { CatalogPageSkeleton, ProductCardSkeleton } from "@/components/design/skeleton";
 import { EmptySearch } from "@/components/design/empty-state";
 

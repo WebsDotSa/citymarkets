@@ -30,7 +30,7 @@ import {
 } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
-import { getOrderPaymentAction } from "@/lib/order-payment-action";
+import { getOrderPaymentAction } from '@/lib/orders';
 import type { NextRequest } from "next/server";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

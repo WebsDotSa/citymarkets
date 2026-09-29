@@ -10,14 +10,14 @@ import React, {
 } from "react";
 import { useAuthState } from "@/contexts/auth-context";
 import { csrfFetch } from "@/lib/csrf-client";
-import type { AddressLabelType, DeliveryAddress } from "@/lib/delivery-address";
+import type { AddressLabelType, DeliveryAddress } from '@/lib/delivery';
 import {
   getOrCreateGuestKey,
   getSelectedAddressId,
   loadLocalAddresses,
   saveLocalAddresses,
   setSelectedAddressId,
-} from "@/lib/delivery-address";
+} from '@/lib/delivery';
 
 type DeliveryLocationState = {
   addresses: DeliveryAddress[];

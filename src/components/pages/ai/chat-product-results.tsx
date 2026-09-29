@@ -13,7 +13,7 @@ import {
   useCartActions,
   useCartState,
 } from "@/contexts/cart-context";
-import type { ChatProductResult } from "@/lib/ai-chat-client-types";
+import type { ChatProductResult } from '@/lib/catalog';
 
 const priceFormatter = new Intl.NumberFormat("ar-SA", {
   minimumFractionDigits: 0,

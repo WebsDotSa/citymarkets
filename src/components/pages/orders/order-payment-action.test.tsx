@@ -14,15 +14,19 @@ vi.mock("@/lib/csrf-client", () => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockRouterPush, replace: vi.fn(), back: vi.fn() }),
 }));
-vi.mock("@/lib/order-status", () => ({
-  PAYMENT_METHOD_AR: {
-    mada: "مدى",
-    visa: "فيزا",
-    mastercard: "ماستركارد",
-    apple_pay: "Apple Pay",
-    stc_pay: "STC Pay",
-  },
-}));
+vi.mock(import('@/lib/orders'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    PAYMENT_METHOD_AR: {
+      mada: "مدى",
+      visa: "فيزا",
+      mastercard: "ماستركارد",
+      apple_pay: "Apple Pay",
+      stc_pay: "STC Pay",
+    },
+  };
+});
 
 import { OrderPaymentAction } from "./order-payment-action";
 

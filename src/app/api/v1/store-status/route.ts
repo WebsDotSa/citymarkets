@@ -3,7 +3,7 @@ import { getStoreStatusSettings } from "@/lib/app-settings";
 import {
   getDeliveryHours,
   buildHoursStatus,
-} from "@/lib/delivery-hours";
+} from '@/lib/delivery';
 import { error as logError } from "@/lib/logger";
 import { withCors } from "@/lib/cors";
 

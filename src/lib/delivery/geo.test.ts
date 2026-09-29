@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { haversineKm } from '@/lib/geo';
+import { haversineKm } from '@/lib/delivery';
 
 describe('haversineKm', () => {
   it('returns 0 for identical points', () => {

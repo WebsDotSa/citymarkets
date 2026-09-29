@@ -11,7 +11,7 @@ import React, {
 } from "react";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import type { User } from "@/lib/types";
-import { isAuthDevBypass } from "@/lib/auth-dev";
+import { isAuthDevBypass } from '@/lib/identity';
 import { supabase } from "@/lib/supabase/client";
 import { warn as logWarn } from "@/lib/logger";
 

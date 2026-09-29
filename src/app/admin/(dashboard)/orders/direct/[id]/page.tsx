@@ -17,7 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import { InvoiceActions } from '@/components/orders/invoice-actions';
-import { getOrderStatusConfig } from '@/lib/order-status';
+import { getOrderStatusConfig } from '@/lib/orders';
 import type {
   AdminDirectOrder,
   AdminDirectOrderItem,

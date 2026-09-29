@@ -17,7 +17,7 @@ import {
 import { DriverLayout } from "@/components/admin/driver-layout";
 import { SearchableSelect } from "@/components/admin/SearchableSelect";
 import { useToast } from "@/components/ui/toast";
-import { getOrderStatusConfig } from "@/lib/order-status";
+import { getOrderStatusConfig } from '@/lib/orders';
 
 interface OrderItem {
   id: string;

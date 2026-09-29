@@ -8,7 +8,7 @@ import { AdminForm } from "@/components/admin/admin-form";
 import { ROLE_LABELS, type AdminUser } from "@/lib/admin-types";
 import { useToast, useConfirm } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from '@/lib/catalog';
 
 type View = "list" | "new" | "edit";
 

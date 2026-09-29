@@ -10,8 +10,8 @@
  */
 
 import type { Product } from "@/lib/types";
-import type { CategoryTreeNode } from "@/lib/categories/tree";
-import { emojiForCategoryName } from "@/lib/dynamic-category-groups";
+import type { CategoryTreeNode } from '@/lib/catalog';
+import { emojiForCategoryName } from '@/lib/catalog';
 
 /* ------------------------------------------------------------------------- */
 /* Local product shape returned by /api/v1/products — minimum fields the   */

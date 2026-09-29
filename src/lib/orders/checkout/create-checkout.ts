@@ -33,13 +33,13 @@ import {
   type DeliveryAddressRow,
 } from "./resolve-address";
 import type { CouponRow } from "../pricing";
-import { haversineKm } from "@/lib/geo";
+import { haversineKm } from '@/lib/delivery';
 import {
   parseSlotsConfig,
   riyadhWallClockToUtc,
   toRiyadhDateKey,
   validateSlotSelection,
-} from "@/lib/delivery-slots";
+} from '@/lib/delivery';
 
 export interface CheckoutInput {
   customerId: string | null;

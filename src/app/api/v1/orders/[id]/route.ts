@@ -4,7 +4,7 @@ import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import {
   assertOrderOwnership,
   idempotencyKeyFromQuery,
-} from '@/lib/order-ownership';
+} from '@/lib/orders';
 import { error as logError } from '@/lib/logger';
 
 /**

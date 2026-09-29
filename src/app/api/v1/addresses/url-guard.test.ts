@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidPlaceImageUrl } from "@/lib/place-image";
+import { isValidPlaceImageUrl } from '@/lib/catalog';
 
 /**
  * Regression coverage for the C3 RBAC hardening in `@/lib/place-image`.

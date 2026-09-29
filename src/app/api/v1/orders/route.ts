@@ -16,15 +16,15 @@ import {
   riyadhWallClockToUtc,
   toRiyadhDateKey,
   validateSlotSelection,
-} from '@/lib/delivery-slots';
+} from '@/lib/delivery';
 import {
   computeOrderFees,
   computeCouponDiscount,
   computeLoyaltyRedemption,
   type PricingSettings,
-} from '@/lib/pricing';
-import { getLoyaltySettings } from '@/lib/loyalty';
-import { haversineKm } from '@/lib/geo';
+} from '@/lib/orders';
+import { getLoyaltySettings } from '@/lib/orders';
+import { haversineKm } from '@/lib/delivery';
 
 /**
  * Order item type for internal use

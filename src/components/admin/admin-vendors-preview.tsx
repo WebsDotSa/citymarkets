@@ -1,7 +1,7 @@
 "use client";
 
 import { Building2, Star, MapPin, Phone } from "lucide-react";
-import { VENDOR_TYPE_LABELS_AR } from "@/lib/vendors";
+import { VENDOR_TYPE_LABELS_AR } from '@/lib/catalog';
 
 const VENDOR_TYPE_LABEL: Record<string, string> = VENDOR_TYPE_LABELS_AR;
 
