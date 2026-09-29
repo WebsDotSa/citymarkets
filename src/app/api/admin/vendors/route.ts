@@ -367,23 +367,28 @@ export async function PUT(request: NextRequest) {
     const slug = v.slug?.toString().trim() || (v.name_ar ? slugify(v.name_ar) : undefined);
 
     await query(
+      // BUGFIX (audit 2026-09-29): wrap every column in COALESCE so a
+      // partial PUT (the admin only changed the description) doesn't
+      // null out unrelated fields. The toggle columns already used
+      // COALESCE; the text columns used to be plain `= $N` and a
+      // missing field in the JSON would overwrite the row with NULL.
       `UPDATE vendors SET
          slug = COALESCE($1, slug),
          name_ar = COALESCE($2, name_ar),
-         name_en = $3,
-         description_ar = $4,
-         description_en = $5,
-         logo_url = $6,
-         banner_url = $7,
+         name_en = COALESCE($3, name_en),
+         description_ar = COALESCE($4, description_ar),
+         description_en = COALESCE($5, description_en),
+         logo_url = COALESCE($6, logo_url),
+         banner_url = COALESCE($7, banner_url),
          vendor_type = COALESCE($8, vendor_type),
-         category_slug = $9,
+         category_slug = COALESCE($9, category_slug),
          primary_color = COALESCE($10, primary_color),
-         contact_phone = $11,
-         contact_email = $12,
-         contact_whatsapp = $13,
-         address_ar = $14,
-         pickup_lat = $15,
-         pickup_lng = $16,
+         contact_phone = COALESCE($11, contact_phone),
+         contact_email = COALESCE($12, contact_email),
+         contact_whatsapp = COALESCE($13, contact_whatsapp),
+         address_ar = COALESCE($14, address_ar),
+         pickup_lat = COALESCE($15, pickup_lat),
+         pickup_lng = COALESCE($16, pickup_lng),
          is_active = COALESCE($17, is_active),
          is_featured = COALESCE($18, is_featured),
          sort_order = COALESCE($19, sort_order),

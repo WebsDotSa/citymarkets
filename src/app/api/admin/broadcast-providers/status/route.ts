@@ -6,6 +6,8 @@ import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { isEmailConfigured } from "@/lib/email";
 import { isNativePushConfigured } from "@/lib/native-push";
 import { isTwilioMessagingConfigured } from "@/lib/twilio-messaging";
+import { isApnsConfigured } from "@/lib/env";
+import { isFcmSenderConfigured } from "@/lib/env";
 
 function vapidConfigured(): boolean {
   return !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
@@ -17,9 +19,41 @@ function sseConfigured(): boolean {
   return true;
 }
 
+/**
+ * Today no concrete APNs/FCM sender has landed (see
+ * `src/lib/native-push/senders/`). When the env is set but the sender
+ * is still a stub, the UI shows "متغيرات البيئة مكتملة — المرسل قيد
+ * التنفيذ" so an admin knows the deployment is mid-roll-out.
+ */
+function isNativePushSenderImplemented(): boolean {
+  // Heuristic: if neither apn nor firebase-admin is installed as a
+  // dependency, no real send can run. We keep this conservative —
+  // when the real implementations land, this flips to true.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require.resolve("apn");
+    return true;
+  } catch {
+    // ignore
+  }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require.resolve("firebase-admin");
+    return true;
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
 export async function GET(request: NextRequest) {
   const gate = await requireAdminApi(request, "manage_broadcasts");
   if (gate instanceof NextResponse) return gate;
+
+  const apnsConfigured = isApnsConfigured();
+  const fcmConfigured = isFcmSenderConfigured();
+  const nativeConfigured = apnsConfigured || fcmConfigured;
+  const nativeImplemented = isNativePushSenderImplemented();
 
   return NextResponse.json({
     success: true,
@@ -33,8 +67,21 @@ export async function GET(request: NextRequest) {
       {
         channel: "native_push",
         label: "Push (تطبيق iOS/Android)",
-        configured: isNativePushConfigured(),
-        env: ["APNS_KEY_ID", "APNS_TEAM_ID", "APNS_BUNDLE_ID", "APNS_KEY_PATH"],
+        configured: nativeConfigured,
+        sender_implemented: nativeImplemented,
+        detail: !nativeConfigured
+          ? "بحاجة إلى APNS_KEY_ID, APNS_TEAM_ID, APNS_BUNDLE_ID, APNS_KEY_PATH أو FCM_PROJECT_ID + FCM_SERVICE_ACCOUNT_JSON"
+          : !nativeImplemented
+            ? "متغيرات البيئة مكتملة — المرسل قيد التنفيذ"
+            : "جاهز للإرسال",
+        env: [
+          "APNS_KEY_ID",
+          "APNS_TEAM_ID",
+          "APNS_BUNDLE_ID",
+          "APNS_KEY_PATH",
+          "FCM_PROJECT_ID",
+          "FCM_SERVICE_ACCOUNT_JSON",
+        ],
       },
       {
         channel: "sms",

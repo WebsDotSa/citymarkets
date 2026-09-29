@@ -90,12 +90,20 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+      // BUGFIX (audit 2026-09-29): vendor_staff.phone is stored in local
+      // form (`05XXXXXXXX`), not E.164 — see phase-3-vendor-otp memory.
+      // Until a future migration normalizes the column we match both
+      // shapes in a single SQL with `IN (E.164, local)`. Without this,
+      // the 3 phone-only staff couldn't log in via the phone branch.
+      const phoneLocal = "0" + phoneE164.slice(4); // +9665XXXXXXXX → 05XXXXXXXX
       staffResult = await query(
         `SELECT id, vendor_id, email, phone, password_hash, full_name_ar, full_name_en,
                 role, permissions, is_active
          FROM vendor_staff
-         WHERE LOWER(phone) = LOWER($1) AND vendor_id = $2`,
-        [phoneE164, vendor.id]
+         WHERE vendor_id = $1
+           AND LOWER(phone) IN (LOWER($2), LOWER($3))
+         LIMIT 1`,
+        [vendor.id, phoneE164, phoneLocal]
       );
     }
 

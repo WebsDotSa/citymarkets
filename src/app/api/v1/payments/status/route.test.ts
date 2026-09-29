@@ -17,6 +17,11 @@ const mocks = vi.hoisted(() => ({
   poolQuery: vi.fn(),
   resolveCustomerUserIdFromRequest: vi.fn(),
   logError: vi.fn(),
+  // BUGFIX (audit 2026-09-29): the route now rate-limits the poll with
+  // PAYMENT_STATUS_* configs. By default the check returns `allowed`
+  // so the existing assertions still exercise the success path.
+  checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 0, resetAt: 0 }),
+  getClientIp: vi.fn().mockReturnValue("127.0.0.1"),
 }));
 
 vi.mock("@/lib/db", () => ({ pool: { query: mocks.poolQuery } }));
@@ -24,6 +29,12 @@ vi.mock('@/lib/identity', () => ({
   resolveCustomerUserIdFromRequest: mocks.resolveCustomerUserIdFromRequest,
 }));
 vi.mock("@/lib/logger", () => ({ error: mocks.logError }));
+vi.mock("@/lib/request-ip", () => ({ getClientIp: mocks.getClientIp }));
+vi.mock("@/lib/rate-limit", () => ({
+  checkRateLimit: mocks.checkRateLimit,
+  PAYMENT_STATUS_CONFIG: { windowMs: 60_000, maxRequests: 60, keyPrefix: "payment:status:user" },
+  PAYMENT_STATUS_IP_CONFIG: { windowMs: 60_000, maxRequests: 120, keyPrefix: "payment:status:ip" },
+}));
 
 import { GET } from "./route";
 
@@ -43,6 +54,9 @@ const ORDER = "22222222-aaaa-bbbb-cccc-333333333333";
 
 beforeEach(() => {
   vi.resetAllMocks();
+  // Re-prime the default `allowed` after resetAllMocks.
+  mocks.checkRateLimit.mockResolvedValue({ allowed: true, remaining: 0, resetAt: 0 });
+  mocks.getClientIp.mockReturnValue("127.0.0.1");
   mocks.resolveCustomerUserIdFromRequest.mockResolvedValue(USER);
 });
 

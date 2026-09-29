@@ -3,6 +3,13 @@ import { query } from '@/lib/db';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
+// BUGFIX (audit 2026-09-29): admin endpoint already guards with this
+// regex; mirror it on the public detail endpoint so callers passing
+// garbage IDs get a clean 404 instead of a Postgres `invalid input
+// syntax for type uuid` 500.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * Related product type
  */
@@ -107,6 +114,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
 
+    // BUGFIX (audit 2026-09-29): reject non-UUID IDs with 404 instead of
+    // letting Postgres raise `invalid input syntax for type uuid` →
+    // HTTP 500. The admin handler uses the same regex; mirror here.
+    if (!UUID_RE.test(id)) {
+      return NextResponse.json(
+        { success: false, error: 'المنتج غير موجود' },
+        { status: 404 },
+      );
+    }
+
     // First try to find in vendor_products table
     let result = await query(
       `SELECT vp.id, vp.vendor_id, vp.category_id, vp.name_ar, vp.name_en,
@@ -118,7 +135,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
               -- single primary image, leaving image_urls[] NULL.
               COALESCE(NULLIF(vp.image_urls[1], ''), NULLIF(vp.image_url, '')) as primary_image,
               vp.price::float as price, vp.discount_price::float as discount_price,
-              vp.stock_quantity as stock_qty, vp.is_active, vp.sort_order,
+              vp.stock_quantity as stock_qty, vp.track_stock, vp.is_active, vp.sort_order,
               vp.created_at as created_at, vp.updated_at as updated_at,
               v.name_ar as vendor_name, v.slug as vendor_slug,
               c.name_ar as category_name, c.slug as category_slug
@@ -177,6 +194,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         price: listPrice,
         discount_price: legacySale,
         stock_qty: parseInt(product.stock_qty) || 0,
+        // BUGFIX (audit 2026-09-29): expose `track_stock` so the storefront
+        // can decide whether stock_qty=0 means "out of stock" or "untracked".
+        // The legacy `products_unified` branch below defaults to false (the
+        // legacy table never had a stock-tracking toggle).
+        track_stock: product.track_stock === true || product.track_stock === 't',
         is_active: product.is_active,
         category_name: product.category_name,
         category_slug: product.category_slug,

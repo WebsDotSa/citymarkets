@@ -102,13 +102,20 @@ async function request(jar, path, init = {}) {
     ...(init.headers || {}),
   };
   if (jar) headers.Cookie = jar.header();
-  // Mutating routes require a CSRF token. Hit /api/csrf once per jar to
-  // seed it; the route sets the csrf_token cookie and returns the same
-  // value, so we mirror that into the X-CSRF-Token header below.
+  // Mutating routes require a CSRF token. Hit /api/v1/auth/csrf once per
+  // jar to seed it; the route sets the csrf_token cookie and returns the
+  // same value, so we mirror that into the X-CSRF-Token header below.
+  //
+  // BUGFIX (audit 2026-09-29): the old /api/csrf path no longer exists;
+  // the canonical endpoint is /api/v1/auth/csrf (Route Handler under the
+  // versioned API). The legacy path happens to set the cookie anyway via
+  // the middleware on 404, masking the bug — but the explicit GET path
+  // we record here is the only one that sets a SAME cookie value the
+  // middleware trusts.
   const method = (init.method || "GET").toUpperCase();
   if (method !== "GET" && method !== "HEAD") {
     if (jar && !jar.get("csrf_token")) {
-      const csrfRes = await fetch(`${BASE_URL.replace(/\/$/, "")}/api/csrf`, {
+      const csrfRes = await fetch(`${BASE_URL.replace(/\/$/, "")}/api/v1/auth/csrf`, {
         headers: { Cookie: jar.header(), Accept: "application/json" },
       });
       jar.absorb(csrfRes.headers.getSetCookie?.() ?? csrfRes.headers.get("set-cookie"));

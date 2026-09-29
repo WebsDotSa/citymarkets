@@ -26,8 +26,22 @@ function SuccessContent() {
     }
 
     let cancelled = false;
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // BUGFIX (audit 2026-09-29): the previous version fired the verify
+    // call exactly twice (immediately + at 2.5s) and then gave up —
+    // leaving the user staring at "جاري تأكيد الدفع" indefinitely
+    // when the gateway webhook was just slow. Replace the single-shot
+    // timeout with a backoff polling loop: start at 1s, double each
+    // attempt, cap at 8s, give up after 90s of total wall time. The
+    // status endpoint is now rate-limited (PAYMENT_STATUS_CONFIG) so
+    // the polling is safe to run for the full window.
+    const POLL_INTERVALS_MS = [1000, 2000, 4000, 8000, 8000, 8000, 8000, 8000, 8000, 8000];
+    const POLL_TIMEOUT_MS = 90_000;
+    const startedAt = Date.now();
 
     const verify = async () => {
+      if (cancelled) return;
       try {
         if (moyasarPaymentId) {
           await fetch("/api/v1/payments/moyasar/confirm", {
@@ -76,20 +90,33 @@ function SuccessContent() {
             payment_method: data.payment_method ?? undefined,
             items,
           });
+          return; // stop polling — terminal
         }
-        else if (data.payment_status === "failed") setStatus("error");
-        else setStatus("pending");
+        if (data.payment_status === "failed") {
+          setStatus("error");
+          return; // stop polling — terminal
+        }
+        setStatus("pending");
       } catch {
         if (!cancelled) setStatus("pending");
       }
+      if (cancelled) return;
+      // Schedule next attempt. Index grows with each call so the
+      // interval grows; once we exhaust the table, fall back to the
+      // last entry. Hard-stop after POLL_TIMEOUT_MS to avoid leaving
+      // the request open forever on a stuck gateway.
+      const elapsed = Date.now() - startedAt;
+      if (elapsed >= POLL_TIMEOUT_MS) return;
+      const attemptsSoFar = Math.floor(elapsed / 1000); // approximate; we're only using it for index lookup
+      const idx = Math.min(POLL_INTERVALS_MS.length - 1, attemptsSoFar);
+      pollTimer = setTimeout(verify, POLL_INTERVALS_MS[idx]);
     };
 
     void verify();
-    const t = setTimeout(verify, 2500);
 
     return () => {
       cancelled = true;
-      clearTimeout(t);
+      if (pollTimer) clearTimeout(pollTimer);
     };
   }, [orderId, moyasarPaymentId]);
 

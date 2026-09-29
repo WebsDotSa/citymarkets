@@ -340,6 +340,34 @@ export const PAYMENT_INITIATE_IP_CONFIG: RateLimitConfig = {
 };
 
 /**
+ * BUGFIX (audit 2026-09-29): rate-limit the payment-status poll
+ * endpoint. The /checkout/success page polls this every ~3s while the
+ * user waits for the gateway webhook to flip the order to `paid`.
+ * Without a cap, a malicious or buggy client can hammer it indefinitely.
+ *
+ * Sized at 60 requests / minute (≈ 1/s) which matches the success-page
+ * poll cadence; well above any human-driven polling and well below
+ * abusive levels.
+ */
+export const PAYMENT_STATUS_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000, // 1 minute
+  maxRequests: 60,
+  keyPrefix: 'payment:status:user',
+};
+
+/**
+ * IP-keyed secondary limit on payment-status polling. Same window /
+ * quota as the user config but scoped by client IP, so a credential
+ * leak alone can't sidestep it. Distinct prefix keeps the two buckets
+ * independent.
+ */
+export const PAYMENT_STATUS_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000, // 1 minute
+  maxRequests: 120,
+  keyPrefix: 'payment:status:ip',
+};
+
+/**
  * Rate limit config for order creation endpoint.
  * Sized generously because (a) the checkout flow can fire several
  * legitimate attempts in a single session when the user toggles the

@@ -165,7 +165,19 @@ export async function dispatchOne(d: DeliveryRow): Promise<void> {
       case "native_push": {
         const r = await sendNativePushToUser(d.user_id, { title, body });
         if (r.skipped) {
-          await markSkipped(d, "native_push_not_configured");
+          // The reason field on the result distinguishes the three
+          // skip paths so an admin can tell in the broadcast metrics
+          // panel whether env vars are missing vs the user has no
+          // registered device vs the concrete sender hasn't shipped
+          // yet. Older callers that only set `skipped: true` still
+          // get the historical `native_push_not_configured` reason.
+          const reason =
+            r.reason === "no_tokens"
+              ? "native_push_no_tokens"
+              : r.reason === "sender_not_implemented"
+                ? "native_push_sender_pending"
+                : "native_push_not_configured";
+          await markSkipped(d, reason);
         } else {
           await recordOutcome(d, { ok: r.failed === 0, error: r.failed > 0 ? "send_failed" : "" });
         }

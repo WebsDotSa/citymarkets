@@ -38,13 +38,33 @@ describe("/api/admin/broadcast-providers/status", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
-    const channels = body.data as { channel: string; configured: boolean }[];
-    const byChannel = Object.fromEntries(channels.map((c) => [c.channel, c.configured]));
+    const channels = body.data as {
+      channel: string;
+      configured: boolean;
+      sender_implemented?: boolean;
+      detail?: string;
+    }[];
+    const byChannel = Object.fromEntries(channels.map((c) => [c.channel, c]));
     expect(channels.length).toBe(5);
-    expect(byChannel.email).toBe(true);
-    expect(byChannel.sms).toBe(true);
-    expect(byChannel.native_push).toBe(false);
-    expect(byChannel.in_app).toBe(true);
-    expect(typeof byChannel.web_push).toBe("boolean");
+    expect(byChannel.email.configured).toBe(true);
+    expect(byChannel.sms.configured).toBe(true);
+    expect(byChannel.native_push.configured).toBe(false);
+    expect(byChannel.in_app.configured).toBe(true);
+    expect(typeof byChannel.web_push.configured).toBe("boolean");
+  });
+
+  it("native_push channel surfaces sender_implemented + detail fields", async () => {
+    const res = await GET(makeReq() as never);
+    const body = await res.json();
+    const native = (body.data as Array<Record<string, unknown>>).find(
+      (c) => c.channel === "native_push",
+    );
+    expect(native).toBeDefined();
+    // Both fields exist so the admin UI can render the honest stub
+    // message regardless of which side of the gate the deployment
+    // is on (env missing vs sender pending).
+    expect(native).toHaveProperty("sender_implemented");
+    expect(native).toHaveProperty("detail");
+    expect(typeof native!.detail).toBe("string");
   });
 });

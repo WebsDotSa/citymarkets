@@ -153,16 +153,27 @@ export function getVapidPublicKey(): string | null {
   return v && v.trim().length > 0 ? v : null;
 }
 
-/** APNs push is fully configured iff the key id + signing key are present. */
+/**
+ * APNs push is fully configured iff the key id + team id + bundle id +
+ * key path are all present. This matches the shape consumed by the
+ * native push sender (see `isApnsSenderConfigured` below) and the
+ * mobile-config endpoint; the legacy `APNS_SIGNING_KEY` form is no
+ * longer accepted (no caller in the codebase).
+ */
 export function isApnsConfigured(): boolean {
   return Boolean(
     process.env.APNS_KEY_ID &&
       process.env.APNS_TEAM_ID &&
-      process.env.APNS_SIGNING_KEY,
+      process.env.APNS_BUNDLE_ID &&
+      process.env.APNS_KEY_PATH,
   );
 }
 
-/** FCM push is fully configured iff a project id + service account are set. */
+/**
+ * FCM push is fully configured iff a project id is set. Used by the
+ * mobile-config endpoint; the concrete sender additionally requires a
+ * service account JSON or legacy server key (see `isFcmSenderConfigured`).
+ */
 export function isFcmConfigured(): boolean {
   return Boolean(process.env.FCM_PROJECT_ID);
 }
@@ -229,26 +240,19 @@ export function getMoyasarSecretKey(): string | null {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// Native push — APNs (legacy KEY_PATH form) + FCM
+// Native push — APNs + FCM (sender-side configuration)
 // ──────────────────────────────────────────────────────────────────────
 //
-// The mobile-config endpoint uses `isApnsConfigured` for the
-// user-facing "is push enabled" flag (APNS_SIGNING_KEY form). The
-// native-push sender uses a different shape — APNS_BUNDLE_ID +
-// APNS_KEY_PATH — so we expose a separate `isApnsSenderConfigured`
-// here. Splitting avoids accidental divergence between the two.
+// `isApnsConfigured` (defined in the public-facing helpers section
+// above) and the sender-side configuration are now the same shape —
+// APNS_KEY_ID + APNS_TEAM_ID + APNS_BUNDLE_ID + APNS_KEY_PATH — so
+// we reuse it directly rather than duplicating the predicate. FCM
+// still needs the extra service-account JSON or legacy server key.
 
-/** APNs sender can talk to api.push.apple.com iff all four env vars set. */
-export function isApnsSenderConfigured(): boolean {
-  return Boolean(
-    process.env.APNS_KEY_ID &&
-      process.env.APNS_TEAM_ID &&
-      process.env.APNS_BUNDLE_ID &&
-      process.env.APNS_KEY_PATH,
-  );
-}
-
-/** FCM sender (firebase-admin / legacy server key) configured. */
+/**
+ * FCM sender (firebase-admin / legacy server key) configured. APNs
+ * configuration reuses `isApnsConfigured()` above.
+ */
 export function isFcmSenderConfigured(): boolean {
   return Boolean(
     (process.env.FCM_PROJECT_ID && process.env.FCM_SERVICE_ACCOUNT_JSON) ||
@@ -256,9 +260,9 @@ export function isFcmSenderConfigured(): boolean {
   );
 }
 
-/** True iff at least one of APNs sender or FCM sender is configured. */
+/** True iff at least one of APNs or FCM sender is configured. */
 export function isNativePushSenderConfigured(): boolean {
-  return isApnsSenderConfigured() || isFcmSenderConfigured();
+  return isApnsConfigured() || isFcmSenderConfigured();
 }
 
 // ──────────────────────────────────────────────────────────────────────

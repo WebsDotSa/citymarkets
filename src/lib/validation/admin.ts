@@ -61,7 +61,17 @@ export const adminStaffCreateSchema = z.object({
     .optional()
     .or(z.literal("")),
   password: z.string().min(8, "كلمة المرور يجب أن تكون 8 أحرف على الأقل").max(128),
-  role: z.string().trim().min(1).max(40).optional(),
+  // BUGFIX (audit 2026-09-29): tighten role to the closed enum used by
+  // src/lib/admin-types.ts. The DB enum (admin_role_enum) is a subset
+  // (`super_admin | admin | manager | support` per migration 003) but
+  // the dashboard also emits `editor`, `viewer`, `delivery_driver`.
+  // Whitelisting the union here gives a clean Arabic 400 instead of
+  // letting Postgres raise 23522 → 500.
+  role: z
+    .enum(["super_admin", "admin", "manager", "support", "editor", "viewer", "delivery_driver"], {
+      errorMap: () => ({ message: "الدور غير صالح" }),
+    })
+    .optional(),
   is_active: z.boolean().optional(),
 });
 
@@ -82,7 +92,13 @@ export const adminStaffUpdateSchema = z.object({
     .max(254)
     .optional()
     .or(z.literal("")),
-  role: z.string().trim().min(1).max(40).optional(),
+  // BUGFIX (audit 2026-09-29): same closed-enum tightening as the create
+  // schema above. See comment on `adminStaffCreateSchema.role`.
+  role: z
+    .enum(["super_admin", "admin", "manager", "support", "editor", "viewer", "delivery_driver"], {
+      errorMap: () => ({ message: "الدور غير صالح" }),
+    })
+    .optional(),
   is_active: z.boolean().optional(),
   password: z
     .string()

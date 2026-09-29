@@ -1,11 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
+import { getClientIp } from '@/lib/request-ip';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import {
+  checkRateLimit,
+  PAYMENT_STATUS_CONFIG,
+  PAYMENT_STATUS_IP_CONFIG,
+} from '@/lib/rate-limit';
 
 /** حالة دفع طلب للعميل بعد العودة من ميسر */
 export async function GET(request: NextRequest) {
+  // BUGFIX (audit 2026-09-29): rate-limit the poll. /checkout/success polls
+  // every ~3s; without this cap a malicious/buggy client can hammer the
+  // endpoint indefinitely. Two independent buckets (per-user + per-IP)
+  // mirror the payment-initiate pattern. IP check runs BEFORE auth so
+  // even unauthenticated traffic gets bucketed.
+  const clientIp = getClientIp(request);
+  const ipLimit = await checkRateLimit(clientIp, PAYMENT_STATUS_IP_CONFIG);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { error: 'طلبات كثيرة، حاول بعد قليل' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((ipLimit.retryAfterMs ?? 0) / 1000)) },
+      }
+    );
+  }
+
   // SECURITY (C4 RBAC): previously this endpoint leaked any order's
   // payment status whenever the caller was unauthenticated OR the order
   // belonged to a guest. We now require authentication and refuse to
@@ -13,6 +36,17 @@ export async function GET(request: NextRequest) {
   const userId = await resolveCustomerUserIdFromRequest(request);
   if (!userId) {
     return NextResponse.json({ error: 'يجب تسجيل الدخول' }, { status: 401 });
+  }
+
+  const userLimit = await checkRateLimit(userId, PAYMENT_STATUS_CONFIG);
+  if (!userLimit.allowed) {
+    return NextResponse.json(
+      { error: 'طلبات كثيرة، حاول بعد قليل' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((userLimit.retryAfterMs ?? 0) / 1000)) },
+      }
+    );
   }
 
   const orderId = new URL(request.url).searchParams.get('order_id');

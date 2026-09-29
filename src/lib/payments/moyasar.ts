@@ -49,6 +49,42 @@ function authHeader(): string {
   return `Basic ${token}`;
 }
 
+/**
+ * BUGFIX (audit 2026-09-29): sanitize the gateway error string before
+ * returning it to the caller. Moyasar sometimes returns raw English
+ * messages (e.g. "amount is required") and at other times returns its
+ * own internal status code text ("Moyasar HTTP 502"). We don't want
+ * either to surface to customers — log the raw form for ops and
+ * translate the well-known shapes into friendly Arabic.
+ *
+ * Unrecognized payloads fall back to a generic Arabic message so a
+ * payload-leak cannot accidentally surface technical detail.
+ */
+function sanitizeGatewayError(
+  rawMessage: string | undefined,
+  status: number,
+): string {
+  const safeMessage = (rawMessage || '').toString().slice(0, 200);
+  // Log the raw gateway detail server-side before sanitising.
+  logError('Moyasar gateway error (sanitised)', {
+    status,
+    raw: safeMessage,
+  });
+
+  const lower = safeMessage.toLowerCase();
+  if (lower.includes('amount')) return 'قيمة الطلب غير صحيحة';
+  if (lower.includes('currency')) return 'عملة الدفع غير مدعومة';
+  if (lower.includes('callback') || lower.includes('success_url') || lower.includes('back_url')) {
+    return 'إعدادات رابط الدفع غير مكتملة، يرجى التواصل مع الدعم';
+  }
+  if (status === 401 || status === 403) return 'تعذّر التحقق من بوابة الدفع';
+  if (status === 429) return 'طلبات كثيرة على بوابة الدفع، حاول بعد قليل';
+  if (status >= 500) return 'بوابة الدفع غير متاحة مؤقتاً، حاول بعد قليل';
+  if (status >= 400) return 'تعذّر إنشاء الفاتورة، حاول مرة أخرى';
+  // Unknown shape — keep it generic rather than echoing gateway detail.
+  return 'تعذّر إتمام عملية الدفع، حاول لاحقاً';
+}
+
 /** المبلغ بالهللة (1 ريال = 100) */
 export function toHalalas(sarAmount: number): number {
   return Math.max(100, Math.round(sarAmount * 100));
@@ -110,11 +146,13 @@ export async function createInvoice(
     };
 
     if (!response.ok) {
-      const errMsg =
+      const rawMessage =
         data.message ||
         (data.errors && Object.values(data.errors).flat().join(', ')) ||
         `Moyasar HTTP ${response.status}`;
-      return { success: false, error: errMsg };
+      // BUGFIX (audit 2026-09-29): surface a sanitised Arabic error
+      // rather than echoing the raw gateway message. See sanitizeGatewayError.
+      return { success: false, error: sanitizeGatewayError(rawMessage, response.status) };
     }
 
     if (!data.id || !data.url) {
@@ -127,9 +165,12 @@ export async function createInvoice(
       invoiceId: data.id,
     };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'خطأ في الاتصال بميسر';
+    // BUGFIX (audit 2026-09-29): previously this returned
+    // `error.message` ("ECONNRESET" etc.) to the caller — replaced
+    // with a generic Arabic message. The raw error is still logged
+    // server-side.
     logError('Moyasar createInvoice error', error);
-    return { success: false, error: message };
+    return { success: false, error: 'تعذّر الاتصال بميسر' };
   }
 }
 
@@ -162,7 +203,12 @@ export async function fetchInvoiceDetails(invoiceId: string): Promise<{
     };
 
     if (!response.ok) {
-      return { success: false, error: data.message || `HTTP ${response.status}` };
+      // BUGFIX (audit 2026-09-29): same sanitisation as createInvoice —
+      // do not echo the raw `data.message` to the caller.
+      return {
+        success: false,
+        error: sanitizeGatewayError(data.message || `HTTP ${response.status}`, response.status),
+      };
     }
 
     return {
@@ -171,8 +217,11 @@ export async function fetchInvoiceDetails(invoiceId: string): Promise<{
       amountHalalas: data.amount,
     };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'fetch failed';
-    return { success: false, error: message };
+    // BUGFIX (audit 2026-09-29): the previous `error.message` could
+    // surface the raw fetch failure (DNS error, ECONNREFUSED, …) to
+    // callers. Replace with a friendly Arabic message.
+    logError('Moyasar fetchInvoiceDetails error', error);
+    return { success: false, error: 'تعذّر الاتصال ببوابة الدفع' };
   }
 }
 
@@ -200,13 +249,18 @@ export async function fetchInvoice(invoiceId: string): Promise<{
     const data = (await response.json()) as { status?: string; message?: string };
 
     if (!response.ok) {
-      return { success: false, error: data.message || `HTTP ${response.status}` };
+      // BUGFIX (audit 2026-09-29): sanitise — do not echo raw `data.message`.
+      return {
+        success: false,
+        error: sanitizeGatewayError(data.message || `HTTP ${response.status}`, response.status),
+      };
     }
 
     return { success: true, status: data.status };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'fetch failed';
-    return { success: false, error: message };
+    // BUGFIX (audit 2026-09-29): never echo raw fetch-failure text.
+    logError('Moyasar fetchInvoice error', error);
+    return { success: false, error: 'تعذّر الاتصال ببوابة الدفع' };
   }
 }
 
@@ -272,7 +326,12 @@ export async function fetchPayment(
     };
 
     if (!response.ok) {
-      return { success: false, error: data.message || `HTTP ${response.status}` };
+      // BUGFIX (audit 2026-09-29): sanitise the error string instead
+      // of leaking the raw gateway `data.message`.
+      return {
+        success: false,
+        error: sanitizeGatewayError(data.message || `HTTP ${response.status}`, response.status),
+      };
     }
 
     return {
@@ -284,7 +343,8 @@ export async function fetchPayment(
       metadata: data.metadata,
     };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'fetch failed';
-    return { success: false, error: message };
+    // BUGFIX (audit 2026-09-29): never echo raw fetch-failure text.
+    logError('Moyasar fetchPayment error', error);
+    return { success: false, error: 'تعذّر الاتصال ببوابة الدفع' };
   }
 }

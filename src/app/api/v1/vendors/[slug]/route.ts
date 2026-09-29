@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+// BUGFIX (audit 2026-09-29): see siblings — replace local isStoreOpen
+// with the Riyadh-tz-aware helper that already exists in
+// `src/lib/delivery/vendor-store-hours`.
+import { isVendorOpen, parseVendorHours } from "@/lib/delivery/vendor-store-hours";
 
 export async function GET(
   request: Request,
@@ -11,8 +15,8 @@ export async function GET(
     const { slug } = await params;
 
     const result = await query(
-      `SELECT 
-        v.id, v.slug, v.name_ar, v.name_en, 
+      `SELECT
+        v.id, v.slug, v.name_ar, v.name_en,
         v.description_ar, v.description_en,
         v.logo_url, v.banner_url, v.vendor_type, v.primary_color,
         v.contact_phone, v.contact_email, v.contact_whatsapp,
@@ -66,7 +70,7 @@ export async function GET(
       } : null,
       openTime: v.open_time,
       closeTime: v.close_time,
-      isOpen: isStoreOpen(v.open_time, v.close_time),
+      isOpen: isVendorOpen(parseVendorHours(v)),
       settings: {
         deliveryMode: v.delivery_mode,
         deliveryFee: v.delivery_fee_override,
@@ -91,21 +95,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
-
-function isStoreOpen(openTime: string, closeTime: string): boolean {
-  const now = new Date();
-  const currentTime = now.getHours() * 60 + now.getMinutes();
-  
-  const [openHour, openMin] = openTime.split(":").map(Number);
-  const [closeHour, closeMin] = closeTime.split(":").map(Number);
-  
-  const open = openHour * 60 + openMin;
-  const close = closeHour * 60 + closeMin;
-  
-  if (close < open) {
-    return currentTime >= open || currentTime < close;
-  }
-  
-  return currentTime >= open && currentTime < close;
 }

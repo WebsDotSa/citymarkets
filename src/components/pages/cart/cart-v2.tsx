@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/cart-context";
+import { useWishlistActions } from "@/contexts/wishlist-context";
 import { useAuthState } from "@/contexts/auth-context";
 import { useDeliveryLocationState, useDeliveryLocationActions } from "@/contexts/delivery-location-context";
 import { useDeliveryQuote } from "@/hooks/use-delivery-quote";
 import { Button } from "@/components/design/button";
 import { EmptyCart } from "@/components/design/empty-state";
+import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
 import { apiFetch } from '@/lib/catalog';
 import { formatPrice } from "@/lib/utils";
+import type { CartItem } from "@/lib/types";
 import {
   groupCartItems,
   hasMixedVendors,
@@ -64,6 +67,8 @@ export function CartV2() {
   const router = useRouter();
   const { user } = useAuthState();
   const { items, updateQuantity, removeItem, subtotal, clearCart } = useCart();
+  const { addItem: wishlistAddItem } = useWishlistActions();
+  const { showToast } = useToast();
   const { selectedAddress } = useDeliveryLocationState();
   const { openSheet } = useDeliveryLocationActions();
   const [couponCode, setCouponCode] = useState("");
@@ -189,6 +194,37 @@ export function CartV2() {
       router.push("/checkout");
     }
   };
+
+  /**
+   * Move a single cart row to the wishlist. The order matters:
+   *   1. Try `wishlistAddItem` FIRST. If it returns `ok:false` with
+   *      `reason: "already_present"` or `"full"`, surface the toast
+   *      and leave the cart untouched — never silently lose the
+   *      user's only copy of the item.
+   *   2. Only after a successful add, remove the row from the cart
+   *      using the composite (vendor_id, product_id) key so a multi-
+   *      vendor cart can't accidentally hit the wrong row.
+   *
+   * Both branches feed the toast surface (success / info / warning)
+   * so the user gets a clear confirmation either way.
+   */
+  const moveToWishlist = useCallback(
+    (item: CartItem) => {
+      const { product, vendor_id: vendorId } = item;
+      const result = wishlistAddItem(product);
+      if (!result.ok) {
+        if (result.reason === "already_present") {
+          showToast("المنتج موجود بالفعل في المفضلة", "info");
+        } else if (result.reason === "full") {
+          showToast("قائمة المفضلة ممتلئة (الحد 50 منتجاً)", "warning");
+        }
+        return;
+      }
+      removeItem(product.id, vendorId ?? null);
+      showToast("تم نقل المنتج إلى المفضلة", "success");
+    },
+    [wishlistAddItem, removeItem, showToast],
+  );
 
   if (items.length === 0) {
     return (
@@ -336,6 +372,7 @@ export function CartV2() {
               }}
               onUpdateQuantity={updateQuantity}
               onRemove={removeItem}
+              onMoveToWishlist={moveToWishlist}
             />
           )}
 
@@ -345,6 +382,7 @@ export function CartV2() {
               group={group}
               onUpdateQuantity={updateQuantity}
               onRemove={removeItem}
+              onMoveToWishlist={moveToWishlist}
             />
           ))}
         </div>
@@ -536,18 +574,7 @@ export function CartV2() {
 }
 
 interface CartItemCardV2Props {
-  item: {
-    product: {
-      id: string;
-      name_ar: string;
-      image_url?: string | null;
-      price: number;
-      discount_price?: number | null;
-      unit?: string;
-    };
-    quantity: number;
-    vendor_id?: string | null;
-  };
+  item: CartItem;
   /** Composite key — required so the row's quantity/remove actions
    *  don't accidentally hit a different row sharing the same product
    *  UUID under a different vendor. Pass `cartItemKey(item)` from the
@@ -555,9 +582,22 @@ interface CartItemCardV2Props {
   compositeKey: string;
   onUpdateQuantity: (productId: string, quantity: number, vendorId?: string | null) => void;
   onRemove: (productId: string, vendorId?: string | null) => void;
+  /**
+   * "Move to wishlist" handler. Composed at the page level from
+   * `useWishlistActions().addItem` + `useCart().removeItem` so the
+   * composite (vendor_id, product_id) key is preserved and a failure
+   * in the wishlist add doesn't silently lose the cart row.
+   */
+  onMoveToWishlist: (item: CartItem) => void;
 }
 
-function CartItemCardV2({ item, compositeKey, onUpdateQuantity, onRemove }: CartItemCardV2Props) {
+function CartItemCardV2({
+  item,
+  compositeKey,
+  onUpdateQuantity,
+  onRemove,
+  onMoveToWishlist,
+}: CartItemCardV2Props) {
   const product = item.product;
   const productId = product.id;
   const vendorId = item.vendor_id ?? null;
@@ -675,22 +715,21 @@ function CartItemCardV2({ item, compositeKey, onUpdateQuantity, onRemove }: Cart
         </div>
       </div>
 
-      {/* Wishlist Option — disabled placeholder. The wishlist context
-          adds/removes by product id but does not have a "move from
-          cart" shortcut wired up; we render a visual affordance so the
-          card layout matches the rest of the app, but the button is
-          disabled (`cursor-not-allowed`, `aria-disabled`) to make it
-          clear that the action is not implemented yet. Remove this
-          block once the move-to-wishlist handler is rolled out. */}
+      {/* Wishlist Option — moves the row to the wishlist without
+          losing it. The handler composes `addItem` (which returns
+          `{ok, reason}`) and `removeItem` so a failure in the
+          wishlist add (already_present, full) leaves the cart row
+          intact instead of silently dropping it. */}
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
         <button
           type="button"
-          disabled
-          aria-disabled="true"
-          title="نقل للمفضلة — قريباً"
-          className="flex items-center gap-2 text-sm text-gray-400 cursor-not-allowed select-none"
+          onClick={() => onMoveToWishlist(item)}
+          aria-label="نقل للمفضلة"
+          title="نقل للمفضلة"
+          data-testid={`move-to-wishlist-${productId}`}
+          className="flex items-center gap-2 text-sm text-gray-600 hover:text-red-500 transition-colors"
         >
-          <Heart className="w-4 h-4" />
+          <Heart className="w-4 h-4" aria-hidden="true" />
           <span>نقل للمفضلة</span>
         </button>
       </div>
@@ -709,10 +748,12 @@ function VendorGroupSection({
   group,
   onUpdateQuantity,
   onRemove,
+  onMoveToWishlist,
 }: {
   group: VendorGroup;
   onUpdateQuantity: (productId: string, quantity: number, vendorId?: string | null) => void;
   onRemove: (productId: string, vendorId?: string | null) => void;
+  onMoveToWishlist: (item: CartItem) => void;
 }) {
   const label = group.isCityMarkets
     ? "أسواق سيتي"
@@ -752,6 +793,7 @@ function VendorGroupSection({
             compositeKey={cartItemKey(item)}
             onUpdateQuantity={onUpdateQuantity}
             onRemove={onRemove}
+            onMoveToWishlist={onMoveToWishlist}
           />
         ))}
       </div>
