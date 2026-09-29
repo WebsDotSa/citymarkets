@@ -12,6 +12,12 @@ import {
   ORDER_STATUS_DISPLAY,
 } from '@/lib/orders';
 import {
+  ORDER_BASE_COLUMNS,
+  ORDER_ADDRESS_COLUMNS_MINIMAL,
+  ORDER_USER_COLUMNS,
+  ORDER_DETAIL_JOINS,
+} from '@/lib/orders/sql-fragments';
+import {
   renderInvoicePdf,
   invoiceFilename,
 } from "@/server/invoice-pdf-server";
@@ -79,18 +85,11 @@ export async function GET(
   const client = await pool.connect();
   try {
     const ord = await client.query(
-      `SELECT o.id, o.status, o.type,
-              o.subtotal::float as subtotal, o.delivery_fee::float as delivery_fee,
-              o.service_fee::float as service_fee, o.tax::float as tax,
-              o.discount::float as discount, o.total::float as total,
-              o.payment_method, o.payment_status, o.created_at,
-              o.guest_name, o.guest_phone,
-              o.tracking_code,
-              u.name as user_name, u.phone as user_phone,
-              a.label as address_label, a.address_text
-       FROM orders o
-       LEFT JOIN users u ON u.id = o.user_id
-       LEFT JOIN addresses a ON a.id = o.address_id
+      `SELECT ${ORDER_BASE_COLUMNS},
+              o.type, o.tracking_code,
+              ${ORDER_ADDRESS_COLUMNS_MINIMAL},
+              ${ORDER_USER_COLUMNS}
+       ${ORDER_DETAIL_JOINS}
        WHERE o.id = $1
        LIMIT 1`,
       [orderId]

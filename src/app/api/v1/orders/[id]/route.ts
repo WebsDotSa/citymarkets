@@ -6,6 +6,12 @@ import {
   idempotencyKeyFromQuery,
 } from '@/lib/orders';
 import { error as logError } from '@/lib/logger';
+import {
+  ORDER_BASE_COLUMNS,
+  ORDER_ADDRESS_COLUMNS,
+  ORDER_USER_COLUMNS,
+  ORDER_DETAIL_JOINS_WITH_META,
+} from '@/lib/orders/sql-fragments';
 
 /**
  * GET /api/v1/orders/[id]
@@ -30,23 +36,17 @@ export async function GET(
   const client = await pool.connect();
   try {
     const ord = await client.query(
-      `SELECT o.id, o.tracking_code AS order_number, o.status, o.type, o.subtotal::float, o.delivery_fee::float,
-              o.service_fee::float, o.tax::float, o.discount::float, o.total::float,
-              o.payment_method, o.payment_status, o.notes, o.created_at, o.updated_at,
+      `SELECT ${ORDER_BASE_COLUMNS},
+              o.tracking_code AS order_number, o.type,
               o.scheduled, o.scheduled_for, o.slot_window,
               o.voice_note_url, o.voice_note_duration,
               o.user_id::text as user_id,
-              o.guest_name, o.guest_phone,
-              u.name as user_name, u.phone as user_phone,
-              a.label as address_label, a.address_text, a.lat as address_lat, a.lng as address_lng,
-              a.plus_code as address_plus_code, a.description as address_description,
-              COALESCE(a.place_images, '{}') as address_place_images,
+              a.plus_code as address_plus_code,
+              ${ORDER_ADDRESS_COLUMNS},
+              ${ORDER_USER_COLUMNS},
               m.delivery_lat, m.delivery_lng, m.delivery_plus_code, m.city, m.district,
               m.customer_edited, m.last_edited_at, m.fee_acknowledged
-       FROM orders o
-       LEFT JOIN addresses a ON o.address_id = a.id
-       LEFT JOIN direct_order_meta m ON m.order_id = o.id
-       LEFT JOIN users u ON u.id = o.user_id
+       ${ORDER_DETAIL_JOINS_WITH_META}
        WHERE o.id = $1
        LIMIT 1`,
       [orderId]

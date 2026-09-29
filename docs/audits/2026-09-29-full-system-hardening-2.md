@@ -135,6 +135,39 @@ These were identified during the audit but are out of scope for this branch:
 
 ---
 
+## Items Closed (post-audit, on `refactor/state-machine-centralization`)
+
+The branch closed **8 of the 10 deferred items** above. P2-7 is deferred
+(awaiting APNs/FCM credentials) and P3-3 had nothing to fix.
+
+| Item | Status | Commit | Notes |
+|---|---|---|---|
+| P2-1 | ✅ closed | `01ab365` | `src/lib/orders/state-machine.ts` (~350 LoC) — single source of truth for order/vendor_order/payment state transitions per role. 36 tests. |
+| P2-2 | ✅ closed | `f4dff96` | `vendorOrderStatusSchema` applied at the vendor PATCH boundary. |
+| P2-3 | ✅ closed | `29b9c08` | `src/lib/identity/address-service.ts` (~300 LoC) — discriminated-union owner, transaction-wrapped default-toggle, 14 tests. |
+| P2-4 | ✅ closed | `e261ca3` | `migrations/076_wishlist_server_persistence.sql` + `src/lib/identity/wishlist-service.ts` (~300 LoC) + API routes + 22 tests. |
+| P2-5 | ✅ closed | `422af33` | `src/lib/cart/pricing.ts` — central unit-price formula wrapping `@/lib/catalog/offers`. Cart GET now delegates. 17 tests. |
+| P2-6 | ✅ closed | `0438f68` | Stock decrement UPDATE gained `AND stock_quantity >= $1` guard + rowCount check. Returns `stock_insufficient` (HTTP 409) on the race. 1 test. |
+| P2-7 | ⏸ deferred | — | APNs/FCM senders still stubbed. Provider abstraction in place (`@/lib/native-push`); concrete sends require credentials. |
+| P3-1 | ✅ closed | `86e834e` | Dead `notifyAdminNewOrderJobId` helper removed. |
+| P3-2 | ✅ closed | `86e834e` | `fetchOrderStatuses()` helper in `moyasar-confirm.ts` replaces 3 inline duplicates. |
+| P3-3 | ✅ n/a | — | Only `console.debug` in `src/lib/logger.ts` (intentional); no leftovers to remove. |
+
+**Bonus**: `b6fa409` and `2a00ce7` carry two additional cleanups:
+- State-machine display config gained a `hex` field so callers can render
+  inline `style={{ color }}` (the legacy `STATUS_COLORS` map in the
+  direct-order pages now lives in one place).
+- Dead `src/app/vendors/[slug]/success/page.tsx` removed (no callers).
+- Vendor order-number generator consolidated to `src/lib/orders/order-number.ts`
+  using `crypto.randomInt` (CSPRNG) — closes the birthday-paradox
+  collision risk in the legacy Math.random() + 5-digit version.
+
+**Verification (this branch)**:
+- tsc: 9 errors (baseline; no new errors)
+- tests: 1891/1891 pass (was 1795 at branch start; +96 tests)
+
+---
+
 ## Files Changed (103 files, +8756 −978 lines since `main`)
 
 The 7 hardening commits added 7 changed files; the remaining 96 files are from the pre-existing branch work that already merged as PR #5 (migration integrity) and PR #7 (production-completion).

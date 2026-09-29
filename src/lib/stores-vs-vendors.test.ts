@@ -62,10 +62,15 @@ const storesSqlRef = /\b(FROM|JOIN|INTO|UPDATE|DELETE\s+FROM|TABLE)\s+stores\b/i
 const vendorsSqlRef = /\b(FROM|JOIN|INTO|UPDATE|DELETE\s+FROM|TABLE)\s+vendors\b/i;
 
 describe("stores vs vendors — domain boundary", () => {
-  it("stores SQL is only used by the delivery/quote + admin/stores routes", () => {
+  it("stores SQL is only used by the canonical main-store helper + admin/stores routes", () => {
+    // After P3-2 (dedup of main-store SELECT) the SQL lives in a single
+    // helper, `@/lib/delivery/main-store.ts`, and is consumed by the
+    // legacy POST /api/v1/orders, the multi-vendor /api/v1/checkout
+    // (via `runCheckout`), and the public delivery-quote route. The
+    // helper is the single writer of the "fetch main store + distance"
+    // query — the assertion below verifies that.
     const storesQueryFiles = [
-      "src/app/api/v1/delivery/quote/route.ts",
-      "src/app/api/v1/delivery/route.ts",
+      "src/lib/delivery/main-store.ts",
       "src/app/api/admin/stores/route.ts",
     ];
     for (const f of storesQueryFiles) {
