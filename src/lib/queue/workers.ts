@@ -108,6 +108,19 @@ export function registerQueueWorkers(): RegisterResult {
       },
       { connection: conn, concurrency: 4 },
     ),
+
+    new Worker(
+      QUEUE_NAMES.NOTIFY_VENDOR_NEW_ORDER,
+      async (job: Job<{ vendorId: string; orderId: string | number }>) => {
+        const { notifyVendorNewOrder } = await import("@/lib/orders/notify-vendor");
+        const result = await notifyVendorNewOrder({
+          vendorId: job.data.vendorId,
+          parentOrderId: String(job.data.orderId),
+        });
+        return result;
+      },
+      { connection: conn, concurrency: 4 },
+    ),
   ];
 
   return { queues: registered.length, workers: registered.length, redisEnabled: true };

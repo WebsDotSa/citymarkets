@@ -14,6 +14,7 @@ import { getRedisConnection } from "./redis";
 
 export const QUEUE_NAMES = {
   NOTIFY_ADMIN_NEW_ORDER: "notify-admin-new-order",
+  NOTIFY_VENDOR_NEW_ORDER: "notify-vendor-new-order",
   SEND_ORDER_PAID_SMS: "send-order-paid-sms",
 } as const;
 
@@ -52,4 +53,27 @@ export function notifyAdminNewOrderJobId(orderId: string | number): string {
 
 export function makeNotifyAdminNewOrderOptions(orderId: string | number): JobsOptions {
   return defaultJobOptions(orderId);
+}
+
+/**
+ * Vendor new-order job IDs are keyed by `${vendorId}:${orderId}` so a
+ * single parent order fanning out to N vendors enqueues N distinct
+ * jobs — but the same (vendor, order) pair never fires twice if the
+ * webhook replays.
+ */
+export function notifyVendorNewOrderJobId(args: { vendorId: string; orderId: string | number }): string {
+  return `vendor:${args.vendorId}:order:${args.orderId}`;
+}
+
+export function makeNotifyVendorNewOrderOptions(args: { vendorId: string; orderId: string | number }): JobsOptions {
+  // Same retry/TTL policy as the other queues — vendor push is best-
+  // effort but losing it means the vendor misses the order until they
+  // manually refresh the dashboard.
+  return {
+    jobId: notifyVendorNewOrderJobId(args),
+    attempts: 5,
+    backoff: { type: "exponential", delay: 1000 },
+    removeOnComplete: { age: 24 * 3600, count: 1000 },
+    removeOnFail: { age: 7 * 24 * 3600 },
+  };
 }

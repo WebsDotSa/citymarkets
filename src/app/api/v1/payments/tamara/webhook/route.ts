@@ -332,6 +332,32 @@ export async function POST(request: NextRequest) {
       logError("[tamara] push notify failed", e);
     }
 
+    // ---- 6b. Vendor push notification (Gap D closure) ----
+    // Fires only on a successful payment and only once per (vendor,
+    // order) pair: the queue is keyed by
+    // `vendor:<vendorId>:order:<orderId>` so a webhook replay that
+    // re-enqueues hits BullMQ's idempotency guard. Fire-and-forget —
+    // never block the gateway ack on push dispatch.
+    if (paymentDb === "paid") {
+      try {
+        const { enqueueNotifyVendorNewOrder } = await import("@/lib/queue");
+        const vendorRows = await pool.query<{ vendor_id: string }>(
+          `SELECT vendor_id::text AS vendor_id
+             FROM vendor_orders
+            WHERE parent_order_id = $1`,
+          [orderId]
+        );
+        for (const row of vendorRows.rows) {
+          void enqueueNotifyVendorNewOrder({
+            vendorId: row.vendor_id,
+            orderId,
+          });
+        }
+      } catch (notifyErr) {
+        logError("[tamara] vendor notify enqueue failed", notifyErr, { orderId });
+      }
+    }
+
     // ---- 7. Fire-and-forget post-payment SMS ----
     if (paymentDb === "paid" && recoveredCount > 0) {
       try {

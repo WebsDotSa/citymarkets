@@ -14,7 +14,7 @@
 
 
 // ── Public enqueue API ──────────────────────────────────────────────────
-export { enqueueAdminNewOrder, enqueueOrderPaidSms } from "./enqueue";
+export { enqueueAdminNewOrder, enqueueOrderPaidSms, enqueueNotifyVendorNewOrder } from "./enqueue";
 
 // ── Queue state introspection ───────────────────────────────────────────
 export { isQueueEnabled } from "./redis";

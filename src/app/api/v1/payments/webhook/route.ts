@@ -100,6 +100,10 @@ export async function POST(request: NextRequest) {
     const remoteStatus = remote.status ?? '';
 
     const client = await pool.connect();
+    // Hoisted to outer scope so the post-COMMIT vendor push fan-out
+    // can read it without TS narrowing the inner try scope. The inner
+    // assignment below is the only place this is written.
+    let orderId: string | undefined;
 
     try {
       // SECURITY: Wrap per-order processing in a transaction with an
@@ -143,7 +147,7 @@ export async function POST(request: NextRequest) {
 
       // Hoisted so the post-processing finalize (payment_events.status)
       // can see the order id even when the original SELECT returned 0 rows.
-      const orderId: string | undefined = order.rows[0]?.id;
+      orderId = order.rows[0]?.id;
 
       if (orderId) {
 
@@ -358,6 +362,56 @@ export async function POST(request: NextRequest) {
           });
         } catch (finalErr) {
           logError('[event-ledger] finalize failed', finalErr, { invoiceId, orderId });
+        }
+      }
+
+      return NextResponse.json({ received: true });
+    // Mark the ledger row as processed for the order we just updated.
+      // orderId is in scope from the SELECT above; if no matching order
+      // was found, leave order_id NULL and finalize anyway — operators
+      // can correlate from raw_payload.invoice_id.
+      if (typeof orderId === 'string') {
+        try {
+          await finalizePaymentEvent(client, {
+            invoiceId,
+            gateway: 'moyasar',
+            eventType,
+            status: 'processed',
+            orderId,
+          });
+        } catch (finalErr) {
+          logError('[event-ledger] finalize failed', finalErr, { invoiceId, orderId });
+        }
+      }
+
+      // Vendor push notification (Gap D closure — production-completion
+      // audit). Fires only on a successful payment and only once per
+      // (vendor, order) pair: the queue is keyed by
+      // `vendor:<vendorId>:order:<orderId>` so a webhook replay that
+      // re-enqueues hits BullMQ's idempotency guard. Fire-and-forget —
+      // never block the gateway ack on push dispatch.
+      if (orderId && (remoteStatus === 'paid' || remoteStatus === 'captured')) {
+        // `orderId` is narrowed to `string` by the if-check; use a
+        // local const to keep the narrowing across the awaited DB query.
+        const orderIdLocal: string = orderId as string;
+        try {
+          const { enqueueNotifyVendorNewOrder } = await import('@/lib/queue');
+          const vendorRows = await client.query<{ vendor_id: string }>(
+            `SELECT vendor_id::text AS vendor_id
+               FROM vendor_orders
+              WHERE parent_order_id = $1`,
+            [orderIdLocal]
+          );
+          for (const row of vendorRows.rows) {
+            // void = fire-and-forget; the helper returns immediately
+            // (BullMQ enqueue or Redis-disabled inline fallback).
+            void enqueueNotifyVendorNewOrder({
+              vendorId: row.vendor_id,
+              orderId: orderIdLocal,
+            });
+          }
+        } catch (notifyErr) {
+          logError('[notify-vendor] enqueue failed', notifyErr, { orderId });
         }
       }
 
