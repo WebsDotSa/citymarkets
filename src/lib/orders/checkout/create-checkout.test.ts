@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createCheckout } from '@/lib/checkout/create-checkout';
+import { createCheckout } from './create-checkout';
 import type { PoolClient } from 'pg';
 import { CITY_MARKETS_VENDOR_ID } from '@/lib/types';
-import type { DeliveryAddressRow } from '@/lib/checkout/resolve-address';
+import type { DeliveryAddressRow } from './resolve-address';
 
 type QueryCall = { sql: string; params: unknown[] };
 

@@ -3,7 +3,7 @@ import {
   computeOrderFees,
   computeCouponDiscount,
   computeLoyaltyRedemption,
-} from '@/lib/pricing';
+} from './pricing';
 
 // Migration 060 — `PricingSettings` no longer carries zone-pricing
 // knobs. Only `serviceFee*` + `tax*` remain (delivery fee is now

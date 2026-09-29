@@ -3,8 +3,8 @@ import {
   computeParentServiceFee,
   computeCheckoutTotals,
   type VendorCheckoutGroup,
-} from '@/lib/checkout/pricing';
-import type { CouponRow, PricingSettings } from '@/lib/pricing';
+} from './pricing';
+import type { CouponRow, PricingSettings } from '../pricing';
 
 const basePricing: PricingSettings = {
   serviceFeeEnabled: true,
