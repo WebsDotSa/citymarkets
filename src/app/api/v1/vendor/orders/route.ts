@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { ALL_VENDOR_ORDER_STATES } from "@/lib/orders/state-machine";
 
 export async function GET(request: Request) {
   try {
@@ -110,15 +111,11 @@ export async function GET(request: Request) {
         total: parseInt(countResult.rows[0].total),
         totalPages: Math.ceil(parseInt(countResult.rows[0].total) / limit),
       },
-      statusCounts: {
-        pending: statusMap.pending || 0,
-        confirmed: statusMap.confirmed || 0,
-        preparing: statusMap.preparing || 0,
-        ready: statusMap.ready || 0,
-        out_for_delivery: statusMap.out_for_delivery || 0,
-        delivered: statusMap.delivered || 0,
-        cancelled: statusMap.cancelled || 0,
-      },
+      // Derived from `ALL_VENDOR_ORDER_STATES` (audit C15) so adding a new
+      // vendor-status key only requires editing the state machine.
+      statusCounts: Object.fromEntries(
+        ALL_VENDOR_ORDER_STATES.map((s) => [s, statusMap[s] || 0]),
+      ),
     });
   } catch (error) {
     logError("Vendor orders error:", error);

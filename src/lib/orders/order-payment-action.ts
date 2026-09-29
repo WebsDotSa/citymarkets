@@ -16,6 +16,7 @@
  * backend status never silently exposes a broken CTA.
  */
 import { ONLINE_RETRY_METHODS } from "@/lib/payments/payment-methods";
+import { ALL_ORDER_STATES } from "./state-machine";
 
 export type OrderPaymentAction = "pay" | "retry" | "none";
 
@@ -37,13 +38,11 @@ const TERMINAL_ORDER_STATUSES = new Set(["delivered"]);
 // Backend enum (multi-vendor) — drive any UI gating off this list. Unknown
 // values (typos, brand-new statuses) must fail closed to "none" so a stale
 // client never exposes a CTA for an order that no longer maps to anything.
-const KNOWN_ORDER_STATUSES = new Set([
-  "pending",
-  "confirmed",
-  "shopping",
-  "on_the_way",
-  "delivered",
-  "cancelled",
+// Derived from `ALL_ORDER_STATES` (audit S3) plus the legacy `paid` alias
+// that still appears in older `orders.status` rows predating the
+// fulfillment-vs-payment split.
+const KNOWN_ORDER_STATUSES: ReadonlySet<string> = new Set<string>([
+  ...ALL_ORDER_STATES,
   "paid",
 ]);
 
