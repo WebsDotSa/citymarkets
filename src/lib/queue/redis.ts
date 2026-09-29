@@ -10,6 +10,7 @@
  * working without Redis.
  */
 import IORedis, { type Redis as IORedisInstance } from "ioredis";
+import { warn } from "@/lib/logger";
 
 let cached: IORedisInstance | null = null;
 let connectionAttempted = false;
@@ -34,8 +35,10 @@ export function getRedisConnection(): IORedisInstance | null {
       // First error marks the connection as failed so we don't spam logs.
       if (!connectionFailed) {
         connectionFailed = true;
-        // eslint-disable-next-line no-console
-        console.warn("[queue] Redis connection failed, enqueue helpers will run synchronously:", err.message);
+        // Audit I39: routed through the canonical logger. The original
+        // `console.warn` bypassed the LOG_LEVEL gate and would fire
+        // once-per-process in production if Redis blipped.
+        warn("[queue] Redis connection failed, enqueue helpers will run synchronously", { reason: err.message });
         cached?.disconnect();
         cached = null;
       }

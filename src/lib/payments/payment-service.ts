@@ -45,16 +45,10 @@ function buildRateLimitHeaders(result: RateLimitResult): Record<string, string> 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const MAX_IDEMPOTENCY_KEY = 64;
 
-// Operator decision (2026-09-20): stc_pay removed from the retry picker.
-// `bank_transfer` is intentionally absent — it is not retryable via
-// the retry endpoint; the customer must re-confirm through the admin.
-export const ONLINE_RETRY_METHODS = new Set([
-  "mada",
-  "visa",
-  "mastercard",
-  "amex",
-  "apple_pay",
-]);
+// Re-exported under its legacy name for callers that import
+// `ONLINE_RETRY_METHODS` from `@/lib/payments/payment-service`. Canonical
+// source is `ONLINE_RETRY_METHODS_SET` in `@/lib/payments/payment-methods`.
+export { ONLINE_RETRY_METHODS_SET as ONLINE_RETRY_METHODS } from "@/lib/payments/payment-methods";
 
 export type PaymentServiceResult<T> =
   | { kind: "ok"; value: T }

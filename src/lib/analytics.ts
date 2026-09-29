@@ -279,6 +279,12 @@ export const analytics = {
       // Dev-mode reminder; production must stay silent so missing config
       // doesn't leak into user-facing logs.
       if (typeof process !== "undefined" && process.env && process.env.NODE_ENV === "development") {
+        // Audit I39: kept as raw `console.warn` because this module is
+        // imported by client bundles (no Node `process.env` access at
+        // module top level). The surrounding `NODE_ENV === "development"`
+        // guard already keeps it silent in production builds, which is
+        // the same effective behaviour as the canonical logger's
+        // LOG_LEVEL gate.
         // eslint-disable-next-line no-console
         console.warn("[analytics] init() called with no GA4 tracking id; GA events will be dropped.");
       }

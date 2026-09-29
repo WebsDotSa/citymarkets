@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bell, BellOff } from "lucide-react";
+import { warn } from "@/lib/logger";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -26,7 +27,8 @@ export async function subscribeToPush(): Promise<boolean> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
   const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   if (!vapidKey) {
-    console.warn("[push] NEXT_PUBLIC_VAPID_PUBLIC_KEY not set; cannot subscribe.");
+    // Audit I39: canonical logger.
+    warn("[push] NEXT_PUBLIC_VAPID_PUBLIC_KEY not set; cannot subscribe.");
     return false;
   }
   const perm = await ensurePermission();

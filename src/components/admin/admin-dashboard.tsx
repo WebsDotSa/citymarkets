@@ -25,6 +25,7 @@ import { formatPrice } from "@/lib/utils";
 import { countsAsElectronicRevenue } from '@/lib/orders';
 import { ORDER_STATUSES } from '@/lib/orders';
 import { StatCard } from "@/components/admin/admin-header";
+import { error as logError } from "@/lib/logger";
 
 const fetchOpts: RequestInit = { credentials: "include" };
 
@@ -262,7 +263,8 @@ export function AdminDashboard() {
         }))
       );
     } catch (err) {
-      console.error("Dashboard load error:", err);
+      // Audit I39: canonical logger.
+      logError("Dashboard load error", err);
     } finally {
       setLoading(false);
     }

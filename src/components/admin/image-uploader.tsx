@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Upload, X, Image as ImageIcon, Loader2, AlertCircle } from "lucide-react";
 import { csrfFetch } from "@/lib/csrf-client";
 import { compressImageForUpload } from "@/lib/image-compress";
+import { error as logError } from "@/lib/logger";
 
 interface ImageUploaderProps {
   value: string;
@@ -83,7 +84,8 @@ export function ImageUploader({
         setError(result.error || "فشل رفع الصورة");
       }
     } catch (err: any) {
-      console.error("Upload error:", err);
+      // Audit I39: canonical logger.
+      logError("Upload error", err);
       if (err.name === "AbortError") {
         setError("انتهت مهلة الرفع. جرّب مرة أخرى.");
       } else {
@@ -103,7 +105,8 @@ export function ImageUploader({
           credentials: "include",
         });
       } catch (err) {
-        console.error("Delete error:", err);
+        // Audit I39: canonical logger.
+        logError("Delete error", err);
       }
     }
     onChange("");

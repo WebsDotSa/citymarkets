@@ -14,7 +14,7 @@ import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
 import { apiFetch } from '@/lib/catalog';
 import { groupCartItems } from "@/lib/catalog";
-import { PAYMENT_METHODS_UI } from "@/lib/payments/payment-methods";
+import { PAYMENT_METHODS_UI, ONLINE_RETRY_METHODS_SET } from "@/lib/payments/payment-methods";
 import type { CouponValidateResult } from "@/lib/types";
 import { AvailableCoupons } from "@/components/pages/coupons/AvailableCoupons";
 import { trackBeginCheckout } from "@/lib/ga-events";
@@ -69,22 +69,11 @@ interface Address {
 type CouponResult = CouponValidateResult;
 
 /**
- * The set of payment methods that should mount the inline Moyasar form
- * (publishable-key flow). Anything outside this set either goes to a
- * hosted invoice (`payment_url`) or skips the gateway entirely
- * (cash / bank_transfer / wallet). Kept at module scope so the
- * checkout effect doesn't need to recreate it on each call.
+ * Re-exported under the local name `INLINE_MOYASAR_METHODS` for clarity at
+ * call sites — the canonical Set lives at `@/lib/payments/payment-methods`.
  */
-const INLINE_MOYASAR_METHODS: ReadonlySet<string> = new Set([
-  "mada",
-  "visa",
-  "mastercard",
-  "amex",
-  "apple_pay",
-]);
-
 function isInlineMoyasarMethod(method: string): boolean {
-  return INLINE_MOYASAR_METHODS.has(method);
+  return ONLINE_RETRY_METHODS_SET.has(method);
 }
 
 // Operator decision (2026-09-20): cash, stc_pay, tamara removed from the

@@ -13,6 +13,7 @@
 
 import { useEffect } from 'react';
 import { isProd } from '@/lib/env';
+import { info, warn } from "@/lib/logger";
 
 /**
  * Each tool registers via `navigator.modelContext.registerTool(name, def)`
@@ -169,8 +170,8 @@ export function WebMCPProvider() {
 
     if (!nav?.modelContext || typeof nav.modelContext.registerTool !== "function") {
       if (!isProd) {
-        // eslint-disable-next-line no-console
-        console.info(
+        // Audit I39: canonical logger; still dev-gated by isProd.
+        info(
           "[WebMCP] navigator.modelContext.registerTool not available — skipping tool registration"
         );
       }
@@ -190,17 +191,16 @@ export function WebMCPProvider() {
         });
       } catch (e) {
         if (!isProd) {
-          // eslint-disable-next-line no-console
-          console.warn(`[WebMCP] failed to register ${tool.name}:`, (e as Error).message);
+          // Audit I39: canonical logger; still dev-gated by isProd.
+          warn(`[WebMCP] failed to register ${tool.name}`, { reason: (e as Error).message });
         }
       }
     }
 
     if (!isProd) {
-      // eslint-disable-next-line no-console
-      console.info(
-        `[WebMCP] registered ${cityMarketsTools.length} tools:`,
-        cityMarketsTools.map((t) => t.name).join(", ")
+      // Audit I39: canonical logger; still dev-gated by isProd.
+      info(
+        `[WebMCP] registered ${cityMarketsTools.length} tools: ${cityMarketsTools.map((t) => t.name).join(", ")}`
       );
     }
   }, []);

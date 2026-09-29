@@ -15,6 +15,7 @@
  * The logic intentionally fails closed on unknown values so a brand-new
  * backend status never silently exposes a broken CTA.
  */
+import { ONLINE_RETRY_METHODS } from "@/lib/payments/payment-methods";
 
 export type OrderPaymentAction = "pay" | "retry" | "none";
 
@@ -25,24 +26,11 @@ export interface OrderPaymentActionInput {
 }
 
 /**
- * The set of online methods the /orders "pay / retry" CTA is allowed to
- * initiate. The "tamara" provider is an order-level BNPL choice made at
- * checkout and intentionally NOT in this list — repaying a Tamara order
- * is a manual support flow.
- *
- * `stc_pay` was removed from the operator-facing picker on 2026-09-20 —
- * it is intentionally absent here so a stale client cannot silently
- * re-introduce it. `bank_transfer` is also absent because manual bank
- * transfers are not retryable via this endpoint; the customer must
- * re-confirm through admin.
+ * Re-exported under its legacy alias for callers that import
+ * `ONLINE_RETRYABLE_METHODS` from `@/lib/orders`. Canonical source is
+ * `ONLINE_RETRY_METHODS` in `@/lib/payments/payment-methods`.
  */
-export const ONLINE_RETRYABLE_METHODS = [
-  "mada",
-  "visa",
-  "mastercard",
-  "amex",
-  "apple_pay",
-] as const;
+export const ONLINE_RETRYABLE_METHODS = ONLINE_RETRY_METHODS;
 
 const TERMINAL_PAYMENT_STATUSES = new Set(["paid", "completed", "refunded"]);
 const TERMINAL_ORDER_STATUSES = new Set(["delivered"]);

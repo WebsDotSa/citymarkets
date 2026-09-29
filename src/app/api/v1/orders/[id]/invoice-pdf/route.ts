@@ -180,14 +180,18 @@ export async function GET(
     // Catch-all logging: @react-pdf/renderer occasionally throws
     // non-Error objects, so capture every common shape.
     const e = err as { name?: string; message?: string; stack?: string };
-    console.error("[invoice-pdf] render failed", {
-      orderId,
-      name: e?.name,
-      message: e?.message,
-      stack: e?.stack?.slice(0, 1000),
-      raw: typeof err === "object" ? JSON.stringify(err) : String(err),
-    });
-    logError("invoice PDF render failed", err, { orderId });
+    // Audit I39: routed through the canonical logger.
+    logError(
+      "[invoice-pdf] render failed",
+      err,
+      {
+        orderId,
+        name: e?.name,
+        message: e?.message,
+        stack: e?.stack?.slice(0, 1000),
+        raw: typeof err === "object" ? JSON.stringify(err) : String(err),
+      },
+    );
     return NextResponse.json(
       { success: false, error: "تعذر إنشاء ملف PDF" },
       { status: 500 }

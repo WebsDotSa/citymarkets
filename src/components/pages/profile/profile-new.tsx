@@ -8,6 +8,7 @@ import { useWishlistState } from "@/contexts/wishlist-context";
 import { useDeliveryLocationActions } from "@/contexts/delivery-location-context";
 import { useConfirm } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
+import { error as logError } from "@/lib/logger";
 import {
   User,
   Phone,
@@ -329,7 +330,8 @@ export function AddressesNew() {
         setAddresses((prev) => prev.filter((a) => a.id !== id));
       }
     } catch (error) {
-      console.error("Error deleting address:", error);
+      // Audit I39: canonical logger.
+      logError("Error deleting address", error);
     }
   };
 
@@ -342,7 +344,8 @@ export function AddressesNew() {
         );
       }
     } catch (error) {
-      console.error("Error setting default:", error);
+      // Audit I39: canonical logger.
+      logError("Error setting default", error);
     }
   };
 
@@ -541,7 +544,8 @@ function AddressFormModal({ onClose }: { onClose: () => void }) {
         setLocationStatus(body?.error || "تعذّر حفظ العنوان");
       }
     } catch (error) {
-      console.error("Error saving address:", error);
+      // Audit I39: canonical logger.
+      logError("Error saving address", error);
       setLocationStatus("تعذّر حفظ العنوان — حاول مرة أخرى");
     } finally {
       setSaving(false);

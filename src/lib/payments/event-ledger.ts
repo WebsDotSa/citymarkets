@@ -30,6 +30,7 @@
  */
 
 import type { PoolClient } from "pg";
+import { warn, error } from "@/lib/logger";
 
 export type PaymentGateway = "moyasar" | "tamara" | "cod";
 
@@ -59,11 +60,17 @@ export async function recordPaymentEvent(
     try {
       rawPayload = JSON.stringify(args.raw);
     } catch (serialiseErr) {
-      // eslint-disable-next-line no-console
-      console.warn(
+      // Audit I39: canonical logger. The previous inline console.warn
+      // bypassed the LOG_LEVEL gate and would fire in production.
+      warn(
         "[payment-events] raw payload not JSON-serialisable, storing placeholder",
         { invoiceId: args.invoiceId, gateway: args.gateway, eventType: args.eventType },
+      );
+      // Pass the serialise error to the error sink so we don't lose it.
+      error(
+        "[payment-events] serialise error",
         serialiseErr,
+        { invoiceId: args.invoiceId, gateway: args.gateway, eventType: args.eventType },
       );
       rawPayload = JSON.stringify({
         __unserialisable: true,

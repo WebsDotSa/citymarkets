@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Printer, Download, Loader2 } from "lucide-react";
+import { error as logError } from "@/lib/logger";
 // PDF rendering happens on the server via
 // /api/v1/orders/[id]/invoice-pdf (Node runtime). This component is just
 // a thin client: trigger print, or fetch the binary and hand it to the
@@ -122,7 +123,8 @@ export function InvoiceActions(props: InvoiceActionsProps) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("[invoice-actions] PDF generation failed:", err);
+      // Audit I39: canonical logger.
+      logError("[invoice-actions] PDF generation failed", err);
       showToast("تعذّر إنشاء ملف PDF. حاول مرة أخرى.", "error");
     } finally {
       setDownloading(false);

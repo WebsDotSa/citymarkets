@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Download, X } from "lucide-react";
+import { warn } from "@/lib/logger";
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -21,7 +22,8 @@ export function PWAProvider() {
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
       navigator.serviceWorker
         .register("/sw.js", { scope: "/" })
-        .catch((err) => console.warn("[pwa] sw registration failed:", err));
+        // Audit I39: canonical logger.
+        .catch((err) => warn("[pwa] sw registration failed", { reason: err?.message ?? String(err) }));
     }
 
     // Listen for install prompt.
