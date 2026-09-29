@@ -7,7 +7,12 @@
 import { pool } from '../src/lib/db';
 import { sendPushToUser } from '../src/lib/push';
 import { processBroadcasts } from '../src/lib/broadcasts/worker';
-import { registerQueueWorkers, closeQueueWorkers, isQueueEnabled } from '../src/lib/queue';
+// Deep-import (NOT the @/lib/queue barrel) because the barrel starts
+// with `import "server-only"` which throws when the file is loaded by
+// plain tsx outside of Next.js — the worker is a long-lived Node
+// process, not an App-Router route. See src/lib/queue/index.ts.
+import { registerQueueWorkers, closeQueueWorkers } from '../src/lib/queue/workers';
+import { isQueueEnabled } from '../src/lib/queue/redis';
 
 interface ScheduledTask {
   name: string;
