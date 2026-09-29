@@ -1,4 +1,6 @@
-/** أسماء الكوكيز فقط — آمن للاستيراد من Edge (middleware) بدون jsonwebtoken / pg */
-export const CUSTOMER_SESSION_COOKIE = "customer_session";
-export const VENDOR_SESSION_COOKIE = "vendor_session";
-export const ADMIN_SESSION_COOKIE = "admin_session";
+/**
+ * @deprecated Use `@/lib/identity/auth-cookie-name` or `@/lib/identity` instead.
+ * This shim re-exports the moved module to keep existing imports working.
+ * Will be removed in a future cleanup pass.
+ */
+export * from "./identity/auth-cookie-name";
