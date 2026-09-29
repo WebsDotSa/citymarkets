@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { csrfFetch } from "@/lib/csrf-client";
+import { useVendorRole } from "../_lib/vendor-role-context";
 
 interface SettingsPageProps {
   params: Promise<{ slug: string }>;
@@ -41,6 +42,8 @@ interface VendorSettings {
 
 export default function VendorSettingsPage({ params }: SettingsPageProps) {
   const { slug } = use(params);
+  const { canDo, isReadOnly } = useVendorRole();
+  const canManage = canDo("manage_settings");
   const [settings, setSettings] = useState<VendorSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -150,7 +153,22 @@ export default function VendorSettingsPage({ params }: SettingsPageProps) {
         <p className="text-gray-500">إعدادات المتجر وطرق الدفع</p>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6">
+      {isReadOnly && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+        >
+          وضع القراءة فقط — لا يمكنك تعديل الإعدادات بهذه الصلاحية. اطلب من المالك أو المدير إجراء التغييرات.
+        </div>
+      )}
+
+      <form onSubmit={handleSave} className="space-y-6" aria-disabled={!canManage}>
+        {/* `fieldset disabled` cascades: every input/select/checkbox
+            below becomes read-only when the role lacks
+            `manage_settings`, so a staff/viewer can't even attempt
+            to mutate the form. */}
+        <fieldset disabled={!canManage} className="space-y-6 m-0 p-0 border-0">
         {/* Basic Info */}
         <div className="bg-white rounded-2xl p-6 space-y-4">
           <h2 className="font-bold text-gray-900">معلومات المتجر</h2>
@@ -321,7 +339,7 @@ export default function VendorSettingsPage({ params }: SettingsPageProps) {
                 value={formData.deliveryFeeOverride || ""}
                 onChange={(e) => setFormData({ ...formData, deliveryFeeOverride: e.target.value })}
                 className="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none"
-                placeholder="اتركه فارغاً لاستخدام默认值"
+                placeholder="اتركه فارغاً لاستخدام الافتراضي"
               />
             </div>
           </div>
@@ -399,13 +417,20 @@ export default function VendorSettingsPage({ params }: SettingsPageProps) {
         )}
 
         {/* Submit */}
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 disabled:opacity-50 transition"
-        >
-          {saving ? "جاري الحفظ..." : "حفظ الإعدادات"}
-        </button>
+        {canManage ? (
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 disabled:opacity-50 transition"
+          >
+            {saving ? "جاري الحفظ..." : "حفظ الإعدادات"}
+          </button>
+        ) : (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            لا تملك صلاحية حفظ الإعدادات. الإعدادات الحالية للعرض فقط.
+          </div>
+        )}
+        </fieldset>
       </form>
     </div>
   );

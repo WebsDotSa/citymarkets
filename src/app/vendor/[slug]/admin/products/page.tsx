@@ -4,6 +4,7 @@ import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { useConfirm } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
+import { useVendorRole } from "../_lib/vendor-role-context";
 
 interface ProductsPageProps {
   params: Promise<{ slug: string }>;
@@ -25,6 +26,8 @@ interface Product {
 
 export default function VendorProductsPage({ params }: ProductsPageProps) {
   const { slug } = use(params);
+  const { canDo, isReadOnly } = useVendorRole();
+  const canManage = canDo("manage_products");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -92,6 +95,15 @@ export default function VendorProductsPage({ params }: ProductsPageProps) {
 
   return (
     <div className="space-y-6">
+      {isReadOnly && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+        >
+          وضع القراءة فقط — هذه الصلاحية لا تسمح بإضافة أو تعديل المنتجات.
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -100,7 +112,9 @@ export default function VendorProductsPage({ params }: ProductsPageProps) {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition"
+          disabled={!canManage}
+          title={canManage ? "إضافة منتج جديد" : "ليس لديك صلاحية لإضافة منتجات"}
+          className="px-4 py-2 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           + إضافة منتج جديد
         </button>
@@ -174,7 +188,9 @@ export default function VendorProductsPage({ params }: ProductsPageProps) {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => toggleActive(product)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    disabled={!canManage}
+                    title={canManage ? "تبديل حالة النشاط" : "ليس لديك صلاحية"}
+                    className={`px-3 py-1 rounded-full text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
                       product.isActive
                         ? "bg-green-100 text-green-700"
                         : "bg-gray-100 text-gray-500"
@@ -189,12 +205,15 @@ export default function VendorProductsPage({ params }: ProductsPageProps) {
                   >
                     👁️
                   </Link>
-                  <button
-                    onClick={() => deleteProduct(product)}
-                    className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100"
-                  >
-                    🗑️
-                  </button>
+                  {canDo("manage_categories") && (
+                    <button
+                      onClick={() => deleteProduct(product)}
+                      title="حذف المنتج"
+                      className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100"
+                    >
+                      🗑️
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -202,12 +221,14 @@ export default function VendorProductsPage({ params }: ProductsPageProps) {
         ) : (
           <div className="p-8 text-center">
             <p className="text-gray-500">لا توجد منتجات</p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="mt-2 text-primary hover:underline"
-            >
-              أضف منتجك الأول
-            </button>
+            {canManage && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="mt-2 text-primary hover:underline"
+              >
+                أضف منتجك الأول
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -235,8 +256,9 @@ export default function VendorProductsPage({ params }: ProductsPageProps) {
         </div>
       )}
 
-      {/* Add Product Modal */}
-      {showModal && (
+      {/* Add Product Modal — hidden from roles without write access
+          so a viewer/staff cannot open it and submit a 403. */}
+      {showModal && canManage && (
         <AddProductModal
           slug={slug}
           onClose={() => setShowModal(false)}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MoreVertical, Loader2, ArrowRight } from "lucide-react";
 import { ORDER_STATUS_DISPLAY, getOrderStatusConfig } from '@/lib/orders';
 import { csrfFetch } from "@/lib/csrf-client";
+import { useVendorRole } from "../_lib/vendor-role-context";
 
 interface OrdersPageProps {
   params: Promise<{ slug: string }>;
@@ -52,6 +53,8 @@ function getNextStatus(current: string): string | null {
 export default function VendorOrdersPage({ params }: OrdersPageProps) {
   const { slug } = use(params);
   const router = useRouter();
+  const { canDo, isReadOnly } = useVendorRole();
+  const canManage = canDo("manage_orders");
   const [orders, setOrders] = useState<Order[]>([]);
   const [statusCounts, setStatusCounts] = useState<StatusCounts | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,6 +114,16 @@ export default function VendorOrdersPage({ params }: OrdersPageProps) {
         <p className="text-gray-500">إدارة طلبات متجرك</p>
       </div>
 
+      {isReadOnly && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+        >
+          وضع القراءة فقط — لا يمكنك تغيير حالة الأوردرات بهذه الصلاحية.
+        </div>
+      )}
+
       {/* Status tabs */}
       <div className="bg-white rounded-2xl p-2 overflow-x-auto">
         <div className="flex gap-1 min-w-max">
@@ -167,6 +180,7 @@ export default function VendorOrdersPage({ params }: OrdersPageProps) {
                 onOpen={() => router.push(`/vendor/${slug}/admin/orders/${order.id}`)}
                 onUpdateStatus={(s) => updateStatus(order, s)}
                 isUpdating={updating === order.id}
+                canManage={canManage}
               />
             ))}
           </div>
@@ -217,12 +231,14 @@ function OrderRow({
   onOpen,
   onUpdateStatus,
   isUpdating,
+  canManage,
 }: {
   order: Order;
   slug: string;
   onOpen: () => void;
   onUpdateStatus: (status: string) => void;
   isUpdating: boolean;
+  canManage: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -295,8 +311,9 @@ function OrderRow({
               e.stopPropagation();
               setMenuOpen((v) => !v);
             }}
-            disabled={!nextStatus && !canCancel}
-            aria-label="إجراءات سريعة"
+            disabled={!canManage || (!nextStatus && !canCancel)}
+            aria-label={canManage ? "إجراءات سريعة" : "إجراءات (للعرض فقط)"}
+            title={canManage ? undefined : "ليس لديك صلاحية لتغيير الحالة"}
             className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {isUpdating ? (
