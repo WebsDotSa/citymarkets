@@ -115,3 +115,57 @@ describe("admin/vendor/customer secrets are pairwise distinct in production", ()
     expect(vendor).not.toBe(customer);
   });
 });
+
+/**
+ * Regression: `isApnsConfigured` now uses the KEY_PATH shape
+ * (KEY_ID + TEAM_ID + BUNDLE_ID + KEY_PATH) — the legacy
+ * APNS_SIGNING_KEY form is no longer accepted. This pins the
+ * standardization so a future contributor cannot silently
+ * re-introduce the old shape.
+ */
+describe("isApnsConfigured (env shape standardization)", () => {
+  const original = { ...process.env };
+  afterEach(() => {
+    process.env = { ...original };
+  });
+
+  function clearApnsEnv() {
+    delete process.env.APNS_KEY_ID;
+    delete process.env.APNS_TEAM_ID;
+    delete process.env.APNS_BUNDLE_ID;
+    delete process.env.APNS_KEY_PATH;
+    delete process.env.APNS_SIGNING_KEY;
+  }
+
+  it("returns false when no APNs env vars set", async () => {
+    clearApnsEnv();
+    const { isApnsConfigured } = await loadFresh();
+    expect(isApnsConfigured()).toBe(false);
+  });
+
+  it("returns false when only legacy APNS_SIGNING_KEY is set", async () => {
+    clearApnsEnv();
+    process.env.APNS_SIGNING_KEY = "legacy";
+    const { isApnsConfigured } = await loadFresh();
+    expect(isApnsConfigured()).toBe(false);
+  });
+
+  it("returns false when only KEY_ID + TEAM_ID + BUNDLE_ID (missing KEY_PATH)", async () => {
+    clearApnsEnv();
+    process.env.APNS_KEY_ID = "k";
+    process.env.APNS_TEAM_ID = "t";
+    process.env.APNS_BUNDLE_ID = "b";
+    const { isApnsConfigured } = await loadFresh();
+    expect(isApnsConfigured()).toBe(false);
+  });
+
+  it("returns true when all four APNS_*_PATH/ID vars are set", async () => {
+    clearApnsEnv();
+    process.env.APNS_KEY_ID = "k";
+    process.env.APNS_TEAM_ID = "t";
+    process.env.APNS_BUNDLE_ID = "b";
+    process.env.APNS_KEY_PATH = "/p";
+    const { isApnsConfigured } = await loadFresh();
+    expect(isApnsConfigured()).toBe(true);
+  });
+});

@@ -142,6 +142,30 @@ describe("dispatcher", () => {
     expect(params[1]).toBe("native_push_not_configured");
   });
 
+  it("skips native_push with sender_pending reason when sender is a stub", async () => {
+    seed({ channels: ["native_push"] }, userRowNoContact);
+    sendNativePushToUserMock.mockResolvedValueOnce({
+      skipped: true,
+      reason: "sender_not_implemented",
+    });
+    await dispatchOne({ ...delivery, channel: "native_push" });
+    const [sql, params] = queryMock.mock.calls.at(-1) as [string, unknown[]];
+    expect(sql).toMatch(/status='skipped'/);
+    expect(params[1]).toBe("native_push_sender_pending");
+  });
+
+  it("skips native_push with no_tokens reason when user has no device registered", async () => {
+    seed({ channels: ["native_push"] }, userRowNoContact);
+    sendNativePushToUserMock.mockResolvedValueOnce({
+      skipped: true,
+      reason: "no_tokens",
+    });
+    await dispatchOne({ ...delivery, channel: "native_push" });
+    const [sql, params] = queryMock.mock.calls.at(-1) as [string, unknown[]];
+    expect(sql).toMatch(/status='skipped'/);
+    expect(params[1]).toBe("native_push_no_tokens");
+  });
+
   it("marks native_push sent on success", async () => {
     seed({ channels: ["native_push"] }, userRowNoContact);
     sendNativePushToUserMock.mockResolvedValueOnce({ skipped: false, failed: 0 });
