@@ -142,6 +142,21 @@ export async function POST(request: NextRequest) {
           `[webhook] duplicate event ${eventType} for ${invoiceId}; ` +
             `idempotent ack without re-processing order`,
         );
+        // FIX (P1-5): finalize the ledger row so subsequent replays do
+        // not see status='received' forever. orderId is intentionally
+        // NOT passed — we short-circuited before the SELECT. The schema
+        // allows order_id NULL (operators correlate from
+        // raw_payload.invoice_id).
+        try {
+          await finalizePaymentEvent(client, {
+            invoiceId,
+            gateway: 'moyasar',
+            eventType,
+            status: 'processed',
+          });
+        } catch (finalErr) {
+          logError('[event-ledger] duplicate finalize failed', finalErr, { invoiceId });
+        }
         await client.query('COMMIT');
         return NextResponse.json({ received: true, duplicate: true });
       }

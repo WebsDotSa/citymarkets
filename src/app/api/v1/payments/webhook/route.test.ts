@@ -381,6 +381,14 @@ describe("POST /api/v1/payments/webhook — ledger + replay", () => {
     expect(json).toMatchObject({ received: true, duplicate: true });
     // No vendor notification on a duplicate replay
     expect(vi.mocked(enqueueNotifyVendorNewOrder)).not.toHaveBeenCalled();
+    // FIX (P1-5): duplicate replay still finalizes the ledger row so
+    // subsequent replays don't see status='received' forever.
+    expect(vi.mocked(finalizePaymentEvent)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(finalizePaymentEvent).mock.calls[0][1]).toMatchObject({
+      invoiceId: "inv-paid-1",
+      gateway: "moyasar",
+      status: "processed",
+    });
   });
 
   it("finalizePaymentEvent runs after COMMIT", async () => {
@@ -525,7 +533,7 @@ describe("POST /api/v1/payments/webhook — COMMIT ordering (P0-2 regression)", 
     vi.mocked(recordPaymentEvent).mockResolvedValueOnce("inserted");
     vi.mocked(enqueueNotifyVendorNewOrder).mockImplementation(() => {
       opOrder.push("enqueueNotifyVendorNewOrder");
-      return Promise.resolve();
+      return Promise.resolve({ queued: true, jobId: "test" });
     });
 
     await POST(signedRequest({ id: "inv-paid-1" }) as never);

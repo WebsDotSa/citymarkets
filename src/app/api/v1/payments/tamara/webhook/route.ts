@@ -187,6 +187,20 @@ export async function POST(request: NextRequest) {
           `[tamara] duplicate event ${eventType} for ${checkoutId}; ` +
             `idempotent ack without re-processing order`,
         );
+        // FIX (P1-5): finalize the ledger row so subsequent replays do
+        // not see status='received' forever. orderId is intentionally
+        // NOT passed — we short-circuited before the SELECT. Mirrors the
+        // same fix in the Moyasar webhook.
+        try {
+          await finalizePaymentEvent(client, {
+            invoiceId: checkoutId,
+            gateway: "tamara",
+            eventType,
+            status: "processed",
+          });
+        } catch (finalErr) {
+          logError('[event-ledger] duplicate finalize failed', finalErr, { invoiceId: checkoutId });
+        }
         await client.query("COMMIT");
         return NextResponse.json({ received: true, duplicate: true });
       }

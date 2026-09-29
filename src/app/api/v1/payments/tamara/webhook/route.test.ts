@@ -273,6 +273,12 @@ describe("POST /api/v1/payments/tamara/webhook — ledger + replay", () => {
     expect(json).toMatchObject({ received: true, duplicate: true });
     // No vendor fan-out on replay
     expect(vi.mocked(enqueueNotifyVendorNewOrder)).not.toHaveBeenCalled();
+    // FIX (P1-5): duplicate replay still finalizes the ledger row so
+    // subsequent replays don't see status='received' forever.
+    expect(vi.mocked(finalizePaymentEvent)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(finalizePaymentEvent).mock.calls[0][1]).toMatchObject({
+      status: "processed",
+    });
   });
 
   it("finalizePaymentEvent runs after COMMIT", async () => {
