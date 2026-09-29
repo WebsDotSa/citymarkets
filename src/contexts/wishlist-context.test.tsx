@@ -3,25 +3,36 @@ import { render, act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 /**
- * Regression tests for the wishlist cross-user data-isolation bug.
+ * Wishlist context — regression + new server-backed coverage.
  *
  * The original implementation used a single global
  * `citymarket_wishlist` localStorage key. After User A signed out
  * and User B signed in on the same browser, User B would see User
  * A's products because the load effect never re-keyed on user change.
  *
- * The fix namespaces the storage key per user identity and re-loads
- * from localStorage whenever the user identity changes.
+ * The first fix (D4) namespaced the storage key per user identity.
+ * The follow-up (this branch) moves the source of truth for signed-in
+ * users to the server (`/api/v1/wishlist`) so the wishlist follows the
+ * user across devices and sign-in/sign-out cycles. Anonymous browsing
+ * keeps the localStorage bucket — the migration shim still protects
+ * pre-fix data.
  *
- * These tests pin down:
- *   1. Each user gets their own storage bucket (D4).
- *   2. The legacy single-key data is migrated exactly once (D4
- *      follow-up so existing customers don't lose their wishlist
- *      on upgrade).
- *   3. Switching from user A → user B clears A's items from state
- *      and surfaces B's (D4 cross-user leak prevention).
- *   4. signOut doesn't leave the previous user's wishlist in
- *      state for the next session (D5).
+ * Tests cover:
+ *   1. Each guest gets the localStorage guest bucket (D4 — still
+ *      valid; the migration only changed behaviour for authed users).
+ *   2. Legacy single-key data is migrated exactly once (D4
+ *      follow-up).
+ *   3. signOut / authed→guest surfaces an empty list without
+ *      touching the server (D5).
+ *   4. Authed users hydrate from the server on mount and during
+ *      identity transitions (new behaviour).
+ *   5. addItem / removeItem / clearWishlist POST/DELETE optimistically
+ *      and revert on server failure.
+ *   6. Guest → authed merge replays the guest bucket into the server
+ *      before the canonical GET (new behaviour).
+ *   7. Authed → authed wipes local state before refetching (new
+ *      behaviour, prevents cross-user bleed-through during the
+ *      fetch window).
  */
 
 // We mock the auth context so the test can drive the user identity
@@ -30,6 +41,22 @@ const mockUseAuthState = vi.fn();
 vi.mock("@/contexts/auth-context", () => ({
   useAuthState: () => mockUseAuthState(),
 }));
+
+// Mock the API client. Each test sets `mocks.apiFetch` to a function
+// that records calls and returns a controllable response shape.
+const mocks = vi.hoisted(() => ({
+  apiFetch: vi.fn(),
+  getCalls: () => mocks.apiFetch.mock.calls,
+}));
+
+vi.mock("@/lib/catalog", async () => {
+  const actual =
+    await vi.importActual<typeof import("@/lib/catalog")>("@/lib/catalog");
+  return {
+    ...actual,
+    apiFetch: (...args: unknown[]) => mocks.apiFetch(...args),
+  };
+});
 
 // Type-only import — the mocked module is referenced above.
 import {
@@ -78,17 +105,70 @@ function makeProduct(id: string, name: string = `Product ${id}`) {
   } as never;
 }
 
+/**
+ * Build a server-shaped wishlist row. The server hydrates each entry
+ * with name/price/image/vendor so the client can render the list
+ * without a second round-trip.
+ */
+function makeServerItem(productId: string) {
+  return {
+    product_id: productId,
+    added_at: new Date().toISOString(),
+    product: {
+      id: productId,
+      name: `Server Product ${productId}`,
+      name_ar: `منتج ${productId}`,
+      slug: productId,
+      price: 10,
+      discount_price: null,
+      image_url: null,
+      vendor_id: "v-1",
+      vendor_name: "vendor",
+      vendor_slug: "vendor",
+      is_active: true,
+      stock_qty: 100,
+    },
+  };
+}
+
 beforeEach(() => {
   window.localStorage.clear();
   window.sessionStorage.clear();
   mockUseAuthState.mockReturnValue({ user: null });
+  // Default: a successful empty wishlist. Tests override per-case.
+  mocks.apiFetch.mockReset();
+  mocks.apiFetch.mockResolvedValue({
+    success: true,
+    data: { success: true, data: [], count: 0 },
+  });
 });
 
 afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("WishlistProvider — per-user storage namespacing (D4)", () => {
+// ─── Guest behaviour (localStorage, no API calls) ──────────────────────
+
+describe("WishlistProvider — guest (anonymous) localStorage bucket", () => {
+  it("hydrates an anonymous user from the guest bucket", async () => {
+    window.localStorage.setItem(
+      "citymarket_wishlist:guest",
+      JSON.stringify([{ product: makeProduct("p-1"), addedAt: 1 }]),
+    );
+
+    mockUseAuthState.mockReturnValue({ user: null });
+    const { result } = renderHook(() => useWishlistState(), {
+      wrapper: withWishlist,
+    });
+    await act(async () => {});
+
+    expect(result.current.itemCount).toBe(1);
+    expect(result.current.items[0].product.id).toBe("p-1");
+    expect(result.current.loading).toBe(false);
+    // No API calls were made for the guest path.
+    expect(mocks.apiFetch).not.toHaveBeenCalled();
+  });
+
   it("writes to the guest bucket when no user is signed in", async () => {
     mockUseAuthState.mockReturnValue({ user: null });
 
@@ -97,19 +177,15 @@ describe("WishlistProvider — per-user storage namespacing (D4)", () => {
         state: useWishlistState(),
         actions: useWishlistActions(),
       }),
-      { wrapper: withWishlist }
+      { wrapper: withWishlist },
     );
-
-    // Wait for the load effect to run.
     await act(async () => {});
 
     act(() => {
       result.current.actions.addItem(makeProduct("p-1"));
     });
 
-    // The single legacy key must NOT be written to.
     expect(window.localStorage.getItem("citymarket_wishlist")).toBeNull();
-    // The namespaced guest bucket holds the item.
     const guest = window.localStorage.getItem("citymarket_wishlist:guest");
     expect(guest).not.toBeNull();
     const parsed = JSON.parse(guest!);
@@ -117,7 +193,43 @@ describe("WishlistProvider — per-user storage namespacing (D4)", () => {
     expect(parsed[0].product.id).toBe("p-1");
   });
 
-  it("writes to the user-namespaced bucket when a user is signed in", async () => {
+  it("does not call the wishlist API for an anonymous user", async () => {
+    mockUseAuthState.mockReturnValue({ user: null });
+
+    const { result } = renderHook(
+      () => ({
+        state: useWishlistState(),
+        actions: useWishlistActions(),
+      }),
+      { wrapper: withWishlist },
+    );
+    await act(async () => {});
+
+    act(() => {
+      result.current.actions.addItem(makeProduct("p-1"));
+      result.current.actions.addItem(makeProduct("p-2"));
+      result.current.actions.removeItem("p-1");
+      result.current.actions.clearWishlist();
+    });
+
+    // No mutations should have hit the server while anonymous.
+    expect(mocks.apiFetch).not.toHaveBeenCalled();
+  });
+});
+
+// ─── Authenticated hydration from the server ───────────────────────────
+
+describe("WishlistProvider — authenticated user hydrates from server", () => {
+  it("fetches the wishlist on mount and replaces local state", async () => {
+    mocks.apiFetch.mockResolvedValueOnce({
+      success: true,
+      data: {
+        success: true,
+        data: [makeServerItem("p-server-1"), makeServerItem("p-server-2")],
+        count: 2,
+      },
+    });
+
     mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
 
     const { result } = renderHook(
@@ -125,173 +237,403 @@ describe("WishlistProvider — per-user storage namespacing (D4)", () => {
         state: useWishlistState(),
         actions: useWishlistActions(),
       }),
-      { wrapper: withWishlist }
+      { wrapper: withWishlist },
     );
 
+    // Loading should be true while the fetch is in flight.
+    // (Note: the fetch resolves in the same tick in this mock, so we
+    //  assert the post-fetch state below instead of the in-flight
+    //  state.)
     await act(async () => {});
 
-    act(() => {
-      result.current.actions.addItem(makeProduct("p-alice-1"));
-    });
+    expect(result.current.state.itemCount).toBe(2);
+    expect(result.current.state.items[0].product.id).toBe("p-server-1");
+    expect(result.current.state.items[1].product.id).toBe("p-server-2");
+    expect(result.current.state.loading).toBe(false);
 
-    expect(window.localStorage.getItem("citymarket_wishlist:alice")).not.toBeNull();
-    // Other users' buckets must NOT exist yet.
-    expect(window.localStorage.getItem("citymarket_wishlist:bob")).toBeNull();
-    expect(window.localStorage.getItem("citymarket_wishlist:guest")).toBeNull();
+    // Exactly one GET was issued to /api/v1/wishlist.
+    const calls = mocks.getCalls();
+    expect(calls).toHaveLength(1);
+    expect(calls[0][0]).toBe("/api/v1/wishlist");
+    expect(calls[0][1]).toEqual({ method: "GET" });
   });
 
-  it("does not leak Alice's wishlist to Bob when Bob signs in on the same browser (D4 — the original bug)", async () => {
-    // Step 1: Alice signs in, adds two items.
+  it("surfaces loading=true while the initial fetch is in flight", async () => {
+    // Defer the fetch resolution so we can observe the loading flag.
+    let resolveFetch: ((value: unknown) => void) | null = null;
+    mocks.apiFetch.mockImplementationOnce(
+      () => new Promise((resolve) => { resolveFetch = resolve; }),
+    );
+
     mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
-    const aliceView = renderHook(
+    const { result } = renderHook(() => useWishlistState(), {
+      wrapper: withWishlist,
+    });
+
+    // Flush the microtask queue so the effect body starts the fetch
+    // and setItems / setLoading have run.
+    await act(async () => {});
+
+    expect(result.current.loading).toBe(true);
+
+    // Resolve the fetch.
+    await act(async () => {
+      resolveFetch!({
+        success: true,
+        data: { success: true, data: [makeServerItem("p-1")], count: 1 },
+      });
+    });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.itemCount).toBe(1);
+  });
+
+  it("surfaces an empty list when the server returns an error", async () => {
+    mocks.apiFetch.mockRejectedValueOnce(new Error("network down"));
+
+    mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
+    const { result } = renderHook(() => useWishlistState(), {
+      wrapper: withWishlist,
+    });
+    await act(async () => {});
+
+    expect(result.current.itemCount).toBe(0);
+    expect(result.current.loading).toBe(false);
+  });
+});
+
+// ─── Authenticated mutations ──────────────────────────────────────────
+
+describe("WishlistProvider — authenticated addItem POSTs to server", () => {
+  it("optimistically adds and POSTs to the server", async () => {
+    mocks.apiFetch.mockResolvedValue({
+      success: true,
+      data: makeServerItem("p-1"),
+    });
+
+    mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
+
+    const { result } = renderHook(
       () => ({
         state: useWishlistState(),
         actions: useWishlistActions(),
       }),
-      { wrapper: withWishlist }
+      { wrapper: withWishlist },
     );
     await act(async () => {});
-    act(() => {
-      aliceView.result.current.actions.addItem(makeProduct("p-alice-1"));
-      aliceView.result.current.actions.addItem(makeProduct("p-alice-2"));
-    });
-    expect(aliceView.result.current.state.itemCount).toBe(2);
 
-    // Step 2: Alice signs out → Bob signs in (simulated by changing
-    // the mocked user).
-    mockUseAuthState.mockReturnValue({ user: { id: "bob" } });
-    const bobView = renderHook(
+    act(() => {
+      result.current.actions.addItem(makeProduct("p-1"));
+    });
+
+    // Local state reflects the optimistic add immediately.
+    expect(result.current.state.itemCount).toBe(1);
+    expect(result.current.state.items[0].product.id).toBe("p-1");
+
+    // Let the fire-and-forget POST resolve.
+    await act(async () => {});
+
+    const calls = mocks.getCalls();
+    const post = calls.find(
+      (c) => c[0] === "/api/v1/wishlist" && (c[1] as RequestInit)?.method === "POST",
+    );
+    expect(post).toBeDefined();
+    expect(JSON.parse((post![1] as RequestInit).body as string)).toEqual({
+      product_id: "p-1",
+    });
+    // Item is still in state — server succeeded.
+    expect(result.current.state.itemCount).toBe(1);
+  });
+
+  it("reverts the optimistic add on server failure", async () => {
+    // Hydration GET → empty list. The POST then fails.
+    mocks.apiFetch
+      .mockResolvedValueOnce({
+        success: true,
+        data: { success: true, data: [], count: 0 },
+      })
+      .mockResolvedValueOnce({
+        success: false,
+        error: "boom",
+      });
+
+    mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
+    const { result } = renderHook(
       () => ({
         state: useWishlistState(),
         actions: useWishlistActions(),
       }),
-      { wrapper: withWishlist }
+      { wrapper: withWishlist },
     );
     await act(async () => {});
 
-    // Bob's wishlist must be EMPTY — Alice's items must not leak.
-    expect(bobView.result.current.state.itemCount).toBe(0);
-    expect(bobView.result.current.state.items).toEqual([]);
-
-    // Bob adds his own item. His bucket is independent of Alice's.
     act(() => {
-      bobView.result.current.actions.addItem(makeProduct("p-bob-1"));
+      result.current.actions.addItem(makeProduct("p-1"));
     });
-    expect(bobView.result.current.state.itemCount).toBe(1);
 
-    // Alice's bucket must still hold exactly her two items.
-    const aliceBucket = JSON.parse(
-      window.localStorage.getItem("citymarket_wishlist:alice") || "[]",
+    // Optimistically present.
+    expect(result.current.state.itemCount).toBe(1);
+
+    // Server fails → optimistic update is reverted.
+    await act(async () => {});
+    expect(result.current.state.itemCount).toBe(0);
+  });
+});
+
+describe("WishlistProvider — authenticated removeItem DELETEs from server", () => {
+  it("optimistically removes and DELETEs from the server", async () => {
+    // Initial hydration returns one item.
+    mocks.apiFetch
+      .mockResolvedValueOnce({
+        success: true,
+        data: { success: true, data: [makeServerItem("p-1")], count: 1 },
+      })
+      // The DELETE call.
+      .mockResolvedValueOnce({ success: true, data: { removed: 1 } });
+
+    mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
+
+    const { result } = renderHook(
+      () => ({
+        state: useWishlistState(),
+        actions: useWishlistActions(),
+      }),
+      { wrapper: withWishlist },
     );
-    expect(aliceBucket).toHaveLength(2);
+    await act(async () => {});
 
-    // Bob's bucket holds exactly his one item.
-    const bobBucket = JSON.parse(
-      window.localStorage.getItem("citymarket_wishlist:bob") || "[]",
+    expect(result.current.state.itemCount).toBe(1);
+
+    act(() => {
+      result.current.actions.removeItem("p-1");
+    });
+
+    expect(result.current.state.itemCount).toBe(0);
+
+    await act(async () => {});
+
+    const deleteCall = mocks.getCalls().find((c) => {
+      const init = c[1] as RequestInit | undefined;
+      return (
+        typeof c[0] === "string" &&
+        c[0].startsWith("/api/v1/wishlist?") &&
+        init?.method === "DELETE"
+      );
+    });
+    expect(deleteCall).toBeDefined();
+    expect(deleteCall![0]).toBe("/api/v1/wishlist?product_id=p-1");
+  });
+});
+
+describe("WishlistProvider — authenticated clearWishlist DELETEs from server", () => {
+  it("optimistically clears and DELETEs (no product_id param)", async () => {
+    mocks.apiFetch
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          success: true,
+          data: [makeServerItem("p-1"), makeServerItem("p-2")],
+          count: 2,
+        },
+      })
+      .mockResolvedValueOnce({ success: true, data: { removed: 2 } });
+
+    mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
+
+    const { result } = renderHook(
+      () => ({
+        state: useWishlistState(),
+        actions: useWishlistActions(),
+      }),
+      { wrapper: withWishlist },
     );
-    expect(bobBucket).toHaveLength(1);
-    expect(bobBucket[0].product.id).toBe("p-bob-1");
+    await act(async () => {});
 
-    // Tear down — prevents cross-test localStorage pollution.
-    aliceView.unmount();
-    bobView.unmount();
+    expect(result.current.state.itemCount).toBe(2);
+
+    act(() => {
+      result.current.actions.clearWishlist();
+    });
+
+    expect(result.current.state.itemCount).toBe(0);
+
+    await act(async () => {});
+
+    const deleteCall = mocks.getCalls().find((c) => {
+      const init = c[1] as RequestInit | undefined;
+      return c[0] === "/api/v1/wishlist" && init?.method === "DELETE";
+    });
+    expect(deleteCall).toBeDefined();
+  });
+});
+
+// ─── Identity transitions ──────────────────────────────────────────────
+
+describe("WishlistProvider — guest → authenticated merges guest bucket", () => {
+  it("POSTs each guest item to the server, then re-fetches the canonical list", async () => {
+    // Seed guest bucket with two items.
+    window.localStorage.setItem(
+      "citymarket_wishlist:guest",
+      JSON.stringify([
+        { product: makeProduct("p-guest-1"), addedAt: 1 },
+        { product: makeProduct("p-guest-2"), addedAt: 2 },
+      ]),
+    );
+
+    // 1st call: POST p-guest-1, 2nd: POST p-guest-2, 3rd: GET server list.
+    mocks.apiFetch
+      .mockResolvedValueOnce({ success: true, data: makeServerItem("p-guest-1") })
+      .mockResolvedValueOnce({ success: true, data: makeServerItem("p-guest-2") })
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          success: true,
+          data: [makeServerItem("p-guest-1"), makeServerItem("p-guest-2")],
+          count: 2,
+        },
+      });
+
+    mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
+    const { result } = renderHook(
+      () => ({
+        state: useWishlistState(),
+        actions: useWishlistActions(),
+      }),
+      { wrapper: withWishlist },
+    );
+    await act(async () => {});
+
+    // After the merge + refetch, the list contains the merged items.
+    expect(result.current.state.itemCount).toBe(2);
+    const ids = result.current.state.items.map((i) => i.product.id).sort();
+    expect(ids).toEqual(["p-guest-1", "p-guest-2"]);
+
+    // The guest bucket was cleared (written as an empty array).
+    const guest = JSON.parse(
+      window.localStorage.getItem("citymarket_wishlist:guest") || "[]",
+    );
+    expect(guest).toEqual([]);
+
+    // The API was called: 2 POSTs + 1 GET, in that order.
+    const calls = mocks.getCalls();
+    expect(calls).toHaveLength(3);
+    expect(calls[0][0]).toBe("/api/v1/wishlist");
+    expect((calls[0][1] as RequestInit).method).toBe("POST");
+    expect(JSON.parse((calls[0][1] as RequestInit).body as string)).toEqual({
+      product_id: "p-guest-1",
+    });
+    expect(calls[1][0]).toBe("/api/v1/wishlist");
+    expect((calls[1][1] as RequestInit).method).toBe("POST");
+    expect(JSON.parse((calls[1][1] as RequestInit).body as string)).toEqual({
+      product_id: "p-guest-2",
+    });
+    expect(calls[2][0]).toBe("/api/v1/wishlist");
+    expect((calls[2][1] as RequestInit).method).toBe("GET");
   });
 
-  it("loads the correct bucket when user identity changes mid-session", async () => {
-    // Seed both buckets directly so the test doesn't depend on the
-    // add/remove actions.
-    window.localStorage.setItem(
-      "citymarket_wishlist:alice",
-      JSON.stringify([{ product: makeProduct("p-alice-A"), addedAt: 1 }]),
-    );
-    window.localStorage.setItem(
-      "citymarket_wishlist:bob",
-      JSON.stringify([{ product: makeProduct("p-bob-X"), addedAt: 2 }]),
-    );
+  it("does not merge when the guest bucket is empty", async () => {
+    // No guest bucket.
+    mocks.apiFetch.mockResolvedValueOnce({
+      success: true,
+      data: { success: true, data: [makeServerItem("p-server-A")], count: 1 },
+    });
 
-    // First: render as Alice → Alice's bucket is hydrated.
     mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
-    const aliceView = renderHook(
-      () => useWishlistState(),
-      { wrapper: withWishlist }
-    );
+    const { result } = renderHook(() => useWishlistState(), {
+      wrapper: withWishlist,
+    });
+    await act(async () => {});
+
+    expect(result.current.itemCount).toBe(1);
+    // Only the GET — no POST merge.
+    expect(mocks.getCalls()).toHaveLength(1);
+  });
+});
+
+describe("WishlistProvider — authenticated → authenticated wipes and re-fetches", () => {
+  it("clears Alice's items from state when Bob signs in on the same browser", async () => {
+    // Hydration for Alice.
+    mocks.apiFetch.mockResolvedValueOnce({
+      success: true,
+      data: { success: true, data: [makeServerItem("p-alice-1")], count: 1 },
+    });
+
+    mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
+    const aliceView = renderHook(() => useWishlistState(), {
+      wrapper: withWishlist,
+    });
     await act(async () => {});
     expect(aliceView.result.current.itemCount).toBe(1);
-    expect(aliceView.result.current.items[0].product.id).toBe("p-alice-A");
 
-    // Now switch to Bob → Bob's bucket is hydrated, Alice's is NOT shown.
+    // Switch to Bob — his hydration is mocked to return different items.
+    mocks.apiFetch.mockResolvedValueOnce({
+      success: true,
+      data: { success: true, data: [makeServerItem("p-bob-1"), makeServerItem("p-bob-2")], count: 2 },
+    });
     mockUseAuthState.mockReturnValue({ user: { id: "bob" } });
     aliceView.rerender();
     await act(async () => {});
-    expect(aliceView.result.current.itemCount).toBe(1);
-    expect(aliceView.result.current.items[0].product.id).toBe("p-bob-X");
+
+    // Bob's items appear, not Alice's.
+    expect(aliceView.result.current.itemCount).toBe(2);
+    const ids = aliceView.result.current.items.map((i) => i.product.id).sort();
+    expect(ids).toEqual(["p-bob-1", "p-bob-2"]);
 
     aliceView.unmount();
   });
 });
 
-describe("WishlistProvider — signOut clears state (D5)", () => {
-  it("switches from user → guest does not show the user's items", async () => {
-    // Sign in as Alice, add an item.
-    mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
-    const view = renderHook(
-      () => ({
-        state: useWishlistState(),
-        actions: useWishlistActions(),
-      }),
-      { wrapper: withWishlist }
-    );
-    await act(async () => {});
-    act(() => {
-      view.result.current.actions.addItem(makeProduct("p-alice-1"));
+describe("WishlistProvider — authenticated → guest surfaces empty state", () => {
+  it("shows the guest bucket (empty) after sign-out, without hitting the server", async () => {
+    // Hydration for Alice.
+    mocks.apiFetch.mockResolvedValueOnce({
+      success: true,
+      data: { success: true, data: [makeServerItem("p-alice-1")], count: 1 },
     });
-    expect(view.result.current.state.itemCount).toBe(1);
+    mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
+    const view = renderHook(() => useWishlistState(), {
+      wrapper: withWishlist,
+    });
+    await act(async () => {});
+    expect(view.result.current.itemCount).toBe(1);
 
-    // signOut: user goes to null.
+    // Sign out → user becomes null. No API call should be made for the
+    // guest transition.
     mockUseAuthState.mockReturnValue({ user: null });
     view.rerender();
     await act(async () => {});
 
-    // After signOut, the wishlist surface shows 0 items (Alice's
-    // bucket persists in storage but is no longer loaded).
-    expect(view.result.current.state.itemCount).toBe(0);
+    expect(view.result.current.itemCount).toBe(0);
+    expect(view.result.current.loading).toBe(false);
 
-    // Alice's bucket is preserved in storage (so re-login restores
-    // her wishlist) — but the active surface is empty.
-    const aliceStorage = JSON.parse(
-      window.localStorage.getItem("citymarket_wishlist:alice") || "[]",
-    );
-    expect(aliceStorage).toHaveLength(1);
     view.unmount();
   });
 });
 
+// ─── Legacy key migration (still applies for guest + authed users) ───
+
 describe("WishlistProvider — legacy key migration (D4 follow-up)", () => {
-  it("migrates legacy single-key data into the current user's bucket on first hydration", async () => {
-    // Pretend the legacy single-key blob was written before the
-    // fix shipped.
+  it("migrates legacy single-key data into the guest bucket on first hydration", async () => {
     window.localStorage.setItem(
       "citymarket_wishlist",
       JSON.stringify([{ product: makeProduct("p-legacy-1"), addedAt: 1 }]),
     );
 
-    mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
+    mockUseAuthState.mockReturnValue({ user: null });
     const view = renderHook(
       () => ({
         state: useWishlistState(),
         actions: useWishlistActions(),
       }),
-      { wrapper: withWishlist }
+      { wrapper: withWishlist },
     );
     await act(async () => {});
 
-    // The legacy blob is moved into Alice's bucket…
-    const aliceStorage = JSON.parse(
-      window.localStorage.getItem("citymarket_wishlist:alice") || "[]",
+    const guest = JSON.parse(
+      window.localStorage.getItem("citymarket_wishlist:guest") || "[]",
     );
-    expect(aliceStorage).toHaveLength(1);
-    expect(aliceStorage[0].product.id).toBe("p-legacy-1");
-    // …and the legacy key is gone.
+    expect(guest).toHaveLength(1);
+    expect(guest[0].product.id).toBe("p-legacy-1");
     expect(window.localStorage.getItem("citymarket_wishlist")).toBeNull();
 
     view.unmount();
@@ -308,45 +650,8 @@ describe("WishlistProvider — legacy key migration (D4 follow-up)", () => {
     await act(async () => {});
     view.unmount();
 
-    // After the first mount the migration flag is set; even if a
-    // fresh legacy blob appears (somehow), the migration does not
-    // run again within this session — the legacy key is just
-    // overwritten on next save with the namespaced one.
-    expect(window.sessionStorage.getItem("citymarket_wishlist_migrated")).toBe("1");
-  });
-});
-
-describe("WishlistProvider — clearWishlist empties state and storage", () => {
-  it("removes items from the current user's bucket only", async () => {
-    window.localStorage.setItem(
-      "citymarket_wishlist:alice",
-      JSON.stringify([{ product: makeProduct("p-a"), addedAt: 1 }]),
-    );
-    window.localStorage.setItem(
-      "citymarket_wishlist:bob",
-      JSON.stringify([{ product: makeProduct("p-b"), addedAt: 2 }]),
-    );
-
-    mockUseAuthState.mockReturnValue({ user: { id: "alice" } });
-    const view = renderHook(
-      () => ({
-        state: useWishlistState(),
-        actions: useWishlistActions(),
-      }),
-      { wrapper: withWishlist }
-    );
-    await act(async () => {});
-
-    expect(view.result.current.state.itemCount).toBe(1);
-    act(() => {
-      view.result.current.actions.clearWishlist();
-    });
-    expect(view.result.current.state.itemCount).toBe(0);
-
-    // Alice's bucket is empty in storage.
-    expect(JSON.parse(window.localStorage.getItem("citymarket_wishlist:alice") || "[]")).toEqual([]);
-    // Bob's bucket is untouched.
-    expect(JSON.parse(window.localStorage.getItem("citymarket_wishlist:bob") || "[]")).toHaveLength(1);
-    view.unmount();
+    expect(
+      window.sessionStorage.getItem("citymarket_wishlist_migrated"),
+    ).toBe("1");
   });
 });

@@ -219,6 +219,13 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
     let cancelled = false;
 
+    // Always run the legacy-key migration. The shim is a one-time
+    // cleanup that uses the sessionStorage flag to avoid repeating
+    // itself, so calling it on every identity change costs nothing
+    // after the first run and keeps the migration behaviour identical
+    // to the pre-server-backed implementation.
+    migrateLegacyWishlist(userId);
+
     async function hydrateAuthed(): Promise<void> {
       // 1. Guest → authed transition: replay the guest bucket into the
       //    server. Best-effort: server caps at MAX_WISHLIST_SIZE so any
@@ -276,7 +283,6 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
     if (!userId) {
       // Guest path: synchronous localStorage hydration, no API calls.
-      migrateLegacyWishlist(userId);
       const loaded = readBucket(userId);
       setItems(loaded ?? []);
       setLoading(false);
