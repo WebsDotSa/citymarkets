@@ -497,13 +497,14 @@ Per master plan §53:
 
 **Code Readiness**: ✅ READY — all gates pass, tests green, build clean
 
-**Database Migration Readiness**: ✅ READY (fresh-DB chain validated in PR #5) — full migration
-chain 001→073 applies cleanly to a fresh PostgreSQL 16 + pgvector DB.
-9 BREAKERs were identified and repaired across 004/007/013/017/023/042/060/073.
-The CI workflow now uses `pgvector/pgvector:pg16` and runs `npm run db:migrate`
-(hard-fail) instead of the legacy dry-run. Operations team must still run
-`npm run db:migrate` against production DB to apply `073_payment_events_ledger.sql`.
-**This audit cannot verify prod apply** (sandbox restriction per master prompt §P1-2 directive).
+**Database Migration Readiness**: ✅ READY (fresh-DB chain executed and verified in PR #5) — full migration
+chain 001→074 (82 migrations) applies cleanly to a fresh PostgreSQL 16 + pgvector DB on first run AND is
+fully idempotent on re-run. Verified by `npm run db:migrate` against a real `pgvector/pgvector:pg16`
+container (port 5438, password=postgres, database=citymarket_test). 11 BREAKERs were identified and
+repaired across 004/007/013/017/023/037/042/060/073 plus 2 runtime fixes (cart ON CONFLICT inference +
+new 074 stores seed). The CI workflow uses `pgvector/pgvector:pg16` and runs `npm run db:migrate`
+(hard-fail) instead of the legacy dry-run. Operations team must still run `npm run db:migrate` against
+production DB to apply `073_payment_events_ledger.sql`.
 
 **Production Deployment Readiness**: ✅ READY — DEPLOYMENT.md current,
 Docker compose current, env example documented.
