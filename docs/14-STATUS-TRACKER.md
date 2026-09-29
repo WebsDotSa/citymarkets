@@ -57,6 +57,9 @@ Updated: 2026-09-29 (reflects `production-completion-2026-09-29` branch
   → small codemod to add `recordPaymentEvent` + `finalizePaymentEvent` to
   `src/app/api/v1/payments/tamara/webhook/route.ts`. Improves dispute
   defense consistency.
+  **CLOSED 2026-09-29** by `production/full-system-repair` branch —
+  Tamara webhook now uses `recordPaymentEvent` and is covered by
+  `src/app/api/v1/payments/tamara/webhook/route.test.ts` (13 tests).
 - **P2-2** Identity code at `src/lib/` root instead of `src/lib/identity/`
   → optional codemod + barrel extraction. 8 files: `customer-session.ts`,
   `admin-session.ts`, `vendor-auth.ts`, `vendor-session.ts`,
@@ -116,6 +119,48 @@ mode affects main HEAD c2a3bd6 (run 36575880245, 4s) and the prior PR
 #4 head 918d30d (run 36574950800, 5s). This is a systemic runner /
 repo-level Actions issue, NOT a PR #5 regression. Local execution of
 every CI step passes.
+
+## Phase 11 — Production full-system repair (`production/full-system-repair` branch, 2026-09-29)
+
+Closure of the production-completion-2026-09-29 audit's acceptance
+checklist (section 56 of the directive). Branch produced 11 atomic
+commits covering Bug A / Bug F / Gap D + 3 legacy route deletions +
+73 new HTTP route tests + golden-path E2E script.
+
+| Item | Status | Evidence |
+|---|---|---|
+| Bug A: webhook never sets `vendor_orders.status='paid'` | ✅ Fixed | Commit `44b5c79` + regression test `webhook/route.test.ts` Bug A group |
+| Bug F: inline confirm uses `recordPaymentEvent` | ✅ Fixed | Commit `bf3a81f` + unit tests in `moyasar-confirm.test.ts` |
+| Gap D: vendor push notification on payment | ✅ Closed | Commit `0767afc` + 3 new tests (vendor fan-out, declined does NOT notify, etc.) |
+| 3 legacy payment routes deleted | ✅ Done | Commit `054af60` removes `/api/v1/payments/moyasar/callback`, `/api/v1/vendors/[slug]/payment`, `/api/v1/vendors/payment/callback` |
+| `moyasar.callbackUrl` points at canonical `/webhook` | ✅ Done | Commit `d10fcec` |
+| Webhook HTTP route tests | ✅ Done | `webhook/route.test.ts` (12) + `tamara/webhook/route.test.ts` (13) + `moyasar/confirm/route.test.ts` (8) — 33 new tests |
+| Vendor lifecycle route tests | ✅ Done | `vendor/auth/login` (10) + `vendor/products` (11) + `vendor/orders` (6) + `vendor/orders/[id]/status` (13) — 40 new tests |
+| Golden-path E2E | ✅ Done | `scripts/e2e-golden-path.mjs` + `npm run qa:golden-path` + CI gate |
+| Dead-code regression found + fixed | ✅ | Commit `07eea06`: the previous Gap D vendor-notification block was unreachable behind a duplicate `finalizePaymentEvent` + early return. Caught by the new webhook route tests. |
+
+### Additional commits this branch
+
+| Commit | Summary |
+|---|---|
+| `07eea06` | fix(payments-webhook): remove duplicated finalizePaymentEvent + early-return that made Gap D vendor notification unreachable |
+| `0d8ec67` | test(webhooks): add HTTP route tests for canonical Moyasar webhook (12 tests) |
+| `78bb3f1` | test(webhooks): add Tamara + moyasar/confirm HTTP route tests (21 tests) |
+| `730135b` | test(vendor): add HTTP route tests for login + products + orders + status (40 tests) |
+| `e764702` | test(e2e): add single golden-path script covering webhook → vendor lifecycle |
+
+### Deferred items (documented for ops follow-up)
+
+- **P1-1** Migration 073 still NOT applied to production DB — code is
+  ready, idempotent, safe to re-run. Ops: `npm run db:migrate` against
+  prod before next webhook traffic.
+- **P1-2** 17 untracked early migrations (001–017) — schema is in
+  production; only `app_migrations` records missing. Whitelist or
+  retroactively register.
+- **D14-impl** Real APNs/FCM senders (provider abstraction is in place
+  via `src/lib/native-push/senders/`); needs live credentials.
+- **D17** Server-backed wishlist with guest-merge (~600–1,000 LoC;
+  separate branch).
 
 ## Rebase Status
 
