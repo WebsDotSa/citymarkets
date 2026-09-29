@@ -19,7 +19,16 @@
       unit tests in `src/__tests__/checkout-service.test.ts` cover the
       store-closed gate, hours gate, scheduled-vs-pickup rejection,
       and body validation. Behavior unchanged byte-for-byte.
-- [ ] extract PaymentService
+- [x] **done:** extract PaymentService — POST /api/v1/payments/initiate
+      (141 lines, was 125) and /retry (301 lines, was 372) now share
+      the same 9-step pipeline via named helpers in
+      `src/lib/payments/payment-service.ts`:
+      resolveCaller / applyPaymentRateLimits / parsePaymentBody /
+      validateOrderId / authorizeOrderForPayment /
+      commitOrderLock / rollbackOrderLock / markOrderPaymentFailed /
+      rateLimitResponseHeaders. 12 new tests in
+      `src/__tests__/payment-service.test.ts` cover the helper layer.
+      Behavior unchanged byte-for-byte.
 - [x] **partially:** canonicalize catalog/product model — `products_unified`
       view is the canonical read path (8 callers: ai-shopping-assistant,
       product-search, components/pages/categories, components/pages/offers,
