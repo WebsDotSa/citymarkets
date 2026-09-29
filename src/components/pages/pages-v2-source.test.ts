@@ -21,42 +21,12 @@ import { join } from "node:path";
 const PAGES_DIR = join(process.cwd(), "src/components/pages");
 
 describe("HomeContentV2 structural contract", () => {
-  const src = readFileSync(
-    join(PAGES_DIR, "home/home-v2.tsx"),
-    "utf8",
-  );
-
-  it("exports the component under the V2 name (not the legacy one)", () => {
-    expect(src).toMatch(/export\s+function\s+HomeContentV2\b/);
-  });
-
-  it("uses AbortController to avoid setting state on unmounted components", () => {
-    // The home page does four parallel fetches; without AbortController,
-    // a navigation away mid-fetch triggers React's "setState on unmounted"
-    // warning that floods the dev console.
-    expect(src).toMatch(/AbortController/);
-    expect(src).toMatch(/ac\.signal\.aborted/);
-    expect(src).toMatch(/ac\.abort\(\)/);
-  });
-
-  it("fetches from the V1 API namespace, not /api (legacy)", () => {
-    expect(src).toMatch(/fetch\(\s*["']\/api\/v1\//);
-  });
-
-  it("guards state setters against array vs object response shapes", () => {
-    // The endpoints sometimes return raw arrays, sometimes
-    // `{ success, data }` envelopes. The component handles both via:
-    //   const d = dealsRes.data;
-    //   setDeals(Array.isArray(d) ? d : d?.data || []);
-    // If someone refactors that handle out, the page will explode in prod.
-    expect(src).toMatch(/Array\.isArray\(.+\)\s*\?\s*.+\s*:\s*.+\?\.\s*data/);
-  });
-
-  it("memoises the category slug lookup", () => {
-    // Without useMemo, every re-render rebuilds the Map → expensive on
-    // a 1000-product catalog. Pin the import + usage.
-    expect(src).toMatch(/useMemo\b/);
-    expect(src).toMatch(/categoryMap|new Map\(categories/);
+  // src/components/pages/home/home-v2.tsx was removed in
+  // refactor/full-repository-consolidation (Phase A2) — the storefront
+  // landing page now uses the live component under src/app/home. The
+  // structural tests that pinned HomeContentV2 are no longer applicable.
+  it.skip("home-v2.tsx was retired; see docs/audits/2026-09-30-full-repository-consolidation.md", () => {
+    expect(true).toBe(true);
   });
 });
 

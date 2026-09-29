@@ -1,13 +1,13 @@
 /**
  * Server-side invoice PDF renderer.
  *
- * Why a separate module from `src/components/orders/invoice-pdf.tsx`?
- * The client-side version uses `Font.register({ src: "/fonts/..." })` so
- * @react-pdf/renderer can fetch() the fonts in the browser. On the
+ * Why a separate module from the retired `src/components/orders/invoice-pdf.tsx`?
+ * The client-side version used `Font.register({ src: "/fonts/..." })` so
+ * @react-pdf/renderer could fetch() the fonts in the browser. On the
  * server, we already have the bytes on disk — `node:fs` is faster, more
- * reliable, and doesn't need an HTTP round-trip. Splitting the two also
- * keeps the bundler from pulling the browser Font registration into the
- * server bundle (and vice versa).
+ * reliable, and doesn't need an HTTP round-trip. The client component
+ * was retired in refactor/full-repository-consolidation Phase A2; this
+ * server module is the canonical renderer.
  *
  * The rendered JSX is identical to the client component so customers
  * and admins get the same layout regardless of which path triggered

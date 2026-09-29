@@ -10,10 +10,11 @@
  * Same pattern: `window.fbq?.(...)` — if Meta is blocked / hasn't loaded /
  * user has not consented to marketing cookies, all calls no-op.
  *
- * The legacy `useAnalytics` hook (src/hooks/useAnalytics.ts) consumes this
- * module, so its public API — `init`, `event`, `productView`, `addToCart`,
+ * The legacy `useAnalytics` hook (src/hooks/useAnalytics.ts, retired in
+ * refactor/full-repository-consolidation Phase A2) used to consume this
+ * module; the public API — `init`, `event`, `productView`, `addToCart`,
  * `removeFromCart`, `checkoutStart`, `purchase`, `search`, `signup`, `error`
- * — is preserved.
+ * — is preserved for direct callers.
  *
  * CONVERSION EVENT MAPPING (Meta Pixel standard events):
  *   view_item        → ViewContent
