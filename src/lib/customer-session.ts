@@ -19,6 +19,7 @@ import type { NextRequest } from "next/server";
 import { CUSTOMER_SESSION_COOKIE } from "./auth-cookie-name";
 import { getCustomerJwtSecretBytes, getSupabasePublicConfig, isCookieSecure } from "./env";
 import { signJwt, verifyJwt, type VerifyConfig } from "@/lib/auth/jwt-helper";
+import { createJwtVerifyCache } from "@/lib/auth/jwt-verify-cache";
 
 export const COOKIE_NAME = CUSTOMER_SESSION_COOKIE;
 
@@ -61,6 +62,11 @@ const customerVerifyConfig = (): VerifyConfig => ({
   secretBytes: customerSecretBytes(),
 });
 
+// JWT verify result cache (60s TTL). Caches CustomerJwtPayload (only on
+// success) by the token string. Edge-safe (Map + Date.now only). See
+// src/lib/auth/jwt-verify-cache.ts for the full safety contract.
+const _customerVerifyCache = createJwtVerifyCache<CustomerJwtPayload>();
+
 export type CustomerJwtPayload = {
   userId: string;
   phone: string;
@@ -84,6 +90,10 @@ export async function signCustomerToken(
 export async function verifyCustomerToken(
   token: string
 ): Promise<CustomerJwtPayload | null> {
+  // Cache hit returns the verified payload directly — same token in the
+  // same window skips HMAC entirely.
+  const cached = _customerVerifyCache.get(token);
+  if (cached !== null) return cached;
   const payload = await verifyJwt<{ userId?: unknown; phone?: unknown }>(
     token,
     customerVerifyConfig(),
@@ -92,7 +102,9 @@ export async function verifyCustomerToken(
   const userId = typeof payload.userId === "string" ? payload.userId : null;
   const phone = typeof payload.phone === "string" ? payload.phone : null;
   if (!userId || !phone) return null;
-  return { userId, phone };
+  const result: CustomerJwtPayload = { userId, phone };
+  _customerVerifyCache.set(token, result);
+  return result;
 }
 
 export function customerSessionCookieOptions() {
