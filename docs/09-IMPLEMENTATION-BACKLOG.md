@@ -11,7 +11,14 @@
 ## P1
 - [ ] create domain modules
 - [ ] create v2 contracts
-- [ ] extract CheckoutService
+- [x] **done:** extract CheckoutService — POST /api/v1/checkout is now
+      a 143-line thin handler (CSRF + auth + rate-limit + body parse +
+      result-mapping); the business pipeline lives in
+      `src/lib/checkout/checkout-service.ts` as `runCheckout(ctx)`,
+      returning a discriminated-union `CheckoutServiceResult`. 5 new
+      unit tests in `src/__tests__/checkout-service.test.ts` cover the
+      store-closed gate, hours gate, scheduled-vs-pickup rejection,
+      and body validation. Behavior unchanged byte-for-byte.
 - [ ] extract PaymentService
 - [x] **partially:** canonicalize catalog/product model — `products_unified`
       view is the canonical read path (8 callers: ai-shopping-assistant,

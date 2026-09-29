@@ -22,7 +22,7 @@ function makeFakeClient(opts: {
       calls.push({ sql, params });
       const s = sql.trim().toUpperCase();
       if (s.startsWith("UPDATE ORDERS")) return { rows: [] };
-      if (s.startsWith("SELECT") && s.includes("FROM ORDERS WHERE ID")) {
+      if (s.startsWith("SELECT") && /FROM\s+ORDERS\b/.test(s)) {
         return { rows: opts.owner ? [opts.owner] : [] };
       }
       return { rows: [] };
@@ -95,7 +95,7 @@ describe("POST /api/v1/payments/initiate — underpayment attack guard", () => {
     // And the SELECT against orders must have happened with the
     // supplied orderId.
     const ownerQuery = calls.find((c) =>
-      c.sql.toUpperCase().includes("FROM ORDERS WHERE ID")
+      /FROM\s+ORDERS\b/i.test(c.sql)
     );
     expect(ownerQuery?.params[0]).toBe("order-1");
   });
