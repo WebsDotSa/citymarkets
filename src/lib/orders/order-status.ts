@@ -42,6 +42,12 @@ export interface OrderStatusConfig {
   label: string;
   /** Tailwind classes for the badge background + text */
   color: string;
+  /**
+   * Inline-style-friendly hex color (see `OrderStateDisplay.hex` in
+   * `state-machine.ts`). Defaults to `#6B7280` (gray-500) in the
+   * `getOrderStatusConfig` fallback for unknown statuses.
+   */
+  hex: string;
   /** Lucide icon for the badge */
   icon: LucideIcon;
   /** Whether this status is considered "active" (i.e. not terminal) */
@@ -63,6 +69,7 @@ export function getOrderStatusConfig(status: string): OrderStatusConfig {
     ORDER_STATUSES[status] ?? {
       label: status,
       color: "bg-gray-100 text-gray-700",
+      hex: "#6B7280",
       icon: Clock,
       active: true,
     }

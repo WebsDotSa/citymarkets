@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
+import { getOrderStatusConfig } from '@/lib/orders';
 import { ChatPanel } from '@/components/ui/chat-panel/chat-panel';
 import {
   ChevronLeft,
@@ -56,16 +57,10 @@ interface OrderItem {
   resolved_price?: number | null;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'بانتظار التأكيد',
-  shopping: 'جارٍ التحضير',
-  preparing: 'جارٍ التحضير',
-  accepted: 'تم القبول',
-  in_progress: 'قيد التنفيذ',
-  on_the_way: 'في الطريق',
-  delivered: 'تم التوصيل',
-  cancelled: 'ملغي',
-};
+// Status label is sourced from `getOrderStatusConfig()` (canonical state
+// machine at `@/lib/orders/state-machine`). The previous local map held
+// stale keys (`accepted`, `in_progress`) that are NOT valid `orders.status`
+// enum values — drifting out of sync with the central enum.
 
 /**
  * Dedicated chat page for a direct order. Shows:
@@ -192,7 +187,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
           </div>
         </div>
         <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
-          {STATUS_LABELS[order.status] || order.status}
+          {getOrderStatusConfig(order.status).label}
         </span>
       </div>
 

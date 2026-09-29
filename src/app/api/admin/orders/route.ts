@@ -6,6 +6,7 @@ import { updateOrderSchema } from '@/lib/validation';
 import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { ALL_ORDER_STATES, ALL_PAYMENT_STATES } from '@/lib/orders/state-machine';
 
 function idCheck(url: URL) {
   const id = url.searchParams.get('id');
@@ -95,11 +96,20 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')?.trim() || '';
 
     // Validate statusFilter against known values — silently ignore invalid filters
-    // instead of passing arbitrary strings to the SQL query.
-    const allowedStatuses = ['pending', 'confirmed', 'shopping', 'on_the_way', 'delivered', 'cancelled'];
-    const safeStatusFilter = allowedStatuses.includes(statusFilter) ? statusFilter : '';
-    // payment_status enum is wider (unpaid/pending/paid/failed/refunded); ignore unknowns.
-    const allowedPaymentStatuses = ['unpaid', 'pending', 'paid', 'failed', 'refunded'];
+    // instead of passing arbitrary strings to the SQL query. The canonical
+    // list lives in `@/lib/orders/state-machine` so the API stays in sync
+    // with the Postgres enum and the UI state machine.
+    const safeStatusFilter = (ALL_ORDER_STATES as readonly string[]).includes(statusFilter)
+      ? statusFilter
+      : '';
+    // payment_status enum is wider than the canonical `ALL_PAYMENT_STATES`
+    // because the legacy `unpaid` alias still exists in some rows (pre-migration
+    // state, kept for backwards compatibility in /api/payments/status). We
+    // explicitly union the canonical four with the legacy alias.
+    const allowedPaymentStatuses: readonly string[] = [
+      ...ALL_PAYMENT_STATES,
+      "unpaid",
+    ];
     const safePaymentStatusFilter = allowedPaymentStatuses.includes(paymentStatusFilter)
       ? paymentStatusFilter
       : '';

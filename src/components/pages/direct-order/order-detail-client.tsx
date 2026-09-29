@@ -72,27 +72,13 @@ interface OrderItem {
   resolved_price?: number | null;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'بانتظار التأكيد',
-  shopping: 'جارٍ التحضير',
-  preparing: 'جارٍ التحضير',
-  accepted: 'تم القبول',
-  in_progress: 'قيد التنفيذ',
-  on_the_way: 'في الطريق',
-  delivered: 'تم التوصيل',
-  cancelled: 'ملغي',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: '#F59E0B',
-  shopping: '#3B82F6',
-  preparing: '#3B82F6',
-  accepted: '#10B981',
-  in_progress: '#8B5CF6',
-  on_the_way: '#0EA5E9',
-  delivered: '#10B981',
-  cancelled: '#EF4444',
-};
+// Status label + hex are sourced from `getOrderStatusConfig()` (canonical
+// state machine at `@/lib/orders/state-machine`). The previous local
+// `STATUS_LABELS` + `STATUS_COLORS` maps contained stale keys (`accepted`,
+// `in_progress`) that are NOT valid `orders.status` enum values — they
+// drifted out of sync with the central enum and the canonical Arabic
+// labels. Inline fallback `#6B7280` (gray-500) is used when the API
+// returns an unknown status.
 
 export function OrderDetailClient({ orderId }: { orderId: string }) {
   const router = useRouter();
@@ -167,8 +153,9 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
 
   const isDirect = order?.type === 'direct';
   const isLocked = Boolean(order && ['on_the_way', 'delivered', 'cancelled'].includes(order.status));
-  const statusColor = order ? (STATUS_COLORS[order.status] || '#6B7280') : '#6B7280';
-  const statusLabel = order ? (STATUS_LABELS[order.status] || order.status) : '';
+  const statusConfig = order ? getOrderStatusConfig(order.status) : null;
+  const statusColor = statusConfig?.hex ?? '#6B7280';
+  const statusLabel = statusConfig?.label ?? '';
 
   if (loading) {
     return (
