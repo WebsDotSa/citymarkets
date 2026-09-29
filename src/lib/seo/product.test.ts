@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { productDescription, productAltText, type ProductSeoRow } from "./product";
+import { cache } from "@/lib/cache";
 
 const base: ProductSeoRow = {
   id: "abc",
@@ -99,10 +100,15 @@ beforeEach(() => {
   vi.clearAllMocks();
   calls.length = 0;
   nextQueryResult = { rows: [] };
+  // SEO helpers cache results via @/lib/cache. Clear the singleton so
+  // each test starts with a clean store — otherwise `nextQueryResult`
+  // overrides would be masked by stale cache entries from prior tests.
+  cache.clear();
 });
 
 afterEach(() => {
   vi.clearAllMocks();
+  cache.clear();
 });
 
 describe("getProductForSeo", () => {
