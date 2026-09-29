@@ -217,23 +217,27 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ received: true });
           }
 
-          // Mirror into the lifecycle `status` column but never go back to
-          // a pre-paid status (e.g. 'pending' from a stale retry).
+          // Roll lifecycle forward: payment confirmed → 'confirmed'.
+          // NEVER set the fulfillment lifecycle to 'paid' — 'paid' is a
+          // payment_status only (matches the Tamara webhook invariant at
+          // src/app/api/v1/payments/tamara/webhook/route.ts:226-237).
+          // We use CASE so a late 'paid' webhook can never regress an
+          // already-confirmed/preparing/ready/etc. order back to pending.
           await client.query(
-            `UPDATE orders SET status = $1 WHERE id = $2 AND status NOT IN ('cancelled','refunded','delivered')`,
-            ['paid', orderId]
+            `UPDATE orders
+                SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
+              WHERE id = $1`,
+            [orderId]
           );
 
-          // Slice 3: mirror the same lifecycle flip onto every child
-          // vendor_order so the parent and N children stay in lockstep.
-          // The status enum on vendor_orders is a superset of the
-          // catalog one, so 'paid' is a valid value.
+          // Slice 3 fan-out: mirror the same lifecycle flip onto every
+          // child vendor_order. Same CASE-guard as the parent — never
+          // set fulfillment to 'paid'.
           await client.query(
             `UPDATE vendor_orders
-                SET status = $1
-              WHERE parent_order_id = $2
-                AND status NOT IN ('cancelled','refunded','delivered')`,
-            ['paid', orderId],
+                SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
+              WHERE parent_order_id = $1`,
+            [orderId]
           );
 
           // SECURITY (Pay-H): resolve any pending_redeem hold into a
