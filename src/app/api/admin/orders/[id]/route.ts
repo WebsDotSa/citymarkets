@@ -8,6 +8,7 @@ import {
   assertValidTransition,
   invalidTransitionMessage,
 } from '@/lib/orders/state-machine';
+import { releaseRedeemHoldForOrder } from '@/lib/orders/loyalty';
 import {
   ORDER_BASE_COLUMNS,
   ORDER_ADDRESS_COLUMNS_MINIMAL,
@@ -297,6 +298,11 @@ export async function PATCH(
              AND used_count > 0`,
           [orderId]
         );
+        // P1-7 (full-system audit 2026-09-30): release the loyalty
+        // `pending_redeem` hold for this order so the customer's
+        // available-balance preview stops drifting downward over time
+        // (cancelled orders previously left the hold in place).
+        await releaseRedeemHoldForOrder(client, { orderId });
       }
     }
 

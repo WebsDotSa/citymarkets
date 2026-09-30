@@ -14,6 +14,7 @@ import {
 import {
   awardPointsForOrder,
   getLoyaltySettings,
+  releaseRedeemHoldForOrder,
 } from '@/lib/orders/loyalty';
 
 export const dynamic = "force-dynamic";
@@ -355,6 +356,13 @@ export async function PATCH(
              AND used_count > 0`,
           [id]
         ).catch(() => {});
+        // P1-7 (full-system audit 2026-09-30): release the loyalty
+        // `pending_redeem` hold for this cancelled order. Best-effort:
+        // failure is logged but does not block the response (same
+        // `.catch(() => {})` posture as the coupon release above).
+        releaseRedeemHoldForOrder(client, { orderId: id }).catch((err) => {
+          logError("[driver cancel] loyalty hold release failed", err, { orderId: id });
+        });
       }
 
       // P0-2 (full-system audit 2026-09-30): COD orders previously
@@ -467,6 +475,12 @@ export async function PATCH(
            AND used_count > 0`,
         [id]
       ).catch(() => {});
+      // P1-7 (full-system audit 2026-09-30): release the loyalty
+      // `pending_redeem` hold for this cancelled order. Same
+      // best-effort posture as the claim branch above.
+      releaseRedeemHoldForOrder(client, { orderId: id }).catch((err) => {
+        logError("[driver cancel] loyalty hold release failed", err, { orderId: id });
+      });
     }
 
     // P0-2 (full-system audit 2026-09-30): mirror the COD loyalty

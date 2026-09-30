@@ -1,9 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
+import type { PoolClient } from "pg";
 
 import {
   DEFAULT_LOYALTY_SETTINGS,
   awardPointsForOrder,
   computeEarnPoints,
+  releaseRedeemHoldForOrder,
   resolveRedeemForOrder,
   type LoyaltySettings,
 } from "./loyalty";
@@ -187,5 +189,30 @@ describe("resolveRedeemForOrder", () => {
     });
     expect(out).toEqual({ debited: 0, duplicate: false });
     expect(client.query).not.toHaveBeenCalled();
+  });
+});
+
+describe("releaseRedeemHoldForOrder (P1-7)", () => {
+  it("DELETEs the pending_redeem row and reports released=true", async () => {
+    const client = makeMockClient();
+    client.query.mockResolvedValueOnce({ rows: [{ id: "lt-1" }], rowCount: 1 });
+    const out = await releaseRedeemHoldForOrder(client as unknown as PoolClient, {
+      orderId: "order-rh1",
+    });
+    expect(out).toEqual({ released: true });
+    expect(client.query).toHaveBeenCalledOnce();
+    const [sql, params] = client.query.mock.calls[0];
+    expect(sql).toMatch(/DELETE FROM loyalty_transactions/);
+    expect(sql).toMatch(/type = 'pending_redeem'/);
+    expect(params).toEqual(["order-rh1"]);
+  });
+
+  it("reports released=false when nothing matched (idempotent)", async () => {
+    const client = makeMockClient();
+    client.query.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+    const out = await releaseRedeemHoldForOrder(client as unknown as PoolClient, {
+      orderId: "order-rh2",
+    });
+    expect(out).toEqual({ released: false });
   });
 });

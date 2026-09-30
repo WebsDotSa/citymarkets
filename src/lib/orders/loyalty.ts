@@ -173,3 +173,35 @@ export async function resolveRedeemForOrder(
 
   return { debited: points, duplicate: false };
 }
+
+/**
+ * Release a pending_redeem hold when an order is cancelled (P1-7 fix).
+ *
+ * Background:
+ *   At checkout, the redemption path inserts a `pending_redeem` row
+ *   in `loyalty_transactions` so the customer can't double-spend
+ *   those points. The hold is normally converted to `redeem` on
+ *   payment success (idempotent via UNIQUE) — but on cancellation
+ *   the row was previously left in place, causing the customer's
+ *   "available points" preview to drift downward over time as
+ *   cancelled orders accumulated unreleased holds.
+ *
+ * This helper DELETEs the hold row. Safe to call multiple times
+ * (idempotent — second call is a no-op).
+ *
+ * Caller must pass a PoolClient so this runs inside the same
+ * transaction as the parent status change.
+ */
+export async function releaseRedeemHoldForOrder(
+  client: PoolClient,
+  args: { orderId: string },
+): Promise<{ released: boolean }> {
+  const deleted = await client.query(
+    `DELETE FROM loyalty_transactions
+      WHERE ref_order_id = $1
+        AND type = 'pending_redeem'::loyalty_tx_type_enum
+      RETURNING id`,
+    [args.orderId],
+  );
+  return { released: (deleted.rowCount ?? 0) > 0 };
+}
