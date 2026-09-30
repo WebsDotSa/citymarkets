@@ -1,10 +1,18 @@
 /**
  * Payment event ledger helper.
  *
- * Records gateway callbacks (Moyasar, Tamara) in the `payment_events`
+ * Records gateway callbacks (Moyasar, Tamara, COD) in the `payment_events`
  * table defined by migration 073. Designed to be the FIRST call in
  * any webhook handler so replays short-circuit before any order/state
  * mutation occurs.
+ *
+ * Accepted `gateway` values (see `PaymentGateway` below):
+ *   - `moyasar`  — credit/debit card payments via the Moyasar gateway.
+ *   - `tamara`   — Buy-Now-Pay-Later payments via Tamara.
+ *   - `cod`      — Cash-on-Delivery ledger rows written by the driver
+ *                  confirmation flow + admin COD-approval flow (no HTTP
+ *                  callback, but the same UNIQUE(invoice_id, gateway,
+ *                  event_type) index dedupes repeat admin-clicks).
  *
  * Idempotency contract:
  *   - The caller passes {invoiceId, gateway, eventType, raw}.

@@ -197,7 +197,3 @@ export function getPaymentStatusConfig(status: string): PaymentStatusConfig {
     }
   );
 }
-
-// Re-export the vendor-order display map for vendor-side admin UIs.
-export const VENDOR_ORDER_STATUSES: Record<string, OrderStatusConfig> =
-  VENDOR_ORDER_STATE_DISPLAY as unknown as Record<string, OrderStatusConfig>;

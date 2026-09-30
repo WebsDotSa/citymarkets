@@ -9,7 +9,7 @@
  *   - redis.ts       — ioredis singleton with graceful Redis-down fallback
  *   - queues.ts      — BullMQ Queue factory + idempotent job options
  *   - enqueue.ts     — public `enqueueAdminNewOrder` / `enqueueOrderPaidSms`
- *                      / `enqueueNotifyVendorNewOrder` / `enqueueVendorFanout`
+ *                      / `enqueueNotifyVendorNewOrder`
  *   - loaders.ts     — canonical DB loaders shared by enqueue + workers
  *   - workers.ts     — Worker factory (registered from scripts/worker.ts)
  *
@@ -25,7 +25,6 @@ export {
   enqueueAdminNewOrder,
   enqueueOrderPaidSms,
   enqueueNotifyVendorNewOrder,
-  enqueueVendorFanout,
 } from "./enqueue";
 
 // ── Queue state introspection ───────────────────────────────────────────
