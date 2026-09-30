@@ -93,6 +93,26 @@ jobs:
         # `|| echo` / `|| true` — migration failures are hard failures.
         run: npm run db:migrate
 
+      - name: Migration drift report (against applied CI DB)
+        # Runs db:drift-report against the freshly-migrated CI database.
+        # Catches any untracked tables or applied-vs-disk checksum drift
+        # that the dry-run above can't detect (dry-run skips the DB).
+        # Currently the only known item is the pre-existing `app_migrations`
+        # tracking table, which is expected and not introduced by this
+        # branch — that's why this gate is informational (no `|| exit 1`).
+        # When pre-existing debt reaches zero, promote to hard-fail.
+        run: npm run db:drift-report
+
+      - name: Domain guard (cross-domain deep import check)
+        # Walks imports under src/app/api/, src/lib/, and src/components/
+        # for cross-domain deep imports that bypass the canonical barrel
+        # (`@/lib/identity`, `@/lib/catalog`, etc.). Soft-fail today:
+        # existing cross-domain deep imports are pre-existing debt on
+        # main that the consolidation branch has not yet cleared.
+        # Promote to hard-fail once domain:guard returns 0 by removing
+        # the `||` clause below.
+        run: npm run domain:guard || echo "::warning::domain:guard soft-failed (pre-existing cross-domain deep imports; tracked for cleanup)"
+
       - name: Vitest with coverage
         run: npm run test:coverage
 
