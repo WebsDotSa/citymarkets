@@ -5,8 +5,8 @@
  * Invariants covered:
  *   1. POST/PUT/PATCH/DELETE all require admin auth (401 otherwise).
  *   2. POST: invalid slug (leading dash) → 400.
- *   3. POST: missing slug auto-fills from a Unicode-safe slugify
- *      (Arabic name_ar → Arabic slug).
+ *   3. POST: missing slug auto-fills via `generateSlug` (Arabic
+ *      name_ar → Latin transliteration slug).
  *   4. POST: round-trip — Unicode slugs pass the new Unicode regex.
  *   5. POST: owner row bootstrap requires phone + password.
  *   6. POST: duplicate slug (PG 23505) → 400.
@@ -111,7 +111,7 @@ describe("POST /api/admin/vendors", () => {
     expect(body.success).toBe(false);
   });
 
-  it("auto-fills slug from Arabic name when slug is empty", async () => {
+  it("auto-fills slug from Arabic name with Latin transliteration", async () => {
     const res = await POST(
       jsonRequest("http://localhost/api/admin/vendors", "POST", {
         name_ar: "متجر الفواكه",
@@ -124,8 +124,12 @@ describe("POST /api/admin/vendors", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
-    // The auto-slug must contain Arabic letters (Unicode-preserving).
-    expect(body.slug).toMatch(/[\p{L}\p{N}]+/u);
+    // The auto-slug must be a Latin transliteration — no Arabic
+    // characters may survive the slugify. The ARABIC_TO_LATIN map in
+    // `@/lib/slug` produces "mtjr-alfwakh" for "متجر الفواكه"
+    // (ا → 'a', ة → 'h', و → 'wa', the rest via single-letter map).
+    expect(body.slug).not.toMatch(/[؀-ۿ]/);
+    expect(body.slug).toMatch(/^[a-z0-9-]+$/);
   });
 
   it("accepts a Unicode slug explicitly (round-trip safe)", async () => {

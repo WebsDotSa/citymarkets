@@ -5,11 +5,11 @@
  * (e.g. lat=9999, "javascript:..." URLs, malformed emails).
  *
  * Slug charset is Unicode-aware (`/^[\p{L}\p{N}-]+$/u`) so Arabic
- * store names round-trip cleanly through PUT. The historical ASCII
- * regex `/^[a-z0-9-]+$/` rejected any non-Latin slug — but the
- * server's auto-slugifier (`slugifyKeepUnicode` in
- * `/api/admin/vendors/route.ts`) already produces Unicode slugs, so
- * the strict regex was inconsistent with the data it had to validate.
+ * store names round-trip cleanly through PUT. The server's
+ * auto-slugifier (`generateSlug` from `@/lib/slug`) transliterates
+ * Arabic to Latin for the *new* vendor auto-fill case, but admins can
+ * still type an Arabic slug explicitly on edit — the historical rows
+ * with Arabic slugs also round-trip unchanged.
  *
  * Owner credentials (login_phone / login_email / password) live
  * OUTSIDE this schema on purpose. They are read from the raw request

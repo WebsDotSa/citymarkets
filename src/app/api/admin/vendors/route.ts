@@ -5,6 +5,7 @@ import { logAdminAction } from "@/lib/admin-audit";
 import { vendorCreateSchema, vendorUpdateSchema } from "@/lib/validation";
 import { optionalPhone, optionalEmail } from "@/lib/validation/primitives";
 import { hashPassword } from "@/lib/password";
+import { generateSlug } from "@/lib/slug";
 
 import { error as logError } from '@/lib/logger';
 
@@ -14,27 +15,6 @@ function idCheck(url: URL) {
     return NextResponse.json({ success: false, error: "المعرّف مطلوب" }, { status: 400 });
   }
   return id;
-}
-
-// Slugify: lowercase, replace non-ASCII alphanumerics with dashes, collapse, trim
-//
-// NOTE: Intentionally NOT replaced with `generateSlug` from
-// `@/lib/slug`. The canonical helper transliterates Arabic to Latin
-// (فواكه → fawakeh); admin vendor slugs in this route are stored
-// verbatim with Arabic characters preserved (matching the historical
-// `vendors.slug` rows). Behaviour change would break lookups by slug
-// for vendors created before the transliteration was introduced.
-//
-// Renamed from `slugify` to `slugifyKeepUnicode` to make the
-// divergence from `@/lib/slug.generateSlug` obvious at every call site.
-function slugifyKeepUnicode(input: string): string {
-  return (input || "")
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
 }
 
 /**
@@ -219,7 +199,7 @@ export async function POST(request: NextRequest) {
     );
   }
   const v = parsed.data;
-  const slug = v.slug?.toString().trim() || slugifyKeepUnicode(v.name_ar);
+  const slug = v.slug?.toString().trim() || generateSlug(v.name_ar);
   if (!slug) {
     return NextResponse.json(
       { success: false, error: "تعذّر توليد slug من الاسم" },
@@ -368,7 +348,7 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-    const slug = v.slug?.toString().trim() || (v.name_ar ? slugifyKeepUnicode(v.name_ar) : undefined);
+    const slug = v.slug?.toString().trim() || (v.name_ar ? generateSlug(v.name_ar) : undefined);
 
     await query(
       // BUGFIX (audit 2026-09-29): wrap every column in COALESCE so a

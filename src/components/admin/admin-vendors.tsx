@@ -73,11 +73,13 @@ function buildFields(): FormField[] {
       key: "slug",
       label: "المعرّف (slug)",
       type: "text",
-      placeholder: "يُولّد تلقائياً من الاسم (يدعم العربية)",
+      placeholder: "مثال: fruits-store — يُترجم تلقائياً من الاسم العربي",
       help: "حروف، أرقام، وشرطات. لا يبدأ أو ينتهي بشرطة.",
       validate: (v) => {
         // Empty slug is allowed on create — the server auto-fills it
-        // from name_ar. On edit an empty slug means "leave existing".
+        // from name_ar via `generateSlug` (Arabic → Latin
+        // transliteration). On edit an empty slug means "leave
+        // existing".
         if (v === undefined || v === null || v === "") return null;
         return validateSlug(v);
       },
