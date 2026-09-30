@@ -208,12 +208,12 @@ export async function POST(request: NextRequest) {
         (user_id, address_id, status, type,
          subtotal, delivery_fee, service_fee, tax, total,
          payment_method, payment_status, notes,
-         voice_note_url, voice_note_duration, service_fee_acknowledged_at,
+         voice_note_url, voice_note_duration,
          idempotency_key)
        VALUES ($1, $2, 'pending', 'direct',
                $3, $4, $5, $6, $7,
                $8, $9, $10,
-               $11, $12, NOW(),
+               $11, $12,
                $13)
        RETURNING id, tracking_code AS order_number`,
       [

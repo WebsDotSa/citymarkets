@@ -35,6 +35,14 @@ import { mapDbUserRow } from "./map-db-user";
 import type { User } from "@/lib/types";
 
 /**
+ * H35 (audit 2026-09-30): file exports only functions (NOT a pure types
+ * module — cannot be renamed to \`auth-types.ts\`). Exports:
+ *   - getServerUser(): Promise<User | null>
+ *   - requireAuth(): Promise<{ success: true, user: User } | NextResponse>
+ *   - createServerSupabaseClientAsync(): Promise<SupabaseClient>
+ */
+
+/**
  * Get the current authenticated user from server-side context
  * Returns null if not authenticated
  */
