@@ -11,6 +11,7 @@
  * without auditing the 2 importers.
  */
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -716,7 +717,7 @@ function DeleteAccountModal({
       if (res.ok && data.success) {
         onDeleted();
       } else {
-        setError(data.error || "فشل حذف الحساب");
+        setError(getApiErrorMessage(data, "فشل حذف الحساب"));
       }
     } catch {
       setError("تعذر الاتصال بالخادم");

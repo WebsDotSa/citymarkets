@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState, useEffect, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -94,7 +95,7 @@ export default function VendorLoginPage({ params }: LoginPageProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "فشل تسجيل الدخول");
+        setError(getApiErrorMessage(data, "فشل تسجيل الدخول"));
         return;
       }
 
@@ -128,13 +129,13 @@ export default function VendorLoginPage({ params }: LoginPageProps) {
         // 503 → force the user back to the password tab (Twilio down).
         if (res.status === 503) {
           setError(
-            (data.error || "خدمة التحقق غير مهيأة") +
+            (getApiErrorMessage(data, "خدمة التحقق غير مهيأة")) +
               " — استخدم كلمة المرور بدلاً من ذلك",
           );
           setTab("password");
           return;
         }
-        setError(data.error || "تعذر إرسال رمز التحقق");
+        setError(getApiErrorMessage(data, "تعذر إرسال رمز التحقق"));
         return;
       }
       setOtpStep("code");
@@ -164,7 +165,7 @@ export default function VendorLoginPage({ params }: LoginPageProps) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "رمز التحقق غير صحيح");
+        setError(getApiErrorMessage(data, "رمز التحقق غير صحيح"));
         setOtp("");
         return;
       }

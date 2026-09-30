@@ -1,5 +1,6 @@
 'use client';
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
@@ -102,7 +103,7 @@ function AdminDirectOrderDetail({ orderId }: { orderId: string }) {
         }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل الحفظ');
+      if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل الحفظ'));
       setPriceEdits({});
       await fetchOrder();
     } catch (err) {
@@ -130,7 +131,7 @@ function AdminDirectOrderDetail({ orderId }: { orderId: string }) {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل الإضافة');
+      if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل الإضافة'));
       setNewItemText('');
       setNewItemQty(1);
       setNewItemUnitPrice('');

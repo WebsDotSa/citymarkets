@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
@@ -48,7 +49,7 @@ export default function NewOfferPage() {
         router.push("/admin/offers");
         return { ok: true };
       }
-      const msg = json.error || "فشل إنشاء العرض";
+      const msg = getApiErrorMessage(json, "فشل إنشاء العرض");
       showToast(msg, "error");
       return { ok: false, error: msg };
     } catch (e) {

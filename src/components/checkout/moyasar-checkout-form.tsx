@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { Loader2, AlertCircle } from "lucide-react";
@@ -113,7 +114,7 @@ export function MoyasarCheckoutForm({
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok || !data.success) {
-          setLoadError(data.error || "تعذّر تحميل إعدادات الدفع");
+          setLoadError(getApiErrorMessage(data, "تعذّر تحميل إعدادات الدفع"));
           return;
         }
         setConfig(data as MoyasarConfig);
@@ -145,7 +146,7 @@ export function MoyasarCheckoutForm({
         });
         const data = await res.json();
         if (!res.ok || !data.success) {
-          const msg = data.error || "تعذّر تأكيد الدفع";
+          const msg = getApiErrorMessage(data, "تعذّر تأكيد الدفع");
           setPayError(msg);
           onError?.(msg);
           return false;

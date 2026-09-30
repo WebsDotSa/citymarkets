@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -134,7 +135,7 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setUpdateError(data.error || "تعذّر تحديث الحالة");
+        setUpdateError(getApiErrorMessage(data, "تعذّر تحديث الحالة"));
         return;
       }
       // Reload to get updated timestamps (confirmed_at / prepared_at / etc.)

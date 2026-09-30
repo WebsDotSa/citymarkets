@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState } from "react";
 import Link from "next/link";
 import { Search, Phone, Hash, Package, MapPin, ChevronLeft, Loader2, X } from "lucide-react";
@@ -57,7 +58,7 @@ export default function TrackOrderPage() {
       );
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setError(data.error || "ما قدرنا نلاقي الطلب");
+        setError(getApiErrorMessage(data, "ما قدرنا نلاقي الطلب"));
         return;
       }
       setOrder(data.order);

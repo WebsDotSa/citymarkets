@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -288,7 +289,7 @@ export default function AdminOrderDetailPage() {
       });
       const json = await res.json().catch(() => ({ success: false }));
       if (!res.ok || !json.success) {
-        showToast(json.error || "فشل حفظ الملاحظات", "error");
+        showToast(getApiErrorMessage(json, "فشل حفظ الملاحظات"), "error");
         return;
       }
       showToast("تم حفظ الملاحظات", "success");
@@ -312,7 +313,7 @@ export default function AdminOrderDetailPage() {
       });
       const json = await res.json().catch(() => ({ success: false }));
       if (!res.ok || !json.success) {
-        showToast(json.error || "فشل حفظ الحالة", "error");
+        showToast(getApiErrorMessage(json, "فشل حفظ الحالة"), "error");
         return;
       }
       showToast("تم حفظ الحالة", "success");

@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Store, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
@@ -147,7 +148,7 @@ export default function VendorRegisterPage() {
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error || "فشل إرسال الطلب");
+        setError(getApiErrorMessage(json, "فشل إرسال الطلب"));
         return;
       }
       setSubmitted(true);

@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState } from "react";
 import { Loader2, CheckCircle, Send } from "lucide-react";
 
@@ -38,7 +39,7 @@ export function DelegateRegisterForm() {
       if (res.ok && data.success) {
         setSubmitted(true);
       } else {
-        setError(data.error || "حدث خطأ أثناء تقديم الطلب");
+        setError(getApiErrorMessage(data, "حدث خطأ أثناء تقديم الطلب"));
       }
     } catch {
       setError("تعذر الاتصال بالسيرفر، يرجى المحاولة لاحقاً");

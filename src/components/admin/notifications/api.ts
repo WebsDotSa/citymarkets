@@ -4,6 +4,7 @@
 // Centralizes `credentials: "include"` + JSON handling so each
 // tab component stays small.
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import type {
   Broadcast,
   BroadcastTemplate,
@@ -29,7 +30,7 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
     error?: string;
   };
   if (!res.ok || data.success === false) {
-    throw new Error(data.error || `HTTP ${res.status}`);
+    throw new Error(getApiErrorMessage(data, `HTTP ${res.status}`));
   }
   return data.data as T;
 }

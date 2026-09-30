@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState, useEffect, useCallback } from "react";
 import {
   TrendingUp,
@@ -103,7 +104,7 @@ export default function DriverEarningsPage() {
         const json = (await res.json()) as EarningsResponse;
         if (signal?.aborted) return;
         if (!res.ok || !json.success) {
-          setError(json.error || "تعذر جلب الأرباح");
+          setError(getApiErrorMessage(json, "تعذر جلب الأرباح"));
           setData(null);
           return;
         }

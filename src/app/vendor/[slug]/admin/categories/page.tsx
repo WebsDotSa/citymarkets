@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useState, use, useMemo } from "react";
 import Link from "next/link";
 import {
@@ -112,7 +113,7 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setError(data.error || "تعذّر إنشاء القسم. حاول مرة أخرى.");
+        setError(getApiErrorMessage(data, "تعذّر إنشاء القسم. حاول مرة أخرى."));
         return;
       }
       showToast(
@@ -162,7 +163,7 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        showToast(data.error || "فشل التحديث", "error");
+        showToast(getApiErrorMessage(data, "فشل التحديث"), "error");
         return;
       }
       showToast("تم تحديث القسم", "success");
@@ -190,7 +191,7 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        showToast(data.error || "فشل الحذف", "error");
+        showToast(getApiErrorMessage(data, "فشل الحذف"), "error");
         return;
       }
       showToast("تم حذف القسم", "success");

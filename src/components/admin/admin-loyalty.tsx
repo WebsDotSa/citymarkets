@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useMemo, useState } from "react";
 import { Award, Coins, TrendingUp, TrendingDown, Save } from "lucide-react";
 import { csrfFetch } from "@/lib/csrf-client";
@@ -58,7 +59,7 @@ export function AdminLoyalty() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || "فشل الحفظ");
+        throw new Error(getApiErrorMessage(json, "فشل الحفظ"));
       }
       setSettings(json.settings);
       setMessage({ kind: "ok", text: "تم حفظ الإعدادات" });

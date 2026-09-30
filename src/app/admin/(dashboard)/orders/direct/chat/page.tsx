@@ -1,5 +1,6 @@
 'use client';
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
@@ -122,7 +123,7 @@ export default function AdminChatHubPage() {
         body: JSON.stringify({ product_id: productId, free_text: productName, quantity: 1 }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل');
+      if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل'));
       setAddingProduct(false);
       setNewProductSearch('');
       setProductResults([]);
@@ -150,7 +151,7 @@ export default function AdminChatHubPage() {
         }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل');
+      if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل'));
       setPriceEdits({});
       await fetchActiveOrder(activeId);
       await fetchOrders();
@@ -177,7 +178,7 @@ export default function AdminChatHubPage() {
         }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل');
+      if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل'));
       await fetchActiveOrder(activeId);
       await fetchOrders();
     } catch (err) {

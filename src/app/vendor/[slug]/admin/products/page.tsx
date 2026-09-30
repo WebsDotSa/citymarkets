@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { useConfirm } from "@/components/ui/toast";
@@ -363,7 +364,7 @@ function AddProductModal({
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "فشل في إنشاء المنتج");
+        setError(getApiErrorMessage(data, "فشل في إنشاء المنتج"));
         return;
       }
 

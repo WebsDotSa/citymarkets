@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState, useEffect, useCallback } from "react";
 import {
   Truck,
@@ -88,7 +89,7 @@ export default function DriverHistoryPage() {
         const json = await res.json();
         if (signal?.aborted) return;
         if (!res.ok || !json.success) {
-          setError(json.error || "تعذر جلب السجل");
+          setError(getApiErrorMessage(json, "تعذر جلب السجل"));
           setOrders([]);
           return;
         }

@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, ArrowRight, Gift } from "lucide-react";
@@ -69,7 +70,7 @@ export default function SpinPage() {
       const json = await res.json();
 
       if (!json.success) {
-        setError(json.error || "فشل في تدوير العجلة");
+        setError(getApiErrorMessage(json, "فشل في تدوير العجلة"));
         setSpinning(false);
         return;
       }
