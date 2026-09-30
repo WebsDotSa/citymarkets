@@ -15,7 +15,7 @@
 
 import type { Product } from "@/lib/types";
 import type { ChatProductResult } from '@/lib/catalog/ai-chat-client-types';
-import type { MealSuggestion } from '@/lib/catalog/ai-shopping-assistant';
+import type { MealSuggestion } from '@/lib/catalog/ai-chat-client-types';
 import {
   buildWelcomeMessage,
   type StoredChatMessage,
@@ -37,7 +37,7 @@ export type AiChatResponse = {
   mealSuggestions?: MealSuggestion[];
 };
 
-export type ChatInputMode = "text" | "voice";
+export type { ChatInputMode } from "@/lib/catalog/ai-chat-client-types";
 
 /* ------------------------------------------------------------------------- */
 /* Quick-pick suggestions shown under the composer when the chat is empty   */

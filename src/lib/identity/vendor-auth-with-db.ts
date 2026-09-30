@@ -6,18 +6,13 @@ import {
   clearVendorSessionCache,
   type VendorRole,
   type VendorSession,
+  type VendorSessionEntry,
   verifyVendorRequest,
 } from "./vendor-auth";
 import { createRoleCache, type RoleCache } from "./auth/role-cache";
 
 // Cache is shared with vendor-auth.ts so a successful DB verification
 // also satisfies the lighter `verifyVendorRequest` callers downstream.
-interface VendorSessionEntry {
-  role: VendorRole;
-  isActive: boolean;
-  vendorIsActive: boolean;
-  tokenVersion: number;
-}
 
 const vendorSessionCache: RoleCache<VendorSessionEntry> =
   createRoleCache<VendorSessionEntry>();

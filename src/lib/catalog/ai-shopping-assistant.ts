@@ -8,19 +8,10 @@ export type AiProductRequest = {
   quantity: number;
 };
 
-/** مكونات مقترحة لوجبة — العميل يختار لاحقاً ما يُضاف للسلة */
-export type MealIngredient = {
-  search_query: string;
-  quantity: number;
-  note?: string;
-};
-
-export type MealSuggestion = {
-  id: string;
-  title: string;
-  description: string;
-  ingredients: MealIngredient[];
-};
+// Meal types are defined once in the client-safe `ai-chat-client-types`
+// module and re-exported here for existing server-side importers.
+import type { MealIngredient, MealSuggestion } from "./ai-chat-client-types";
+export type { MealIngredient, MealSuggestion };
 
 export type AiAssistantPayload = {
   reply: string;

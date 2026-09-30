@@ -4,13 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Award, Coins, TrendingUp, TrendingDown, Save } from "lucide-react";
 import { csrfFetch } from "@/lib/csrf-client";
 
-interface LoyaltySettings {
-  enabled: boolean;
-  earn_points_per_sar: number;
-  redeem_value_per_point: number;
-  min_redeem_points: number;
-  max_redeem_percent: number;
-}
+// Canonical settings shape (type-only import — erased from the client bundle).
+import type { LoyaltySettings } from "@/lib/orders/loyalty";
 
 interface LoyaltyStats {
   members: number;

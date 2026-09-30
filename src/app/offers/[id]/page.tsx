@@ -1,3 +1,4 @@
+import { toNumberOrNull, toNumberOrZero } from "@/lib/format";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { buildPageMetadata } from "@/lib/seo/site";
@@ -61,18 +62,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     path: `/offers/${offer.id}`,
     image: offer.image_url,
   });
-}
-
-function toNumberOrZero(v: string | number | null | undefined): number {
-  if (v == null) return 0;
-  const n = typeof v === "number" ? v : parseFloat(String(v));
-  return Number.isFinite(n) ? n : 0;
-}
-
-function toNumber(v: string | number | null | undefined): number | null {
-  if (v == null) return null;
-  const n = typeof v === "number" ? v : parseFloat(String(v));
-  return Number.isFinite(n) ? n : null;
 }
 
 export default async function OfferDetailPage({ params }: PageProps) {
@@ -165,8 +154,8 @@ export default async function OfferDetailPage({ params }: PageProps) {
     image_url: offer.image_url,
     discount_type: offer.discount_type,
     discount_value: toNumberOrZero(offer.discount_value),
-    max_discount: toNumber(offer.max_discount),
-    min_order: toNumber(offer.min_order),
+    max_discount: toNumberOrNull(offer.max_discount),
+    min_order: toNumberOrNull(offer.min_order),
     starts_at: offer.starts_at,
     ends_at: offer.ends_at,
     is_featured: offer.is_featured,

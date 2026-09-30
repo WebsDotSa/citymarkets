@@ -78,7 +78,7 @@ export async function verifyVendorRequest(
   };
 }
 
-interface VendorSessionEntry {
+export interface VendorSessionEntry {
   role: VendorRole;
   isActive: boolean;
   vendorIsActive: boolean;
