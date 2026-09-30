@@ -12,28 +12,19 @@
 // "not yours" (the latter would leak address ownership).
 
 import { NextRequest, NextResponse } from "next/server";
-import { resolveCustomerUserIdFromRequest } from "@/lib/identity";
-import { setDefaultAddress as setDefaultAddressService } from "@/lib/identity/address-service";
+import {
+  resolveAddressOwnerFromRequest,
+  setDefaultAddress as setDefaultAddressService,
+} from "@/lib/identity/address-service";
 
 import { error as logError } from "@/lib/logger";
 
-type Owner =
-  | { kind: "user"; userId: string }
-  | { kind: "guest"; guestKey: string };
-
-async function ownerFromRequest(request: NextRequest): Promise<Owner | null> {
-  const userId = await resolveCustomerUserIdFromRequest(request);
-  if (userId) return { kind: "user", userId };
-  const guestKey = request.headers.get("x-guest-key");
-  if (guestKey) return { kind: "guest", guestKey };
-  return null;
-}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
-  const owner = await ownerFromRequest(request);
+  const owner = await resolveAddressOwnerFromRequest(request);
   if (!owner) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },

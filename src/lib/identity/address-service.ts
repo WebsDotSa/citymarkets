@@ -37,12 +37,29 @@
  *     have validated the URLs.
  */
 
+import type { NextRequest } from "next/server";
 import { query, pool } from "@/lib/db";
+import { resolveCustomerUserIdFromRequest } from "./customer-session";
 
 /** Discriminated union — addresses can be owned by a user or a guest session. */
 export type AddressOwner =
   | { kind: "user"; userId: string }
   | { kind: "guest"; guestKey: string };
+
+/**
+ * Resolve the address owner for a request: the authenticated customer, else
+ * the guest session from the `x-guest-key` header, else `null`. Canonical for
+ * every `/api/v1/delivery-addresses*` handler.
+ */
+export async function resolveAddressOwnerFromRequest(
+  request: NextRequest,
+): Promise<AddressOwner | null> {
+  const userId = await resolveCustomerUserIdFromRequest(request);
+  if (userId) return { kind: "user", userId };
+  const guestKey = request.headers.get("x-guest-key");
+  if (guestKey) return { kind: "guest", guestKey };
+  return null;
+}
 
 export interface AddressRow {
   id: string;
@@ -374,4 +391,20 @@ export async function resolveOrderAddress(
   if (rows.length === 0) return null;
   const r = rows[0];
   return { id: String(r.id), lat: Number(r.lat), lng: Number(r.lng) };
+}
+
+/**
+ * Public DTO for the delivery-addresses contract: strips owner-identifying
+ * fields (`user_id`, `guest_key`) and normalises a NULL `place_images`
+ * (rows written before migration 049) to `[]`, matching the pre-service
+ * response shape.
+ */
+export function toPublicAddressRow(row: AddressRow): Record<string, unknown> {
+  const { user_id: _u, guest_key: _g, ...rest } = row;
+  void _u;
+  void _g;
+  return {
+    ...rest,
+    place_images: Array.isArray(row.place_images) ? row.place_images : [],
+  };
 }

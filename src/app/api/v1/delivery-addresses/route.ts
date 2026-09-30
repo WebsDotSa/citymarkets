@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { sanitizePlaceImageUrls } from '@/lib/catalog';
 import {
-  type AddressRow,
+  resolveAddressOwnerFromRequest,
+  toPublicAddressRow,
   createAddress as createAddressService,
   deleteAddress as deleteAddressService,
   listAddresses as listAddressesService,
@@ -22,45 +22,11 @@ import { error as logError } from '@/lib/logger';
 // title fallback, is_default toggle) so the route stays an HTTP
 // shaper + auth gate.
 
-type Owner =
-  | { kind: "user"; userId: string }
-  | { kind: "guest"; guestKey: string };
 
-async function ownerFromRequest(request: NextRequest): Promise<Owner | null> {
-  const userId = await resolveCustomerUserIdFromRequest(request);
-  if (userId) return { kind: "user", userId };
-  const guestKey = request.headers.get("x-guest-key");
-  if (guestKey) return { kind: "guest", guestKey };
-  return null;
-}
-
-/**
- * Strip owner-identifying fields from a row before sending it to the
- * client. The address service returns `user_id` and `guest_key` so
- * internal callers can audit, but the delivery-addresses contract
- * (predates the service) never exposed them — keep the response
- * shape identical to the pre-P2-3 implementation.
- *
- * `place_images` is COALESCEd to `[]` here because the old SQL had
- * `COALESCE(place_images, '{}')`; the service returns the raw value
- * (could be NULL when the row was written before the column was
- * added in migration 049). The web client treats `null` as `[]`
- * already via rowToAddress, but the raw JSON shape stays identical
- * to the pre-P2-3 response.
- */
-function toClientRow(row: AddressRow): Record<string, unknown> {
-  const { user_id: _u, guest_key: _g, ...rest } = row;
-  void _u;
-  void _g;
-  return {
-    ...rest,
-    place_images: Array.isArray(row.place_images) ? row.place_images : [],
-  };
-}
 
 // GET /api/v1/delivery-addresses
 export async function GET(request: NextRequest) {
-  const owner = await ownerFromRequest(request);
+  const owner = await resolveAddressOwnerFromRequest(request);
   if (!owner) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },
@@ -72,7 +38,7 @@ export async function GET(request: NextRequest) {
     const rows = await listAddressesService(owner);
     return NextResponse.json({
       success: true,
-      data: rows.map(toClientRow),
+      data: rows.map(toPublicAddressRow),
     });
   } catch (error) {
     logError("delivery-addresses GET:", error);
@@ -85,7 +51,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/v1/delivery-addresses
 export async function POST(request: NextRequest) {
-  const owner = await ownerFromRequest(request);
+  const owner = await resolveAddressOwnerFromRequest(request);
   if (!owner) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },
@@ -123,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: toClientRow(row),
+      data: toPublicAddressRow(row),
     });
   } catch (error) {
     logError("delivery-addresses POST:", error);
@@ -136,7 +102,7 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/v1/delivery-addresses?id=  (edit)
 export async function PUT(request: NextRequest) {
-  const owner = await ownerFromRequest(request);
+  const owner = await resolveAddressOwnerFromRequest(request);
   if (!owner) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },
@@ -192,7 +158,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, data: toClientRow(row) });
+    return NextResponse.json({ success: true, data: toPublicAddressRow(row) });
   } catch (error) {
     logError("delivery-addresses PUT:", error);
     return NextResponse.json(
@@ -204,7 +170,7 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/v1/delivery-addresses?id=
 export async function DELETE(request: NextRequest) {
-  const owner = await ownerFromRequest(request);
+  const owner = await resolveAddressOwnerFromRequest(request);
   if (!owner) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },
