@@ -5,6 +5,7 @@ import {
   assertOrderOwnership,
   idempotencyKeyFromBody,
   idempotencyKeyFromQuery,
+  isDirectOrderCustomerEditable,
 } from '@/lib/orders';
 import { checkRateLimit, ORDER_CREATE_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';
@@ -18,7 +19,8 @@ import {
  * POST /api/v1/orders/[id]/items
  *
  * Customer adds a new line to their direct order. Order must be in
- * status pending OR in_progress (locked once driver picks it up).
+ * status is customer-editable (`isDirectOrderCustomerEditable`: pending or
+ * shopping — locked once the driver picks it up).
  *
  * SECURITY (F1): ownership is a positive proof via
  * `assertOrderOwnership`. Guest callers MUST include the order's
@@ -90,7 +92,7 @@ export async function POST(
         { status: 400 }
       );
     }
-    if (!['pending', 'shopping', 'preparing', 'accepted'].includes(o.status)) {
+    if (!isDirectOrderCustomerEditable(o.status)) {
       return NextResponse.json(
         { success: false, error: 'لا يمكن تعديل الطلب في هذه المرحلة' },
         { status: 409 }
@@ -172,7 +174,7 @@ export async function PATCH(
         { status: ownership.code }
       );
     }
-    if (!['pending', 'shopping', 'preparing', 'accepted'].includes(ownership.status)) {
+    if (!isDirectOrderCustomerEditable(ownership.status)) {
       return NextResponse.json(
         { success: false, error: 'لا يمكن تعديل الطلب في هذه المرحلة' },
         { status: 409 }
@@ -242,7 +244,7 @@ export async function DELETE(
         { status: ownership.code }
       );
     }
-    if (!['pending', 'shopping', 'preparing', 'accepted'].includes(ownership.status)) {
+    if (!isDirectOrderCustomerEditable(ownership.status)) {
       return NextResponse.json(
         { success: false, error: 'لا يمكن تعديل الطلب في هذه المرحلة' },
         { status: 409 }

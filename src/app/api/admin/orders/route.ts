@@ -6,7 +6,7 @@ import { updateOrderSchema } from '@/lib/validation';
 import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
-import { ALL_ORDER_STATES, ALL_PAYMENT_STATES, assertValidTransition, invalidTransitionMessage } from '@/lib/orders/state-machine';
+import { ALL_ORDER_PAYMENT_STATUSES, ALL_ORDER_STATES, assertValidTransition, invalidTransitionMessage } from '@/lib/orders/state-machine';
 import {
   ORDER_BASE_COLUMNS,
   ORDER_LIST_COLUMNS,
@@ -136,10 +136,7 @@ export async function GET(request: NextRequest) {
     // because the legacy `unpaid` alias still exists in some rows (pre-migration
     // state, kept for backwards compatibility in /api/payments/status). We
     // explicitly union the canonical four with the legacy alias.
-    const allowedPaymentStatuses: readonly string[] = [
-      ...ALL_PAYMENT_STATES,
-      "unpaid",
-    ];
+    const allowedPaymentStatuses: readonly string[] = ALL_ORDER_PAYMENT_STATUSES;
     const safePaymentStatusFilter = allowedPaymentStatuses.includes(paymentStatusFilter)
       ? paymentStatusFilter
       : '';

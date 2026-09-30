@@ -371,3 +371,37 @@ export const ALL_PAYMENT_STATES: readonly PaymentState[] = [
   "failed",
   "refunded",
 ];
+
+// ── Parent-order payment status (orders.payment_status) ─────────────────
+//
+// `orders.payment_status` is wider than `PaymentState` (vendor_orders): the
+// LEGACY `unpaid` value is still written by direct orders for electronic
+// methods and is filterable in the admin orders list. This is the single
+// definition of that wider set — do not re-spell it in routes or types.
+
+export type OrderPaymentStatus = PaymentState | "unpaid";
+
+export const ALL_ORDER_PAYMENT_STATUSES: readonly OrderPaymentStatus[] = [
+  ...ALL_PAYMENT_STATES,
+  "unpaid",
+];
+
+// ── Direct-order editability ────────────────────────────────────────────
+//
+// A customer may add / change / remove lines on a direct order only while
+// it has not been dispatched. `orders.status` is `order_status_enum`
+// (= `OrderState`), so the previously inline `preparing` / `accepted`
+// values were unreachable and are intentionally not listed.
+
+export const DIRECT_ORDER_CUSTOMER_EDITABLE_STATES: readonly OrderState[] = [
+  "pending",
+  "shopping",
+];
+
+export function isDirectOrderCustomerEditable(
+  status: string | null | undefined,
+): boolean {
+  return (DIRECT_ORDER_CUSTOMER_EDITABLE_STATES as readonly string[]).includes(
+    String(status ?? ""),
+  );
+}
