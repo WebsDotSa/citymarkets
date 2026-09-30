@@ -78,19 +78,23 @@ describe("GET /api/v1/vendor/categories", () => {
   });
 
   it("returns the category list from the global table", async () => {
-    const rows = [
-      { id: "c1", name_ar: "ألبان", name_en: "Dairy", slug: "dairy", parent_id: null, sort_order: 1, is_active: true },
-      { id: "c2", name_ar: "فواكه", name_en: "Fruit", slug: "fruit", parent_id: null, sort_order: 2, is_active: true },
+    const globalRows = [
+      { id: "c1", name_ar: "ألبان", name_en: "Dairy", slug: "dairy", parent_id: null, sort_order: 1, is_active: true, vendor_id: null },
+      { id: "c2", name_ar: "فواكه", name_en: "Fruit", slug: "fruit", parent_id: null, sort_order: 2, is_active: true, vendor_id: null },
     ];
     (query as any).mockHandler = async (sql: string) => {
-      if (sql.startsWith("SELECT id, name_ar")) return { rows };
+      if (sql.startsWith("SELECT id, name_ar")) return { rows: globalRows };
       return { rows: [] };
     };
     const res = await GET(makeRequest() as unknown as never);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
-    expect(body.data).toHaveLength(2);
+    // Migration 081 split the response into { global, private }.
+    expect(body.data).toHaveProperty("global");
+    expect(body.data).toHaveProperty("private");
+    expect(body.data.global).toHaveLength(2);
+    expect(body.data.private).toHaveLength(0);
   });
 });
 
