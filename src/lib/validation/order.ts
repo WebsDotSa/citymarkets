@@ -9,7 +9,15 @@
  *   - orderItemAddSchema / orderItemUpdateSchema (customer-side line edits)
  *   - orderMessagePostSchema (admin/customer chat on an order)
  *   - orderStatusSchema (admin status flip)
- *   - createReviewSchema (post-delivery rating)
+ *
+ * NOTE (P2-4, full-system audit 2026-09-30): the previous
+ * `createReviewSchema` was removed — it validated the order-level
+ * `reviews` (driver_rating + store_rating) table from migration 001,
+ * which was superseded by the product-level `product_reviews` table
+ * in migration 017. No route ever imported it, so the schema was
+ * dead code. If a future feature wants order-level reviews again,
+ * recreate the schema + a route + decide whether to revive the
+ * `reviews` table or fold into `product_reviews`.
  */
 
 import { z } from "zod";
@@ -17,7 +25,6 @@ import {
   couponCodeSchema,
   paymentMethodSchema,
   phoneSchema,
-  uuidSchema,
 } from "./schemas";
 import {
   ALL_ORDER_STATES,
@@ -272,16 +279,6 @@ export const orderItemUpdateSchema = z.object({
   free_text: z.string().max(500).optional().nullable(),
 });
 
-/**
- * Review schema
- */
-export const createReviewSchema = z.object({
-  order_id: uuidSchema,
-  driver_rating: z.number().int().min(1).max(5).optional(),
-  store_rating: z.number().int().min(1).max(5).optional(),
-  comment: z.string().max(500).optional(),
-});
-
 // Re-export couponCodeSchema for callers that imported it from
-// @/lib/validation (the barrel) instead of @/lib/validation/common.
+// @/lib/validation (the barrel) instead of @/lib/validation/schemas.
 export { couponCodeSchema };

@@ -155,7 +155,8 @@ export const ALLOWED_METHODS: ReadonlySet<string> = new Set([
  *   - src/lib/orders/order-payment-action.ts:39         (ONLINE_RETRYABLE_METHODS)
  *   - src/lib/payments/payment-service.ts:51            (ONLINE_RETRY_METHODS)
  *   - src/components/pages/checkout/checkout-new.tsx:78 (INLINE_MOYASAR_METHODS)
- *   - src/components/pages/orders/order-payment-action.tsx (METHOD_OPTIONS subset)
+ *   - src/components/pages/orders/order-payment-action.tsx was removed; the
+ *     retry-button view now imports ONLINE_RETRY_METHODS_SET directly.
  */
 export const ONLINE_RETRY_METHODS = [
   'mada',
@@ -204,7 +205,7 @@ export const ALL_PAYMENT_METHODS_SET: ReadonlySet<string> = new Set(ALL_PAYMENT_
  *   - admin-side analytics / reporting endpoints that read these tokens
  *     out of the DB and re-validate them before display.
  *
- * `paymentMethodSchema` in `validation/common.ts` derives from this tuple
+ * `paymentMethodSchema` in `validation/schemas.ts` derives from this tuple
  * unioned with `ALL_PAYMENT_METHODS`. Do NOT add a token here without
  * verifying that (a) existing DB rows can still be read back into the
  * enum, and (b) the customer-facing picker still rejects it via

@@ -13,7 +13,7 @@ vi.mock("@/lib/app-settings", () => ({
   ),
 }));
 
-vi.mock("@/lib/utils", () => ({
+vi.mock("@/lib/format", () => ({
   buildWhatsAppUrl: vi.fn(),
 }));
 
@@ -25,7 +25,7 @@ vi.mock("@/lib/logger", () => ({
 
 import { notifyAdminNewOrder } from "./order-notify-admin";
 import { getNotificationSettings } from "@/lib/app-settings";
-import { buildWhatsAppUrl } from "@/lib/utils";
+import { buildWhatsAppUrl } from "@/lib/format";
 import * as loggerMod from "@/lib/logger";
 
 const mockGetNotificationSettings = vi.mocked(getNotificationSettings);
