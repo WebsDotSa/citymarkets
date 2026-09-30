@@ -15,6 +15,7 @@ import {
   vendorFieldsFromProduct,
 } from '@/lib/catalog';
 import { trackAddToCart } from "@/lib/ga-events";
+import { productUnitPrice } from "@/lib/catalog/product-price";
 
 // -------- State slice --------
 interface CartStateValue {
@@ -219,9 +220,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // Google Analytics 4 — add_to_cart. Fire after the React state
         // commit so we always report what the user actually sees in the
         // cart bar (existing quantity + delta, not the original click).
-        const unitPrice = Number(
-          product.discount_price ?? product.price ?? 0,
-        );
+        const unitPrice = productUnitPrice(product);
         trackAddToCart({
           currency: "SAR",
           value: unitPrice * quantity,

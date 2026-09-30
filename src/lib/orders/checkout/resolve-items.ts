@@ -16,6 +16,7 @@
 
 import { CITY_MARKETS_VENDOR_ID } from "@/lib/types";
 import { queryMany, queryOne, type Queryable } from "@/lib/db/typed";
+import { productUnitPrice } from "@/lib/catalog/product-price";
 
 export interface ResolvedCatalogItem {
   product_id: string;
@@ -160,7 +161,7 @@ export async function resolveItems(
             };
           }
         }
-        const unit = Number(row.discount_price ?? row.price) || 0;
+        const unit = productUnitPrice(row);
         resolvedCatalog.push({
           product_id: row.id,
           quantity: it.quantity,
@@ -269,7 +270,7 @@ export async function resolveItems(
           };
         }
       }
-      const unit = Number(row.discount_price ?? row.price) || 0;
+      const unit = productUnitPrice(row);
       const line = unit * it.quantity;
       subtotal += line;
       items.push({
