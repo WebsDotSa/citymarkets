@@ -17,6 +17,19 @@ const TRACK_RATE_LIMIT = {
   keyPrefix: "track-order",
 } as const;
 
+// P1-8 (full-system audit 2026-09-30): per-(ip, code) lockout for
+// failed lookups. The IP-only rate limit (20/min above) does not
+// stop an attacker from sweeping all 10^6 tracking codes against a
+// single code per request — they would just stay under the IP limit.
+// Track failed lookups keyed by `(ip, code)` and lock the pair for
+// 10 minutes after 5 consecutive misses. Same Redis/in-memory
+// fallback as TRACK_RATE_LIMIT (via `checkRateLimit`).
+const TRACK_CODE_LOCKOUT = {
+  maxRequests: 5,
+  windowMs: 10 * 60_000,
+  keyPrefix: "track-code-fail",
+} as const;
+
 export async function GET(request: NextRequest) {
   // SECURITY (F2): rate-limit tracking-code lookups by IP. The previous
   // code was unauthenticated and unthrottled, so an attacker could
@@ -54,6 +67,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "رقم جوال غير صالح" }, { status: 400 });
   }
 
+  // P1-8 (full-system audit 2026-09-30): per-(ip, code) lockout —
+  // checked AFTER a failed lookup below so the counter only
+  // counts misses (legitimate users whose (phone, code) doesn't
+  // match don't bump the lockout for other legitimate users on
+  // the same IP). The key includes the tracking code so one IP can
+  // still legitimately fail-lookup a few different codes (typo
+  // recovery) but is stopped from sweeping the same code across
+  // many phones. See the 404 branch below for the increment.
+
   const client = await pool.connect();
   try {
     // SECURITY (F2): The previous filter was
@@ -80,6 +102,22 @@ export async function GET(request: NextRequest) {
     );
 
     if (result.rows.length === 0) {
+      // P1-8 (full-system audit 2026-09-30): count this miss against
+      // the per-(ip, code) bucket. Five consecutive misses on the
+      // same code from the same IP within 10 minutes will lock the
+      // pair out — legitimate users with a wrong code only count
+      // once per request, and a typo on a different code never
+      // contributes to someone else's lockout.
+      const codeLockout = await checkRateLimit(
+        `${ip}:${code}`,
+        TRACK_CODE_LOCKOUT,
+      );
+      if (!codeLockout.allowed) {
+        return NextResponse.json(
+          { error: "تم قفل رمز التتبع مؤقتاً بعد محاولات فاشلة، حاول بعد 10 دقائق" },
+          { status: 429, headers: createRateLimitHeaders(codeLockout) }
+        );
+      }
       // Avoid leaking whether the code exists.
       return NextResponse.json(
         { error: "ما قدرنا نلاقي طلب بهذه البيانات" },
