@@ -76,34 +76,37 @@ export function getOrderStatusConfig(status: string): OrderStatusConfig {
   );
 }
 
-/** Active status keys, in display order, used by admin + customer filters. */
-export const ACTIVE_ORDER_STATUSES: string[] = [
-  "pending",
-  "confirmed",
-  "shopping",
-  "on_the_way",
-];
+/**
+ * Active status keys (non-terminal), in canonical ORDER_STATE_DISPLAY order.
+ *
+ * Derived from `ORDER_STATE_DISPLAY[k].active === true` so adding a new
+ * status to `state-machine.ts` automatically extends this list — no more
+ * hand-maintained arrays to drift out of sync.
+ */
+export const ACTIVE_ORDER_STATUSES: string[] = (
+  Object.keys(ORDER_STATE_DISPLAY) as Array<keyof typeof ORDER_STATE_DISPLAY>
+).filter((k) => ORDER_STATE_DISPLAY[k].active);
 
-/** Display order used by status dropdowns (admin). */
+/**
+ * Display order used by status dropdowns (admin). Derived from
+ * `ORDER_STATE_DISPLAY` (preserves the canonical order). To add a new
+ * status, edit `state-machine.ts` + `order-status-display.ts`.
+ */
 export const ORDER_STATUS_DISPLAY: Array<{ value: string; label: string }> = (
   Object.entries(ORDER_STATE_DISPLAY) as Array<[string, OrderStatusConfig]>
-)
-  .filter(([key]) =>
-    [
-      "pending",
-      "confirmed",
-      "shopping",
-      "on_the_way",
-      "delivered",
-      "cancelled",
-    ].includes(key),
-  )
-  .map(([value, { label }]) => ({ value, label }));
+).map(([value, { label }]) => ({ value, label }));
 
 /**
  * Progress steps for the customer-facing order timeline. Includes
  * "تم التأكيد" so the timeline is contiguous from order receipt to
  * delivery, and uses the canonical backend status values.
+ *
+ * NOTE: this is intentionally a 5-step subset of `ORDER_STATE_DISPLAY`
+ * (omits `cancelled` since a cancelled order doesn't render a progress
+ * bar). It is the one order-status export that is NOT fully derived
+ * because the customer-facing copy + icons differ from the admin
+ * display map. Keep in sync manually when adding a new non-terminal
+ * status.
  */
 export const CUSTOMER_PROGRESS_STEPS: Array<{
   label: string;
