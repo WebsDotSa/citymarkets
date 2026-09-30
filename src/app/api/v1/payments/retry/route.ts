@@ -8,13 +8,13 @@ import {
   applyPaymentRateLimits,
   authorizeOrderForPayment,
   commitOrderLock,
-  ONLINE_RETRY_METHODS,
   parsePaymentBody,
   rateLimitResponseHeaders,
   rollbackOrderLock,
   validateOrderId,
   MAX_IDEMPOTENCY_KEY,
 } from "@/lib/payments/payment-service";
+import { ONLINE_RETRY_METHODS_SET } from "@/lib/payments/payment-methods";
 import {
   initiateOnlinePayment,
   initiateTamaraPayment,
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
   if (paymentMethod === "tamara") {
     return errorResponse(409, "تمارا تتطلب إنشاء طلب جديد");
   }
-  if (!ONLINE_RETRY_METHODS.has(paymentMethod)) {
+  if (!ONLINE_RETRY_METHODS_SET.has(paymentMethod)) {
     return errorResponse(400, "طريقة الدفع غير مدعومة");
   }
   if (

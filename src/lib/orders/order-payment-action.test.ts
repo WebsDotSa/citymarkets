@@ -1,23 +1,23 @@
 import { describe, it, expect } from "vitest";
+import { ONLINE_RETRY_METHODS } from "@/lib/payments/payment-methods";
 import {
   getOrderPaymentAction,
   isRetryableOrderPayment,
-  ONLINE_RETRYABLE_METHODS,
   type OrderPaymentAction,
 } from "./order-payment-action";
 
-describe("ONLINE_RETRYABLE_METHODS", () => {
+describe("ONLINE_RETRY_METHODS (re-exported via payment-methods)", () => {
   it("includes the unified online payment methods (excluding tamara which is order-level)", () => {
-    expect(ONLINE_RETRYABLE_METHODS).toContain("mada");
-    expect(ONLINE_RETRYABLE_METHODS).toContain("visa");
-    expect(ONLINE_RETRYABLE_METHODS).toContain("mastercard");
-    expect(ONLINE_RETRYABLE_METHODS).toContain("amex");
-    expect(ONLINE_RETRYABLE_METHODS).toContain("apple_pay");
+    expect(ONLINE_RETRY_METHODS).toContain("mada");
+    expect(ONLINE_RETRY_METHODS).toContain("visa");
+    expect(ONLINE_RETRY_METHODS).toContain("mastercard");
+    expect(ONLINE_RETRY_METHODS).toContain("amex");
+    expect(ONLINE_RETRY_METHODS).toContain("apple_pay");
   });
 
   it("contains exactly the supported cards + wallets", () => {
-    expect(new Set(ONLINE_RETRYABLE_METHODS).size).toBe(
-      ONLINE_RETRYABLE_METHODS.length,
+    expect(new Set(ONLINE_RETRY_METHODS).size).toBe(
+      ONLINE_RETRY_METHODS.length,
     );
   });
 });

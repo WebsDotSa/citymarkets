@@ -45,10 +45,8 @@ function buildRateLimitHeaders(result: RateLimitResult): Record<string, string> 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const MAX_IDEMPOTENCY_KEY = 64;
 
-// Re-exported under its legacy name for callers that import
-// `ONLINE_RETRY_METHODS` from `@/lib/payments/payment-service`. Canonical
-// source is `ONLINE_RETRY_METHODS_SET` in `@/lib/payments/payment-methods`.
-export { ONLINE_RETRY_METHODS_SET as ONLINE_RETRY_METHODS } from "@/lib/payments/payment-methods";
+// D16-D19 cleanup (2026-09-30): the legacy `ONLINE_RETRY_METHODS` alias
+// re-export has been removed. Canonical source is `@/lib/payments/payment-methods`.
 
 export type PaymentServiceResult<T> =
   | { kind: "ok"; value: T }

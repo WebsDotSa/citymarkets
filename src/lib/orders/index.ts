@@ -89,7 +89,6 @@ export {
 export {
   getOrderPaymentAction,
   isRetryableOrderPayment,
-  ONLINE_RETRYABLE_METHODS,
 } from "./order-payment-action";
 export type {
   OrderPaymentAction,

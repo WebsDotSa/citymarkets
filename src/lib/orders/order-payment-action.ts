@@ -26,12 +26,9 @@ export interface OrderPaymentActionInput {
   paymentMethod: string | null | undefined;
 }
 
-/**
- * Re-exported under its legacy alias for callers that import
- * `ONLINE_RETRYABLE_METHODS` from `@/lib/orders`. Canonical source is
- * `ONLINE_RETRY_METHODS` in `@/lib/payments/payment-methods`.
- */
-export const ONLINE_RETRYABLE_METHODS = ONLINE_RETRY_METHODS;
+// D16-D19 cleanup (2026-09-30): the legacy `ONLINE_RETRYABLE_METHODS`
+// alias was removed. Canonical source is `ONLINE_RETRY_METHODS` in
+// `@/lib/payments/payment-methods`.
 
 const TERMINAL_PAYMENT_STATUSES = new Set(["paid", "completed", "refunded"]);
 const TERMINAL_ORDER_STATUSES = new Set(["delivered"]);
