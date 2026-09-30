@@ -72,3 +72,28 @@ export const optionalWhatsapp = z
 export const hhmm = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "HH:MM 24h");
+
+/**
+ * Slug-shaped identifier. Accepts Unicode letters and digits (so Arabic
+ * slugs round-trip cleanly) but rejects leading/trailing dashes and
+ * anything that is not a letter, digit, or dash. Length cap matches
+ * the historical `vendors.slug VARCHAR(80)` column.
+ */
+export const slugSchema = z
+  .string()
+  .trim()
+  .min(1, "المعرّف مطلوب")
+  .max(80, "المعرّف طويل جداً")
+  .regex(/^[\p{L}\p{N}-]+$/u, "يسمح بالحروف والأرقام والشرطات فقط")
+  .refine((s) => !s.startsWith("-") && !s.endsWith("-"), {
+    message: "لا يجب أن يبدأ أو ينتهي بشرطة",
+  });
+
+/**
+ * Plain password validator. Length-only — callers layer on any
+ * complexity rules (digit, mixed case, etc.) at the schema site.
+ */
+export const passwordSchema = z
+  .string()
+  .min(8, "كلمة المرور يجب أن تكون 8 أحرف على الأقل")
+  .max(128, "كلمة المرور طويلة جداً");

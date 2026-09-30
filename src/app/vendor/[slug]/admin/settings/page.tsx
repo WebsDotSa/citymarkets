@@ -330,16 +330,24 @@ export default function VendorSettingsPage({ params }: SettingsPageProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                رسوم التوصيل (ر.س)
+              {/* Migration 078 (2026-09-30): `delivery_fee_override` is
+                  no longer honored by the checkout pipeline — distance
+                  pricing is universal (computed from `stores.is_main`).
+                  The column is kept on `vendor_settings` for backward-
+                  compat (iOS / data-export reads), but the vendor UI
+                  no longer surfaces it. To re-introduce per-vendor
+                  overrides, see `src/lib/orders/checkout/pricing.ts`. */}
+              <label className="block text-sm font-medium text-gray-400 mb-1">
+                رسوم التوصيل (ر.س) — غير نشط
               </label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.deliveryFeeOverride || ""}
-                onChange={(e) => setFormData({ ...formData, deliveryFeeOverride: e.target.value })}
-                className="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none"
-                placeholder="اتركه فارغاً لاستخدام الافتراضي"
+                disabled
+                title="تم تعطيل رسوم التوصيل الخاصة بكل بائع — السعر يحتسب آلياً من المسافة (راجع إعدادات التوصيل في لوحة المدير)."
+                className="w-full px-4 py-2 rounded-xl border bg-gray-50 text-gray-400 cursor-not-allowed outline-none"
+                placeholder="يُحتسب آلياً من المسافة"
               />
             </div>
           </div>

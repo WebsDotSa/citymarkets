@@ -100,7 +100,7 @@ export function AdminHeader({
     { label: "إضافة منتج", href: "/admin/products?new=1", icon: Plus },
     { label: "إضافة فئة", href: "/admin/categories/new", icon: Plus },
     { label: "إضافة كوبون", href: "/admin/coupons?new=1", icon: Plus },
-    { label: "إضافة بانر", href: "/admin/banners", icon: Plus },
+    { label: "تصميم الرئيسية", href: "/admin/home-design", icon: Plus },
     { label: "إضافة عرض", href: "/admin/offers/new", icon: Plus },
   ];
 

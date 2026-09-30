@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { DriverLayout } from "@/components/admin/driver-layout";
 import { getOrderStatusConfig, PAYMENT_METHOD_AR, getPaymentStatusConfig } from '@/lib/orders';
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 
 interface HistoryOrder {
   id: string;

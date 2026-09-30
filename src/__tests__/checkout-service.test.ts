@@ -33,6 +33,33 @@ vi.mock('@/lib/delivery/delivery-hours', () => ({
   })),
   evaluateHours: vi.fn(() => ({ open: true, message: null })),
 }));
+// Migration 079 (2026-09-30): CheckoutService now resolves per-branch
+// hours via getActiveStoreHours. Mock both the new module and the
+// main-store helper so the deterministic tests stay DB-free.
+vi.mock('@/lib/delivery/store-hours', () => ({
+  getActiveStoreHours: vi.fn(async () => ({
+    enabled: true,
+    open_time: "08:00",
+    close_time: "23:00",
+    closed_message: null,
+    timezone: "Asia/Riyadh",
+  })),
+  evaluateStoreHours: vi.fn(() => ({ open: true, message: null })),
+  parseStoreHours: vi.fn(),
+  DEFAULT_STORE_OPENING_HOURS: {},
+}));
+vi.mock('@/lib/delivery/main-store', () => ({
+  getMainStoreAndDistance: vi.fn(async () => ({
+    store: {
+      id: "00000000-0000-0000-0000-000000000001",
+      name_ar: "الفرع الرئيسي",
+      lat: 24.7136,
+      lng: 46.6753,
+      is_active: true,
+    },
+    distanceKm: null,
+  })),
+}));
 vi.mock('@/lib/delivery/vendor-closed-gate', () => ({
   checkClosedVendorsInCart: vi.fn(async () => ({ closed: [], message: null })),
 }));
@@ -96,7 +123,8 @@ vi.mock("@/lib/push", () => ({
 
 import { runCheckout } from '@/lib/orders/checkout/checkout-service';
 import { getStoreStatusSettings } from "@/lib/app-settings";
-import { evaluateHours, getDeliveryHours } from '@/lib/delivery/delivery-hours';
+import { evaluateHours } from '@/lib/delivery/delivery-hours';
+import { getActiveStoreHours } from '@/lib/delivery/store-hours';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -130,10 +158,12 @@ describe("CheckoutService — hours gate", () => {
       open: false,
       message: "مغلق الآن",
     });
-    (getDeliveryHours as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+    (getActiveStoreHours as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      enabled: true,
       open_time: "08:00",
       close_time: "23:00",
       closed_message: null,
+      timezone: "Asia/Riyadh",
     });
     const r = await runCheckout({
       caller: { userId: "u1", sessionId: null, clientIp: "1.2.3.4" },

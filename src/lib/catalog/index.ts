@@ -121,7 +121,6 @@ export type {
 // ── Public storefront API client ────────────────────────────────────────
 export {
   apiFetch,
-  getBanners,
   getCategories,
   getProduct,
   getProducts,

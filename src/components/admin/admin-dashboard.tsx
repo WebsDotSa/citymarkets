@@ -10,7 +10,7 @@ import {
   ShoppingCart,
   Clock,
   FolderTree,
-  Image,
+  LayoutTemplate,
   TicketPercent,
   BarChart3,
   ArrowUpRight,
@@ -20,11 +20,13 @@ import {
   BellRing,
   RefreshCw,
   Activity,
+  ChevronLeft,
 } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 import { countsAsElectronicRevenue } from '@/lib/orders';
 import { ORDER_STATUSES } from '@/lib/orders';
 import { StatCard } from "@/components/admin/admin-header";
+import { error as logError } from "@/lib/logger";
 
 const fetchOpts: RequestInit = { credentials: "include" };
 
@@ -34,7 +36,6 @@ interface DashboardStats {
   users: number;
   revenue: number;
   categories: number;
-  banners: number;
   coupons: number;
   lowStockProducts: number;
   pendingOrders: number;
@@ -69,7 +70,6 @@ export function AdminDashboard() {
     users: 0,
     revenue: 0,
     categories: 0,
-    banners: 0,
     coupons: 0,
     lowStockProducts: 0,
     pendingOrders: 0,
@@ -94,7 +94,6 @@ export function AdminDashboard() {
         ordersRes,
         analyticsRes,
         categoriesRes,
-        bannersRes,
         couponsRes,
         usersRes,
         notificationsRes,
@@ -103,7 +102,6 @@ export function AdminDashboard() {
         fetch("/api/admin/orders?limit=100", fetchOpts).then((r) => r.json()),
         fetch("/api/admin/analytics", fetchOpts).then((r) => r.json()),
         fetch("/api/admin/categories", fetchOpts).then((r) => r.json()),
-        fetch("/api/admin/banners", fetchOpts).then((r) => r.json()),
         fetch("/api/admin/coupons", fetchOpts).then((r) => r.json()),
         fetch("/api/admin/users", fetchOpts).then((r) => r.json()),
         fetch("/api/admin/notifications", fetchOpts).then((r) => r.json()),
@@ -124,10 +122,6 @@ export function AdminDashboard() {
       const categories =
         categoriesRes.status === "fulfilled" && categoriesRes.value.success
           ? categoriesRes.value.data || []
-          : [];
-      const banners =
-        bannersRes.status === "fulfilled" && bannersRes.value.success
-          ? bannersRes.value.data || []
           : [];
       const coupons =
         couponsRes.status === "fulfilled" && couponsRes.value.success
@@ -225,7 +219,6 @@ export function AdminDashboard() {
         users: usersList.length,
         revenue: totalRevenue,
         categories: categories.length,
-        banners: banners.length,
         coupons: coupons.length,
         lowStockProducts: lowStock,
         pendingOrders,
@@ -262,7 +255,8 @@ export function AdminDashboard() {
         }))
       );
     } catch (err) {
-      console.error("Dashboard load error:", err);
+      // Audit I39: canonical logger.
+      logError("Dashboard load error", err);
     } finally {
       setLoading(false);
     }
@@ -318,12 +312,6 @@ export function AdminDashboard() {
       href: "/admin/orders",
       icon: <ShoppingBag className="w-5 h-5" />,
       color: "from-primary-500 to-primary-600",
-    },
-    {
-      label: "البانرات",
-      href: "/admin/banners",
-      icon: <Image className="w-5 h-5" />,
-      color: "from-pink-500 to-pink-600",
     },
     {
       label: "الإحصائيات",
@@ -614,20 +602,18 @@ export function AdminDashboard() {
                 </span>
               </Link>
               <Link
-                href="/admin/banners"
+                href="/admin/home-design"
                 className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center">
-                    <Image className="w-5 h-5 text-pink-600" />
+                  <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                    <LayoutTemplate className="w-5 h-5 text-emerald-600" />
                   </div>
                   <span className="text-sm font-medium text-slate-700">
-                    البانرات
+                    تصميم الصفحة الرئيسية
                   </span>
                 </div>
-                <span className="text-lg font-bold text-slate-800 group-hover:text-primary transition-colors">
-                  {stats.banners}
-                </span>
+                <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" />
               </Link>
               <Link
                 href="/admin/coupons"

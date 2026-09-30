@@ -9,7 +9,13 @@ import {
 import {
   canTransition as stateMachineCanTransition,
   invalidTransitionMessage as stateMachineInvalidMessage,
+  PARENT_ORDER_TRANSITIONS_BY_ROLE,
 } from '@/lib/orders/state-machine';
+import {
+  awardPointsForOrder,
+  getLoyaltySettings,
+  releaseRedeemHoldForOrder,
+} from '@/lib/orders/loyalty';
 
 export const dynamic = "force-dynamic";
 
@@ -146,7 +152,15 @@ export async function PATCH(
   // _, status)` returning true for any valid `from`. We list the legal
   // target states here for the early-return 400 — the state machine
   // also enforces it once the order's current status is loaded.
-  const validStatuses = ["on_the_way", "delivered", "cancelled"];
+  // Derived from the state machine (audit C14) so any future new legal
+  // target state added to the driver table flows through automatically.
+  const validStatuses: readonly string[] = [
+    ...new Set(
+      Object.values(PARENT_ORDER_TRANSITIONS_BY_ROLE.driver).flatMap(
+        (targets) => [...targets],
+      ),
+    ),
+  ];
 
   if (!status || !validStatuses.includes(status)) {
     return NextResponse.json(
@@ -190,8 +204,15 @@ export async function PATCH(
 
     // Lock the order row so two drivers tapping "claim" at the same
     // instant serialize on the row lock — one wins, the other gets 409.
+    // We also pull `user_id` + `catalog_subtotal` so the post-COMMIT
+    // COD loyalty credit (P0-2 fix) has the inputs it needs without a
+    // second round-trip. NULL `catalog_subtotal` for pre-038 rows is
+    // coerced to 0 inside `awardPointsForOrder` via
+    // `computeEarnPoints` (which guards `points <= 0`).
     const orderCheck = await client.query(
-      `SELECT id, status, payment_status, driver_id FROM orders WHERE id = $1 FOR UPDATE`,
+      `SELECT id, status, payment_status, driver_id,
+              user_id, catalog_subtotal::float as catalog_subtotal
+         FROM orders WHERE id = $1 FOR UPDATE`,
       [id]
     );
 
@@ -335,6 +356,42 @@ export async function PATCH(
              AND used_count > 0`,
           [id]
         ).catch(() => {});
+        // P1-7 (full-system audit 2026-09-30): release the loyalty
+        // `pending_redeem` hold for this cancelled order. Best-effort:
+        // failure is logged but does not block the response (same
+        // `.catch(() => {})` posture as the coupon release above).
+        releaseRedeemHoldForOrder(client, { orderId: id }).catch((err) => {
+          logError("[driver cancel] loyalty hold release failed", err, { orderId: id });
+        });
+      }
+
+      // P0-2 (full-system audit 2026-09-30): COD orders previously
+      // skipped loyalty credit because only the Moyasar/Tamara
+      // webhooks called `awardPointsForOrder`. Drivers mark COD paid
+      // on delivery, so we credit here, post-COMMIT, mirroring the
+      // webhook's award-on-paid semantics. Skipped for guest orders
+      // (`user_id IS NULL`) and for orders with zero catalog subtotal.
+      if (markingCodPaid && codLedgerResult === "inserted") {
+        const codUserId = orderCheck.rows[0].user_id as string | null;
+        const codCatalogSubtotal = Number(
+          orderCheck.rows[0].catalog_subtotal ?? 0,
+        );
+        if (codUserId && codCatalogSubtotal > 0) {
+          try {
+            const settings = await getLoyaltySettings();
+            await awardPointsForOrder(client, {
+              orderId: id,
+              userId: codUserId,
+              catalogSubtotal: codCatalogSubtotal,
+              settings,
+            });
+          } catch (loyaltyErr) {
+            logError("[driver COD loyalty] award failed", loyaltyErr, {
+              orderId: id,
+              userId: codUserId,
+            });
+          }
+        }
       }
 
       return NextResponse.json({
@@ -418,6 +475,39 @@ export async function PATCH(
            AND used_count > 0`,
         [id]
       ).catch(() => {});
+      // P1-7 (full-system audit 2026-09-30): release the loyalty
+      // `pending_redeem` hold for this cancelled order. Same
+      // best-effort posture as the claim branch above.
+      releaseRedeemHoldForOrder(client, { orderId: id }).catch((err) => {
+        logError("[driver cancel] loyalty hold release failed", err, { orderId: id });
+      });
+    }
+
+    // P0-2 (full-system audit 2026-09-30): mirror the COD loyalty
+    // award that runs on the claim branch — the non-claim branch
+    // handles `on_the_way → delivered` for an order already claimed
+    // by this driver, and must credit points just the same.
+    if (markingCodPaid && codLedgerResult === "inserted") {
+      const codUserId = orderCheck.rows[0].user_id as string | null;
+      const codCatalogSubtotal = Number(
+        orderCheck.rows[0].catalog_subtotal ?? 0,
+      );
+      if (codUserId && codCatalogSubtotal > 0) {
+        try {
+          const settings = await getLoyaltySettings();
+          await awardPointsForOrder(client, {
+            orderId: id,
+            userId: codUserId,
+            catalogSubtotal: codCatalogSubtotal,
+            settings,
+          });
+        } catch (loyaltyErr) {
+          logError("[driver COD loyalty] award failed", loyaltyErr, {
+            orderId: id,
+            userId: codUserId,
+          });
+        }
+      }
     }
 
     return NextResponse.json({

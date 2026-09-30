@@ -36,32 +36,32 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 import {
-  ONLINE_RETRY_METHODS,
   MAX_IDEMPOTENCY_KEY,
   parsePaymentBody,
   rateLimitResponseHeaders,
   validateOrderId,
 } from "@/lib/payments/payment-service";
+import { ONLINE_RETRY_METHODS_SET } from "@/lib/payments/payment-methods";
 import type { NextRequest } from "next/server";
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("PaymentService — ONLINE_RETRY_METHODS", () => {
+describe("PaymentService — ONLINE_RETRY_METHODS_SET", () => {
   it("includes the canonical card + wallet methods", () => {
-    expect(ONLINE_RETRY_METHODS.has("mada")).toBe(true);
-    expect(ONLINE_RETRY_METHODS.has("visa")).toBe(true);
-    expect(ONLINE_RETRY_METHODS.has("mastercard")).toBe(true);
-    expect(ONLINE_RETRY_METHODS.has("amex")).toBe(true);
-    expect(ONLINE_RETRY_METHODS.has("apple_pay")).toBe(true);
+    expect(ONLINE_RETRY_METHODS_SET.has("mada")).toBe(true);
+    expect(ONLINE_RETRY_METHODS_SET.has("visa")).toBe(true);
+    expect(ONLINE_RETRY_METHODS_SET.has("mastercard")).toBe(true);
+    expect(ONLINE_RETRY_METHODS_SET.has("amex")).toBe(true);
+    expect(ONLINE_RETRY_METHODS_SET.has("apple_pay")).toBe(true);
   });
 
   it("excludes tamara (checkout-only) and bank_transfer (admin-only)", () => {
-    expect(ONLINE_RETRY_METHODS.has("tamara")).toBe(false);
-    expect(ONLINE_RETRY_METHODS.has("bank_transfer")).toBe(false);
-    expect(ONLINE_RETRY_METHODS.has("stc_pay")).toBe(false);
-    expect(ONLINE_RETRY_METHODS.has("cash")).toBe(false);
+    expect(ONLINE_RETRY_METHODS_SET.has("tamara")).toBe(false);
+    expect(ONLINE_RETRY_METHODS_SET.has("bank_transfer")).toBe(false);
+    expect(ONLINE_RETRY_METHODS_SET.has("stc_pay")).toBe(false);
+    expect(ONLINE_RETRY_METHODS_SET.has("cash")).toBe(false);
   });
 });
 

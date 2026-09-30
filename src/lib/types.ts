@@ -266,7 +266,6 @@ export type Order = {
   service_fee: number;
   discount: number;
   total: number;
-  coupon_id: string | null;
   driver_id: string | null;
   notes: string | null;
   created_at: string;
@@ -367,22 +366,6 @@ export type Notification = {
   body_ar: string;
   type: "order" | "coupon" | "promotion" | "system";
   is_read: boolean;
-  created_at: string;
-};
-
-export type Banner = {
-  id: string;
-  image_url: string;
-  link_type: "product" | "category" | "external" | "none";
-  link_value: string | null;
-  active: boolean;
-  /**
-   * Legacy alias for `active` — older admin rows wrote `is_active`
-   * instead. The admin banner page reads both for backwards-compat
-   * with rows persisted before the rename.
-   */
-  is_active?: boolean;
-  sort_order: number;
   created_at: string;
 };
 

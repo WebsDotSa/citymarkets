@@ -6,7 +6,7 @@ import { Providers } from "@/contexts/providers";
 import { StoreChrome } from "@/components/layout/store-chrome";
 import { AppInstallBanner } from "@/components/layout/app-install-banner";
 import { StoreClosedBanner } from "@/components/layout/store-closed-banner";
-import { PWAProvider } from "@/components/pwa-provider";
+import { PWAProvider } from "@/components/PWAProvider";
 import { PageviewTracker } from "@/components/analytics/pageview-tracker";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { MetaPixel } from "@/components/analytics/meta-pixel";
@@ -15,7 +15,7 @@ import { Suspense } from "react";
 import { StoreFooter } from "@/components/layout/store-footer";
 import { SiteJsonLd } from "@/components/seo/json-ld";
 import { rootSiteMetadata } from "@/lib/seo/site";
-import { WebMCPProvider } from "@/components/webmcp-provider";
+import { WebMCPProvider } from "@/components/WebMCPProvider";
 
 // Body font — IBM Plex Sans Arabic.
 // display: "optional" tells the browser to use the fallback immediately

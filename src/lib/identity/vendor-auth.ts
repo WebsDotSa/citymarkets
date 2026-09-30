@@ -89,7 +89,7 @@ interface VendorSessionEntry {
 // blast radius of a stale role / `token_version` while keeping auth
 // checks off the DB hot path. The shared `createRoleCache` factory is
 // the single source of truth for TTL semantics — see
-// src/lib/auth/role-cache.ts.
+// src/lib/identity/auth/role-cache.ts.
 const vendorSessionCache: RoleCache<VendorSessionEntry> =
   createRoleCache<VendorSessionEntry>();
 

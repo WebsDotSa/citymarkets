@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { DriverLayout } from "@/components/admin/driver-layout";
 import { BarChart, PeriodSelector, Sparkline } from "@/components/admin/charts";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 
 interface Totals {
   deliveries: number;

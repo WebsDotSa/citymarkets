@@ -10,10 +10,11 @@
  * Same pattern: `window.fbq?.(...)` — if Meta is blocked / hasn't loaded /
  * user has not consented to marketing cookies, all calls no-op.
  *
- * The legacy `useAnalytics` hook (src/hooks/useAnalytics.ts) consumes this
- * module, so its public API — `init`, `event`, `productView`, `addToCart`,
+ * The legacy `useAnalytics` hook (src/hooks/useAnalytics.ts, retired in
+ * refactor/full-repository-consolidation Phase A2) used to consume this
+ * module; the public API — `init`, `event`, `productView`, `addToCart`,
  * `removeFromCart`, `checkoutStart`, `purchase`, `search`, `signup`, `error`
- * — is preserved.
+ * — is preserved for direct callers.
  *
  * CONVERSION EVENT MAPPING (Meta Pixel standard events):
  *   view_item        → ViewContent
@@ -278,6 +279,12 @@ export const analytics = {
       // Dev-mode reminder; production must stay silent so missing config
       // doesn't leak into user-facing logs.
       if (typeof process !== "undefined" && process.env && process.env.NODE_ENV === "development") {
+        // Audit I39: kept as raw `console.warn` because this module is
+        // imported by client bundles (no Node `process.env` access at
+        // module top level). The surrounding `NODE_ENV === "development"`
+        // guard already keeps it silent in production builds, which is
+        // the same effective behaviour as the canonical logger's
+        // LOG_LEVEL gate.
         // eslint-disable-next-line no-console
         console.warn("[analytics] init() called with no GA4 tracking id; GA events will be dropped.");
       }

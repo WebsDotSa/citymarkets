@@ -12,6 +12,7 @@ import {
 import { DataTable } from "@/components/admin/data-table";
 import { useToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/admin/modal";
+import { error as logError } from "@/lib/logger";
 
 const adminCred: RequestInit = { credentials: "include" };
 const PAGE_SIZE = 50;
@@ -83,7 +84,8 @@ export function AdminActivity() {
         }
       } catch (e) {
         if (!signal?.aborted) {
-          console.error(e);
+          // Audit I39: canonical logger.
+          logError("admin-activity fetch", e);
           showToast("تعذّر الاتصال بالخادم", "error");
         }
       }
@@ -134,7 +136,8 @@ export function AdminActivity() {
       URL.revokeObjectURL(url);
       showToast("تم تنزيل ملف CSV", "success");
     } catch (e) {
-      console.error(e);
+      // Audit I39: canonical logger.
+      logError("admin-activity CSV export", e);
       showToast("فشل تصدير CSV", "error");
     }
   };

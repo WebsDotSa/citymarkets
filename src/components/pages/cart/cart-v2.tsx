@@ -14,7 +14,7 @@ import { EmptyCart } from "@/components/design/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
 import { apiFetch } from '@/lib/catalog';
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 import type { CartItem } from "@/lib/types";
 import {
   groupCartItems,

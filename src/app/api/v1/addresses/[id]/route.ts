@@ -18,8 +18,8 @@
 // customer's row.
 
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
 import { resolveCustomerUserIdFromRequest } from "@/lib/identity";
+import { deleteAddress as deleteAddressService } from "@/lib/identity/address-service";
 import { error as logError } from "@/lib/logger";
 
 export async function DELETE(
@@ -43,11 +43,11 @@ export async function DELETE(
   }
 
   try {
-    const result = await query(
-      "DELETE FROM addresses WHERE id = $1::uuid AND user_id = $2::uuid RETURNING id",
-      [id, userId],
-    );
-    if (result.rowCount === 0) {
+    // P2-3: delegate to the address service. The service pins both
+    // `id` and `user_id` in the WHERE clause so a customer can never
+    // delete another customer's row even with a guessed UUID.
+    const rowCount = await deleteAddressService({ kind: "user", userId }, id);
+    if (rowCount === 0) {
       // Either the row doesn't exist or it belongs to a different
       // user. We don't disclose which — the URL is the same either
       // way and revealing "row exists but isn't yours" would leak

@@ -3,14 +3,18 @@
  * time slots for a given day. Companion to `/api/v1/delivery/quote`.
  *
  * The slots config lives in `delivery_settings.slots` (see migration
- * 047). Capacity is computed per (zone, date, window_id) by counting
- * scheduled orders in that window — so a zone with 100 orders/day
- * saturates faster than one with 20.
+ * 047). Capacity is global per (date, window_id) — every scheduled
+ * order in that window counts toward the cap.
+ *
+ * Migration 060 dropped the `delivery_zones` table and the
+ * `orders.delivery_zone_id` column; the previous `?zone=` filter would
+ * throw a 500 against the missing column. We accept the param for
+ * backward-compat (old iOS clients still pass it) but always return
+ * `zone_id: null` and ignore the filter.
  *
  * Query:
  *   ?date=YYYY-MM-DD       (Riyadh, default = today Riyadh)
- *   &zone=<uuid>           (optional — if omitted, capacity is summed
- *                          across all zones since the cap is global)
+ *   &zone=<uuid>           (DEPRECATED — ignored, kept for compat)
  *
  * Response:
  *   {
@@ -22,6 +26,7 @@
  *       "lead_time_minutes": 120,
  *       "min_date": "2026-08-10",
  *       "max_date": "2026-08-17",
+ *       "zone_id": null,
  *       "windows": [
  *         {
  *           "id": "morning", "label_ar": "صباحاً",
@@ -65,7 +70,10 @@ async function loadConfig(): Promise<{ enabled: boolean; raw: unknown }> {
 
 /**
  * Count existing scheduled orders per window for a given Riyadh date.
- * If `zoneId` is provided, scoped to that zone. Otherwise summed across all.
+ * Capacity is GLOBAL (post migration 060 — there are no delivery zones
+ * anymore). The `zoneId` arg is preserved for the route signature but
+ * intentionally unused — we accept-and-ignore the deprecated `?zone=`
+ * param so old clients don't break.
  *
  * The DB stores `scheduled_for` as a naive timestamp (server timezone).
  * Since Saudi Arabia doesn't observe DST and all server ops use a fixed
@@ -75,25 +83,25 @@ async function loadConfig(): Promise<{ enabled: boolean; raw: unknown }> {
 async function loadBookedCounts(
   dateKey: string,
   windows: SlotWindow[],
-  zoneId: string | null,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  zoneId?: string | null,
 ): Promise<Record<string, number>> {
   // Build the [day_start_utc, day_end_utc) interval.
   const dayStart = riyadhWallClockToUtc(dateKey, "00:00");
   const dayEnd = riyadhWallClockToUtc(addDays(dateKey, 1), "00:00");
-  const params: unknown[] = [dayStart.toISOString(), dayEnd.toISOString()];
-  let where = `scheduled = true
-                AND scheduled_for >= $1::timestamp
-                AND scheduled_for <  $2::timestamp`;
-  if (zoneId) {
-    params.push(zoneId);
-    where += ` AND delivery_zone_id = $${params.length}::uuid`;
-  }
+  // Migration 060 dropped `orders.delivery_zone_id` along with the
+  // `delivery_zones` table. The previous `zoneId`-based filter would
+  // throw a 500 ("column does not exist") here — we now sum across all
+  // orders globally, matching the canonical "capacity is global per
+  // (date, window_id)" model.
   const r = await query<{ slot_window: string | null; n: string }>(
     `SELECT slot_window, COUNT(*)::int AS n
        FROM orders
-      WHERE ${where}
+      WHERE scheduled = true
+        AND scheduled_for >= $1::timestamp
+        AND scheduled_for <  $2::timestamp
       GROUP BY slot_window`,
-    params,
+    [dayStart.toISOString(), dayEnd.toISOString()],
   );
   const out: Record<string, number> = {};
   for (const row of r.rows) {
@@ -117,13 +125,18 @@ const handler = async (request: NextRequest) => {
   if (dateKey < minDate) dateKey = minDate;
   if (dateKey > maxDate) dateKey = maxDate;
 
+  // Accept-and-ignore the deprecated `?zone=` query param. Migration 060
+  // dropped the `delivery_zones` table and `orders.delivery_zone_id`
+  // column; capacity is now global per (date, window_id).
   const zoneRaw = searchParams.get("zone");
-  const zoneId = zoneRaw && zoneRaw.length > 0 ? zoneRaw : null;
+  // Surface a one-time deprecation header for any client still sending
+  // the zone filter so they see the canonical answer in their logs.
+  const isLegacyZoneQuery = !!(zoneRaw && zoneRaw.length > 0);
 
-  const booked = await loadBookedCounts(dateKey, cfg.windows, zoneId);
+  const booked = await loadBookedCounts(dateKey, cfg.windows);
   const windows = buildAvailability(cfg, dateKey, booked);
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     success: true,
     data: {
       date: dateKey,
@@ -132,10 +145,18 @@ const handler = async (request: NextRequest) => {
       lead_time_minutes: cfg.lead_time_minutes,
       min_date: minDate,
       max_date: maxDate,
-      zone_id: zoneId,
+      // Always null post-migration 060 (capacity is global).
+      zone_id: null,
       windows,
     },
   });
+  if (isLegacyZoneQuery) {
+    response.headers.set(
+      "X-API-Deprecated",
+      "?zone= is ignored since migration 060; capacity is global per (date, window)",
+    );
+  }
+  return response;
 };
 
 export const GET = withCors(handler);

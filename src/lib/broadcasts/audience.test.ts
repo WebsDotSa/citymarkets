@@ -108,7 +108,11 @@ describe("audience.ts", () => {
       ["email"],
     );
     const [sql, params] = queryMock.mock.calls[0];
-    expect(sql).toMatch(/loyalty_points >= \$1/);
+    // P1-3 (full-system audit 2026-09-30): the legacy
+    // `users.loyalty_points` column is no longer written; the live
+    // balance lives in the `loyalty_points` table. Assert the new
+    // EXISTS(SELECT 1 FROM loyalty_points …) shape instead.
+    expect(sql).toMatch(/loyalty_points[\s\S]+balance >= \$1/);
     expect(sql).toMatch(/loyalty_tier = \$2::loyalty_tier_enum/);
     expect(sql).toMatch(/SELECT user_id FROM addresses WHERE city = \$3/);
     expect(sql).toMatch(/id <> ALL\(\$4::uuid\[\]\)/);

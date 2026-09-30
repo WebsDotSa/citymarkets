@@ -330,3 +330,48 @@ export async function setDefaultAddress(
     client.release();
   }
 }
+
+/**
+ * Resolve an address for an order in one round-trip.
+ *
+ * Pre-fix: `src/app/api/v1/orders/route.ts` ran FOUR separate SELECTs
+ * against the `addresses` table during checkout:
+ *
+ *   1. fetch the default address id when the caller didn't pass one,
+ *   2. verify the supplied `addressId` belongs to the caller,
+ *   3. SELECT lat,
+ *   4. SELECT lng.
+ *
+ * Four round-trips meant four awaits on the same row; the helper here
+ * collapses them into a single SELECT that returns `{ id, lat, lng }`
+ * (the fields the order route actually needs to compute distance).
+ *
+ * Behaviour:
+ *   - When `addressId` is `null` the helper returns the caller's
+ *     default address (ties broken by oldest `created_at` to match the
+ *     previous ordering).
+ *   - When `addressId` is provided the helper enforces ownership in the
+ *     WHERE clause — the same rowCount=0 → 400 the route did inline.
+ *   - Returns `null` when no row matches (caller's pool of addresses
+ *     is empty, or the supplied id isn't owned by them).
+ */
+export async function resolveOrderAddress(
+  userId: string,
+  addressId: string | null,
+): Promise<{ id: string; lat: number; lng: number } | null> {
+  const { rows } = await query<{ id: string; lat: number; lng: number }>(
+    addressId
+      ? `SELECT id, lat::float8 AS lat, lng::float8 AS lng
+          FROM addresses
+         WHERE id = $2::uuid AND user_id = $1::uuid`
+      : `SELECT id, lat::float8 AS lat, lng::float8 AS lng
+          FROM addresses
+         WHERE user_id = $1::uuid
+         ORDER BY is_default DESC, created_at ASC
+         LIMIT 1`,
+    [userId, addressId],
+  );
+  if (rows.length === 0) return null;
+  const r = rows[0];
+  return { id: String(r.id), lat: Number(r.lat), lng: Number(r.lng) };
+}

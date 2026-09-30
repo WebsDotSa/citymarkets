@@ -5,15 +5,8 @@ import {
   getTamaraWebhookToken,
   verifyWebhookSignature,
 } from "@/lib/payments/tamara";
-import {
-  recordPaymentEvent,
-  finalizePaymentEvent,
-} from "@/lib/payments/event-ledger";
-import {
-  awardPointsForOrder,
-  getLoyaltySettings,
-  resolveRedeemForOrder,
-} from "@/lib/orders/loyalty";
+import { finalizePaymentEvent } from "@/lib/payments/event-ledger";
+import { reconcilePayment } from "@/lib/payments/reconcile-payment";
 import { error as logError, warn as logWarn, info as logInfo } from "@/lib/logger";
 
 /**
@@ -165,140 +158,51 @@ export async function POST(request: NextRequest) {
     try {
       await client.query("BEGIN");
 
-      // payment_events ledger (migration 073) — INSERT first so any
-      // gateway replay hits the UNIQUE (invoice_id, gateway, event_type)
-      // index and short-circuits the rest of the work. Mirrors the
-      // Moyasar webhook pattern. Atomic with the order updates via the
-      // surrounding transaction: if the order mutation rolls back, the
-      // ledger row rolls back too and a fresh replay gets to insert
-      // again. See src/lib/payments/event-ledger.ts.
+      // FIX (P1-5): reconcile-payment is the shared single-source-of-
+      // truth used by every gateway webhook. It does the ledger INSERT,
+      // advisory lock, parent/child UPDATE, lifecycle flip, loyalty
+      // resolve, earn award, and abandoned-cart recovery. Tamara only
+      // adds the per-gateway surface area (signature verify +
+      // amount/currency guard + payment_method alias) above this call.
       const eventType =
         typeof body.order_status === "string" && body.order_status
           ? `tamara.${String(body.order_status)}`
           : "tamara.notification";
-      const ledgerResult = await recordPaymentEvent(client, {
+      const reconcileResult = await reconcilePayment(client, {
         invoiceId: checkoutId,
         gateway: "tamara",
         eventType,
-        raw: body,
+        paymentDb,
+        rawBody: body,
+        orderRow: {
+          id: orderRow.id,
+          total: orderRow.total,
+          catalog_subtotal: orderRow.catalog_subtotal,
+          user_id: orderRow.user_id,
+          points_redeemed: orderRow.points_redeemed,
+          guest_phone: guestPhone,
+        },
       });
-      if (ledgerResult === "duplicate") {
+      if (reconcileResult.duplicate) {
         logInfo(
           `[tamara] duplicate event ${eventType} for ${checkoutId}; ` +
             `idempotent ack without re-processing order`,
         );
-        // FIX (P1-5): finalize the ledger row so subsequent replays do
-        // not see status='received' forever. orderId is intentionally
-        // NOT passed — we short-circuited before the SELECT. Mirrors the
-        // same fix in the Moyasar webhook.
-        try {
-          await finalizePaymentEvent(client, {
-            invoiceId: checkoutId,
-            gateway: "tamara",
-            eventType,
-            status: "processed",
-          });
-        } catch (finalErr) {
-          logError('[event-ledger] duplicate finalize failed', finalErr, { invoiceId: checkoutId });
-        }
         await client.query("COMMIT");
         return NextResponse.json({ received: true, duplicate: true });
       }
+      recoveredCount = reconcileResult.recoveredCount;
 
-      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-        `order:${orderId}`,
-      ]);
-
-      // Never regress a Paid/Failed order back to Pending.
+      // Tamara-specific: backfill payment_method when the row was
+      // created before the gateway alias was set. Idempotent — the
+      // COALESCE only writes when current value is NULL.
       await client.query(
         `UPDATE orders
-            SET payment_status = CASE
-              WHEN payment_status = 'paid'   THEN 'paid'
-              WHEN payment_status = 'failed' AND $1 = 'pending' THEN 'failed'
-              ELSE $1
-            END,
-            payment_method = COALESCE(payment_method, 'tamara'),
-            updated_at = NOW()
-          WHERE id = $2`,
-        [paymentDb, orderId],
+            SET payment_method = COALESCE(payment_method, 'tamara'),
+                updated_at = NOW()
+          WHERE id = $1`,
+        [orderId],
       );
-      // Slice 3 fan-out to vendor_orders children.
-      await client.query(
-        `UPDATE vendor_orders
-            SET payment_status = CASE
-              WHEN payment_status = 'paid'   THEN 'paid'
-              WHEN payment_status = 'failed' AND $1 = 'pending' THEN 'failed'
-              ELSE $1
-            END,
-            updated_at = NOW()
-          WHERE parent_order_id = $2`,
-        [paymentDb, orderId],
-      );
-
-      if (paymentDb === "paid") {
-        // Lifecycle: roll status forward but never go backwards.
-        await client.query(
-          `UPDATE orders
-              SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
-            WHERE id = $1`,
-          [orderId],
-        );
-        await client.query(
-          `UPDATE vendor_orders
-              SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
-            WHERE parent_order_id = $1`,
-          [orderId],
-        );
-
-        // Resolve any pending_redeem hold into a real debit.
-        const userId = orderRow.user_id;
-        const redeemPoints = Math.floor(Number(orderRow.points_redeemed ?? 0));
-        if (userId && redeemPoints > 0) {
-          try {
-            await resolveRedeemForOrder(client, {
-              orderId,
-              userId,
-              pointsRedeemed: redeemPoints,
-            });
-          } catch (e) {
-            logError("[tamara] loyalty redeem resolve failed", e, { orderId });
-          }
-        }
-
-        // Award loyalty on the catalog_subtotal (Slice 3 policy).
-        const catalogSubtotal = Number(orderRow.catalog_subtotal ?? 0);
-        if (userId && catalogSubtotal > 0) {
-          try {
-            const loyaltySettings = await getLoyaltySettings();
-            await awardPointsForOrder(client, {
-              orderId,
-              userId,
-              catalogSubtotal,
-              settings: loyaltySettings,
-            });
-          } catch (e) {
-            logError("[tamara] loyalty earn failed", e, { orderId });
-          }
-        }
-
-        // Recover any abandoned carts that belong to this customer.
-        // Best-effort: the helper is idempotent — re-running on a webhook
-        // replay is safe — and we don't want a snapshot miss to block the
-        // payment confirmation.
-        try {
-          const { markAbandonedCartRecovered } = await import('@/lib/orders/abandoned-carts');
-          const { recovered_count } = await markAbandonedCartRecovered(
-            orderId,
-            {
-              user_id: orderRow.user_id || null,
-              guest_phone: guestPhone,
-            },
-          );
-          recoveredCount = recovered_count;
-        } catch (e) {
-          logError("[tamara] abandoned-carts recovery failed", e, { orderId });
-        }
-      }
 
       await client.query("COMMIT");
 
@@ -355,15 +259,12 @@ export async function POST(request: NextRequest) {
     if (paymentDb === "paid") {
       try {
         const { enqueueNotifyVendorNewOrder } = await import("@/lib/queue");
-        const vendorRows = await pool.query<{ vendor_id: string }>(
-          `SELECT vendor_id::text AS vendor_id
-             FROM vendor_orders
-            WHERE parent_order_id = $1`,
-          [orderId]
-        );
-        for (const row of vendorRows.rows) {
+        const { loadOrderVendorIds } = await import("@/lib/queue/loaders");
+        // Shared loader (same SQL as Moyasar webhook; canonical source).
+        const vendorIds = await loadOrderVendorIds(orderId);
+        for (const vendorId of vendorIds) {
           void enqueueNotifyVendorNewOrder({
-            vendorId: row.vendor_id,
+            vendorId,
             orderId,
           });
         }

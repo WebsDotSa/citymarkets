@@ -399,7 +399,7 @@ export function FooterV2() {
           </div>
           <div className="text-center mt-4 pb-20">
             <a
-              href="https://tharwah.shop/"
+              href="https://tharwah.app/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-gray-500 text-xs hover:text-primary-400 transition-colors"

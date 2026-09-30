@@ -33,8 +33,22 @@ describe("canTransition — parent orders (orders.status)", () => {
     expect(canTransition("admin", "orders", "pending", "delivered")).toBe(false);
   });
 
-  it("admin cannot move delivered (terminal)", () => {
-    expect(canTransition("admin", "orders", "delivered", "cancelled")).toBe(false);
+  it("admin cannot move delivered (terminal except for the documented escape hatch)", () => {
+    // Delivered is terminal for all non-cancelled targets. The admin
+    // escape hatch allows delivered → cancelled so support can roll
+    // back a delivery when a customer files a complaint AFTER delivery
+    // and a refund is being processed out-of-band.
+    expect(canTransition("admin", "orders", "delivered", "confirmed")).toBe(false);
+    expect(canTransition("admin", "orders", "delivered", "shopping")).toBe(false);
+    expect(canTransition("admin", "orders", "delivered", "on_the_way")).toBe(false);
+    expect(canTransition("admin", "orders", "delivered", "pending")).toBe(false);
+    expect(canTransition("admin", "orders", "delivered", "delivered")).toBe(false);
+    // The one and only terminal escape:
+    expect(canTransition("admin", "orders", "delivered", "cancelled")).toBe(true);
+  });
+
+  it("system cannot use the admin escape hatch (webhooks never undo delivery)", () => {
+    expect(canTransition("system", "orders", "delivered", "cancelled")).toBe(false);
   });
 
   it("system can flip pending → confirmed (webhook lifecycle)", () => {

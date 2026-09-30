@@ -49,17 +49,6 @@ export const productInputSchema = z.object({
 });
 
 /**
- * Admin banner create/update schema
- */
-export const bannerInputSchema = z.object({
-  image_url: z.string().min(1, "رابط الصورة مطلوب").max(500),
-  link_type: z.enum(["none", "category", "product", "external"]).optional(),
-  link_value: z.string().max(500).optional().nullable(),
-  active: z.boolean().optional(),
-  sort_order: z.number().int().min(0).max(9999).optional(),
-});
-
-/**
  * Admin category create/update schema
  */
 export const categoryInputSchema = z.object({

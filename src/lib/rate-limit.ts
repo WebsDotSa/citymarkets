@@ -534,3 +534,13 @@ export async function closeRateLimiter(): Promise<void> {
     redisInitPromise = null;
   }
 }
+
+/**
+ * Test helper: clear the in-memory rate-limit store. Tests that
+ * exercise rate-limit behaviour across multiple `it()` blocks must
+ * call this in `beforeEach` so a previous test's failure counter
+ * does not bleed into the next one. Production code never calls this.
+ */
+export function __resetRateLimitStoreForTests(): void {
+  rateLimitStore.clear();
+}

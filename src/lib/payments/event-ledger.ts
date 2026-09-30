@@ -1,10 +1,18 @@
 /**
  * Payment event ledger helper.
  *
- * Records gateway callbacks (Moyasar, Tamara) in the `payment_events`
+ * Records gateway callbacks (Moyasar, Tamara, COD) in the `payment_events`
  * table defined by migration 073. Designed to be the FIRST call in
  * any webhook handler so replays short-circuit before any order/state
  * mutation occurs.
+ *
+ * Accepted `gateway` values (see `PaymentGateway` below):
+ *   - `moyasar`  — credit/debit card payments via the Moyasar gateway.
+ *   - `tamara`   — Buy-Now-Pay-Later payments via Tamara.
+ *   - `cod`      — Cash-on-Delivery ledger rows written by the driver
+ *                  confirmation flow + admin COD-approval flow (no HTTP
+ *                  callback, but the same UNIQUE(invoice_id, gateway,
+ *                  event_type) index dedupes repeat admin-clicks).
  *
  * Idempotency contract:
  *   - The caller passes {invoiceId, gateway, eventType, raw}.
@@ -30,6 +38,7 @@
  */
 
 import type { PoolClient } from "pg";
+import { warn, error } from "@/lib/logger";
 
 export type PaymentGateway = "moyasar" | "tamara" | "cod";
 
@@ -59,11 +68,17 @@ export async function recordPaymentEvent(
     try {
       rawPayload = JSON.stringify(args.raw);
     } catch (serialiseErr) {
-      // eslint-disable-next-line no-console
-      console.warn(
+      // Audit I39: canonical logger. The previous inline console.warn
+      // bypassed the LOG_LEVEL gate and would fire in production.
+      warn(
         "[payment-events] raw payload not JSON-serialisable, storing placeholder",
         { invoiceId: args.invoiceId, gateway: args.gateway, eventType: args.eventType },
+      );
+      // Pass the serialise error to the error sink so we don't lose it.
+      error(
+        "[payment-events] serialise error",
         serialiseErr,
+        { invoiceId: args.invoiceId, gateway: args.gateway, eventType: args.eventType },
       );
       rawPayload = JSON.stringify({
         __unserialisable: true,

@@ -10,11 +10,11 @@
  * / the user has not granted marketing-cookie consent.
  *
  * This module is the **production entry point** for analytics on citymarkets.sa.
- * (`useAnalytics` hook in src/hooks/useAnalytics.ts mirrors the same API for
- * newer callers but currently has no production consumers — see
- * src/contexts/cart-context.tsx, src/app/checkout/success/page.tsx for the
- * sites that actually fire events. Both code paths now produce the same GA4
- * + Meta tracking so dashboards and ad optimization see consistent data.)
+ * (`useAnalytics` hook in src/hooks/useAnalytics.ts, retired in
+ * refactor/full-repository-consolidation Phase A2, used to mirror this API.)
+ * Direct callers in src/contexts/cart-context.tsx and
+ * src/app/checkout/success/page.tsx fire the same GA4 + Meta tracking so
+ * dashboards and ad optimization see consistent data.
  *
  * CONVERSION EVENT MAPPING (Meta Pixel standard events):
  *   view_item        → ViewContent

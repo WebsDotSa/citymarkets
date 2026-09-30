@@ -1,26 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { sanitizePlaceImageUrls } from '@/lib/catalog';
+import {
+  type AddressRow,
+  createAddress as createAddressService,
+  deleteAddress as deleteAddressService,
+  listAddresses as listAddressesService,
+  updateAddress as updateAddressService,
+} from '@/lib/identity/address-service';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 // SECURITY: place_images validation now mirrors the strict C3 RBAC
 // allowlist from `@/lib/place-image`. Previous prefix-only check
 // accepted `..`, protocol-relative URLs, and arbitrary schemes —
 // kept here for parity with `/api/v1/addresses` so any client that
 // can hit the looser route can no longer bypass the stricter one.
+//
+// P2-3: all four handlers now delegate to the canonical address
+// service. The service owns the SQL (user_id vs guest_key scope,
+// title fallback, is_default toggle) so the route stays an HTTP
+// shaper + auth gate.
 
-async function ownerFromRequest(request: NextRequest) {
+type Owner =
+  | { kind: "user"; userId: string }
+  | { kind: "guest"; guestKey: string };
+
+async function ownerFromRequest(request: NextRequest): Promise<Owner | null> {
   const userId = await resolveCustomerUserIdFromRequest(request);
+  if (userId) return { kind: "user", userId };
   const guestKey = request.headers.get("x-guest-key");
-  return { userId, guestKey };
+  if (guestKey) return { kind: "guest", guestKey };
+  return null;
+}
+
+/**
+ * Strip owner-identifying fields from a row before sending it to the
+ * client. The address service returns `user_id` and `guest_key` so
+ * internal callers can audit, but the delivery-addresses contract
+ * (predates the service) never exposed them — keep the response
+ * shape identical to the pre-P2-3 implementation.
+ *
+ * `place_images` is COALESCEd to `[]` here because the old SQL had
+ * `COALESCE(place_images, '{}')`; the service returns the raw value
+ * (could be NULL when the row was written before the column was
+ * added in migration 049). The web client treats `null` as `[]`
+ * already via rowToAddress, but the raw JSON shape stays identical
+ * to the pre-P2-3 response.
+ */
+function toClientRow(row: AddressRow): Record<string, unknown> {
+  const { user_id: _u, guest_key: _g, ...rest } = row;
+  void _u;
+  void _g;
+  return {
+    ...rest,
+    place_images: Array.isArray(row.place_images) ? row.place_images : [],
+  };
 }
 
 // GET /api/v1/delivery-addresses
 export async function GET(request: NextRequest) {
-  const { userId, guestKey } = await ownerFromRequest(request);
-  if (!userId && !guestKey) {
+  const owner = await ownerFromRequest(request);
+  if (!owner) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },
       { status: 400 }
@@ -28,23 +69,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = userId
-      ? await query(
-          `SELECT id, label, description, title, lat, lng, address_text, is_default,
-                  COALESCE(place_images, '{}') AS place_images, created_at
-           FROM addresses WHERE user_id = $1
-           ORDER BY is_default DESC, created_at DESC`,
-          [userId]
-        )
-      : await query(
-          `SELECT id, label, description, title, lat, lng, address_text, is_default,
-                  COALESCE(place_images, '{}') AS place_images, created_at
-           FROM addresses WHERE guest_key = $1
-           ORDER BY is_default DESC, created_at DESC`,
-          [guestKey]
-        );
-
-    return NextResponse.json({ success: true, data: result.rows });
+    const rows = await listAddressesService(owner);
+    return NextResponse.json({
+      success: true,
+      data: rows.map(toClientRow),
+    });
   } catch (error) {
     logError("delivery-addresses GET:", error);
     return NextResponse.json(
@@ -56,8 +85,8 @@ export async function GET(request: NextRequest) {
 
 // POST /api/v1/delivery-addresses
 export async function POST(request: NextRequest) {
-  const { userId, guestKey } = await ownerFromRequest(request);
-  if (!userId && !guestKey) {
+  const owner = await ownerFromRequest(request);
+  if (!owner) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },
       { status: 400 }
@@ -75,75 +104,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Title is the user-facing display label. Required since migration
-    // 049 made the column NOT NULL. Fall back to description, then
-    // label, so older clients (iOS + web) keep working.
-    const resolvedTitle = (() => {
-      if (typeof title === "string" && title.trim().length > 0) return title.trim();
-      if (typeof description === "string" && description.trim().length > 0) return description.trim();
-      return label;
-    })();
-
     // Validate place_images via the shared allowlist (see SECURITY note
     // at the top of this file). Cap at 5.
     const validImages = sanitizePlaceImageUrls(place_images, 5);
 
-    const countSql = userId
-      ? "SELECT COUNT(*)::int AS c FROM addresses WHERE user_id = $1"
-      : "SELECT COUNT(*)::int AS c FROM addresses WHERE guest_key = $1";
-    const countResult = await query(countSql, [userId || guestKey]);
-    const isFirst = countResult.rows[0]?.c === 0;
-    const makeDefault = is_default === true || isFirst;
-
-    if (makeDefault && userId) {
-      await query(
-        "UPDATE addresses SET is_default = false WHERE user_id = $1",
-        [userId]
-      );
-    } else if (makeDefault && guestKey) {
-      await query(
-        "UPDATE addresses SET is_default = false WHERE guest_key = $1",
-        [guestKey]
-      );
-    }
-
-    const insertResult = userId
-      ? await query(
-          `INSERT INTO addresses (user_id, label, lat, lng, address_text, description, title, is_default, place_images)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::text[])
-           RETURNING id, label, lat, lng, address_text, description, title, is_default, place_images, created_at`,
-          [
-            userId,
-            label,
-            parseFloat(lat) || 0,
-            parseFloat(lng) || 0,
-            address_text,
-            description || null,
-            resolvedTitle,
-            makeDefault,
-            validImages,
-          ]
-        )
-      : await query(
-          `INSERT INTO addresses (guest_key, label, lat, lng, address_text, description, title, is_default, place_images)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::text[])
-           RETURNING id, label, lat, lng, address_text, description, title, is_default, place_images, created_at`,
-          [
-            guestKey,
-            label,
-            parseFloat(lat) || 0,
-            parseFloat(lng) || 0,
-            address_text,
-            description || null,
-            resolvedTitle,
-            makeDefault,
-            validImages,
-          ]
-        );
+    // P2-3: title fallback (title → description → label) lives in the
+    // service as `resolveTitle`. Pass through the explicit values.
+    const row = await createAddressService(owner, {
+      label,
+      title: typeof title === "string" ? title : null,
+      description: typeof description === "string" ? description : null,
+      lat: Number(lat),
+      lng: Number(lng),
+      address_text,
+      is_default: is_default === true,
+      place_images: validImages,
+    });
 
     return NextResponse.json({
       success: true,
-      data: insertResult.rows[0],
+      data: toClientRow(row),
     });
   } catch (error) {
     logError("delivery-addresses POST:", error);
@@ -156,8 +136,8 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/v1/delivery-addresses?id=  (edit)
 export async function PUT(request: NextRequest) {
-  const { userId, guestKey } = await ownerFromRequest(request);
-  if (!userId && !guestKey) {
+  const owner = await ownerFromRequest(request);
+  if (!owner) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },
       { status: 400 }
@@ -182,72 +162,37 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Mirror the POST fallback so editing a row always leaves a
-    // non-empty `title`.
-    const resolvedTitle = (() => {
-      if (typeof title === "string" && title.trim().length > 0) return title.trim();
-      if (typeof description === "string" && description.trim().length > 0) return description.trim();
-      return label;
-    })();
-
-    let validImages: string[] | undefined;
+    // P2-3: title fallback is now in the service — pass the explicit
+    // values and let `resolveTitle` do the ladder.
+    let validImages: string[] | null | undefined;
     if (Array.isArray(place_images)) {
       validImages = sanitizePlaceImageUrls(place_images, 5);
     }
 
-    if (is_default === true) {
-      if (userId) {
-        await query(
-          "UPDATE addresses SET is_default = false WHERE user_id = $1 AND id <> $2",
-          [userId, id]
-        );
-      } else if (guestKey) {
-        await query(
-          "UPDATE addresses SET is_default = false WHERE guest_key = $1 AND id <> $2",
-          [guestKey, id]
-        );
-      }
-    }
+    // Pre-P2-3 the PUT always set is_default = `is_default === true`
+    // (a boolean), so an absent `is_default` in the body wrote `false`
+    // to the column. Preserve that exact semantics: we always pass a
+    // boolean and let the service decide whether to clear-others
+    // (only fires when is_default===true).
+    const row = await updateAddressService(owner, id, {
+      label,
+      title: typeof title === "string" ? title : null,
+      description: typeof description === "string" ? description : null,
+      lat: Number(lat),
+      lng: Number(lng),
+      address_text,
+      is_default: is_default === true,
+      place_images: validImages ?? null,
+    });
 
-    const scopeFilter = userId
-      ? "id = $1 AND user_id = $2"
-      : "id = $1 AND guest_key = $2";
-    const scopeArg = userId || guestKey;
-
-    const result = await query(
-      `UPDATE addresses
-       SET label = $3,
-           lat = $4,
-           lng = $5,
-           address_text = $6,
-           description = $7,
-           title = $8,
-           is_default = $9,
-           place_images = COALESCE($10::text[], place_images)
-       WHERE ${scopeFilter}
-       RETURNING id, label, lat, lng, address_text, description, title, is_default, place_images, created_at`,
-      [
-        id,
-        scopeArg,
-        label,
-        parseFloat(lat) || 0,
-        parseFloat(lng) || 0,
-        address_text,
-        description || null,
-        resolvedTitle,
-        is_default === true,
-        validImages ?? null,
-      ]
-    );
-
-    if (result.rows.length === 0) {
+    if (!row) {
       return NextResponse.json(
         { success: false, error: "العنوان غير موجود" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ success: true, data: result.rows[0] });
+    return NextResponse.json({ success: true, data: toClientRow(row) });
   } catch (error) {
     logError("delivery-addresses PUT:", error);
     return NextResponse.json(
@@ -259,8 +204,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/v1/delivery-addresses?id=
 export async function DELETE(request: NextRequest) {
-  const { userId, guestKey } = await ownerFromRequest(request);
-  if (!userId && !guestKey) {
+  const owner = await ownerFromRequest(request);
+  if (!owner) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },
       { status: 400 }
@@ -275,17 +220,11 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    if (userId) {
-      await query("DELETE FROM addresses WHERE id = $1 AND user_id = $2", [
-        id,
-        userId,
-      ]);
-    } else if (guestKey) {
-      await query("DELETE FROM addresses WHERE id = $1 AND guest_key = $2", [
-        id,
-        guestKey,
-      ]);
-    }
+    // Service pins both id AND owner in the WHERE clause, so a guest
+    // can never delete a user's row (or vice-versa). Pre-P2-3 the
+    // route returned 200 even when rowCount=0; preserve that to keep
+    // the response contract.
+    await deleteAddressService(owner, id);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(

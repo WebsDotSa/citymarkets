@@ -38,7 +38,6 @@ export async function GET(
     const ord = await client.query(
       `SELECT ${ORDER_BASE_COLUMNS},
               o.tracking_code AS order_number, o.type,
-              o.scheduled, o.scheduled_for, o.slot_window,
               o.voice_note_url, o.voice_note_duration,
               o.user_id::text as user_id,
               a.plus_code as address_plus_code,

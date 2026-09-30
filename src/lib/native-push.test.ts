@@ -18,9 +18,20 @@ const ORIGINAL = { ...process.env };
 
 // Mock the provider abstraction so the test never reaches the
 // placeholder senders when probing the configured-but-stub path.
-vi.mock("@/lib/native-push/senders", () => ({
-  selectSender: vi.fn(),
-}));
+// `selectSenders` (plural) is the new dispatch selector (audit K58).
+// `selectSender` (singular) is kept as a backward-compat wrapper that
+// returns the first configured sender. We deliberately do NOT mock
+// `ApnsSender` / `FcmSender` — the dispatch helper relies on
+// `instanceof` to map each sender to its platform (ios/android), so
+// the real classes must be importable.
+vi.mock("@/lib/native-push/senders", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/native-push/senders")>();
+  return {
+    ...actual,
+    selectSender: vi.fn(),
+    selectSenders: vi.fn(),
+  };
+});
 
 // Mock the DB layer so `loadPushTokens` doesn't hit a real Postgres.
 // Per-test we set `mockTokens` to simulate "user has tokens" / "no tokens".
@@ -29,7 +40,7 @@ vi.mock("@/lib/db", () => ({
   pool: { query: queryMock },
 }));
 
-import { selectSender } from "@/lib/native-push/senders";
+import { selectSender, selectSenders } from "@/lib/native-push/senders";
 
 function setApnsEnv() {
   process.env.APNS_KEY_ID = "k";
@@ -63,6 +74,12 @@ describe("native-push", () => {
     vi.restoreAllMocks();
     queryMock.mockReset();
     vi.mocked(selectSender).mockReset();
+    vi.mocked(selectSenders).mockReset();
+    // Default: the new dispatch path consults `selectSenders` first.
+    // Default to "no senders" so each test must opt in to the
+    // configured state by setting env vars + mocking.
+    vi.mocked(selectSenders).mockReturnValue([]);
+    vi.mocked(selectSender).mockReturnValue(null);
   });
   afterEach(() => {
     for (const key of Object.keys(process.env)) {
@@ -107,9 +124,10 @@ describe("native-push", () => {
 
   it("sendNativePushToUser returns sender_not_implemented when configured but no real sender", async () => {
     setApnsEnv();
-    // selectSender returns null → the env check passes but the
+    // selectSenders returns [] → the env check passes but the
     // factory finds no concrete provider. We force that by mocking
-    // selectSender to return null explicitly.
+    // selectSenders to return [] explicitly.
+    vi.mocked(selectSenders).mockReturnValue([]);
     vi.mocked(selectSender).mockReturnValue(null);
     queryMock.mockResolvedValueOnce({ rows: [{ device_token: "tok", platform: "apns" }] });
     const { sendNativePushToUser } = await loadFresh();
@@ -126,6 +144,7 @@ describe("native-push", () => {
     setApnsEnv();
     const fakeSender = { isConfigured: () => true, describeConfiguration: () => "x", send: vi.fn() };
     vi.mocked(selectSender).mockReturnValue(fakeSender as never);
+    vi.mocked(selectSenders).mockReturnValue([fakeSender as never]);
     queryMock.mockResolvedValueOnce({ rows: [] });
     const { sendNativePushToUser } = await loadFresh();
     const out = await sendNativePushToUser("u1", { title: "x", body: "y" });
@@ -145,6 +164,7 @@ describe("native-push", () => {
       send: vi.fn().mockResolvedValue({ status: "skipped", reason: "sender_not_implemented" }),
     };
     vi.mocked(selectSender).mockReturnValue(fakeSender as never);
+    vi.mocked(selectSenders).mockReturnValue([fakeSender as never]);
     queryMock.mockResolvedValueOnce({ rows: [{ device_token: "tok", platform: "apns" }] });
     const { sendNativePushToUser } = await loadFresh();
     const out = await sendNativePushToUser("u1", { title: "x", body: "y" });
@@ -169,6 +189,7 @@ describe("native-push", () => {
       }),
     };
     vi.mocked(selectSender).mockReturnValue(fakeSender as never);
+    vi.mocked(selectSenders).mockReturnValue([fakeSender as never]);
     queryMock.mockResolvedValueOnce({
       rows: [
         { device_token: "tok1", platform: "apns" },
@@ -179,5 +200,70 @@ describe("native-push", () => {
     const { sendNativePushToUser } = await loadFresh();
     const out = await sendNativePushToUser("u1", { title: "x", body: "y" });
     expect(out).toEqual({ sent: 2, failed: 1, skipped: false });
+  });
+
+  it("sendNativePushToUser fans out across multiple configured senders (K58)", async () => {
+    // Multi-device dispatch: both APNs and FCM configured; user has
+    // one iOS token + one Android token; both senders should run.
+    setApnsEnv();
+    process.env.FCM_PROJECT_ID = "p";
+    process.env.FCM_SERVICE_ACCOUNT_JSON = "{}";
+
+    const apnsSender = {
+      isConfigured: () => true,
+      describeConfiguration: () => "apns",
+      send: vi.fn().mockResolvedValue({ status: "sent", sent: 1, failed: 0, externalIds: ["a"] }),
+    };
+    const fcmSender = {
+      isConfigured: () => true,
+      describeConfiguration: () => "fcm",
+      send: vi.fn().mockResolvedValue({ status: "sent", sent: 1, failed: 0, externalIds: ["b"] }),
+    };
+    vi.mocked(selectSender).mockReturnValue(apnsSender as never);
+    vi.mocked(selectSenders).mockReturnValue([apnsSender, fcmSender] as never);
+
+    queryMock.mockResolvedValueOnce({
+      rows: [
+        { device_token: "ios-tok", platform: "apns" },
+        { device_token: "and-tok", platform: "fcm" },
+      ],
+    });
+    const { sendNativePushToUser } = await loadFresh();
+    const out = await sendNativePushToUser("u1", { title: "x", body: "y" });
+    expect(out).toEqual({ sent: 2, failed: 0, skipped: false });
+    // Each sender must have been called exactly once.
+    expect(apnsSender.send).toHaveBeenCalledTimes(1);
+    expect(fcmSender.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("sendNativePushToUser returns sender_not_implemented when ANY configured sender is a stub", async () => {
+    setApnsEnv();
+    process.env.FCM_PROJECT_ID = "p";
+    process.env.FCM_SERVICE_ACCOUNT_JSON = "{}";
+
+    // APNs is real (would send), FCM is a stub returning skipped.
+    const apnsSender = {
+      isConfigured: () => true,
+      describeConfiguration: () => "apns",
+      send: vi.fn().mockResolvedValue({ status: "sent", sent: 1, failed: 0, externalIds: ["a"] }),
+    };
+    const fcmSender = {
+      isConfigured: () => true,
+      describeConfiguration: () => "fcm",
+      send: vi.fn().mockResolvedValue({ status: "skipped", reason: "sender_not_implemented" }),
+    };
+    vi.mocked(selectSenders).mockReturnValue([apnsSender, fcmSender] as never);
+
+    queryMock.mockResolvedValueOnce({
+      rows: [
+        { device_token: "ios-tok", platform: "apns" },
+        { device_token: "and-tok", platform: "fcm" },
+      ],
+    });
+    const { sendNativePushToUser } = await loadFresh();
+    const out = await sendNativePushToUser("u1", { title: "x", body: "y" });
+    // Mixed result → reported as a successful delivery; partial
+    // skip counts are absorbed.
+    expect(out).toEqual({ sent: 1, failed: 0, skipped: false });
   });
 });

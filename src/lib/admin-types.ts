@@ -539,14 +539,6 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'manage_roles',
   },
   {
-    id: 'banners',
-    label: 'البانرات',
-    icon: 'Image',
-    href: '/admin/banners',
-    roles: ['super_admin', 'admin', 'editor'],
-    permission: 'manage_banners',
-  },
-  {
     id: 'home-design',
     label: 'تصميم الرئيسية',
     icon: 'LayoutTemplate',

@@ -49,7 +49,7 @@ export function extractBearerToken(request: NextRequest): string | null {
 // layer, analogous to the admin/vendor tokens. If a customer JWT were
 // ever accidentally signed with the admin secret (or vice versa), the
 // mismatched iss/aud would cause verification to fail instead of granting
-// the wrong-role access. See `src/lib/auth/jwt-helper.ts` for the
+// the wrong-role access. See `src/lib/identity/auth/jwt-helper.ts` for the
 // shared sign/verify mechanics.
 const ISS = "citymarket-customer";
 const AUD = "citymarket-customer-api";
@@ -64,7 +64,7 @@ const customerVerifyConfig = (): VerifyConfig => ({
 
 // JWT verify result cache (60s TTL). Caches CustomerJwtPayload (only on
 // success) by the token string. Edge-safe (Map + Date.now only). See
-// src/lib/auth/jwt-verify-cache.ts for the full safety contract.
+// src/lib/identity/auth/jwt-verify-cache.ts for the full safety contract.
 const _customerVerifyCache = createJwtVerifyCache<CustomerJwtPayload>();
 
 export type CustomerJwtPayload = {

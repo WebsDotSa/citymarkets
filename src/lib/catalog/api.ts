@@ -41,10 +41,6 @@ export async function apiFetch<T = unknown>(
   }
 }
 
-export async function getBanners() {
-  return apiFetch<any[]>('/api/v1/banners');
-}
-
 export async function getCategories() {
   return apiFetch<any[]>('/api/v1/categories');
 }

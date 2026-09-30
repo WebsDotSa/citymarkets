@@ -116,7 +116,7 @@ const REVENUE_ORDER_FRAGMENT = `
 /** Vendor-eligible filter (vendor_orders has its own status enum). */
 const VENDOR_REVENUE_FRAGMENT = `
   vo.status IN ('confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered')
-  AND vo.payment_status IN ('paid', 'completed')
+  AND vo.payment_status = 'paid'
 `;
 
 // ---------------------------------------------------------------------------
@@ -143,7 +143,7 @@ export async function getOverviewKpis(periodDays: PeriodDays): Promise<OverviewK
         COUNT(*) FILTER (WHERE DATE(created_at) = CURRENT_DATE)                                         AS orders_today,
         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')                                 AS orders_week,
         COALESCE(SUM(CASE WHEN ${REVENUE_ORDER_FRAGMENT} THEN total ELSE 0 END), 0)                     AS revenue_electronic,
-        COALESCE(SUM(CASE WHEN payment_status IN ('paid','completed') AND status NOT IN ('cancelled')
+        COALESCE(SUM(CASE WHEN payment_status = 'paid' AND status NOT IN ('cancelled')
                           THEN total ELSE 0 END), 0)                                                    AS revenue_any_method,
         COUNT(*) FILTER (WHERE ${REVENUE_ORDER_FRAGMENT})                                              AS orders_confirmed,
         COUNT(DISTINCT user_id) FILTER (WHERE ${REVENUE_ORDER_FRAGMENT})                                AS active_customers

@@ -122,15 +122,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate that the supplied categoryId refers to an ACTIVE row in
-    // the global `categories` table. Without this check, a stale UI
-    // dropdown (vendor sees a category that was archived in the admin
-    // panel) could attach products to hidden rows and silently break
-    // the storefront. Returns 400 with an Arabic message so the vendor
-    // form can prompt the user to pick another category.
+    // the `categories` table that this vendor is allowed to use.
+    // Migration 081 added `vendor_id` (NULL = global, SET = private
+    // to one vendor). A vendor cannot tag a product with another
+    // vendor's private category — the SELECT scopes by either
+    // `vendor_id IS NULL` (global) or `vendor_id = session.vendorId`.
+    // Returns 400 with an Arabic message so the vendor form can prompt
+    // the user to pick another category.
     if (categoryId) {
       const catRes = await query(
-        `SELECT id FROM categories WHERE id = $1 AND is_active = TRUE LIMIT 1`,
-        [categoryId],
+        `SELECT id FROM categories
+          WHERE id = $1
+            AND is_active = TRUE
+            AND (vendor_id IS NULL OR vendor_id = $2)
+          LIMIT 1`,
+        [categoryId, session.vendorId],
       );
       if (catRes.rows.length === 0) {
         return NextResponse.json(

@@ -289,9 +289,56 @@ function AddProductModal({
     stockQuantity: "",
     trackStock: false,
     isActive: true,
+    categoryId: "",
   });
+  const [globalCategories, setGlobalCategories] = useState<
+    { id: string; name_ar: string }[]
+  >([]);
+  const [privateCategories, setPrivateCategories] = useState<
+    { id: string; name_ar: string }[]
+  >([]);
+  const [loadingCats, setLoadingCats] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/v1/vendor/categories", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        const payload = data.data ?? {};
+        setGlobalCategories(
+          Array.isArray(payload.global)
+            ? payload.global.map((c: any) => ({
+                id: c.id,
+                name_ar: c.name_ar,
+              }))
+            : [],
+        );
+        setPrivateCategories(
+          Array.isArray(payload.private)
+            ? payload.private.map((c: any) => ({
+                id: c.id,
+                name_ar: c.name_ar,
+              }))
+            : [],
+        );
+      } catch {
+        /* ignore — categories are optional */
+      } finally {
+        if (!cancelled) setLoadingCats(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -309,6 +356,7 @@ function AddProductModal({
           stockQuantity: parseInt(formData.stockQuantity) || 0,
           trackStock: formData.trackStock,
           isActive: formData.isActive,
+          categoryId: formData.categoryId || undefined,
         }),
       });
 
@@ -381,6 +429,43 @@ function AddProductModal({
               className="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none"
               rows={3}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              القسم
+            </label>
+            <select
+              value={formData.categoryId}
+              onChange={(e) =>
+                setFormData({ ...formData, categoryId: e.target.value })
+              }
+              disabled={loadingCats}
+              className="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none bg-white"
+            >
+              <option value="">بدون تصنيف</option>
+              {globalCategories.length > 0 && (
+                <optgroup label="عام">
+                  {globalCategories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name_ar}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {privateCategories.length > 0 && (
+                <optgroup label="خاص بمتجري">
+                  {privateCategories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name_ar}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              الأقسام العامة تظهر لجميع المتاجر، والخاصة تظهر لمتجرك فقط.
+            </p>
           </div>
 
           <div className="flex items-center gap-4">

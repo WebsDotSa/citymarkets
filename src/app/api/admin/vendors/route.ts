@@ -3,7 +3,9 @@ import { query, pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { logAdminAction } from "@/lib/admin-audit";
 import { vendorCreateSchema, vendorUpdateSchema } from "@/lib/validation";
+import { optionalPhone, optionalEmail } from "@/lib/validation/primitives";
 import { hashPassword } from "@/lib/password";
+import { generateSlug } from "@/lib/slug";
 
 import { error as logError } from '@/lib/logger';
 
@@ -13,24 +15,6 @@ function idCheck(url: URL) {
     return NextResponse.json({ success: false, error: "المعرّف مطلوب" }, { status: 400 });
   }
   return id;
-}
-
-// Slugify: lowercase, replace non-ASCII alphanumerics with dashes, collapse, trim
-//
-// NOTE: Intentionally NOT replaced with `generateSlug` from
-// `@/lib/slug`. The canonical helper transliterates Arabic to Latin
-// (فواكه → fawakeh); admin vendor slugs in this route are stored
-// verbatim with Arabic characters preserved (matching the historical
-// `vendors.slug` rows). Behaviour change would break lookups by slug
-// for vendors created before the transliteration was introduced.
-function slugify(input: string): string {
-  return (input || "")
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
 }
 
 /**
@@ -54,19 +38,20 @@ function hasOwnerCredentials(
 /**
  * Upsert the vendor owner login row in `vendor_staff`.
  *
- * Phone is REQUIRED for the *first* owner row on a brand-new vendor
- * (login by phone is the default surface — both password and OTP).
- * Email is OPTIONAL. Behavior:
+ * Owner bootstrap rules (brand-new vendor, no existing owner row):
+ *   - phone + password (≥8 chars) → INSERT `vendor_staff` row.
+ *   - phone only (no password) → SKIP. Phone alone can't log in, so
+ *     the vendor is left without an owner row. The admin can fill in
+ *     the password later via edit (the list view shows a
+ *     "⚠ بدون حساب دخول" badge so this isn't invisible).
+ *   - no owner fields at all → SKIP (no-op).
  *
- *   - Creating a brand-new vendor with login info:
- *       → INSERT a `vendor_staff` row with role='owner' for this
- *         vendor. `phone` must be provided (`login_phone`); `email`
- *         may be omitted; `password` (≥8 chars) must be provided so
- *         the merchant can actually sign in.
- *   - Editing an existing vendor:
- *       → UPDATE only the fields the admin sent. Empty `password` =
- *         keep current hash. Empty `email` (=empty string) clears the
- *         stored email so the owner can sign in by phone only.
+ * Existing owner row (edit):
+ *   - UPDATE only the fields the admin sent. Empty `password` keeps
+ *     the current hash. Empty `login_email` (=empty string) clears the
+ *     stored email so the owner can sign in by phone only.
+ *
+ * Email is always optional.
  *
  * Returns an error string if validation failed, or null on success.
  * The caller surfaces the error via the API response.
@@ -98,10 +83,10 @@ async function upsertVendorOwner(
 
   const run = client ? client.query : (sql: string, params?: unknown[]) => query(sql, params);
 
-  if (hasPhone && !/^(\+?966|0)?5\d{8}$/.test(loginPhone!.replace(/\s|-/g, ""))) {
+  if (hasPhone && !optionalPhone.safeParse(loginPhone!.replace(/\s|-/g, "")).success) {
     return "رقم جوال المالك غير صالح — مثال: 5XXXXXXXX";
   }
-  if (hasEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail!.trim())) {
+  if (hasEmail && !optionalEmail.safeParse(loginEmail!.trim()).success) {
     return "البريد الإلكتروني للمالك غير صالح";
   }
   if (hasPassword && password!.length < 8) {
@@ -115,13 +100,12 @@ async function upsertVendorOwner(
   );
 
   if (existing.rows.length === 0) {
-    // No owner yet → phone must be set, password must be set to bootstrap one.
-    if (!hasPhone) {
-      return "يجب إدخال رقم جوال المالك لإنشاء حساب دخول المتجر";
-    }
-    if (!hasPassword) {
-      return "يجب إدخال كلمة مرور (8 أحرف على الأقل) لإنشاء حساب المالك";
-    }
+    // No owner row yet → INSERT only when both phone AND password are
+    // provided. Phone alone can't sign in (no password), so we skip
+    // and leave the vendor without a merchant login; admin can add
+    // the password later via edit.
+    if (!hasPhone) return null;
+    if (!hasPassword) return null;
     const passwordHash = await hashPassword(password!);
     const emailValue = hasEmail ? loginEmail!.trim().toLowerCase() : null;
     await run(
@@ -215,7 +199,7 @@ export async function POST(request: NextRequest) {
     );
   }
   const v = parsed.data;
-  const slug = v.slug?.toString().trim() || slugify(v.name_ar);
+  const slug = v.slug?.toString().trim() || generateSlug(v.name_ar);
   if (!slug) {
     return NextResponse.json(
       { success: false, error: "تعذّر توليد slug من الاسم" },
@@ -364,7 +348,7 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-    const slug = v.slug?.toString().trim() || (v.name_ar ? slugify(v.name_ar) : undefined);
+    const slug = v.slug?.toString().trim() || (v.name_ar ? generateSlug(v.name_ar) : undefined);
 
     await query(
       // BUGFIX (audit 2026-09-29): wrap every column in COALESCE so a

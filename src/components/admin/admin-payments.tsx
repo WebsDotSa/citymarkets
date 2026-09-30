@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DataTable } from "@/components/admin/data-table";
 import { RefreshCw, ExternalLink } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 import { useToast } from "@/components/ui/toast";
+import { error as logError } from "@/lib/logger";
 
 const adminCred: RequestInit = { credentials: "include" };
 
@@ -49,7 +50,8 @@ export function AdminPayments() {
         setMoyasarConfigured(res.moyasarConfigured);
       }
     } catch (e) {
-      console.error(e);
+      // Audit I39: canonical logger.
+      logError("admin-payments fetch", e);
       showToast("فشل تحميل المدفوعات", "error");
     }
     setLoading(false);

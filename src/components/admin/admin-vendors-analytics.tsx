@@ -13,7 +13,7 @@ import {
   Package,
   BarChart3,
 } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 import { safeFetchJsonStrict } from "@/lib/safe-fetch";
 import { getVendorTypeAr, VENDOR_TYPE_FILTER } from "@/lib/analytics-labels";
 import {

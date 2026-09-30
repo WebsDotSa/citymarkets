@@ -4,7 +4,7 @@
  * Tracks carts that reached checkout but did not complete online payment.
  * Two flows funnel through here:
  *
- *  1. `snapshotAbandonedCartFromOrder` is called from POST /api/v1/orders
+ *  1. `snapshotAbandonedCartFromOrder` is called from POST /api/v1/checkout
  *     AFTER COMMIT for non-cash/wallet orders (payment_method in
  *     {card, mada, visa, mastercard, amex, applepay, stcpay, moyasar_*,
  *     bank_transfer}). It captures the order's items + the actor
@@ -26,7 +26,7 @@
  * 4th". No profile or login is required.
  *
  * Idempotency: a UNIQUE partial index on intent_order_id prevents the
- * same snapshot from being created twice if POST /api/v1/orders is
+ * same snapshot from being created twice if POST /api/v1/checkout is
  * retried (the orders.idempotency_key UNIQUE catches that scenario
  * upstream, but this index is a backstop).
  */

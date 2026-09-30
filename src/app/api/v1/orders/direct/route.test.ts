@@ -44,7 +44,7 @@ vi.mock("@/lib/logger", () => ({
   info: vi.fn(),
 }));
 
-import { pool } from "@/lib/db";
+import { pool, query } from "@/lib/db";
 import {
   resolveCustomerUserIdFromRequest,
   getGuestSessionIdFromRequest,
@@ -79,11 +79,16 @@ function validBody(overrides: Record<string, unknown> = {}) {
 // client. Used for tests that expect the transaction body to be
 // reached — the queries inside don't need to match a real schema,
 // only to return non-rejected Promises.
+//
+// Also stubs the module-level `query` (used by the Apple-review
+// flag pre-check) so it returns no rows by default. Tests that need
+// to assert the Apple-review branch must override the mock locally.
 function mockDb() {
   vi.mocked(pool.connect).mockResolvedValueOnce({
     query: vi.fn().mockResolvedValue({ rows: [] }),
     release: vi.fn(),
   } as never);
+  vi.mocked(query).mockResolvedValue({ rows: [] } as never);
 }
 
 describe("POST /api/v1/orders/direct — session gate", () => {

@@ -15,7 +15,29 @@ import { error as logError } from '@/lib/logger';
 // re-validate (the URL allowlist is HTTP-layer concern, not a DB
 // concern).
 
-// GET /api/v1/addresses - Get customer addresses
+// DEPRECATION: Migration 078 (2026-09-30). `/api/v1/addresses` is the
+// legacy user-only address surface. The canonical replacement is
+// `/api/v1/delivery-addresses`, which supports BOTH user sessions AND
+// guest sessions (`x-guest-key` header) and ships path-param variants
+// for PUT/DELETE/default under `/api/v1/delivery-addresses/[id]/...`.
+//
+// The route is kept alive for backward-compat with the iOS APIClient
+// (see `src/app/vendor/[slug]/admin/settings/page.tsx:343` and the iOS
+// release notes). Every response here now carries an
+// `X-API-Deprecated` header so a client owner can grep their logs and
+// migrate at their own pace. No removal date is set yet — the iOS app
+// is the gate.
+function deprecationHeaders(): HeadersInit {
+  // ASCII-only: HTTP header values must be ByteString (0..255). Em-dash
+  // (—) breaks NextResponse.json with "character at index N has a value
+  // greater than 255". Use plain dash.
+  return {
+    'X-API-Deprecated':
+      'use /api/v1/delivery-addresses - supports user + guest sessions',
+  };
+}
+
+// GET /api/v1/addresses - Get customer addresses (LEGACY → /delivery-addresses)
 export async function GET(request: NextRequest) {
   const userId = await resolveCustomerUserIdFromRequest(request);
   if (!userId) {
@@ -30,22 +52,25 @@ export async function GET(request: NextRequest) {
     // service so the SELECT statement, ORDER BY, and COALESCE for
     // place_images live in one place.
     const rows = await listAddressesService({ kind: 'user', userId });
-    return NextResponse.json({ success: true, data: rows });
+    return NextResponse.json(
+      { success: true, data: rows },
+      { headers: deprecationHeaders() },
+    );
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'فشل جلب العناوين' },
-      { status: 500 }
+      { status: 500, headers: deprecationHeaders() }
     );
   }
 }
 
-// POST /api/v1/addresses - Create address
+// POST /api/v1/addresses - Create address (LEGACY → /delivery-addresses)
 export async function POST(request: NextRequest) {
   const userId = await resolveCustomerUserIdFromRequest(request);
   if (!userId) {
     return NextResponse.json(
       { success: false, error: 'غير مصرح' },
-      { status: 401 }
+      { status: 401, headers: deprecationHeaders() }
     );
   }
 
@@ -56,7 +81,7 @@ export async function POST(request: NextRequest) {
     if (!label || lat == null || lng == null) {
       return NextResponse.json(
         { success: false, error: 'بيانات العنوان غير مكتملة' },
-        { status: 400 }
+        { status: 400, headers: deprecationHeaders() }
       );
     }
 
@@ -98,32 +123,35 @@ export async function POST(request: NextRequest) {
       placeImages: row.place_images,
       createdAt: row.created_at,
     };
-    return NextResponse.json({
-      success: true,
-      data: row,
-      address,
-      deliveryAddress: address,
-      customerAddress: address,
-      addressId: row.id,
-      address_id: row.id,
-      deliveryAddressId: row.id,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: row,
+        address,
+        deliveryAddress: address,
+        customerAddress: address,
+        addressId: row.id,
+        address_id: row.id,
+        deliveryAddressId: row.id,
+      },
+      { headers: deprecationHeaders() },
+    );
   } catch (error: any) {
     logError('Create address error:', error);
     return NextResponse.json(
       { success: false, error: 'فشل حفظ العنوان: ' + (error?.message || 'خطأ غير معروف') },
-      { status: 500 }
+      { status: 500, headers: deprecationHeaders() }
     );
   }
 }
 
-// DELETE /api/v1/addresses - Delete address
+// DELETE /api/v1/addresses - Delete address (LEGACY → /delivery-addresses/[id])
 export async function DELETE(request: NextRequest) {
   const userId = await resolveCustomerUserIdFromRequest(request);
   if (!userId) {
     return NextResponse.json(
       { success: false, error: 'غير مصرح' },
-      { status: 401 }
+      { status: 401, headers: deprecationHeaders() }
     );
   }
 
@@ -133,7 +161,7 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { success: false, error: 'معرّف العنوان مطلوب' },
-        { status: 400 }
+        { status: 400, headers: deprecationHeaders() }
       );
     }
 
@@ -142,11 +170,14 @@ export async function DELETE(request: NextRequest) {
     // delete another user's address by passing its id.
     await deleteAddressService({ kind: 'user', userId }, id);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json(
+      { success: true },
+      { headers: deprecationHeaders() },
+    );
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'فشل حذف العنوان' },
-      { status: 500 }
+      { status: 500, headers: deprecationHeaders() }
     );
   }
 }

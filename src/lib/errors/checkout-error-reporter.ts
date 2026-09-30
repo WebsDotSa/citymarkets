@@ -34,6 +34,7 @@
  */
 
 import * as Sentry from "@sentry/nextjs";
+import { error as logError } from "@/lib/logger";
 
 export interface CheckoutErrorContext {
   /** End-user id (best-effort; may be null when the request failed auth). */
@@ -107,8 +108,9 @@ export async function reportCheckoutError(
       extra,
     });
   } catch (sentryErr) {
-    // Sentry failures must never bubble. Log to stderr for debugging.
-    console.error("[checkout-error-reporter] Sentry capture failed:", sentryErr);
+    // Sentry failures must never bubble. Log via canonical logger
+    // (audit I39) so the prod-vs-dev LOG_LEVEL split applies.
+    logError("[checkout-error-reporter] Sentry capture failed", sentryErr);
   }
 
   // 2. File dump — same JSON shape the existing inline blocks produced,
@@ -135,7 +137,8 @@ export async function reportCheckoutError(
     await fs.appendFile(dumpPath, line + "\n", "utf8");
   } catch (fsErr) {
     // Same best-effort contract as the previous inline blocks.
-    console.error("[checkout-error-reporter] file dump failed:", fsErr);
+    // Audit I39: canonical logger.
+    logError("[checkout-error-reporter] file dump failed", fsErr);
   }
 }
 

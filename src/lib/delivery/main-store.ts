@@ -33,9 +33,13 @@ import type { Queryable } from "@/lib/db/typed";
 /**
  * One row from the canonical main-store query. Postgres returns numeric
  * columns as strings unless explicitly cast; we accept both shapes so
- * callers don't need to coerce manually.
+ * callers don't need to coerce manually. `id` and `name_ar` are
+ * included so the public `/api/v1/delivery` route can return a
+ * `{store:{id,name}}` payload without a second round-trip.
  */
 export interface MainStoreRow {
+  id: string | null;
+  name_ar: string | null;
   lat: string | number | null;
   lng: string | number | null;
   is_active: boolean | null;
@@ -49,9 +53,12 @@ export interface MainStoreRow {
  *
  * LIMIT 1 guarantees we never read two main stores even if a data
  * migration accidentally inserted more than one.
+ *
+ * F27: `id` + `name_ar` are now selected so the public delivery-fee
+ * route can answer `{store:{id,name}}` from a single query.
  */
 const MAIN_STORE_SQL = `
-  SELECT lat, lng, is_active FROM stores
+  SELECT id, name_ar, lat, lng, is_active FROM stores
    WHERE is_main = true
    ORDER BY is_active DESC NULLS LAST
    LIMIT 1

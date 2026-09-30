@@ -1,20 +1,31 @@
 "use client";
 
+/**
+ * CheckoutNew — the unified multi-vendor checkout experience.
+ *
+ * The `-new` suffix is intentional (audit H34): this file replaced an
+ * older single-vendor `checkout.tsx` flow during the Slice 3 checkout
+ * consolidation (see docs/01). The legacy file was removed; the new
+ * one kept the `-new` discriminator so existing route imports at
+ * src/app/checkout/page.tsx don't need to change. Do NOT rename this
+ * file without auditing the 1 importer + any historical iOS deep links
+ * that may pin the symbol.
+ */
+
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/cart-context";
 import { useAuthState } from "@/contexts/auth-context";
-import { useDeliveryLocationActions } from "@/contexts/delivery-location-context";
+import { useDeliveryLocationActions, useDeliveryLocationState } from "@/contexts/delivery-location-context";
 import { useDeliveryQuote } from "@/hooks/use-delivery-quote";
 import { CardIcon, ApplePayIcon, VisaIcon, MastercardIcon, AmexIcon, WalletIcon, BankIcon } from "@/components/icons/payment";
 import { MoyasarCheckoutForm, type CheckoutMoyasarMethod } from "@/components/checkout/moyasar-checkout-form";
 import { BankTransferCard } from "@/components/checkout/bank-transfer-card";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
-import { apiFetch } from '@/lib/catalog';
 import { groupCartItems } from "@/lib/catalog";
-import { PAYMENT_METHODS_UI } from "@/lib/payments/payment-methods";
+import { PAYMENT_METHODS_UI, ONLINE_RETRY_METHODS_SET } from "@/lib/payments/payment-methods";
 import type { CouponValidateResult } from "@/lib/types";
 import { AvailableCoupons } from "@/components/pages/coupons/AvailableCoupons";
 import { trackBeginCheckout } from "@/lib/ga-events";
@@ -69,22 +80,11 @@ interface Address {
 type CouponResult = CouponValidateResult;
 
 /**
- * The set of payment methods that should mount the inline Moyasar form
- * (publishable-key flow). Anything outside this set either goes to a
- * hosted invoice (`payment_url`) or skips the gateway entirely
- * (cash / bank_transfer / wallet). Kept at module scope so the
- * checkout effect doesn't need to recreate it on each call.
+ * Re-exported under the local name `INLINE_MOYASAR_METHODS` for clarity at
+ * call sites — the canonical Set lives at `@/lib/payments/payment-methods`.
  */
-const INLINE_MOYASAR_METHODS: ReadonlySet<string> = new Set([
-  "mada",
-  "visa",
-  "mastercard",
-  "amex",
-  "apple_pay",
-]);
-
 function isInlineMoyasarMethod(method: string): boolean {
-  return INLINE_MOYASAR_METHODS.has(method);
+  return ONLINE_RETRY_METHODS_SET.has(method);
 }
 
 // Operator decision (2026-09-20): cash, stc_pay, tamara removed from the
@@ -182,10 +182,29 @@ export function CheckoutNew() {
   const router = useRouter();
   const { user } = useAuthState();
   const { openSheet } = useDeliveryLocationActions();
+  // Migration 078 (2026-09-30): pull the canonical address list +
+  // selection directly from the delivery-location context instead of
+  // running a parallel `fetch('/api/v1/addresses')` on mount. The
+  // context already GETs `/api/v1/delivery-addresses` (which supports
+  // BOTH user + guest sessions); doing a second round-trip on the
+  // checkout page created a race where the local `addresses` state
+  // and the context's `addresses` could disagree (e.g. after
+  // `addAddress` finishes in the sheet the local state would still
+  // show the stale list).
+  const {
+    addresses: contextAddresses,
+    selectedAddress: contextSelectedAddress,
+  } = useDeliveryLocationState();
   const { items, subtotal, clearCart, isHydrated } = useCart();
   const { showToast } = useToast();
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  // The checkout still keeps a local `addresses` shadow list so the
+  // delete handler can remove a row optimistically without round-
+  // tripping the context's `refreshAddresses`. The initial value
+  // comes from the context so the two lists stay in sync from frame 1.
+  const [addresses, setAddresses] = useState<Address[]>(contextAddresses);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(
+    contextSelectedAddress ?? null,
+  );
   // ميسر (Moyasar) is the default — picking it mounts the inline payment
   // form so the customer can enter card details without leaving the page.
   // Cash remains an opt-in for customers who prefer to pay on delivery.
@@ -287,20 +306,21 @@ export function CheckoutNew() {
   const addressTextOf = (a: Address | null | undefined): string =>
     (a?.address_text || a?.address || a?.description || "").trim();
 
+  // Sync from the delivery-location context (user + guest aware).
+  // Migration 078 (2026-09-30): removed the duplicate
+  // `fetch('/api/v1/addresses')` here — the context is the single
+  // source of truth. When the context adds/removes an address we
+  // mirror the change into our local `addresses` so the inline delete
+  // UX keeps working without a full refresh.
+  //
+  // The two types differ slightly (DeliveryAddress uses lat:number,
+  // local Address allows lat:number|string|null). Cast at the boundary.
   useEffect(() => {
-    // Fetch user addresses
-    const ac = new AbortController();
-    apiFetch<Address[]>("/api/v1/addresses", { signal: ac.signal })
-      .then((res) => {
-        if (res.success && res.data) {
-          setAddresses(res.data);
-          const defaultAddr = res.data.find((a) => a.is_default);
-          setSelectedAddress(defaultAddr || res.data[0]);
-        }
-      })
-      .catch(() => {});
-    return () => ac.abort();
-  }, []);
+    setAddresses(contextAddresses as unknown as Address[]);
+    if (!selectedAddress && contextSelectedAddress) {
+      setSelectedAddress(contextSelectedAddress as unknown as Address);
+    }
+  }, [contextAddresses, contextSelectedAddress]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // META PIXEL — fire InitiateCheckout exactly once per checkout page
   // mount, with the live cart contents. Carts in citymarkets.sa are
@@ -1274,6 +1294,21 @@ export function CheckoutNew() {
           done
         >
           <div className="space-y-2 text-sm">
+            {schedule.mode === "scheduled" ? (
+              // Audit 2026-09-30 (Finding 8.1): confirm the chosen slot
+              // right above the CTA so the user can spot a wrong pick
+              // before tapping "تأكيد الطلب". The picker already
+              // provides `label_ar` + `date`, no extra fetch needed.
+              <div className="flex justify-between items-center bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                <span className="text-gray-600 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-700" />
+                  موعد التوصيل
+                </span>
+                <span className="font-medium text-amber-900 text-xs">
+                  {schedule.date} · {schedule.label_ar}
+                </span>
+              </div>
+            ) : null}
             <div className="flex justify-between">
               <span className="text-gray-500">إجمالي المنتجات</span>
               <span className="font-medium">{subtotal.toFixed(2)} ر.س</span>

@@ -5,6 +5,12 @@
  * categories-browser-v2.tsx so the main page component stays under
  * the 800-line soft cap.
  *
+ * H35 (audit 2026-09-30): file is mixed types + helpers (NOT a pure
+ * types module — cannot be renamed to \`categories-types.ts\`). Exports:
+ *   - types: ProductsApiItem, SearchedProduct
+ *   - functions: bgForCategoryName, collectCategoryMatches,
+ *     mapApiItemToProduct, dedupeById
+ *
  * Nothing in this file imports React — safe to consume from both
  * server and client modules.
  */

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
@@ -45,6 +45,17 @@ interface Product {
   discountPrice?: number;
   inStock: boolean;
   stock?: number;
+  categoryId?: string | null;
+}
+
+interface StorefrontCategory {
+  id: string;
+  name_ar: string;
+  name_en?: string | null;
+  slug: string;
+  icon_url?: string | null;
+  is_private: boolean;
+  product_count: number;
 }
 
 const SORT_OPTIONS = [
@@ -62,6 +73,8 @@ export default function VendorPage() {
   const router = useRouter();
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<StorefrontCategory[]>([]);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"products" | "info">("products");
@@ -79,9 +92,10 @@ export default function VendorPage() {
 
   async function fetchVendorData() {
     try {
-      const [vendorRes, productsRes] = await Promise.all([
+      const [vendorRes, productsRes, categoriesRes] = await Promise.all([
         fetch(`/api/v1/vendors/${slug}`),
         fetch(`/api/v1/vendors/${slug}/products`),
+        fetch(`/api/v1/vendors/${slug}/categories`).catch(() => null),
       ]);
 
       if (!vendorRes.ok) {
@@ -93,6 +107,13 @@ export default function VendorPage() {
 
       setVendor(vendorData.vendor);
       setProducts(productsData.products || []);
+
+      if (categoriesRes && categoriesRes.ok) {
+        const categoriesData = await categoriesRes.json();
+        setCategories(Array.isArray(categoriesData.data?.categories) ? categoriesData.data.categories : []);
+      } else {
+        setCategories([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ في تحميل المتجر");
     } finally {
@@ -122,6 +143,9 @@ export default function VendorPage() {
       const q = searchQuery.toLowerCase();
       list = list.filter((p) => p.name.toLowerCase().includes(q));
     }
+    if (activeCategoryId) {
+      list = list.filter((p) => p.categoryId === activeCategoryId);
+    }
     if (onlyInStock) {
       list = list.filter((p) => p.inStock);
     }
@@ -138,7 +162,7 @@ export default function VendorPage() {
         break;
     }
     return sorted;
-  }, [products, searchQuery, onlyInStock, sortBy]);
+  }, [products, searchQuery, onlyInStock, sortBy, activeCategoryId]);
 
   if (loading) {
     return (
@@ -366,6 +390,18 @@ export default function VendorPage() {
         {/* ── Content ── */}
         {activeTab === "products" ? (
           <div className="mt-4">
+            {/* Category strip — image-card chips with arrows, lifts the
+                MainCatsImageStrip pattern from the homepage. Renders
+                only when this vendor has ≥1 category with active
+                products; otherwise hidden so a sparse store doesn't
+                show an empty strip. */}
+            <CategoryStrip
+              categories={categories}
+              activeId={activeCategoryId}
+              onSelect={(id) => setActiveCategoryId(id)}
+              primaryColor={vendor.primaryColor}
+            />
+
             {/* Featured products carousel */}
             {featuredProducts.length > 0 && !searchQuery && (
               <section aria-label="منتجات مميزة" className="mb-6">
@@ -635,4 +671,223 @@ export default function VendorPage() {
       </div>
     </div>
   );
+}
+
+/**
+ * Horizontal scroll-snap chip strip for storefront categories.
+ *
+ * Mirrors the MainCatsImageStrip pattern from the homepage:
+ *   - Sticky-feel row (not sticky here, sits below the existing
+ *     tabs bar).
+ *   - Desktop arrows (md:flex) on each side that scrollBy(±220px).
+ *   - First chip is always "الكل" (resets the filter).
+ *   - Each category chip: image-or-emoji square + name + count badge.
+ *   - Active chip: 2px ring colored by `vendor.primaryColor`.
+ *   - When the active chip changes, scrollIntoView centers it.
+ *
+ * Hidden when there are zero categories — no empty UI clutter.
+ */
+function CategoryStrip({
+  categories,
+  activeId,
+  onSelect,
+  primaryColor,
+}: {
+  categories: StorefrontCategory[];
+  activeId: string | null;
+  onSelect: (id: string | null) => void;
+  primaryColor: string;
+}) {
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const chipRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Auto-scroll the active chip into view whenever the active id
+  // changes — covers both programmatic changes (filter reset via
+  // "الكل") and direct clicks on far-right chips.
+  useEffect(() => {
+    const target = activeId ? chipRefs.current[activeId] : null;
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+  }, [activeId]);
+
+  if (categories.length === 0) return null;
+
+  const scrollBy = (delta: number) => {
+    scrollerRef.current?.scrollBy({ left: delta, behavior: "smooth" });
+  };
+
+  const chipBase =
+    "shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-2xl border transition-all text-sm font-bold";
+  const chipInactive = "bg-white border-slate-200 text-slate-700 hover:border-slate-300";
+  const ringStyle = { boxShadow: `0 0 0 2px ${primaryColor} inset` } as const;
+
+  return (
+    <div className="relative mb-5 -mx-4 px-4">
+      {/* Left arrow (desktop) */}
+      <button
+        type="button"
+        onClick={() => scrollBy(-220)}
+        aria-label="السابق"
+        className="hidden md:flex absolute -right-1 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center bg-white/95 border border-slate-200 shadow-md rounded-full hover:bg-white"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+      {/* Right arrow (desktop) */}
+      <button
+        type="button"
+        onClick={() => scrollBy(220)}
+        aria-label="التالي"
+        className="hidden md:flex absolute -left-1 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center bg-white/95 border border-slate-200 shadow-md rounded-full hover:bg-white"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+
+      <div
+        ref={scrollerRef}
+        className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1"
+        style={{ scrollSnapType: "x mandatory" }}
+        role="tablist"
+        aria-label="تصنيفات المتجر"
+      >
+        {/* "All" reset chip */}
+        <button
+          type="button"
+          onClick={() => onSelect(null)}
+          className={`${chipBase} ${activeId === null ? "" : chipInactive}`}
+          style={
+            activeId === null
+              ? { ...ringStyle, scrollSnapAlign: "center" }
+              : { scrollSnapAlign: "center" }
+          }
+          role="tab"
+          aria-selected={activeId === null}
+        >
+          <span className="text-base" aria-hidden>🗂️</span>
+          <span>الكل</span>
+          <span className="text-xs text-slate-400 tabular-nums" dir="ltr">
+            {categories.reduce((s, c) => s + c.product_count, 0)}
+          </span>
+        </button>
+
+        {categories.map((c) => {
+          const isActive = c.id === activeId;
+          return (
+            <button
+              key={c.id}
+              ref={(el) => {
+                chipRefs.current[c.id] = el;
+              }}
+              type="button"
+              onClick={() => onSelect(c.id)}
+              className={`${chipBase} ${isActive ? "" : chipInactive}`}
+              style={{ ...(isActive ? ringStyle : {}), scrollSnapAlign: "center" }}
+              role="tab"
+              aria-selected={isActive}
+            >
+              <CategoryIcon
+                nameAr={c.name_ar}
+                iconUrl={c.icon_url}
+                size={28}
+                rounded="rounded-lg"
+              />
+              <span className="line-clamp-1">{c.name_ar}</span>
+              {c.is_private && (
+                <span
+                  className="text-[10px] text-amber-600 border border-amber-300 rounded-full px-1.5"
+                  title="تصنيف خاص"
+                >
+                  خاص
+                </span>
+              )}
+              <span className="text-xs text-slate-400 tabular-nums" dir="ltr">
+                {c.product_count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Small image-or-emoji square for the category chip. Falls back to a
+ * category emoji when `icon_url` is missing (most rows in the seeded
+ * `categories` table have no icon).
+ */
+function CategoryIcon({
+  nameAr,
+  iconUrl,
+  size,
+  rounded,
+}: {
+  nameAr: string;
+  iconUrl?: string | null;
+  size: number;
+  rounded: string;
+}) {
+  if (iconUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={iconUrl}
+        alt=""
+        width={size}
+        height={size}
+        className={`${rounded} object-cover bg-slate-100 shrink-0`}
+      />
+    );
+  }
+  const emoji = categoryEmoji(nameAr);
+  return (
+    <span
+      className={`${rounded} bg-slate-100 flex items-center justify-center text-base shrink-0`}
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      {emoji}
+    </span>
+  );
+}
+
+/**
+ * Lightweight emoji → category-name map. The platform's category list
+ * isn't exhaustive, so unknown names fall back to a generic folder
+ * emoji. Good enough for the chip preview — the storefront's product
+ * cards render the category's real icon when one exists.
+ */
+const KNOWN_EMOJI: Array<[RegExp, string]> = [
+  [/فاك|فواكه|فاكهة/, "🍎"],
+  [/خضار|خضروات|خضرة/, "🥦"],
+  [/لحم|لحوم|دجاج|أسماك|مأكولات/, "🍗"],
+  [/خبز|مخبوز|كعك/, "🍞"],
+  [/حليب|ألبان|جبن|زبدة/, "🥛"],
+  [/قهوة|شاي|كافيه|قهوه/, "☕"],
+  [/عصير|شراب|مشروب/, "🧃"],
+  [/حلوى|حلويات|شوكولات|كيك/, "🍰"],
+  [/تمو?ر|بلح/, "🌴"],
+  [/عطو?ر|عطر/, "🌸"],
+  [/إلكترون|جوالات|هاتف|تلفاز|تقنية/, "📱"],
+  [/أزياء|ملابس|فستان|قميص|بنطال/, "👗"],
+  [/أحذية|نعال|صندل|كعب/, "👟"],
+  [/مجوهرات|ساعات|ذهب|فضة/, "💍"],
+  [/كتب|قرطاسية|أقلام/, "📚"],
+  [/ألعاب|لعبة|بلي/, "🧸"],
+  [/سيار|إطارات|قطع غيار/, "🚗"],
+  [/أثاث|أدوات منزلية|مفروشات/, "🛋️"],
+  [/صحة|دواء|صيدلية/, "💊"],
+  [/تجميل|مكياج|عناية/, "💄"],
+  [/رياضة|لياقة|دراجة/, "🏋️"],
+  [/حيوانات|أكل قطط|طعام حيوانات/, "🐾"],
+];
+function categoryEmoji(name: string): string {
+  for (const [re, emoji] of KNOWN_EMOJI) {
+    if (re.test(name)) return emoji;
+  }
+  return "📦";
 }

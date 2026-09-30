@@ -59,11 +59,19 @@ function audienceUserIdsSQL(audience: AudienceFilter): {
       );
       break;
     case "top_loyalty":
+      // P1-3 (full-system audit 2026-09-30): the live loyalty balance
+      // lives in `loyalty_points.balance` (added in 021). The legacy
+      // `users.loyalty_points` column is no longer written, so the
+      // audience "top 10%" filter was always returning 0 rows. Join
+      // the live table instead.
       clauses.push(
-        `loyalty_points > 0 AND loyalty_points >= COALESCE((
-          SELECT PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY loyalty_points)
-            FROM users WHERE loyalty_points > 0
-        ), 0)`,
+        `EXISTS (SELECT 1 FROM loyalty_points lp
+                  WHERE lp.user_id = users.id
+                    AND lp.balance > 0
+                    AND lp.balance >= COALESCE((
+                      SELECT PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY balance)
+                        FROM loyalty_points WHERE balance > 0
+                    ), 0))`,
       );
       break;
     case "ordered_last_30d":
@@ -82,7 +90,16 @@ function audienceUserIdsSQL(audience: AudienceFilter): {
   }
 
   if (audience.loyalty_min != null) {
-    clauses.push(`loyalty_points >= $${i++}`);
+    // P1-3 (full-system audit 2026-09-30): read the live balance
+    // from the `loyalty_points` table. The legacy
+    // `users.loyalty_points` column is no longer written by the
+    // loyalty pipeline, so a `>= N` filter on it would never match
+    // anyone whose points were credited after 021.
+    clauses.push(
+      `EXISTS (SELECT 1 FROM loyalty_points lp
+                WHERE lp.user_id = users.id
+                  AND lp.balance >= $${i++})`,
+    );
     params.push(audience.loyalty_min);
   }
   if (audience.loyalty_tier) {

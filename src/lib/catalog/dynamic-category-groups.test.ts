@@ -7,7 +7,7 @@ import type { CategoryRow } from "@/lib/types";
 
 /**
  * dynamic-category-groups is the small, pure utility that powers the
- * category sections of HomeContentV2 (the storefront landing page).
+ * category sections of the storefront landing page.
  * It is consumed on every render so a regression here manifests as
  * sections that disappear or get the wrong emoji — both visible bugs
  * without needing React Testing Library to catch.

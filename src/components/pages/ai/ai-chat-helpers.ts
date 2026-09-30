@@ -3,6 +3,14 @@
  *
  * Extracted from ai-chat-page.tsx so the main component can stay
  * focused on state orchestration + JSX. None of these touch React.
+ *
+ * H35 (audit 2026-09-30): file is mixed types + constants + helpers
+ * (NOT a pure types module — cannot be renamed to \`ai-chat-types.ts\`).
+ * Exports:
+ *   - types: MatchedProduct, AiChatResponse, ChatInputMode
+ *   - constants: SUGGESTIONS
+ *   - functions: toChatProductResults, storedToUiMessages, defaultMessages,
+ *     friendlyError, validatePhone
  */
 
 import type { Product } from "@/lib/types";

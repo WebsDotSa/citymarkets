@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import type { AdminOffer, AdminOfferTarget, OfferTargetType } from "@/lib/admin-types";
+import { error as logError } from "@/lib/logger";
 
 export interface OfferFormValues {
   id?: string;
@@ -146,7 +147,10 @@ export function OfferEditForm({
         const data = await res.json();
         if (data.success) setPickerOptions(data.data || []);
       } catch (err) {
-        if ((err as Error).name !== "AbortError") console.error("Picker fetch error", err);
+        if ((err as Error).name !== "AbortError") {
+          // Audit I39: canonical logger.
+          logError("Picker fetch error", err);
+        }
       } finally {
         if (!ac.signal.aborted) setPickerLoading(false);
       }

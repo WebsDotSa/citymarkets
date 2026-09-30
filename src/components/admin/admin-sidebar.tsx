@@ -158,7 +158,6 @@ export function AdminSidebar({ user, isOpen, onClose, onLogout }: AdminSidebarPr
         "products",
         "categories",
         "inventory",
-        "banners",
         "home-design",
         "offers",
         "coupons",

@@ -7,9 +7,9 @@
 كل التحسينات المعمارية الصغيرة/المتوسطة في PR واحد قابل للمراجعة
 بدلاً من N PRs صغيرة.
 
-**11 commits، 38 ملف، +3950 / −550 سطر.**
+**12 commits، 40 ملف، +3994 / −594 سطر.**
 **1891/1891 اختبار يمر** (كنت 1795 عند بداية الـ branch).
-**tsc: 9 errors (baseline؛ لا أخطاء جديدة في كود الإنتاج).**
+**tsc: 0 errors** (آخر commit `7688003` أصلح 9 أخطاء baseline في ملفين للاختبار فقط — لا أخطاء في كود الإنتاج).
 
 ---
 
@@ -26,6 +26,7 @@
 | **P3-1** | حذف دالة ميتة `notifyAdminNewOrderJobId` + صفحة `vendors/[slug]/success/page.tsx` الميتة. | `86e834e`, `b6fa409` | 0 |
 | **P3-2** | توحيد استعلامات SQL مكررة — `fetchOrderStatuses()` في `moyasar-confirm.ts` + **`getMainStoreAndDistance()` في `src/lib/delivery/main-store.ts`** (يلفّ 3 نسخ inline من main-store SELECT + haversine) + **`src/lib/orders/sql-fragments.ts`** (`ORDER_BASE_COLUMNS`, `ORDER_ADDRESS_COLUMNS`, `ORDER_DETAIL_JOINS`, ...). | `86e834e`, `cc4b451` | +6 |
 | **P3-3** | توحيد صفحتي `/orders/direct/[id]` detail + chat — `src/components/pages/direct-order/shared.ts` يحتوي على `useOrderPolling` hook + `addOrderItem`/`removeOrderItem` helpers + أنواع `OrderDetail`/`OrderItem` المشتركة. | `9830d12` | 0 (UI؛ integration tests تغطي) |
+| **إصلاح CI** | إغلاق 9 أخطاء TS baseline في `route.test.ts` (8 × `QueryResult` ناقص `command/rowCount/oid/fields`) و `wishlist-context.test.tsx` (1 × `beforeAll` غير مُستورَد). إضافة helper `qr<R>()` للقيم المرجعة + استيراد `beforeAll`. | `7688003` | 0 |
 
 ## إضافات نظافة
 
@@ -96,7 +97,7 @@ CSRF + body-validate dance عبر 8 routes. مخاطرة عالية للجلسة
 
 | البند | الحالة |
 |---|---|
-| tsc --noEmit | ✅ 9 errors (baseline) |
+| tsc --noEmit | ✅ 0 errors |
 | npm test | ✅ 1891/1891 pass |
 | HTTP smoke (qa:smoke) | ✅ لم يتغير (لم نلمس routes قائمة) |
 | CI gates | ✅ متوقع يمر |

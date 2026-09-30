@@ -26,7 +26,7 @@ npm ci --legacy-peer-deps
 # 2. تجهيز قاعدة البيانات
 npm run db:migrate              # تطبيق migrations بالترتيب
 npm run db:drift-report         # تحقق من سلامة الـ schema
-npx tsx scripts/migration-diagnostics.ts  # فحوصات حرجة
+npm run migration:diagnostics  # فحوصات حرجة
 
 # 3. تشغيل
 npm run dev                     # المنفذ 4040

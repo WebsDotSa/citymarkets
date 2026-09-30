@@ -22,9 +22,21 @@
 // are non-fatal: the dispatcher marks the delivery `skipped` or
 // `failed` in `broadcast_deliveries` based on the outcome and continues
 // to the next delivery.
+//
+// Multi-device dispatch (audit K58): when BOTH APNs and FCM env vars
+// are present, the dispatcher iterates ALL configured senders and
+// filters tokens by `platform` before each send. A user with an iOS
+// + Android device pair therefore gets two parallel delivery attempts,
+// not just the first one. See `src/lib/native-push/senders/index.ts`
+// for the factory contract.
 
 import { isNativePushSenderConfigured } from "@/lib/env";
-import { selectSender } from "@/lib/native-push/senders";
+import {
+  selectSenders,
+  ApnsSender,
+  FcmSender,
+} from "@/lib/native-push/senders";
+import type { NativePushSender, SendOutcome } from "@/lib/native-push/senders";
 import { warn as logWarn } from "@/lib/logger";
 import { pool } from "@/lib/db";
 
@@ -94,12 +106,12 @@ export async function sendNativePushToUser(
     return { sent: 0, failed: 0, skipped: true, reason: "not_configured" };
   }
 
-  const sender = selectSender();
-  if (!sender) {
+  const senders = selectSenders();
+  if (senders.length === 0) {
     // Defensive: `isNativePushConfigured()` returned true but no sender
     // is registered. Shouldn't happen, but surface it as not_configured
     // rather than crashing the dispatch loop.
-    logWarn("[native-push] no sender selected despite config check", { userId });
+    logWarn("[native-push] no senders selected despite config check", { userId });
     return { sent: 0, failed: 0, skipped: true, reason: "not_configured" };
   }
 
@@ -108,9 +120,102 @@ export async function sendNativePushToUser(
     return { sent: 0, failed: 0, skipped: true, reason: "no_tokens" };
   }
 
-  const outcome = await sender.send({ userId, payload, tokens });
-  if (outcome.status === "skipped") {
-    return { sent: 0, failed: 0, skipped: true, reason: outcome.reason };
+  // Audit K58: multi-device dispatch. Group tokens by platform so each
+  // sender only receives the tokens it can deliver to. A user with
+  // both iOS and Android devices gets a parallel send through both
+  // configured providers; a user with only one platform only goes
+  // through the matching sender.
+  const aggregated = await dispatchToAllSenders({
+    userId,
+    payload,
+    tokens,
+    senders,
+  });
+  return aggregated;
+}
+
+/**
+ * Internal helper: run the payload through every configured sender,
+ * filtering tokens by `platform` before each send. Aggregates
+ * `sent` / `failed` across senders and reports the worst-case
+ * `reason` (`not_configured` / `no_tokens` / `sender_not_implemented`)
+ * so the dispatcher can still mark a delivery `skipped` when ALL
+ * senders reported `skipped`.
+ *
+ * `senders.length === 0` is a precondition violation — the caller
+ * (`sendNativePushToUser`) already handles that case and returns
+ * `not_configured` before reaching this function.
+ */
+async function dispatchToAllSenders(args: {
+  userId: string;
+  payload: NativePushPayload;
+  tokens: { token: string; platform: "ios" | "android" }[];
+  senders: NativePushSender[];
+}): Promise<NativePushResult> {
+  const platforms = new Set(args.tokens.map((t) => t.platform));
+  let totalSent = 0;
+  let totalFailed = 0;
+  // Track skipped reasons across senders so a delivery is marked
+  // skipped iff EVERY sender that could have delivered reported
+  // `skipped`. A mixed result (some sent + some skipped) is reported
+  // as a successful delivery with the partial-skip counts ignored.
+  let anySent = false;
+  const skippedReasons: NonNullable<NativePushResult["reason"]>[] = [];
+
+  for (const sender of args.senders) {
+    const targetPlatform: "ios" | "android" | null =
+      sender instanceof ApnsSender
+        ? "ios"
+        : sender instanceof FcmSender
+          ? "android"
+          : null;
+    if (!targetPlatform) {
+      // Unknown sender type — pass through without filtering. Future
+      // senders that handle both platforms must update this helper.
+      const outcome: SendOutcome = await sender.send({
+        userId: args.userId,
+        payload: args.payload,
+        tokens: args.tokens,
+      });
+      if (outcome.status === "sent") {
+        anySent = true;
+        totalSent += outcome.sent;
+        totalFailed += outcome.failed;
+      } else {
+        skippedReasons.push(outcome.reason);
+      }
+      continue;
+    }
+    if (!platforms.has(targetPlatform)) continue; // no tokens for this platform
+
+    const platformTokens = args.tokens.filter((t) => t.platform === targetPlatform);
+    const outcome = await sender.send({
+      userId: args.userId,
+      payload: args.payload,
+      tokens: platformTokens,
+    });
+    if (outcome.status === "sent") {
+      anySent = true;
+      totalSent += outcome.sent;
+      totalFailed += outcome.failed;
+    } else {
+      skippedReasons.push(outcome.reason);
+    }
   }
-  return { sent: outcome.sent, failed: outcome.failed, skipped: false };
+
+  if (anySent) {
+    return { sent: totalSent, failed: totalFailed, skipped: false };
+  }
+  // No sender produced a `sent` outcome. Surface the most-specific
+  // skip reason to the dispatcher; `sender_not_implemented` wins
+  // over `no_tokens` because the latter implies the operator did
+  // not register a token, while the former means the platform is
+  // configured but the integration hasn't shipped.
+  const reason: NonNullable<NativePushResult["reason"]> =
+    skippedReasons.includes("sender_not_implemented")
+      ? "sender_not_implemented"
+      : skippedReasons.includes("no_tokens")
+        ? "no_tokens"
+        : "not_configured";
+  return { sent: 0, failed: 0, skipped: true, reason };
 }

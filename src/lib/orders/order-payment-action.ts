@@ -15,6 +15,8 @@
  * The logic intentionally fails closed on unknown values so a brand-new
  * backend status never silently exposes a broken CTA.
  */
+import { ONLINE_RETRY_METHODS } from "@/lib/payments/payment-methods";
+import { ALL_ORDER_STATES } from "./state-machine";
 
 export type OrderPaymentAction = "pay" | "retry" | "none";
 
@@ -24,38 +26,20 @@ export interface OrderPaymentActionInput {
   paymentMethod: string | null | undefined;
 }
 
-/**
- * The set of online methods the /orders "pay / retry" CTA is allowed to
- * initiate. The "tamara" provider is an order-level BNPL choice made at
- * checkout and intentionally NOT in this list — repaying a Tamara order
- * is a manual support flow.
- *
- * `stc_pay` was removed from the operator-facing picker on 2026-09-20 —
- * it is intentionally absent here so a stale client cannot silently
- * re-introduce it. `bank_transfer` is also absent because manual bank
- * transfers are not retryable via this endpoint; the customer must
- * re-confirm through admin.
- */
-export const ONLINE_RETRYABLE_METHODS = [
-  "mada",
-  "visa",
-  "mastercard",
-  "amex",
-  "apple_pay",
-] as const;
+// D16-D19 cleanup (2026-09-30): the legacy `ONLINE_RETRYABLE_METHODS`
+// alias was removed. Canonical source is `ONLINE_RETRY_METHODS` in
+// `@/lib/payments/payment-methods`.
 
 const TERMINAL_PAYMENT_STATUSES = new Set(["paid", "completed", "refunded"]);
 const TERMINAL_ORDER_STATUSES = new Set(["delivered"]);
 // Backend enum (multi-vendor) — drive any UI gating off this list. Unknown
 // values (typos, brand-new statuses) must fail closed to "none" so a stale
 // client never exposes a CTA for an order that no longer maps to anything.
-const KNOWN_ORDER_STATUSES = new Set([
-  "pending",
-  "confirmed",
-  "shopping",
-  "on_the_way",
-  "delivered",
-  "cancelled",
+// Derived from `ALL_ORDER_STATES` (audit S3) plus the legacy `paid` alias
+// that still appears in older `orders.status` rows predating the
+// fulfillment-vs-payment split.
+const KNOWN_ORDER_STATUSES: ReadonlySet<string> = new Set<string>([
+  ...ALL_ORDER_STATES,
   "paid",
 ]);
 

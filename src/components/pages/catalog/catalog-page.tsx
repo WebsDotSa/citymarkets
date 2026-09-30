@@ -23,6 +23,7 @@ const CATEGORY_GROUPS: LegacyCategoryGroup[] = [];
 const getGroupForSlug = (_slug: string): LegacyCategoryGroup | undefined => undefined;
 import { getCategoryEmoji } from '@/lib/catalog';
 import { CatalogPageSkeleton, ProductCardSkeleton } from "@/components/design/skeleton";
+import { error as logError } from "@/lib/logger";
 import { EmptySearch } from "@/components/design/empty-state";
 
 function getCategoryIcon(iconUrl: string | null): string {
@@ -74,7 +75,8 @@ export function CatalogPage() {
       .then((res) => {
         if (res.success) setCategories(res.data || []);
       })
-      .catch(console.error);
+      // Audit I39: canonical logger.
+      .catch((e) => logError("catalog-page categories fetch", e));
   }, []);
 
   const activeGroup = groupId

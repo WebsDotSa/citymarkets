@@ -1,11 +1,8 @@
+import { NON_ELECTRONIC_METHODS } from "@/lib/payments/payment-methods";
+
 /** طلبات تُحسب في «إيرادات مدفوعة إلكترونياً»: تم التأكيد + ليس نقداً/محفظة/تحويل بنكي */
 export const REVENUE_ORDER_STATUS = "confirmed" as const;
 export const REVENUE_PAYMENT_STATUS = "paid" as const;
-
-// Operator decision (2026-09-20): `bank_transfer` was added to the manual
-// flow (Al Rajhi IBAN). Manual bank transfers require admin confirmation,
-// so they are NOT counted as electronic revenue.
-const NON_ELECTRONIC_METHODS = new Set(["cash", "wallet", "bank_transfer", ""]);
 
 export function isElectronicPaymentMethod(
   method: string | null | undefined

@@ -18,7 +18,7 @@
 --   * PRECHECK block fails loud if invariants don't hold.
 --   * Idempotent: re-running is safe.
 --
--- Rollback: see 060_rollback.sql
+-- Rollback: see scripts/rollback-060.sql (operator-invoked; never auto-runs)
 
 BEGIN;
 

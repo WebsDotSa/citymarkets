@@ -4,11 +4,15 @@ import {
   resolveCustomerUserIdFromRequest,
   getGuestSessionIdFromRequest,
 } from '@/lib/identity';
+import { createAddress as createAddressService } from '@/lib/identity/address-service';
 import { createRateLimitHeaders, checkRateLimit, ORDER_CREATE_CONFIG } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';
 import { error as logError } from '@/lib/logger';
 import { BRAND } from '@/lib/brand-theme';
 import { directOrderSchema } from '@/lib/validation';
+import { isAppleReviewUser } from '@/lib/apple-review';
+import { sendOrderConfirmationSms } from '@/lib/twilio-messaging';
+import { NON_ELECTRONIC_METHODS } from '@/lib/payments/payment-methods';
 
 /**
  * POST /api/v1/orders/direct
@@ -87,18 +91,33 @@ export async function POST(request: NextRequest) {
     ? data.idempotency_key.slice(0, 64)
     : null;
 
-  const apple = false;
-  if (apple) {
-    // Apple-review sandbox path mirrors the catalog orders route.
-    return NextResponse.json(
-      {
-        success: true,
-        sandbox: true,
-        orderId: `sandbox-direct-${Date.now()}`,
-        orderNumber: `DR-SBX-${Date.now()}`,
-      },
-      { status: 200 }
+  // P1-10 (full-system audit 2026-09-30): the previous `const apple =
+  // false` made this branch unreachable. Mirrors the catalog orders
+  // route (`src/app/api/v1/orders/route.ts`) which checks the
+  // authenticated user via `isAppleReviewUser` and returns a synthetic
+  // sandbox response for Apple's review team. Standardised so both
+  // legacy catalog and direct order routes share the same gating.
+  //
+  // We need the user's name+phone (not just the id) for the gate —
+  // `isAppleReviewUser` matches on `name` / `phone`, so a single
+  // SELECT runs before pool.connect() to avoid taking a transaction
+  // on the sandbox short-circuit.
+  if (userId) {
+    const userRow = await query<{ name: string | null; phone: string | null }>(
+      `SELECT name, phone FROM users WHERE id = $1`,
+      [userId],
     );
+    if (userRow.rows[0] && isAppleReviewUser(userRow.rows[0])) {
+      return NextResponse.json(
+        {
+          success: true,
+          sandbox: true,
+          orderId: `sandbox-direct-${Date.now()}`,
+          orderNumber: `DR-SBX-${Date.now()}`,
+        },
+        { status: 200 }
+      );
+    }
   }
 
   const client = await pool.connect();
@@ -130,26 +149,37 @@ export async function POST(request: NextRequest) {
     }
 
     // 1) Upsert the address (customers often re-use the same label).
+    //
+    // P2-3: delegate to the canonical address service. The original
+    // inline INSERT was broken — it referenced plus_code / city /
+    // district columns that don't exist on the `addresses` table; the
+    // service writes only valid columns and stores plus_code/city/
+    // district in direct_order_meta below (the route's pre-existing
+    // behaviour for those fields is preserved). The service also
+    // auto-promotes the new row to default when it's the owner's
+    // first address, which is the right default for a one-off direct
+    // order — the order pins the address by id so is_default doesn't
+    // affect downstream behaviour.
+    //
+    // Title fallback: the direct-order Zod schema has no `title` field,
+    // so we let the service's resolveTitle ladder (title → description
+    // → label) compute it. We pass description explicitly so a caller
+    // who DID supply a description still ends up with a non-empty
+    // title column (the migration-049 contract).
     const addr = data.delivery_address;
-    const addrRes = await client.query(
-      `INSERT INTO addresses
-        (user_id, label, address_text, lat, lng, plus_code, city, district, description, place_images, is_default)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, FALSE)
-       RETURNING id`,
-      [
-        userId ?? null,
-        addr.label,
-        addr.address_text,
-        addr.lat,
-        addr.lng,
-        addr.plus_code ?? null,
-        addr.city ?? null,
-        addr.district ?? null,
-        addr.description ?? null,
-        addr.place_images ?? [],
-      ]
-    );
-    const addressId: string = addrRes.rows[0].id;
+    const addressOwner = userId
+      ? { kind: "user" as const, userId }
+      : { kind: "guest" as const, guestKey: sessionId! };
+    const addrRow = await createAddressService(addressOwner, {
+      label: addr.label,
+      title: null,
+      description: typeof addr.description === "string" ? addr.description : null,
+      lat: Number(addr.lat),
+      lng: Number(addr.lng),
+      address_text: addr.address_text,
+      place_images: Array.isArray(addr.place_images) ? addr.place_images : [],
+    });
+    const addressId: string = addrRow.id;
 
     // 2) Compute totals — direct orders charge the customer ONLY the 4 SAR
     //    service fee + 15% VAT. Items' actual cost is reconciled by the
@@ -162,18 +192,29 @@ export async function POST(request: NextRequest) {
     const total = +(serviceFee + tax).toFixed(2);
 
     // 3) Create the order.
+    //
+    // P1-11 (full-system audit 2026-09-30): mirror the catalog route
+    // (`src/app/api/v1/orders/route.ts:680`) — initial `payment_status`
+    // is `'unpaid'` for electronic methods (Moyasar card / Apple Pay)
+    // so the admin/finance dashboards can distinguish "awaiting
+    // gateway" from "manual / no-gateway" without inspecting
+    // `payment_method`. Non-electronic methods (wallet / bank_transfer)
+    // stay `'pending'` because no gateway call will follow.
+    const initialPaymentStatus = NON_ELECTRONIC_METHODS.has(data.payment_method)
+      ? 'pending'
+      : 'unpaid';
     const orderRes = await client.query(
       `INSERT INTO orders
         (user_id, address_id, status, type,
          subtotal, delivery_fee, service_fee, tax, total,
          payment_method, payment_status, notes,
-         voice_note_url, voice_note_duration, service_fee_acknowledged_at,
+         voice_note_url, voice_note_duration,
          idempotency_key)
        VALUES ($1, $2, 'pending', 'direct',
                $3, $4, $5, $6, $7,
-               $8, 'pending', $9,
-               $10, $11, NOW(),
-               $12)
+               $8, $9, $10,
+               $11, $12,
+               $13)
        RETURNING id, tracking_code AS order_number`,
       [
         userId ?? null,
@@ -184,6 +225,7 @@ export async function POST(request: NextRequest) {
         tax,
         total,
         data.payment_method,
+        initialPaymentStatus,
         data.notes ?? null,
         data.voice_note_url || null,
         data.voice_note_duration ?? null,
@@ -232,6 +274,48 @@ export async function POST(request: NextRequest) {
     );
 
     await client.query('COMMIT');
+
+    // P1-4 (full-system audit 2026-09-30): send the order-confirmation
+    // SMS post-COMMIT so the customer gets immediate acknowledgment
+    // regardless of payment_method. The catalog orders route
+    // (`src/app/api/v1/orders/route.ts`) already does this; direct
+    // orders previously skipped it, leaving the customer waiting for
+    // a payment webhook that may never arrive (wallet / bank_transfer
+    // have no online confirmation). Failures are logged but never
+    // block the response — Twilio outages must not roll back orders.
+    // P1-4 (full-system audit 2026-09-30): send the order-confirmation
+    // SMS post-COMMIT so the customer gets immediate acknowledgment
+    // regardless of payment_method. Mirrors the catalog orders route
+    // pattern (`src/app/api/v1/orders/route.ts`): try the top-level
+    // `customer_phone` first, fall back to `users.phone` for logged-in
+    // callers. Skipped when neither is available — the driver chat
+    // panel can still reach the customer via the address label.
+    // Failures are logged but never block the response — Twilio
+    // outages must not roll back orders.
+    let notifyPhone: string | undefined =
+      typeof data.customer_phone === 'string' && data.customer_phone.length > 0
+        ? data.customer_phone
+        : undefined;
+    if (!notifyPhone && userId) {
+      try {
+        const phRow = await client.query<{ phone: string }>(
+          'SELECT phone FROM users WHERE id = $1',
+          [userId]
+        );
+        notifyPhone = phRow.rows[0]?.phone ?? undefined;
+      } catch {
+        /* optional */
+      }
+    }
+    if (notifyPhone) {
+      sendOrderConfirmationSms({
+        phone: notifyPhone,
+        orderId,
+        total,
+      }).catch((smsErr) => {
+        logError('direct-order SMS confirmation failed', smsErr, { orderId });
+      });
+    }
 
     return NextResponse.json(
       {

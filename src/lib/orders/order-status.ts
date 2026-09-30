@@ -76,34 +76,37 @@ export function getOrderStatusConfig(status: string): OrderStatusConfig {
   );
 }
 
-/** Active status keys, in display order, used by admin + customer filters. */
-export const ACTIVE_ORDER_STATUSES: string[] = [
-  "pending",
-  "confirmed",
-  "shopping",
-  "on_the_way",
-];
+/**
+ * Active status keys (non-terminal), in canonical ORDER_STATE_DISPLAY order.
+ *
+ * Derived from `ORDER_STATE_DISPLAY[k].active === true` so adding a new
+ * status to `state-machine.ts` automatically extends this list — no more
+ * hand-maintained arrays to drift out of sync.
+ */
+export const ACTIVE_ORDER_STATUSES: string[] = (
+  Object.keys(ORDER_STATE_DISPLAY) as Array<keyof typeof ORDER_STATE_DISPLAY>
+).filter((k) => ORDER_STATE_DISPLAY[k].active);
 
-/** Display order used by status dropdowns (admin). */
+/**
+ * Display order used by status dropdowns (admin). Derived from
+ * `ORDER_STATE_DISPLAY` (preserves the canonical order). To add a new
+ * status, edit `state-machine.ts` + `order-status-display.ts`.
+ */
 export const ORDER_STATUS_DISPLAY: Array<{ value: string; label: string }> = (
   Object.entries(ORDER_STATE_DISPLAY) as Array<[string, OrderStatusConfig]>
-)
-  .filter(([key]) =>
-    [
-      "pending",
-      "confirmed",
-      "shopping",
-      "on_the_way",
-      "delivered",
-      "cancelled",
-    ].includes(key),
-  )
-  .map(([value, { label }]) => ({ value, label }));
+).map(([value, { label }]) => ({ value, label }));
 
 /**
  * Progress steps for the customer-facing order timeline. Includes
  * "تم التأكيد" so the timeline is contiguous from order receipt to
  * delivery, and uses the canonical backend status values.
+ *
+ * NOTE: this is intentionally a 5-step subset of `ORDER_STATE_DISPLAY`
+ * (omits `cancelled` since a cancelled order doesn't render a progress
+ * bar). It is the one order-status export that is NOT fully derived
+ * because the customer-facing copy + icons differ from the admin
+ * display map. Keep in sync manually when adding a new non-terminal
+ * status.
  */
 export const CUSTOMER_PROGRESS_STEPS: Array<{
   label: string;
@@ -134,10 +137,8 @@ export const PAYMENT_METHOD_AR: Record<string, string> = {
 export const PAYMENT_STATUS_AR: Record<string, string> = {
   // تم الدفع — confirmed paid (Moyasar / Apple Pay / Visa / مدى / STC Pay / نقداً)
   paid: "تم الدفع",
-  completed: "تم الدفع",
-  // لم يتم الدفع — gateway hasn't confirmed yet (online payment flow), or
-  // cash-on-delivery before collection. Surfaces to customers as "not yet paid".
-  unpaid: "لم يتم الدفع",
+  // قيد تأكيد الدفع — gateway hasn't confirmed yet (online payment flow),
+  // or cash-on-delivery before collection.
   pending: "قيد تأكيد الدفع",
   // فشل الدفع — gateway rejected (declined card, 3DS fail, expired invoice)
   failed: "فشل الدفع",
@@ -155,9 +156,10 @@ export const PAYMENT_STATUS_AR: Record<string, string> = {
  * `label` falls back to `PAYMENT_STATUS_AR` so unknown backend values still
  * render correctly. The `color`/`dotColor` fall back to neutral gray.
  *
- * Sourced from the central state machine (PAYMENT_STATE_DISPLAY) plus the
- * legacy `unpaid` / `completed` aliases that pre-date the four-state
- * payment_status enum.
+ * P1-2 (full-system audit 2026-09-30): legacy `unpaid` and `completed`
+ * aliases were removed — neither is ever written to the DB anymore
+ * (P0-3 + analytics filter cleanup). The canonical set is
+ * `{paid, pending, failed, refunded}`.
  */
 export interface PaymentStatusConfig {
   label: string;
@@ -170,16 +172,6 @@ export const PAYMENT_STATUSES_CONFIG: Record<string, PaymentStatusConfig> = {
     label: PAYMENT_STATUS_AR.paid,
     color: "bg-emerald-100 text-emerald-700",
     dotColor: "bg-emerald-500",
-  },
-  completed: {
-    label: PAYMENT_STATUS_AR.completed,
-    color: "bg-emerald-100 text-emerald-700",
-    dotColor: "bg-emerald-500",
-  },
-  unpaid: {
-    label: PAYMENT_STATUS_AR.unpaid,
-    color: "bg-gray-100 text-gray-700",
-    dotColor: "bg-gray-400",
   },
   pending: {
     label: PAYMENT_STATUS_AR.pending,
@@ -208,7 +200,3 @@ export function getPaymentStatusConfig(status: string): PaymentStatusConfig {
     }
   );
 }
-
-// Re-export the vendor-order display map for vendor-side admin UIs.
-export const VENDOR_ORDER_STATUSES: Record<string, OrderStatusConfig> =
-  VENDOR_ORDER_STATE_DISPLAY as unknown as Record<string, OrderStatusConfig>;

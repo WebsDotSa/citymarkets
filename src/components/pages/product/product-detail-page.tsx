@@ -14,7 +14,7 @@ import type { Product } from "@/lib/types";
 import { isCityMarketsVendor } from '@/lib/catalog';
 import { BRAND } from "@/lib/brand-theme";
 import { ProductDetailSkeleton } from "@/components/design/skeleton";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 import { trackViewItem } from "@/lib/ga-events";
 
 export function ProductDetailPage() {

@@ -13,7 +13,7 @@ import {
   RefreshCcw,
   Filter,
 } from "lucide-react";
-import { formatPrice, formatOrderId } from "@/lib/utils";
+import { formatPrice, formatOrderId } from "@/lib/format";
 import type {
   AdminAbandonedCart,
   AdminPagination,
