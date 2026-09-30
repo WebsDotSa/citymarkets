@@ -4,12 +4,13 @@
 //
 // Note: we ALSO serve /.well-known/ucp for backwards compatibility.
 
+import { getSiteUrl } from "@/lib/seo/site";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-static";
 export const revalidate = 86400;
 
-const SITE_URL = "https://citymarkets.sa";
+const SITE_URL = getSiteUrl();
 
 const ucpManifest = {
   // UCP root envelope

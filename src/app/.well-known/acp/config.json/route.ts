@@ -5,12 +5,13 @@
 // Note: we ALSO serve /.well-known/acp.json for backwards compatibility
 // with scanners that hard-code the old path. Both return the same body.
 
+import { getSiteUrl } from "@/lib/seo/site";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-static";
 export const revalidate = 86400;
 
-const SITE_URL = "https://citymarkets.sa";
+const SITE_URL = getSiteUrl();
 
 const acpConfig = {
   // ACP envelope — per rfc.discovery.md the protocol block is an

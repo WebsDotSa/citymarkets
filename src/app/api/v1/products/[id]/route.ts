@@ -1,3 +1,4 @@
+import { UUID_RE } from "@/lib/uuid";
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
@@ -7,8 +8,6 @@ import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logge
 // regex; mirror it on the public detail endpoint so callers passing
 // garbage IDs get a clean 404 instead of a Postgres `invalid input
 // syntax for type uuid` 500.
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Related product type

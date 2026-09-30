@@ -1,3 +1,4 @@
+import { rateLimitExceededResponse } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeSaudiToE164 } from "@/lib/phone-format";
 import { isTwilioVerifyConfigured, twilioSendVerification } from "@/lib/twilio-verify";
@@ -19,25 +20,6 @@ import {
 // circuit the Twilio call AND the rate limit so the reviewer can keep
 // re-running the flow during a session. Twilio fraud-blocks numbers
 // we don't own, so calling Verify would fail anyway.
-function rateLimitResponse(
-  result: { retryAfterMs?: number; remaining: number; resetAt: number },
-  message: string,
-  by: "phone" | "ip"
-) {
-  const response = NextResponse.json(
-    {
-      error: message,
-      retryAfter: Math.ceil((result.retryAfterMs || 0) / 1000),
-    },
-    { status: 429 }
-  );
-  Object.entries(createRateLimitHeaders(result as any)).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
-  response.headers.set("X-RateLimit-By", by);
-  return response;
-}
-
 export async function POST(request: NextRequest) {
   if (!isTwilioVerifyConfigured()) {
     return NextResponse.json(
@@ -91,7 +73,7 @@ export async function POST(request: NextRequest) {
   const clientIp = getClientIp(request);
   const ipLimit = await checkRateLimit(clientIp, OTP_SEND_IP_CONFIG);
   if (!ipLimit.allowed) {
-    return rateLimitResponse(
+    return rateLimitExceededResponse(
       ipLimit,
       "تم تجاوز عدد محاولات الإرسال من هذا الجهاز. انتظر قليلاً ثم أعد المحاولة",
       "ip"
@@ -102,7 +84,7 @@ export async function POST(request: NextRequest) {
   // limit because the two `keyPrefix`es differ.
   const rateLimitResult = await checkRateLimit(e164, OTP_SEND_CONFIG);
   if (!rateLimitResult.allowed) {
-    return rateLimitResponse(
+    return rateLimitExceededResponse(
       rateLimitResult,
       "تم تجاوز عدد محاولات الإرسال. انتظر قليلاً ثم أعد المحاولة",
       "phone"

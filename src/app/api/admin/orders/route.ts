@@ -1,3 +1,4 @@
+import { requireIdParam } from "@/lib/request-params";
 import { NextRequest, NextResponse } from 'next/server';
 import { pool, query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -15,13 +16,6 @@ import {
   ORDER_DETAIL_JOINS,
   ORDER_LIST_JOINS,
 } from '@/lib/orders/sql-fragments';
-
-function idCheck(url: URL) {
-  const id = url.searchParams.get('id');
-  if (!id)
-    return NextResponse.json({ success: false, error: 'المعرّف مطلوب' }, { status: 400 });
-  return id;
-}
 
 export async function GET(request: NextRequest) {
   const gate = await requireAdminApi(request, 'manage_orders');
@@ -212,7 +206,7 @@ export async function PUT(request: NextRequest) {
   if (gate instanceof NextResponse) return gate;
   try {
     const url = new URL(request.url);
-    const idCheckResult = idCheck(url);
+    const idCheckResult = requireIdParam(url);
     if (typeof idCheckResult !== 'string') return idCheckResult;
 
     const rawBody = await request.json();

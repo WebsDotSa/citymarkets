@@ -1,3 +1,4 @@
+import { rateLimitExceededResponse } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { normalizeSaudiToE164 } from "@/lib/phone-format";
@@ -44,30 +45,6 @@ export const dynamic = "force-dynamic";
  *   - Separate rate-limit bucket (VENDOR_OTP_SEND_*) so customer-OTP
  *     abuse can't starve vendor login.
  */
-
-function rateLimitResponse(
-  result: { retryAfterMs?: number; remaining: number; resetAt: number },
-  message: string,
-  by: "phone" | "ip",
-) {
-  const response = NextResponse.json(
-    {
-      error: message,
-      retryAfter: Math.ceil((result.retryAfterMs || 0) / 1000),
-    },
-    { status: 429 },
-  );
-  // Cast is safe: `result` is always a RateLimitResult at runtime; the
-  // local alias exists to keep the function signature compatible with
-  // helpers that take a stricter shape.
-  Object.entries(
-    createRateLimitHeaders(result as unknown as Parameters<typeof createRateLimitHeaders>[0]),
-  ).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
-  response.headers.set("X-RateLimit-By", by);
-  return response;
-}
 
 export async function POST(request: NextRequest) {
   if (!isTwilioVerifyConfigured()) {
@@ -130,7 +107,7 @@ export async function POST(request: NextRequest) {
   const clientIp = getClientIp(request);
   const ipLimit = await checkRateLimit(clientIp, VENDOR_OTP_SEND_IP_CONFIG);
   if (!ipLimit.allowed) {
-    return rateLimitResponse(
+    return rateLimitExceededResponse(
       ipLimit,
       "تم تجاوز عدد محاولات الإرسال من هذا الجهاز. انتظر قليلاً ثم أعد المحاولة",
       "ip",
@@ -140,7 +117,7 @@ export async function POST(request: NextRequest) {
   // Per-phone cap (independent prefix).
   const rateLimitResult = await checkRateLimit(e164, VENDOR_OTP_SEND_CONFIG);
   if (!rateLimitResult.allowed) {
-    return rateLimitResponse(
+    return rateLimitExceededResponse(
       rateLimitResult,
       "تم تجاوز عدد محاولات الإرسال. انتظر قليلاً ثم أعد المحاولة",
       "phone",

@@ -7,6 +7,10 @@ export const SITE_NAME_SHORT = "أسواق سيتي";
 export const DEFAULT_DESCRIPTION =
   "اكتشف أحدث العروض وأكبر تشكيلة من المنتجات الطازجة والمواد الغذائية عبر أسواق سيتي — منصة تسوّق أونلاين تجمع لك آلاف المتاجر المحلية مع توصيل سريع إلى باب بيتك في جميع مدن المملكة.";
 
+/**
+ * THE canonical site URL: NEXT_PUBLIC_SITE_URL, else SITE_URL, else the
+ * production domain, without a trailing slash. `@/lib/env` re-exports this.
+ */
 export function getSiteUrl(): string {
   const raw =
     process.env.NEXT_PUBLIC_SITE_URL ||

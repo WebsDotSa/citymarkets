@@ -1,13 +1,8 @@
+import { requireIdParam } from "@/lib/request-params";
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { adminUserInputSchema as userInputSchema } from '@/lib/validation';
-
-function idCheck(url: URL) {
-  const id = url.searchParams.get('id');
-  if (!id) return NextResponse.json({ success: false, error: 'المعرّف مطلوب' }, { status: 400 });
-  return id;
-}
 
 export async function GET(request: NextRequest) {
   const gate = await requireAdminApi(request, 'manage_users');
@@ -52,7 +47,7 @@ export async function PUT(request: NextRequest) {
   if (gate instanceof NextResponse) return gate;
   try {
     const url = new URL(request.url);
-    const idCheckResult = idCheck(url);
+    const idCheckResult = requireIdParam(url);
     if (typeof idCheckResult !== 'string') return idCheckResult;
     const body = await request.json();
     const parsed = userInputSchema.safeParse({
@@ -80,7 +75,7 @@ export async function DELETE(request: NextRequest) {
   if (gate instanceof NextResponse) return gate;
   try {
     const url = new URL(request.url);
-    const idCheckResult = idCheck(url);
+    const idCheckResult = requireIdParam(url);
     if (typeof idCheckResult !== 'string') return idCheckResult;
     await query('DELETE FROM users WHERE id = $1', [idCheckResult]);
     return NextResponse.json({ success: true });

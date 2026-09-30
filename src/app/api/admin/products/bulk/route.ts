@@ -1,3 +1,4 @@
+import { UUID_RE as UUID_LIKE } from "@/lib/uuid";
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -5,7 +6,6 @@ import { error as logError } from '@/lib/logger';
 import { deleteFromR2, r2KeyFromUrl } from '@/lib/r2';
 import { CITY_MARKETS_VENDOR_ID } from '@/lib/types';
 
-const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request: NextRequest) {
   const gate = await requireAdminApi(request, 'manage_products');

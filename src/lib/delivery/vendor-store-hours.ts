@@ -21,8 +21,9 @@
  * `vendor_inactive` error returned by `resolveItems`.
  */
 
-export const RIYADH_TZ = "Asia/Riyadh";
-const RIYADH_OFFSET_MIN = 3 * 60; // +03:00, no DST
+import { RIYADH_OFFSET_MIN, RIYADH_TZ, hhmmToMinutes, toRiyadhHhmm } from "./riyadh-time";
+
+export { RIYADH_TZ };
 
 export type VendorHours = {
   /** `vendors.id` — included so logging can identify the row. */
@@ -64,16 +65,6 @@ export function parseVendorHours(raw: unknown): VendorHours | null {
  * "HH:MM" Riyadh wall-clock for a given Date. Mirrors the helper in
  * `delivery-hours.ts` so the two helpers share timezone semantics.
  */
-function toRiyadhHhmm(d: Date): string {
-  const riyadhMs = d.getTime() + RIYADH_OFFSET_MIN * 60_000;
-  const r = new Date(riyadhMs);
-  return `${String(r.getUTCHours()).padStart(2, "0")}:${String(r.getUTCMinutes()).padStart(2, "0")}`;
-}
-
-function hhmmToMinutes(s: string): number {
-  const [h, m] = s.split(":").map(Number);
-  return h * 60 + m;
-}
 
 /**
  * Decide whether `now` falls inside the vendor's working window.

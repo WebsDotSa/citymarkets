@@ -11,12 +11,13 @@
 // Future per-request paywalls (e.g. premium analytics, vendor reports)
 // can flip `enabled: true` and point at the protected path.
 
+import { getSiteUrl } from "@/lib/seo/site";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-static";
 export const revalidate = 86400;
 
-const SITE_URL = "https://citymarkets.sa";
+const SITE_URL = getSiteUrl();
 
 const x402Manifest = {
   // x402 envelope (per docs.x402.org discovery spec)

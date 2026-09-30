@@ -1,3 +1,4 @@
+import { rateLimitExceededResponse } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { normalizeSaudiToE164 } from "@/lib/phone-format";
@@ -45,28 +46,6 @@ export const dynamic = "force-dynamic";
  *   - Response shape mirrors /api/v1/vendor/auth/login (line 149-163) so
  *     the UI treats both paths identically.
  */
-
-function rateLimitResponse(
-  result: { retryAfterMs?: number; remaining: number; resetAt: number },
-  message: string,
-  by: "phone" | "ip",
-) {
-  const response = NextResponse.json(
-    {
-      error: message,
-      retryAfter: Math.ceil((result.retryAfterMs || 0) / 1000),
-    },
-    { status: 429 },
-  );
-  // Cast is safe: `result` is always a RateLimitResult at runtime.
-  Object.entries(
-    createRateLimitHeaders(result as unknown as Parameters<typeof createRateLimitHeaders>[0]),
-  ).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
-  response.headers.set("X-RateLimit-By", by);
-  return response;
-}
 
 export async function POST(request: NextRequest) {
   let body: { phone?: string; code?: string; vendorSlug?: string };
@@ -116,7 +95,7 @@ export async function POST(request: NextRequest) {
     const clientIp = getClientIp(request);
     const ipLimit = await checkRateLimit(clientIp, VENDOR_OTP_VERIFY_IP_CONFIG);
     if (!ipLimit.allowed) {
-      return rateLimitResponse(
+      return rateLimitExceededResponse(
         ipLimit,
         "تم تجاوز عدد محاولات التحقق من هذا الجهاز. انتظر قليلاً ثم أعد المحاولة",
         "ip",
@@ -126,7 +105,7 @@ export async function POST(request: NextRequest) {
     // Per-phone cap.
     const rateLimitResult = await checkRateLimit(e164, VENDOR_OTP_VERIFY_CONFIG);
     if (!rateLimitResult.allowed) {
-      return rateLimitResponse(
+      return rateLimitExceededResponse(
         rateLimitResult,
         "تم تجاوز عدد محاولات التحقق. انتظر قليلاً ثم أعد المحاولة",
         "phone",

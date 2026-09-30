@@ -12,6 +12,7 @@
  *     Open applications can't be deleted; they must be approved/rejected
  *     first so the audit trail stays coherent.
  */
+import { UUID_RE } from "@/lib/uuid";
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -19,7 +20,6 @@ import { logAdminAction } from "@/lib/admin-audit";
 
 import { error as logError } from "@/lib/logger";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(request: NextRequest) {
   const gate = await requireAdminApi(request, "manage_store_settings");

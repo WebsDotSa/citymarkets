@@ -3,6 +3,7 @@
  * https://docs.moyasar.com/api/invoices/01-create-invoice/
  */
 
+import { getSiteUrl } from '@/lib/seo/site';
 import { error as logError } from '@/lib/logger';
 
 const MOYASAR_API_BASE =
@@ -11,9 +12,7 @@ const MOYASAR_API_BASE =
 const MOYASAR_SECRET_KEY = process.env.MOYASAR_SECRET_KEY;
 const MOYASAR_PUBLISHABLE_KEY = process.env.MOYASAR_PUBLISHABLE_KEY;
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
-  'https://citymarkets.sa';
+const SITE_URL = getSiteUrl();
 
 export interface MoyasarInvoiceRequest {
   amount: number;

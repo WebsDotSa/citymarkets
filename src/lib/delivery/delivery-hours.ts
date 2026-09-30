@@ -13,6 +13,7 @@
  * matches `delivery-slots.ts` so the two systems stay coherent.
  */
 
+import { RIYADH_OFFSET_MIN, RIYADH_TZ, hhmmToMinutes, toRiyadhHhmm, validHhmmOr } from "./riyadh-time";
 import { query } from "@/lib/db";
 
 export type DeliveryHours = {
@@ -23,8 +24,7 @@ export type DeliveryHours = {
   closed_message: string;
 };
 
-export const RIYADH_TZ = "Asia/Riyadh";
-const RIYADH_OFFSET_MIN = 3 * 60; // +03:00, no DST
+export { RIYADH_TZ };
 
 export const DEFAULT_DELIVERY_HOURS: DeliveryHours = {
   enabled: true,
@@ -42,15 +42,10 @@ export const DEFAULT_DELIVERY_HOURS: DeliveryHours = {
 export function parseDeliveryHours(raw: unknown): DeliveryHours {
   if (!raw || typeof raw !== "object") return { ...DEFAULT_DELIVERY_HOURS };
   const v = raw as Partial<DeliveryHours>;
-  const minutes = (s: string | undefined, fallback: string) => {
-    if (typeof s !== "string") return fallback;
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(s)) return fallback;
-    return s;
-  };
   return {
     enabled: typeof v.enabled === "boolean" ? v.enabled : true,
-    open_time: minutes(v.open_time, DEFAULT_DELIVERY_HOURS.open_time),
-    close_time: minutes(v.close_time, DEFAULT_DELIVERY_HOURS.close_time),
+    open_time: validHhmmOr(v.open_time, DEFAULT_DELIVERY_HOURS.open_time),
+    close_time: validHhmmOr(v.close_time, DEFAULT_DELIVERY_HOURS.close_time),
     timezone: typeof v.timezone === "string" && v.timezone.length > 0
       ? v.timezone
       : RIYADH_TZ,
@@ -91,16 +86,6 @@ function toRiyadhDateKey(d: Date): string {
 /**
  * "HH:MM" Riyadh wall-clock for a given Date.
  */
-function toRiyadhHhmm(d: Date): string {
-  const riyadhMs = d.getTime() + RIYADH_OFFSET_MIN * 60_000;
-  const r = new Date(riyadhMs);
-  return `${String(r.getUTCHours()).padStart(2, "0")}:${String(r.getUTCMinutes()).padStart(2, "0")}`;
-}
-
-function hhmmToMinutes(s: string): number {
-  const [h, m] = s.split(":").map(Number);
-  return h * 60 + m;
-}
 
 /**
  * Result of evaluating the current moment against `hours`.

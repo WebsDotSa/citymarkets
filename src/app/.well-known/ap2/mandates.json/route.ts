@@ -7,12 +7,13 @@
 // Google are the canonical issuers; we accept signed payment mandates
 // via the same Moyasar PSP integration.)
 
+import { getSiteUrl } from "@/lib/seo/site";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-static";
 export const revalidate = 86400;
 
-const SITE_URL = "https://citymarkets.sa";
+const SITE_URL = getSiteUrl();
 
 const ap2Mandates = {
   protocol: "ap2",

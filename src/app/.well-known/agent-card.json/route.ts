@@ -7,12 +7,13 @@
 // exposes buyer-side agents (catalog browse, cart add, checkout) over
 // the standard A2A transport.
 
+import { getSiteUrl } from "@/lib/seo/site";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-static";
 export const revalidate = 86400;
 
-const SITE_URL = "https://citymarkets.sa";
+const SITE_URL = getSiteUrl();
 
 const agentCard = {
   // Required A2A fields

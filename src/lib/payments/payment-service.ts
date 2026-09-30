@@ -20,6 +20,7 @@
 // 401/403/404/409). The pattern mirrors CheckoutService in
 // src/lib/checkout/checkout-service.ts.
 
+import { UUID_RE } from "@/lib/uuid";
 import type { PoolClient } from "pg";
 import type { RateLimitConfig, RateLimitResult } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
@@ -42,7 +43,6 @@ function buildRateLimitHeaders(result: RateLimitResult): Record<string, string> 
   return headers;
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const MAX_IDEMPOTENCY_KEY = 64;
 
 // D16-D19 cleanup (2026-09-30): the legacy `ONLINE_RETRY_METHODS` alias

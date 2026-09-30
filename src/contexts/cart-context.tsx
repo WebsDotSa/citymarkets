@@ -1,5 +1,6 @@
 "use client";
 
+import { UUID_RE } from "@/lib/uuid";
 import React, {
   createContext,
   useContext,
@@ -121,7 +122,6 @@ function matchesCompositeKey(
 // to pass non-UUID ids into the checkout Zod schema, producing the
 // "معرّف غير صالح" error on /checkout/pay. Filtering here keeps the cart
 // self-healing across schema changes.
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isUuid(value: unknown): value is string {
   return typeof value === "string" && UUID_RE.test(value);
 }
