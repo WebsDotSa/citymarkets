@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { pool } from '@/lib/db';
 import { fetchPayment, mapMoyasarStatusToDb, isSarCurrency } from '@/lib/payments/moyasar';
-import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
-import {
-  recordPaymentEvent,
-  finalizePaymentEvent,
-} from '@/lib/payments/event-ledger';
+import { finalizePaymentEvent } from '@/lib/payments/event-ledger';
+import { reconcilePayment } from '@/lib/payments/reconcile-payment';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
@@ -122,48 +119,18 @@ export async function POST(request: NextRequest) {
       // twice. Released on COMMIT/ROLLBACK.
       await client.query('BEGIN');
 
-      // payment_events ledger (migration 073) — INSERT first so any
-      // gateway replay hits the UNIQUE (invoice_id, gateway, event_type)
-      // index and short-circuits the rest of the work. Atomic with the
-      // order updates via the surrounding transaction: if the order
-      // mutation rolls back, the ledger row rolls back too and a fresh
-      // replay gets to insert again. See docs/04-PAYMENTS-AND-CHECKOUT.md
-      // and src/lib/payments/event-ledger.ts.
+      // FIX (P1-5): reconcile-payment is the shared single-source-of-
+      // truth used by every gateway webhook. It does the ledger INSERT,
+      // advisory lock, parent/child UPDATE, lifecycle flip, loyalty
+      // resolve, earn award, and abandoned-cart recovery. Moyasar only
+      // adds the per-gateway surface area (signature verify + amount/
+      // currency guard + push body variations) above this call.
       const eventType =
         typeof body.type === 'string' && body.type
           ? String(body.type)
           : typeof body.event_type === 'string' && body.event_type
             ? String(body.event_type)
             : 'payment.notification';
-      const ledgerResult = await recordPaymentEvent(client, {
-        invoiceId,
-        gateway: 'moyasar',
-        eventType,
-        raw: body,
-      });
-      if (ledgerResult === 'duplicate') {
-        logInfo(
-          `[webhook] duplicate event ${eventType} for ${invoiceId}; ` +
-            `idempotent ack without re-processing order`,
-        );
-        // FIX (P1-5): finalize the ledger row so subsequent replays do
-        // not see status='received' forever. orderId is intentionally
-        // NOT passed — we short-circuited before the SELECT. The schema
-        // allows order_id NULL (operators correlate from
-        // raw_payload.invoice_id).
-        try {
-          await finalizePaymentEvent(client, {
-            invoiceId,
-            gateway: 'moyasar',
-            eventType,
-            status: 'processed',
-          });
-        } catch (finalErr) {
-          logError('[event-ledger] duplicate finalize failed', finalErr, { invoiceId });
-        }
-        await client.query('COMMIT');
-        return NextResponse.json({ received: true, duplicate: true });
-      }
       const order = await client.query(
         'SELECT id, status, total, subtotal, catalog_subtotal, user_id, points_redeemed, guest_phone, guest_name FROM orders WHERE payment_reference = $1',
         [invoiceId]
@@ -173,234 +140,148 @@ export async function POST(request: NextRequest) {
       // can see the order id even when the original SELECT returned 0 rows.
       orderId = order.rows[0]?.id;
 
-      if (orderId) {
-
-        // Per-order advisory lock so concurrent callbacks for the same order
-        // serialize. Released on COMMIT/ROLLBACK.
-        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
-          `order:${orderId}`,
-        ]);
-
-        await client.query(
-          // SECURITY (Payment-H): never regress a Paid/Failed order back
-          // to Pending. The webhook can fire multiple times with stale
-          // payloads (network retries, queue replays) and we don't want a
-          // late "Pending" callback to overwrite a successful payment.
-          // The COALESCE on the CASE keeps the more terminal status:
-          //   paid   > failed   > pending
-          // `updated_at` is also bumped so ops can see the last activity.
-          `UPDATE orders
-           SET payment_status = CASE
-             WHEN payment_status = 'paid'   THEN 'paid'
-             WHEN payment_status = 'failed' AND $1 = 'pending' THEN 'failed'
-             ELSE $1
-           END,
-           updated_at = NOW()
-           WHERE id = $2`,
-          [paymentDb, orderId]
-        );
-
-        // Slice 3 fan-out: when the parent's payment_status changes,
-        // mirror the same value onto every vendor_orders child. The
-        // same CASE-guard prevents regression. The same advisory lock
-        // above serializes this so a sibling latency window can't
-        // split the parent from its children.
-        await client.query(
-          `UPDATE vendor_orders
-              SET payment_status = CASE
-                WHEN payment_status = 'paid'   THEN 'paid'
-                WHEN payment_status = 'failed' AND $1 = 'pending' THEN 'failed'
-                ELSE $1
-              END,
-              updated_at = NOW()
-            WHERE parent_order_id = $2`,
-          [paymentDb, orderId],
-        );
-
-        if (remoteStatus === 'paid' || remoteStatus === 'captured') {
-          // SECURITY (Pay-H): verify the invoice currency is SAR and the
-          // paid amount covers the order total before crediting loyalty
-          // or marking the order paid. Without this check, a payment
-          // made in a weaker currency could be accepted as "Paid" and
-          // converted to loyalty at SAR face value.
-          //
-          // FIX (P0-3): guards do NOT early-return. They gate the
-          // lifecycle flip + loyalty crediting via `guardsOk`; the
-          // payment_status was already written above (gateway confirmed).
-          // finalizePaymentEvent still runs so the ledger reflects truth,
-          // and a replay short-circuited by the UNIQUE index sees the
-          // ledger already at status='processed' (P1-5 covers the
-          // duplicate-branch finalize explicitly).
-          const orderRow = order.rows[0];
-          const orderTotal = Number(orderRow.total);
-
-          const currencyOk = isSarCurrency(remote.currency);
-          const amountOk =
-            typeof remote.amountHalalas !== "number" ||
-            remote.amountHalalas / 100 + 0.01 >= orderTotal;
-
-          if (!currencyOk) {
-            logWarn(
-              `[webhook] order ${orderId} paid in ${remote.currency}, expected SAR — refusing to credit loyalty`,
-            );
-          }
-          if (!amountOk) {
-            logWarn(
-              `[webhook] order ${orderId} paid amount ${(remote.amountHalalas ?? 0) / 100} < total ${orderTotal} — refusing to credit loyalty`,
-            );
-          }
-          const guardsOk = currencyOk && amountOk;
-
-          if (guardsOk) {
-            // Roll lifecycle forward: payment confirmed → 'confirmed'.
-          // NEVER set the fulfillment lifecycle to 'paid' — 'paid' is a
-          // payment_status only (matches the Tamara webhook invariant at
-          // src/app/api/v1/payments/tamara/webhook/route.ts:226-237).
-          // We use CASE so a late 'paid' webhook can never regress an
-          // already-confirmed/preparing/ready/etc. order back to pending.
-          await client.query(
-            `UPDATE orders
-                SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
-              WHERE id = $1`,
-            [orderId]
-          );
-
-          // Slice 3 fan-out: mirror the same lifecycle flip onto every
-          // child vendor_order. Same CASE-guard as the parent — never
-          // set fulfillment to 'paid'.
-          await client.query(
-            `UPDATE vendor_orders
-                SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
-              WHERE parent_order_id = $1`,
-            [orderId]
-          );
-
-          // SECURITY (Pay-H): resolve any pending_redeem hold into a
-          // real debit. The hold was placed at order creation so the
-          // user sees a "reservation" on their activity feed but the
-          // balance was untouched. Now that payment is confirmed we
-          // can safely deduct. Idempotent via the ON CONFLICT on
-          // (ref_order_id, type='redeem') — see src/lib/loyalty.ts.
-          if (orderRow.user_id && Number(orderRow.points_redeemed) > 0) {
-            try {
-              await resolveRedeemForOrder(client, {
-                orderId,
-                userId: orderRow.user_id,
-                pointsRedeemed: Number(orderRow.points_redeemed),
-              });
-            } catch (redeemErr) {
-              logError('[loyalty] redeem resolve failed for order', redeemErr, { orderId });
-            }
-          }
-
-          // Award loyalty points for paid orders with a logged-in user.
-          // Rate (e.g. 10 SAR = 1 point) and earn gating come from
-          // app_settings['loyalty'], read via getLoyaltySettings().
-          // Catalog subtotal only — Slice 3 policy: vendor orders earn
-          // at the vendor's discretion, not the marketplace's.
-          //
-          // Idempotency relies on UNIQUE(ref_order_id, type) on
-          // loyalty_transactions (see migration 046). The INSERT ...
-          // ON CONFLICT DO NOTHING pattern is atomic.
-          if (orderRow.user_id && Number(orderRow.catalog_subtotal) > 0) {
-            try {
-              const loyaltySettings = await getLoyaltySettings();
-              await awardPointsForOrder(client, {
-                orderId,
-                userId: orderRow.user_id,
-                catalogSubtotal: Number(orderRow.catalog_subtotal),
-                settings: loyaltySettings,
-              });
-            } catch (lpErr) {
-              logError('[loyalty] earn failed for order', lpErr, { orderId });
-            }
-          }
-          } // end if (guardsOk)
-
-          // Recover any abandoned carts that belong to this customer.
-          // Idempotent — the helper uses intent_order_id <> recovered_order_id
-          // so re-running this branch on a webhook replay is safe.
-          // Best-effort: a snapshot miss should never block the payment.
-          try {
-            const { markAbandonedCartRecovered } = await import('@/lib/orders/abandoned-carts');
-            const guestPhone =
-              orderRow.guest_phone != null && orderRow.guest_phone !== ''
-                ? String(orderRow.guest_phone)
-                : null;
-            const { recovered_count } = await markAbandonedCartRecovered(
-              orderId,
-              {
-                user_id: orderRow.user_id || null,
-                guest_phone: guestPhone,
-              },
-            );
-            // W1 fix: capture the intent here (inside the transaction)
-            // and fire the SMS in the post-COMMIT side-effects block.
-            // Calling enqueueOrderPaidSms from inside the transaction
-            // risked the worker reading DB state before COMMIT propagated.
-            shouldEnqueueOrderPaidSms = recovered_count > 0;
-          } catch (acErr) {
-            logError('[abandoned-carts] recovery failed', acErr, { orderId });
-          }
+      if (!orderId) {
+        // No matching order: still record the event so the ledger
+        // captures the gateway attempt. Operators correlate via
+        // raw_payload.invoice_id.
+        const ledgerResult = await reconcilePayment(client, {
+          invoiceId,
+          gateway: 'moyasar',
+          eventType,
+          paymentDb,
+          rawBody: body,
+          orderRow: {
+            id: '',
+            total: 0,
+            catalog_subtotal: 0,
+            user_id: null,
+            points_redeemed: 0,
+            guest_phone: null,
+          },
+        });
+        await client.query('COMMIT');
+        if (ledgerResult.duplicate) {
+          return NextResponse.json({ received: true, duplicate: true });
         }
+        return NextResponse.json({ received: true });
+      }
 
-        logInfo(`Order ${orderId} payment_status=${paymentDb} (gateway=${remoteStatus})`);
+      const orderRow = order.rows[0];
 
-        // Send push notification to the buyer (if logged in). Fire-and-forget
-        // so a slow push endpoint never blocks the webhook.
-        try {
-          const { sendPushToUser } = await import("@/lib/push");
-          const orderInfo = order.rows[0];
-          if (orderInfo?.user_id) {
-            let title = "تم تحديث حالة طلبك";
-            let body = `حالة الطلب #${String(orderId).slice(0, 8)} الآن ${paymentDb}`;
-            let url = `/orders`;
-            if (remoteStatus === 'paid' || remoteStatus === 'captured') {
-              title = "تم الدفع بنجاح ✅";
-              body = `طلبك #${String(orderId).slice(0, 8)} مدفوع وجاري التجهيز.`;
-              url = `/profile/orders`;
-            }
-            await sendPushToUser(orderInfo.user_id, {
-              title,
-              body,
-              url,
-              tag: `order-${orderId}`,
-            });
-          }
-        } catch (pushErr) {
-          logError('[push] order status notification failed:', pushErr);
+      // SECURITY (Pay-H): verify the invoice currency is SAR and the
+      // paid amount covers the order total before crediting loyalty
+      // or marking the order paid. Without this check, a payment made
+      // in a weaker currency could be accepted as "Paid" and converted
+      // to loyalty at SAR face value. The guards do NOT early-return;
+      // they gate the lifecycle flip + loyalty crediting inside
+      // reconcilePayment via the `paymentDb` interpretation. Here we
+      // downgrade paymentDb to 'pending' when guards fail so the
+      // shared helper skips the paid-only branch but still records the
+      // event.
+      let effectivePaymentDb: 'paid' | 'failed' | 'pending' = paymentDb;
+      if (remoteStatus === 'paid' || remoteStatus === 'captured') {
+        const currencyOk = isSarCurrency(remote.currency);
+        const amountOk =
+          typeof remote.amountHalalas !== 'number' ||
+          remote.amountHalalas / 100 + 0.01 >= Number(orderRow.total);
+        if (!currencyOk) {
+          logWarn(
+            `[webhook] order ${orderId} paid in ${remote.currency}, expected SAR — refusing to credit loyalty`,
+          );
+          effectivePaymentDb = 'pending';
+        }
+        if (!amountOk) {
+          logWarn(
+            `[webhook] order ${orderId} paid amount ${(remote.amountHalalas ?? 0) / 100} < total ${orderRow.total} — refusing to credit loyalty`,
+          );
+          effectivePaymentDb = 'pending';
         }
       }
+
+      const reconcileResult = await reconcilePayment(client, {
+        invoiceId,
+        gateway: 'moyasar',
+        eventType,
+        paymentDb: effectivePaymentDb,
+        rawBody: body,
+        orderRow: {
+          id: orderRow.id,
+          total: orderRow.total,
+          catalog_subtotal: orderRow.catalog_subtotal,
+          user_id: orderRow.user_id,
+          points_redeemed: orderRow.points_redeemed,
+          guest_phone:
+            orderRow.guest_phone != null && orderRow.guest_phone !== ''
+              ? String(orderRow.guest_phone)
+              : null,
+        },
+      });
+      if (reconcileResult.duplicate) {
+        logInfo(
+          `[webhook] duplicate event ${eventType} for ${invoiceId}; ` +
+            `idempotent ack without re-processing order`,
+        );
+        await client.query('COMMIT');
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+
+      logInfo(`Order ${orderId} payment_status=${paymentDb} (gateway=${remoteStatus})`);
+
+      // Capture fan-out intent BEFORE COMMIT. The post-COMMIT section
+      // below needs this flag to run vendor notify without holding the
+      // already-released client connection. Vendor notify is based on
+      // the GATEWAY's `remoteStatus` (the source of truth for "did
+      // Moyasar confirm this invoice?"), NOT on `effectivePaymentDb`
+      // (which gates only the loyalty / lifecycle flip inside the
+      // reconcile helper when SAR/amount guards fail).
+      shouldNotifyVendor =
+        Boolean(orderId) &&
+        (remoteStatus === 'paid' || remoteStatus === 'captured');
+      shouldEnqueueOrderPaidSms = reconcileResult.recoveredCount > 0;
+
+      // COMMIT inside the try (matches Tamara webhook pattern).
+      // Vendor push fan-out happens AFTER this commit + release.
+      await client.query('COMMIT');
 
       // Mark the ledger row as processed for the order we just updated.
       // orderId is in scope from the SELECT above; if no matching order
       // was found, leave order_id NULL and finalize anyway — operators
       // can correlate from raw_payload.invoice_id.
-      if (typeof orderId === 'string') {
-        try {
-          await finalizePaymentEvent(client, {
-            invoiceId,
-            gateway: 'moyasar',
-            eventType,
-            status: 'processed',
-            orderId,
-          });
-        } catch (finalErr) {
-          logError('[event-ledger] finalize failed', finalErr, { invoiceId, orderId });
-        }
+      try {
+        await finalizePaymentEvent(client, {
+          invoiceId,
+          gateway: 'moyasar',
+          eventType,
+          status: 'processed',
+          orderId: orderId as string,
+        });
+      } catch (finalErr) {
+        logError('[event-ledger] finalize failed', finalErr, { invoiceId, orderId });
       }
 
-      // Capture fan-out intent BEFORE COMMIT. The post-COMMIT section
-      // below needs this flag to run vendor notify without holding the
-      // already-released client connection.
-      shouldNotifyVendor = Boolean(
-        orderId &&
-          (remoteStatus === 'paid' || remoteStatus === 'captured'),
-      );
-
-      // COMMIT inside the try (matches Tamara webhook pattern).
-      // Vendor push fan-out happens AFTER this commit + release.
-      await client.query('COMMIT');
+      // Send push notification to the buyer (if logged in). Fire-and-forget
+      // so a slow push endpoint never blocks the webhook.
+      try {
+        const { sendPushToUser } = await import("@/lib/push");
+        if (orderRow.user_id) {
+          let title = "تم تحديث حالة طلبك";
+          let body = `حالة الطلب #${String(orderId).slice(0, 8)} الآن ${paymentDb}`;
+          let url = `/orders`;
+          if (remoteStatus === 'paid' || remoteStatus === 'captured') {
+            title = "تم الدفع بنجاح ✅";
+            body = `طلبك #${String(orderId).slice(0, 8)} مدفوع وجاري التجهيز.`;
+            url = `/profile/orders`;
+          }
+          await sendPushToUser(orderRow.user_id, {
+            title,
+            body,
+            url,
+            tag: `order-${orderId}`,
+          });
+        }
+      } catch (pushErr) {
+        logError('[push] order status notification failed:', pushErr);
+      }
     } catch (e) {
       try { await client.query('ROLLBACK'); } catch { /* noop */ }
       throw e;
