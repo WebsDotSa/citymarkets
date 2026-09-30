@@ -43,7 +43,7 @@ import {
   type CheckoutResult,
 } from "./create-checkout";
 import type { DeliveryAddressRow } from "./resolve-address";
-import type { CouponRow } from "../pricing";
+import type { CouponRow } from "./pricing";
 import { reportCheckoutError } from "@/lib/errors/checkout-error-reporter";
 import { markOrderPaymentFailed } from "@/lib/payments/payment-service";
 import { getMainStoreAndDistance } from "@/lib/delivery/main-store";

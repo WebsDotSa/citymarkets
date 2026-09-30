@@ -20,11 +20,10 @@ import {
 } from '@/lib/delivery';
 import { evaluateHours } from '@/lib/delivery/delivery-hours';
 import { getActiveStoreHours } from '@/lib/delivery/store-hours';
-import { computeOrderFees, computeCouponDiscount, computeLoyaltyRedemption, type PricingSettings } from '@/lib/orders';
+import { resolvePaymentMethod } from '@/lib/payments/payment-methods';
 import { ORDER_LIST_COLUMNS } from '@/lib/orders/sql-fragments';
 import { getLoyaltySettings } from '@/lib/orders/loyalty';
 import { getMainStoreAndDistance } from '@/lib/delivery/main-store';
-import { resolvePaymentMethod } from '@/lib/payments/payment-methods';
 
 /**
  * Order item type for internal use

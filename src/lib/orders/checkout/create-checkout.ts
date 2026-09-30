@@ -32,7 +32,7 @@ import {
   pickUserAddress,
   type DeliveryAddressRow,
 } from "./resolve-address";
-import type { CouponRow } from "../pricing";
+import type { CouponRow } from "./pricing";
 import { haversineKm } from '@/lib/delivery';
 import { generateVendorOrderNumber } from "@/lib/orders/order-number";
 import {

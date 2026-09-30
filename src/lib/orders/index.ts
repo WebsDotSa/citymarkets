@@ -25,8 +25,11 @@
  *   - order-paid-confirm.ts     — build + send "order paid" SMS (no DB)
  *   - order-metrics.ts          — revenue SQL/constants
  *   - order-payment-action.ts   — determine retry-ability of failed orders
- *   - pricing.ts                — order fee calculator (pure functions)
  *   - checkout/pricing.ts       — pure per-vendor checkout pricing
+ *                                (also owns `computeCouponDiscount` /
+ *                                `computeLoyaltyRedemption` / `PricingSettings`
+ *                                after the B8 fold that deleted the legacy
+ *                                single-vendor `pricing.ts`)
  */
 
 // ── Order status (canonical enums + Arabic labels) ──────────────────────
@@ -95,26 +98,24 @@ export type {
   OrderPaymentActionInput,
 } from "./order-payment-action";
 
-// ── Pricing (order fees — pure functions) ───────────────────────────────
-export {
-  computeCouponDiscount,
-  computeLoyaltyRedemption,
-  computeOrderFees,
-} from "./pricing";
-export type {
-  CouponRow,
-  FeeBreakdown,
-  LoyaltyRedemptionSettings,
-  PricingSettings,
-} from "./pricing";
-
 // ── Checkout pricing (per-vendor — pure functions) ─────────────────────
+// B8 (audit 2026-09-30): the legacy `src/lib/orders/pricing.ts` (which
+// owned `computeOrderFees` + the coupon/loyalty helpers used by the
+// single-vendor POST `/api/v1/orders` route) was deleted. Every symbol
+// that survived the fold is re-exported from here so consumers keep
+// importing from the `@/lib/orders` barrel.
 export {
   computeCheckoutTotals,
+  computeCouponDiscount,
+  computeLoyaltyRedemption,
   computeParentServiceFee,
+  computeParentTax,
 } from "./checkout/pricing";
 export type {
   CheckoutDiscounts,
   CheckoutTotals,
+  CouponRow,
+  LoyaltyRedemptionSettings,
+  PricingSettings,
   VendorCheckoutGroup,
 } from "./checkout/pricing";

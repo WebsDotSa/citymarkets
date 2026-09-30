@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool, query } from "@/lib/db";
-import { computeOrderFees } from '@/lib/orders';
 import { computeDistanceFee } from '@/lib/delivery';
 import { getMainStoreAndDistance } from '@/lib/delivery/main-store';
+import {
+  computeParentServiceFee,
+  computeParentTax,
+} from '@/lib/orders/checkout/pricing';
 
 import { error as logError } from '@/lib/logger';
 
@@ -70,15 +73,15 @@ export async function POST(request: NextRequest) {
 
     // Pre-compute service + tax against the requested subtotal so the
     // checkout summary can show every cost line the order will persist.
-    // The orders route re-runs `computeOrderFees` for the final insert
-    // — this is a UX hint, not a contract.
-    const fees = computeOrderFees({
-      subtotal,
-      discount: 0,
-      deliveryMode,
-      couponFreeDelivery: false,
-      distanceKm,
-      pricing,
+    // The orders route used to re-run `computeOrderFees` (now deleted —
+    // B8 fold) for the final insert — this is a UX hint, not a contract.
+    const serviceFee = computeParentServiceFee({
+      catalogSubtotal: subtotal,
+      pricing: pricing as never,
+    });
+    const tax = computeParentTax({
+      catalogSubtotal: subtotal,
+      pricing: pricing as never,
     });
 
     return NextResponse.json({
@@ -86,8 +89,8 @@ export async function POST(request: NextRequest) {
       deliveryFee,
       isFreeDelivery: deliveryFee === 0,
       distanceKm: Math.round(distanceKm * 100) / 100,
-      serviceFee: fees.serviceFee,
-      tax: fees.tax,
+      serviceFee,
+      tax,
     });
   } catch (error) {
     logError("delivery-quote error:", error);
