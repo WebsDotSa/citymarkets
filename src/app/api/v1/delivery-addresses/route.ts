@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
+import { isValidGuestKey } from '@/lib/identity/address-service';
 import { sanitizePlaceImageUrls } from '@/lib/catalog';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
@@ -13,7 +14,10 @@ import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logge
 
 async function ownerFromRequest(request: NextRequest) {
   const userId = await resolveCustomerUserIdFromRequest(request);
-  const guestKey = request.headers.get("x-guest-key");
+  // Client-supplied — only whitelisted formats (UUID / guest_<ts>_<rand>)
+  // are honoured; anything else is treated as absent (→ 400 below).
+  const rawGuestKey = request.headers.get("x-guest-key");
+  const guestKey = isValidGuestKey(rawGuestKey) ? rawGuestKey : null;
   return { userId, guestKey };
 }
 

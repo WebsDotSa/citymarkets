@@ -97,6 +97,10 @@ jobs:
         run: npm run db:migrate
 
       - name: Vitest with coverage
+        # RUN_DB_TESTS enables *.db.test.ts suites against the freshly
+        # migrated CI database (they refuse any DB not named ci_*/test*).
+        env:
+          RUN_DB_TESTS: "1"
         run: npm run test:coverage
 
       - name: Auth isolation audit (static route walk)
