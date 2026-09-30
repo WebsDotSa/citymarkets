@@ -266,7 +266,6 @@ export type Order = {
   service_fee: number;
   discount: number;
   total: number;
-  coupon_id: string | null;
   driver_id: string | null;
   notes: string | null;
   created_at: string;
