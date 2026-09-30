@@ -134,13 +134,19 @@ describe("PAYMENT_METHOD_AR", () => {
 });
 
 describe("PAYMENT_STATUS_AR + PAYMENT_STATUSES_CONFIG", () => {
-  it("paid + completed share the same Arabic label (both = 'paid')", () => {
+  // P1-2 (full-system audit 2026-09-30): legacy `completed` and
+  // `unpaid` aliases were removed from PAYMENT_STATUS_AR. They are
+  // no longer written to the DB (P0-3 + analytics filter cleanup)
+  // and the canonical set is now `{paid, pending, failed, refunded}`.
+  // Tests below assert the post-cleanup shape — the old aliases
+  // should not exist as standalone keys.
+  it("paid label is 'تم الدفع'", () => {
     expect(PAYMENT_STATUS_AR.paid).toBe("تم الدفع");
-    expect(PAYMENT_STATUS_AR.completed).toBe("تم الدفع");
   });
 
-  it("unpaid label is 'لم يتم الدفع' (not yet paid)", () => {
-    expect(PAYMENT_STATUS_AR.unpaid).toBe("لم يتم الدفع");
+  it("legacy aliases `completed` + `unpaid` are NOT in PAYMENT_STATUS_AR", () => {
+    expect(PAYMENT_STATUS_AR.completed).toBeUndefined();
+    expect(PAYMENT_STATUS_AR.unpaid).toBeUndefined();
   });
 
   it("every key in PAYMENT_STATUS_AR has a matching entry in PAYMENT_STATUSES_CONFIG", () => {

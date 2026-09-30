@@ -134,10 +134,8 @@ export const PAYMENT_METHOD_AR: Record<string, string> = {
 export const PAYMENT_STATUS_AR: Record<string, string> = {
   // تم الدفع — confirmed paid (Moyasar / Apple Pay / Visa / مدى / STC Pay / نقداً)
   paid: "تم الدفع",
-  completed: "تم الدفع",
-  // لم يتم الدفع — gateway hasn't confirmed yet (online payment flow), or
-  // cash-on-delivery before collection. Surfaces to customers as "not yet paid".
-  unpaid: "لم يتم الدفع",
+  // قيد تأكيد الدفع — gateway hasn't confirmed yet (online payment flow),
+  // or cash-on-delivery before collection.
   pending: "قيد تأكيد الدفع",
   // فشل الدفع — gateway rejected (declined card, 3DS fail, expired invoice)
   failed: "فشل الدفع",
@@ -155,9 +153,10 @@ export const PAYMENT_STATUS_AR: Record<string, string> = {
  * `label` falls back to `PAYMENT_STATUS_AR` so unknown backend values still
  * render correctly. The `color`/`dotColor` fall back to neutral gray.
  *
- * Sourced from the central state machine (PAYMENT_STATE_DISPLAY) plus the
- * legacy `unpaid` / `completed` aliases that pre-date the four-state
- * payment_status enum.
+ * P1-2 (full-system audit 2026-09-30): legacy `unpaid` and `completed`
+ * aliases were removed — neither is ever written to the DB anymore
+ * (P0-3 + analytics filter cleanup). The canonical set is
+ * `{paid, pending, failed, refunded}`.
  */
 export interface PaymentStatusConfig {
   label: string;
@@ -170,16 +169,6 @@ export const PAYMENT_STATUSES_CONFIG: Record<string, PaymentStatusConfig> = {
     label: PAYMENT_STATUS_AR.paid,
     color: "bg-emerald-100 text-emerald-700",
     dotColor: "bg-emerald-500",
-  },
-  completed: {
-    label: PAYMENT_STATUS_AR.completed,
-    color: "bg-emerald-100 text-emerald-700",
-    dotColor: "bg-emerald-500",
-  },
-  unpaid: {
-    label: PAYMENT_STATUS_AR.unpaid,
-    color: "bg-gray-100 text-gray-700",
-    dotColor: "bg-gray-400",
   },
   pending: {
     label: PAYMENT_STATUS_AR.pending,

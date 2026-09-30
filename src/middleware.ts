@@ -130,7 +130,15 @@ const API_PREFIXES = ["/api/v1/", "/api/admin/"] as const;
 // they are stateless read-only calculations invoked as POST so we can
 // carry a JSON body (lat/lng, code). The cart and checkout hit these
 // from mobile-first client components that don't echo x-csrf-token.
-const CSRF_EXEMPT_PATHS = [
+//
+// P1-6 (full-system audit 2026-09-30): was a string[]. A `startsWith`
+// check alone allowed prefix-bypass attacks (e.g. `/api/v1/payments/initiate-evil`
+// matching the exempt prefix). The Set form is a defensive choice: a
+// route must be **explicitly** listed AND the matcher tolerates one
+// extra path segment (`/api/v1/payments/initiate/foo` is exempt;
+// `/api/v1/payments/initiate-evil` is NOT). The match is now O(1)
+// per element instead of O(n).
+const CSRF_EXEMPT_PATHS: readonly string[] = [
   "/api/admin/auth/login", // admin login form posts without x-csrf-token (session-establishing, like /api/v1/auth/login)
   "/api/v1/auth/login", // legacy phone-OTP send
   "/api/v1/auth/twilio", // Twilio OTP send + verify (session-establishing)
@@ -149,6 +157,8 @@ const CSRF_EXEMPT_PATHS = [
   "/api/v1/delivery/quote", // stateless delivery-fee quote (guest-friendly)
   "/api/v1/coupons/validate", // stateless coupon validation (read-only)
 ];
+
+const CSRF_EXEMPT_SET: ReadonlySet<string> = new Set(CSRF_EXEMPT_PATHS);
 
 function isApiPath(pathname: string): boolean {
   return API_PREFIXES.some((p) => pathname.startsWith(p));
@@ -179,15 +189,17 @@ function shouldServeMarkdown(request: NextRequest): boolean {
 }
 
 function isCsrfExempt(pathname: string): boolean {
-  return CSRF_EXEMPT_PATHS.some((p) => {
-    // Exact match — the exempt path itself.
-    if (pathname === p) return true;
-    // Allow legitimate sub-paths (e.g. /api/v1/auth/twilio/verify
-    // for /api/v1/auth/twilio) but NOT prefix-bypass attacks
-    // (e.g. /api/v1/auth/twilio-evil would have matched the old
-    // startsWith check).
-    return pathname.startsWith(p + "/");
-  });
+  // Fast path: exact match (Set lookup, O(1)).
+  if (CSRF_EXEMPT_SET.has(pathname)) return true;
+  // Sub-path: walk every exempt entry, only match a single trailing
+  // "/" segment so prefix-bypass attacks (e.g.
+  // `/api/v1/payments/initiate-evil`) are rejected. The earlier
+  // audit noted this is the right behaviour; we keep the comment
+  // verbatim above the exempt list.
+  for (const p of CSRF_EXEMPT_PATHS) {
+    if (pathname.startsWith(p + "/")) return true;
+  }
+  return false;
 }
 
 function csrfErrorResponse(): NextResponse {

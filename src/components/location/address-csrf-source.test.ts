@@ -47,8 +47,12 @@ describe("delivery address CSRF contract", () => {
   });
 
   it("does not weaken CSRF protection for state-changing endpoints", () => {
+    // Tolerate the optional type annotation (`readonly string[]`) that
+    // sits between the identifier and the `=`. Without `[\s\S]*?` the
+    // type prefix would skip past the closing `];` and capture the
+    // whole file.
     const exemptBlock = proxySrc.match(
-      /const\s+CSRF_EXEMPT_PATHS\s*=\s*\[([\s\S]*?)\];/,
+      /const\s+CSRF_EXEMPT_PATHS\b[\s\S]*?=\s*\[([\s\S]*?)\];/,
     )?.[1];
 
     expect(exemptBlock).toBeDefined();

@@ -66,8 +66,18 @@ async function loadTemplate(id: string | null): Promise<TemplateRow | null> {
 }
 
 async function loadUser(id: string): Promise<UserRow | null> {
+  // P1-3 (full-system audit 2026-09-30): source the loyalty balance
+  // from the live `loyalty_points` table. The legacy
+  // `users.loyalty_points` column is no longer written by the loyalty
+  // pipeline (021+), so reading it here returned stale data and the
+  // SMS/email template `{loyalty_points}` interpolated the wrong number.
   const r = await pool.query(
-    `SELECT id, name, phone, email, loyalty_points, loyalty_tier FROM users WHERE id = $1`,
+    `SELECT u.id, u.name, u.phone, u.email,
+            COALESCE(lp.balance, 0)::int AS loyalty_points,
+            u.loyalty_tier
+       FROM users u
+       LEFT JOIN loyalty_points lp ON lp.user_id = u.id
+      WHERE u.id = $1`,
     [id],
   );
   return r.rows[0] ?? null;
