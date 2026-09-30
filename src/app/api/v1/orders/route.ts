@@ -261,7 +261,9 @@ export async function POST(request: NextRequest) {
   // electronic orders. Falls back to `wallet` for missing values
   // (matches the original `'cash'` default semantically — driver
   // collects / no gateway integration).
-  const paymentResolved = resolvePaymentMethod(paymentMethod || payment_method);
+  const paymentResolved = resolvePaymentMethod(
+    (paymentMethod || payment_method) as string | null | undefined,
+  );
   const addressResolved = addressId || address_id;
 
   // SECURITY (Pay-Dup): hoist idempotency-key resolution out of the
@@ -677,7 +679,7 @@ export async function POST(request: NextRequest) {
     }
 
     const paymentStatus =
-      paymentResolved === 'cash' || paymentResolved === 'wallet'
+      paymentResolved === 'wallet' || paymentResolved === 'bank_transfer'
         ? 'pending'
         : 'unpaid';
 
@@ -777,7 +779,7 @@ export async function POST(request: NextRequest) {
     //   * a failed/cancelled payment leaves the hold as an audit record
     //     without affecting the balance.
     // Cash/wallet orders still need an immediate hold (no webhook will
-    // fire) — handled in the webhook too via `payment_method='cash'`
+    // fire) — handled in the webhook too via `payment_method='wallet'`
     // fallback, but here we always create the pending row.
     if (userId && pointsRedeemed > 0) {
       await client.query(
@@ -823,7 +825,7 @@ export async function POST(request: NextRequest) {
     // snapshot issue can never break a customer's checkout.
     const orderIdStr = String(orderId);
     const requiresOnlinePaymentForSnapshot =
-      paymentResolved !== 'cash' && paymentResolved !== 'wallet';
+      paymentResolved !== 'wallet' && paymentResolved !== 'bank_transfer';
     if (requiresOnlinePaymentForSnapshot && orderItems.length > 0) {
       try {
         const { snapshotAbandonedCartFromOrder } = await import('@/lib/orders/abandoned-carts');
