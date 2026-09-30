@@ -1,4 +1,4 @@
-import { findDriverIdByAdminUser, postDirectOrderSystemMessage } from "@/lib/orders/order-repository";
+import { findDriverIdByAdminUser, postDirectOrderSystemMessage } from "@/lib/orders";
 import { requireIdParam } from "@/lib/request-params";
 import { NextRequest, NextResponse } from 'next/server';
 import { pool, query } from '@/lib/db';

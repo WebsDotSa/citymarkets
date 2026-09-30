@@ -52,7 +52,7 @@ import {
   Trash2,
   Loader2,
 } from "lucide-react";
-import { productUnitPrice } from "@/lib/catalog/product-price";
+import { productUnitPrice } from "@/lib/catalog";
 
 interface Address {
   id: string;

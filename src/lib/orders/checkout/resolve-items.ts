@@ -16,7 +16,7 @@
 
 import { CITY_MARKETS_VENDOR_ID } from "@/lib/types";
 import { queryMany, queryOne, type Queryable } from "@/lib/db/typed";
-import { productUnitPrice } from "@/lib/catalog/product-price";
+import { productUnitPrice } from "@/lib/catalog";
 
 export interface ResolvedCatalogItem {
   product_id: string;

@@ -1,4 +1,4 @@
-import { postDirectOrderSystemMessage } from "@/lib/orders/order-repository";
+import { postDirectOrderSystemMessage } from "@/lib/orders";
 import { NextRequest, NextResponse } from 'next/server';
 import { pool, query } from '@/lib/db';
 import {

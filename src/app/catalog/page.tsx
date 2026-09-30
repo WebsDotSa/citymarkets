@@ -5,7 +5,7 @@ import { getCategoryForSeo } from '@/lib/catalog/seo/product';
 import { buildPageMetadata, absoluteUrl, SITE_NAME } from "@/lib/seo/site";
 import { CategoryJsonLd } from "@/components/seo/category-json-ld";
 import { query } from "@/lib/db";
-import { productUnitPrice } from "@/lib/catalog/product-price";
+import { productUnitPrice } from "@/lib/catalog";
 
 type PageProps = {
   searchParams: Promise<{ category?: string; q?: string; deals?: string }>;

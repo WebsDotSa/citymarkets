@@ -3,7 +3,7 @@
 // scope description) and a product_count.
 
 import { toNumberOrNull, toNumberOrZero } from "@/lib/format";
-import type { OfferRow } from "@/lib/catalog/offers";
+import type { OfferRow } from "@/lib/catalog";
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { error as logError } from "@/lib/logger";

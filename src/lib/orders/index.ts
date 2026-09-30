@@ -122,3 +122,11 @@ export type {
   CheckoutTotals,
   VendorCheckoutGroup,
 } from "./checkout/pricing";
+
+// ── Canonical order-adjacent queries (server routes) ───────────────────
+export {
+  findDriverIdByAdminUser,
+  postDirectOrderSystemMessage,
+  releaseCouponUseForOrder,
+} from "./order-repository";
+export type { Queryable } from "./order-repository";

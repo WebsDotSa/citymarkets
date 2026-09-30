@@ -13,7 +13,7 @@ import { ProductCard } from "@/components/storefront/product-card";
 import { formatPrice } from "@/lib/format";
 import { BRAND } from "@/lib/brand-theme";
 import { useConfirm } from "@/components/ui/toast";
-import { productUnitPrice } from "@/lib/catalog/product-price";
+import { productUnitPrice } from "@/lib/catalog";
 
 export default function WishlistPage() {
   const router = useRouter();

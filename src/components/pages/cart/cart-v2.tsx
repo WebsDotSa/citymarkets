@@ -41,7 +41,7 @@ import {
   AlertCircle,
   Store,
 } from "lucide-react";
-import { productUnitPrice } from "@/lib/catalog/product-price";
+import { productUnitPrice } from "@/lib/catalog";
 
 interface SuggestedProduct {
   id: string;

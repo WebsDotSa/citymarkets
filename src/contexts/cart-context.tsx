@@ -16,7 +16,7 @@ import {
   vendorFieldsFromProduct,
 } from '@/lib/catalog';
 import { trackAddToCart } from "@/lib/ga-events";
-import { productUnitPrice } from "@/lib/catalog/product-price";
+import { productUnitPrice } from "@/lib/catalog";
 
 // -------- State slice --------
 interface CartStateValue {

@@ -1,4 +1,4 @@
-import { findDriverIdByAdminUser } from "@/lib/orders/order-repository";
+import { findDriverIdByAdminUser } from "@/lib/orders";
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";

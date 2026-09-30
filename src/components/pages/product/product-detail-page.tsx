@@ -16,7 +16,7 @@ import { BRAND } from "@/lib/brand-theme";
 import { ProductDetailSkeleton } from "@/components/design/skeleton";
 import { formatPrice } from "@/lib/format";
 import { trackViewItem } from "@/lib/ga-events";
-import { productUnitPrice } from "@/lib/catalog/product-price";
+import { productUnitPrice } from "@/lib/catalog";
 
 export function ProductDetailPage() {
   const { user } = useAuthState();
