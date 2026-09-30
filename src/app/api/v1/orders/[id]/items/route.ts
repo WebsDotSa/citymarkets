@@ -1,3 +1,4 @@
+import { postDirectOrderSystemMessage } from "@/lib/orders/order-repository";
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
@@ -115,12 +116,7 @@ export async function POST(
     );
 
     // System message in chat.
-    await client.query(
-      `INSERT INTO direct_order_messages
-        (order_id, sender_type, body, message_kind)
-       VALUES ($1, 'system', $2, 'system')`,
-      [orderId, `أضاف العميل عنصراً جديداً: ${data.free_text || ('منتج #' + (data.product_id || '').slice(0, 8))}`]
-    );
+    await postDirectOrderSystemMessage(client, { orderId: orderId, body: `أضاف العميل عنصراً جديداً: ${data.free_text || ('منتج #' + (data.product_id || '').slice(0, 8))}` });
 
     return NextResponse.json(
       { success: true, itemId: ins.rows[0].id },

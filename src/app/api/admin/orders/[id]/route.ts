@@ -1,3 +1,4 @@
+import { findDriverIdByAdminUser, postDirectOrderSystemMessage, releaseCouponUseForOrder } from "@/lib/orders/order-repository";
 import { NextRequest, NextResponse } from 'next/server';
 import { pool, query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -193,20 +194,15 @@ export async function PATCH(
     if (parsed.data.driver_id !== undefined) {
       let resolvedDriverId: string | null = null;
       if (parsed.data.driver_id !== null) {
-        const dRes = await client.query(
-          `SELECT d.id FROM drivers d
-             JOIN admin_users au ON au.id = d.admin_user_id
-            WHERE au.id = $1 AND au.is_active = true`,
-          [parsed.data.driver_id]
-        );
-        if (dRes.rows.length === 0) {
+        const dId = await findDriverIdByAdminUser(client, parsed.data.driver_id, { requireActiveAdmin: true });
+        if (!dId) {
           await client.query('ROLLBACK');
           return NextResponse.json(
             { success: false, error: 'المندوب غير موجود أو غير نشط' },
             { status: 400 }
           );
         }
-        resolvedDriverId = dRes.rows[0].id;
+        resolvedDriverId = dId;
       }
       driverChange = { oldDriver: ord.rows[0].driver_id, newDriver: resolvedDriverId };
       updates.push(`driver_id = $${pIdx++}`);
@@ -273,12 +269,11 @@ export async function PATCH(
         [orderId, ord.rows[0].status, parsed.data.status, admin.id, parsed.data.internal_notes || null]
       );
       // System message to chat.
-      await client.query(
-        `INSERT INTO direct_order_messages
-          (order_id, sender_type, sender_admin_id, body, message_kind)
-         VALUES ($1, 'system', $2, $3, 'system')`,
-        [orderId, admin.id, `تحديث الحالة: ${ord.rows[0].status} → ${parsed.data.status}`]
-      );
+      await postDirectOrderSystemMessage(client, {
+        orderId: orderId,
+        adminId: admin.id,
+        body: `تحديث الحالة: ${ord.rows[0].status} → ${parsed.data.status}`,
+      });
 
       // SECURITY (F4): when an admin flips an order to 'cancelled',
       // release the coupon slot back to the pool. Previously the
@@ -291,13 +286,7 @@ export async function PATCH(
       // We additionally gate on `used_count > 0` so a second cancel of
       // the same order is a no-op.
       if (parsed.data.status === "cancelled") {
-        await client.query(
-          `UPDATE coupons
-             SET used_count = GREATEST(used_count - 1, 0)
-           WHERE code = (SELECT coupon_code FROM orders WHERE id = $1)
-             AND used_count > 0`,
-          [orderId]
-        );
+        await releaseCouponUseForOrder(client, orderId);
         // P1-7 (full-system audit 2026-09-30): release the loyalty
         // `pending_redeem` hold for this order so the customer's
         // available-balance preview stops drifting downward over time
@@ -322,16 +311,11 @@ export async function PATCH(
           driverChange.newDriver ? 'تعيين مندوب' : 'إلغاء تعيين مندوب',
         ]
       );
-      await client.query(
-        `INSERT INTO direct_order_messages
-          (order_id, sender_type, sender_admin_id, body, message_kind)
-         VALUES ($1, 'system', $2, $3, 'system')`,
-        [
-          orderId,
-          admin.id,
-          driverChange.newDriver ? 'تم تعيين مندوب للطلب' : 'تم إلغاء تعيين المندوب',
-        ]
-      );
+      await postDirectOrderSystemMessage(client, {
+        orderId: orderId,
+        adminId: admin.id,
+        body: driverChange.newDriver ? 'تم تعيين مندوب للطلب' : 'تم إلغاء تعيين المندوب',
+      });
     }
 
     await client.query('COMMIT');

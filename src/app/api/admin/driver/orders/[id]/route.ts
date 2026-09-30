@@ -1,3 +1,4 @@
+import { findDriverIdByAdminUser, releaseCouponUseForOrder } from "@/lib/orders/order-repository";
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -186,11 +187,8 @@ export async function PATCH(
 
     // Resolve the caller's drivers.id from their admin_users.id. Should
     // always exist post-T1 migration; defensive 403 if not.
-    const driverLookup = await client.query(
-      `SELECT id FROM drivers WHERE admin_user_id = $1`,
-      [gate.admin.id]
-    );
-    if (driverLookup.rows.length === 0) {
+    const driverId = await findDriverIdByAdminUser(client, gate.admin.id);
+    if (!driverId) {
       await client.query("ROLLBACK");
       return NextResponse.json(
         {
@@ -200,7 +198,6 @@ export async function PATCH(
         { status: 403 }
       );
     }
-    const driverId = driverLookup.rows[0].id as string;
 
     // Lock the order row so two drivers tapping "claim" at the same
     // instant serialize on the row lock — one wins, the other gets 409.
@@ -349,13 +346,7 @@ export async function PATCH(
       ).catch(() => {});
 
       if (status === "cancelled") {
-        await client.query(
-          `UPDATE coupons
-             SET used_count = GREATEST(used_count - 1, 0)
-           WHERE code = (SELECT coupon_code FROM orders WHERE id = $1)
-             AND used_count > 0`,
-          [id]
-        ).catch(() => {});
+        await releaseCouponUseForOrder(client, id).catch(() => {});
         // P1-7 (full-system audit 2026-09-30): release the loyalty
         // `pending_redeem` hold for this cancelled order. Best-effort:
         // failure is logged but does not block the response (same
@@ -468,13 +459,7 @@ export async function PATCH(
     ).catch(() => {});
 
     if (status === "cancelled") {
-      await client.query(
-        `UPDATE coupons
-           SET used_count = GREATEST(used_count - 1, 0)
-         WHERE code = (SELECT coupon_code FROM orders WHERE id = $1)
-           AND used_count > 0`,
-        [id]
-      ).catch(() => {});
+      await releaseCouponUseForOrder(client, id).catch(() => {});
       // P1-7 (full-system audit 2026-09-30): release the loyalty
       // `pending_redeem` hold for this cancelled order. Same
       // best-effort posture as the claim branch above.

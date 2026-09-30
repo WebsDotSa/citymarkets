@@ -1,3 +1,4 @@
+import { postDirectOrderSystemMessage } from "@/lib/orders/order-repository";
 import { NextRequest, NextResponse } from 'next/server';
 import { pool, query } from '@/lib/db';
 import {
@@ -263,15 +264,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 6) System message: order created.
-    await client.query(
-      `INSERT INTO direct_order_messages
-        (order_id, sender_type, body, message_kind)
-       VALUES ($1, 'system', $2, 'system')`,
-      [
-        orderId,
-        `تم استلام طلبك المباشر ${orderNumber} — رسوم الخدمة ${serviceFee.toFixed(2)} ر.س شامل الضريبة`,
-      ]
-    );
+    await postDirectOrderSystemMessage(client, { orderId: orderId, body: `تم استلام طلبك المباشر ${orderNumber} — رسوم الخدمة ${serviceFee.toFixed(2)} ر.س شامل الضريبة` });
 
     await client.query('COMMIT');
 

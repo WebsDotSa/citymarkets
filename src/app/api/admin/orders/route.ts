@@ -1,3 +1,4 @@
+import { findDriverIdByAdminUser, postDirectOrderSystemMessage } from "@/lib/orders/order-repository";
 import { requireIdParam } from "@/lib/request-params";
 import { NextRequest, NextResponse } from 'next/server';
 import { pool, query } from '@/lib/db';
@@ -244,19 +245,14 @@ export async function PUT(request: NextRequest) {
       if (driver_id === null) {
         resolvedDriverId = null;
       } else {
-        const dRes = await query(
-          `SELECT d.id FROM drivers d
-             JOIN admin_users au ON au.id = d.admin_user_id
-            WHERE au.id = $1 AND au.is_active = true`,
-          [driver_id]
-        );
-        if (dRes.rows.length === 0) {
+        const dId = await findDriverIdByAdminUser({ query }, driver_id, { requireActiveAdmin: true });
+        if (!dId) {
           return NextResponse.json(
             { success: false, error: 'المندوب غير موجود أو غير نشط' },
             { status: 400 }
           );
         }
-        resolvedDriverId = dRes.rows[0].id;
+        resolvedDriverId = dId;
       }
       sets.push(`driver_id = $${n++}`);
       vals.push(resolvedDriverId);
@@ -379,16 +375,11 @@ export async function PUT(request: NextRequest) {
             resolvedDriverId ? 'تعيين مندوب' : 'إلغاء تعيين مندوب',
           ]
         );
-        await query(
-          `INSERT INTO direct_order_messages
-             (order_id, sender_type, sender_admin_id, body, message_kind)
-           VALUES ($1, 'system', $2, $3, 'system')`,
-          [
-            idCheckResult,
-            gate.admin.id,
-            resolvedDriverId ? 'تم تعيين مندوب للطلب' : 'تم إلغاء تعيين المندوب',
-          ]
-        );
+        await postDirectOrderSystemMessage({ query }, {
+          orderId: idCheckResult,
+          adminId: gate.admin.id,
+          body: resolvedDriverId ? 'تم تعيين مندوب للطلب' : 'تم إلغاء تعيين المندوب',
+        });
       } catch (logErr) {
         logWarn('[order_status_log] admin driver change log insert failed', {
           orderId: idCheckResult,
