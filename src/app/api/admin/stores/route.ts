@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { pool, query } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { logAdminAction } from "@/lib/admin-audit";
 import {
@@ -67,17 +67,23 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const gate = await requireAdminApi(request, "manage_store_settings");
   if (gate instanceof NextResponse) return gate;
+  const client = await pool.connect();
   try {
     const body = await request.json();
+    await client.query("BEGIN");
 
-    // If setting as main, unset other main stores first
+    // Audit 2026-09-30 (Finding 5.1): wrap the "unset others, set new"
+    // pair in a single transaction so a failed INSERT can never leave
+    // the platform with zero `is_main = true` rows. Without the guard
+    // a flaky network between the two statements was bricking every
+    // checkout with a 503 "لم يتم تكوين الفرع الرئيسي".
     if (body.is_main) {
-      await query(`UPDATE stores SET is_main = false WHERE is_main = true`);
+      await client.query(`UPDATE stores SET is_main = false WHERE is_main = true`);
     }
 
     const openingHours = coerceOpeningHours(body.opening_hours);
 
-    const result = await query(
+    const result = await client.query(
       `INSERT INTO stores (name, name_ar, address, lat, lng, phone, is_active, is_main, opening_hours)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
        RETURNING id`,
@@ -94,6 +100,8 @@ export async function POST(request: NextRequest) {
       ]
     );
     const id = result.rows[0]?.id;
+    if (!id) throw new Error("INSERT did not return an id");
+    await client.query("COMMIT");
     await logAdminAction(gate.admin, "store.create", {
       entityType: "store",
       entityId: id,
@@ -102,23 +110,36 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ success: true, id });
   } catch (error) {
+    try { await client.query("ROLLBACK"); } catch { /* ignore */ }
     logError("stores POST:", error);
     return NextResponse.json({ success: false, error: "فشل الإنشاء" }, { status: 500 });
+  } finally {
+    client.release();
   }
 }
 
 export async function PUT(request: NextRequest) {
   const gate = await requireAdminApi(request, "manage_store_settings");
   if (gate instanceof NextResponse) return gate;
+  const client = await pool.connect();
   try {
     const url = new URL(request.url);
     const id = idCheck(url);
     if (id instanceof NextResponse) return id;
     const body = await request.json();
 
-    // If setting as main, unset other main stores first
+    await client.query("BEGIN");
+
+    // Audit 2026-09-30 (Finding 5.1): wrap the unset-then-set pair in
+    // a single transaction so the table never momentarily loses its
+    // only main store. Pre-fix, a connection drop between the two
+    // queries left every row with `is_main = false` and bricked every
+    // checkout.
     if (body.is_main) {
-      await query(`UPDATE stores SET is_main = false WHERE is_main = true AND id != $1`, [id]);
+      await client.query(
+        `UPDATE stores SET is_main = false WHERE is_main = true AND id != $1`,
+        [id],
+      );
     }
 
     // Migration 079: opening_hours is part of the writable surface.
@@ -127,7 +148,7 @@ export async function PUT(request: NextRequest) {
     // canonical coercion.
     if (body.opening_hours !== undefined) {
       const openingHours = coerceOpeningHours(body.opening_hours);
-      await query(
+      await client.query(
         `UPDATE stores SET
            name = $1, name_ar = $2, address = $3, lat = $4, lng = $5,
            phone = $6, is_active = $7, is_main = $8,
@@ -147,7 +168,7 @@ export async function PUT(request: NextRequest) {
         ],
       );
     } else {
-      await query(
+      await client.query(
         `UPDATE stores SET
            name = $1, name_ar = $2, address = $3, lat = $4, lng = $5,
            phone = $6, is_active = $7, is_main = $8, updated_at = NOW()
@@ -165,6 +186,7 @@ export async function PUT(request: NextRequest) {
         ]
       );
     }
+    await client.query("COMMIT");
     await logAdminAction(gate.admin, "store.update", {
       entityType: "store",
       entityId: id,
@@ -173,8 +195,11 @@ export async function PUT(request: NextRequest) {
     });
     return NextResponse.json({ success: true });
   } catch (error) {
+    try { await client.query("ROLLBACK"); } catch { /* ignore */ }
     logError("stores PUT:", error);
     return NextResponse.json({ success: false, error: "فشل التحديث" }, { status: 500 });
+  } finally {
+    client.release();
   }
 }
 

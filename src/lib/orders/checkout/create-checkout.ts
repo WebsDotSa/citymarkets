@@ -257,11 +257,19 @@ export async function createCheckout(
     );
     const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60_000);
     const bookedRes = await (client as Queryable).query<{ n: string }>(
+      // Audit 2026-09-30 (Finding 1.1): exclude orders whose status
+      // is cancelled / payment failed / refunded so a cancelled
+      // booking doesn't permanently consume capacity. The customer's
+      // `payment_status` path is the second discriminator because
+      // `status='pending'` + `payment_status='failed'` rows also exist
+      // (legacy failed webhooks).
       `SELECT COUNT(*)::int AS n FROM orders
         WHERE scheduled = true
           AND slot_window = $1
           AND scheduled_for >= $2::timestamp
-          AND scheduled_for <  $3::timestamp`,
+          AND scheduled_for <  $3::timestamp
+          AND status <> 'cancelled'
+          AND payment_status NOT IN ('failed', 'refunded')`,
       [input.slotId, dayStart.toISOString(), dayEnd.toISOString()],
     );
     const booked = parseInt(bookedRes.rows[0]?.n ?? "0", 10);

@@ -91,7 +91,7 @@ export function ProfileNew() {
     }
 
     Promise.all([
-      fetch("/api/v1/addresses").then((r) => r.json()),
+      fetch("/api/v1/delivery-addresses").then((r) => r.json()),
       // /api/v1/loyalty/points does NOT exist (404); use the canonical
       // endpoint which returns { success, data: { balance, ... } }.
       fetch("/api/v1/loyalty")
@@ -322,7 +322,7 @@ export function AddressesNew() {
   useEffect(() => {
     if (!user) return;
     const ac = new AbortController();
-    fetch("/api/v1/addresses", { signal: ac.signal })
+    fetch("/api/v1/delivery-addresses", { signal: ac.signal })
       .then((r) => r.json())
       .then((res) => {
         if (ac.signal.aborted) return;
@@ -336,7 +336,7 @@ export function AddressesNew() {
   const deleteAddress = async (id: string) => {
     if (!(await confirm({ title: "حذف عنوان", message: "هل أنت متأكد من حذف هذا العنوان؟", danger: true }))) return;
     try {
-      const res = await fetch(`/api/v1/addresses/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/v1/delivery-addresses/${id}`, { method: "DELETE" });
       if (res.ok) {
         setAddresses((prev) => prev.filter((a) => a.id !== id));
       }
@@ -348,7 +348,7 @@ export function AddressesNew() {
 
   const setDefault = async (id: string) => {
     try {
-      const res = await fetch(`/api/v1/addresses/${id}/default`, { method: "POST" });
+      const res = await fetch(`/api/v1/delivery-addresses/${id}/default`, { method: "POST" });
       if (res.ok) {
         setAddresses((prev) =>
           prev.map((a) => ({ ...a, is_default: a.id === id }))
@@ -479,7 +479,7 @@ function AddressFormModal({ onClose }: { onClose: () => void }) {
   const [building, setBuilding] = useState("");
   const [floor, setFloor] = useState("");
   const [instructions, setInstructions] = useState("");
-  // D13: lat/lng are required by /api/v1/addresses POST. We either
+  // D13: lat/lng are required by /api/v1/delivery-addresses POST. We either
   // capture them via geolocation or fall back to Riyadh center so
   // the form submits even when permission is denied.
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -534,7 +534,7 @@ function AddressFormModal({ onClose }: { onClose: () => void }) {
       const lat = coords?.lat ?? 24.7136;
       const lng = coords?.lng ?? 46.6753;
 
-      const res = await fetch("/api/v1/addresses", {
+      const res = await fetch("/api/v1/delivery-addresses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -633,7 +633,7 @@ function AddressFormModal({ onClose }: { onClose: () => void }) {
             />
           </div>
 
-          {/* D13 geolocation: lat/lng are required by /api/v1/addresses.
+          {/* D13 geolocation: lat/lng are required by /api/v1/delivery-addresses.
               We give the user a one-tap "Use my location" button and
               fall back to Riyadh center coords if the browser denies. */}
           <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">

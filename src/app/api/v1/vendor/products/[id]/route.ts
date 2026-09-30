@@ -110,10 +110,19 @@ export async function PATCH(
 // ACTIVE row — POST already does this but PATCH was silently accepting
 // archived category UUIDs and leaving products stranded in a hidden
 // section of the storefront. Symmetric to POST at vendor/products/route.ts.
+//
+// Migration 081 added vendor-scoped private categories; the WHERE
+// clause now also enforces `vendor_id IS NULL OR vendor_id = session`
+// so a vendor can't tag a product with another vendor's private
+// category via PATCH.
 if (body.categoryId !== undefined && body.categoryId !== null && body.categoryId !== "") {
   const catRes = await query(
-    `SELECT id FROM categories WHERE id = $1 AND is_active = TRUE LIMIT 1`,
-    [body.categoryId],
+    `SELECT id FROM categories
+      WHERE id = $1
+        AND is_active = TRUE
+        AND (vendor_id IS NULL OR vendor_id = $2)
+      LIMIT 1`,
+    [body.categoryId, session.vendorId],
   );
   if (catRes.rows.length === 0) {
     return NextResponse.json(

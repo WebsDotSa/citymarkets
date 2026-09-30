@@ -10,6 +10,9 @@ import { getClientIp } from '@/lib/request-ip';
 import { error as logError } from '@/lib/logger';
 import { BRAND } from '@/lib/brand-theme';
 import { directOrderSchema } from '@/lib/validation';
+import { isAppleReviewUser } from '@/lib/apple-review';
+import { sendOrderConfirmationSms } from '@/lib/twilio-messaging';
+import { NON_ELECTRONIC_METHODS } from '@/lib/payments/payment-methods';
 
 /**
  * POST /api/v1/orders/direct
@@ -88,18 +91,33 @@ export async function POST(request: NextRequest) {
     ? data.idempotency_key.slice(0, 64)
     : null;
 
-  const apple = false;
-  if (apple) {
-    // Apple-review sandbox path mirrors the catalog orders route.
-    return NextResponse.json(
-      {
-        success: true,
-        sandbox: true,
-        orderId: `sandbox-direct-${Date.now()}`,
-        orderNumber: `DR-SBX-${Date.now()}`,
-      },
-      { status: 200 }
+  // P1-10 (full-system audit 2026-09-30): the previous `const apple =
+  // false` made this branch unreachable. Mirrors the catalog orders
+  // route (`src/app/api/v1/orders/route.ts`) which checks the
+  // authenticated user via `isAppleReviewUser` and returns a synthetic
+  // sandbox response for Apple's review team. Standardised so both
+  // legacy catalog and direct order routes share the same gating.
+  //
+  // We need the user's name+phone (not just the id) for the gate —
+  // `isAppleReviewUser` matches on `name` / `phone`, so a single
+  // SELECT runs before pool.connect() to avoid taking a transaction
+  // on the sandbox short-circuit.
+  if (userId) {
+    const userRow = await query<{ name: string | null; phone: string | null }>(
+      `SELECT name, phone FROM users WHERE id = $1`,
+      [userId],
     );
+    if (userRow.rows[0] && isAppleReviewUser(userRow.rows[0])) {
+      return NextResponse.json(
+        {
+          success: true,
+          sandbox: true,
+          orderId: `sandbox-direct-${Date.now()}`,
+          orderNumber: `DR-SBX-${Date.now()}`,
+        },
+        { status: 200 }
+      );
+    }
   }
 
   const client = await pool.connect();
@@ -174,6 +192,17 @@ export async function POST(request: NextRequest) {
     const total = +(serviceFee + tax).toFixed(2);
 
     // 3) Create the order.
+    //
+    // P1-11 (full-system audit 2026-09-30): mirror the catalog route
+    // (`src/app/api/v1/orders/route.ts:680`) — initial `payment_status`
+    // is `'unpaid'` for electronic methods (Moyasar card / Apple Pay)
+    // so the admin/finance dashboards can distinguish "awaiting
+    // gateway" from "manual / no-gateway" without inspecting
+    // `payment_method`. Non-electronic methods (wallet / bank_transfer)
+    // stay `'pending'` because no gateway call will follow.
+    const initialPaymentStatus = NON_ELECTRONIC_METHODS.has(data.payment_method)
+      ? 'pending'
+      : 'unpaid';
     const orderRes = await client.query(
       `INSERT INTO orders
         (user_id, address_id, status, type,
@@ -183,9 +212,9 @@ export async function POST(request: NextRequest) {
          idempotency_key)
        VALUES ($1, $2, 'pending', 'direct',
                $3, $4, $5, $6, $7,
-               $8, 'pending', $9,
-               $10, $11, NOW(),
-               $12)
+               $8, $9, $10,
+               $11, $12, NOW(),
+               $13)
        RETURNING id, tracking_code AS order_number`,
       [
         userId ?? null,
@@ -196,6 +225,7 @@ export async function POST(request: NextRequest) {
         tax,
         total,
         data.payment_method,
+        initialPaymentStatus,
         data.notes ?? null,
         data.voice_note_url || null,
         data.voice_note_duration ?? null,
@@ -244,6 +274,48 @@ export async function POST(request: NextRequest) {
     );
 
     await client.query('COMMIT');
+
+    // P1-4 (full-system audit 2026-09-30): send the order-confirmation
+    // SMS post-COMMIT so the customer gets immediate acknowledgment
+    // regardless of payment_method. The catalog orders route
+    // (`src/app/api/v1/orders/route.ts`) already does this; direct
+    // orders previously skipped it, leaving the customer waiting for
+    // a payment webhook that may never arrive (wallet / bank_transfer
+    // have no online confirmation). Failures are logged but never
+    // block the response — Twilio outages must not roll back orders.
+    // P1-4 (full-system audit 2026-09-30): send the order-confirmation
+    // SMS post-COMMIT so the customer gets immediate acknowledgment
+    // regardless of payment_method. Mirrors the catalog orders route
+    // pattern (`src/app/api/v1/orders/route.ts`): try the top-level
+    // `customer_phone` first, fall back to `users.phone` for logged-in
+    // callers. Skipped when neither is available — the driver chat
+    // panel can still reach the customer via the address label.
+    // Failures are logged but never block the response — Twilio
+    // outages must not roll back orders.
+    let notifyPhone: string | undefined =
+      typeof data.customer_phone === 'string' && data.customer_phone.length > 0
+        ? data.customer_phone
+        : undefined;
+    if (!notifyPhone && userId) {
+      try {
+        const phRow = await client.query<{ phone: string }>(
+          'SELECT phone FROM users WHERE id = $1',
+          [userId]
+        );
+        notifyPhone = phRow.rows[0]?.phone ?? undefined;
+      } catch {
+        /* optional */
+      }
+    }
+    if (notifyPhone) {
+      sendOrderConfirmationSms({
+        phone: notifyPhone,
+        orderId,
+        total,
+      }).catch((smsErr) => {
+        logError('direct-order SMS confirmation failed', smsErr, { orderId });
+      });
+    }
 
     return NextResponse.json(
       {

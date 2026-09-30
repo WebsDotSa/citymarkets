@@ -189,6 +189,13 @@ export const directOrderSchema = z.object({
   notes: z.string().max(700).optional().nullable(),
   voice_note_url: z.string().url().optional().nullable().or(z.literal("")),
   voice_note_duration: z.number().int().min(1).max(600).optional().nullable(),
+  // P1-4 (full-system audit 2026-09-30): top-level phone capture so
+  // the SMS confirmation has a destination when the caller is a
+  // guest (no users row to read from). For logged-in callers the
+  // route reads users.phone as a fallback. Stored in the orders
+  // row's `guest_phone` column so the driver chat panel can see it
+  // too.
+  customer_phone: phoneSchema.optional().nullable(),
   fee_acknowledged: z
     .boolean()
     .refine((v) => v === true, { message: "يجب الموافقة على رسوم الخدمة" }),

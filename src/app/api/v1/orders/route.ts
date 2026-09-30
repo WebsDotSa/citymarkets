@@ -21,6 +21,7 @@ import {
 import { evaluateHours } from '@/lib/delivery/delivery-hours';
 import { getActiveStoreHours } from '@/lib/delivery/store-hours';
 import { computeOrderFees, computeCouponDiscount, computeLoyaltyRedemption, type PricingSettings } from '@/lib/orders';
+import { ORDER_LIST_COLUMNS } from '@/lib/orders/sql-fragments';
 import { getLoyaltySettings } from '@/lib/orders/loyalty';
 import { getMainStoreAndDistance } from '@/lib/delivery/main-store';
 import { resolvePaymentMethod } from '@/lib/payments/payment-methods';
@@ -113,7 +114,12 @@ export async function GET(request: NextRequest) {
     params.push(limit);
 
     const result = await client.query(
-      `SELECT o.*,
+      // Audit 2026-09-30 (Finding 6.1): replaced the inline `SELECT o.*`
+      // with the canonical ORDER_LIST_COLUMNS fragment so the new
+      // scheduled fields and any future cast (e.g. tax::float) flow
+      // through here too. Customer addresses don't need the full
+      // ORDER_ADDRESS_COLUMNS so we project only `address_text`.
+      `SELECT ${ORDER_LIST_COLUMNS},
         a.address_text,
         COALESCE(o.tracking_code, LEFT(o.id::text, 8)) AS order_number,
         COALESCE(
@@ -651,11 +657,17 @@ export async function POST(request: NextRequest) {
       const dayStart = riyadhWallClockToUtc(dayKey, "00:00");
       const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60_000);
       const bookedRes = await client.query<{ n: string }>(
+        // Audit 2026-09-30 (Finding 1.1): exclude cancelled + failed/
+        // refunded rows so a cancelled booking doesn't permanently
+        // consume the slot capacity. Mirrors the same predicate used
+        // by the multi-vendor checkout.
         `SELECT COUNT(*)::int AS n FROM orders
           WHERE scheduled = true
             AND slot_window = $1
             AND scheduled_for >= $2::timestamp
-            AND scheduled_for <  $3::timestamp`,
+            AND scheduled_for <  $3::timestamp
+            AND status <> 'cancelled'
+            AND payment_status NOT IN ('failed', 'refunded')`,
         [slot_id, dayStart.toISOString(), dayEnd.toISOString()],
       );
       const booked = parseInt(bookedRes.rows[0]?.n ?? "0", 10);

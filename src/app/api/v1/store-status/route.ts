@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { pool } from "@/lib/db";
 import { getStoreStatusSettings } from "@/lib/app-settings";
 import {
-  getDeliveryHours,
   buildHoursStatus,
 } from '@/lib/delivery/delivery-hours';
+import { getActiveStoreHours } from '@/lib/delivery/store-hours';
+import { getMainStoreAndDistance } from '@/lib/delivery/main-store';
 import { error as logError } from "@/lib/logger";
 import { withCors } from "@/lib/cors";
 
@@ -18,14 +20,28 @@ import { withCors } from "@/lib/cors";
  *
  * Also surfaces the daily working-hours config so the storefront can
  * show "مغلق — يفتح غداً الساعة 09:00" without a second round-trip.
+ *
+ * Migration 079 (2026-09-30): now resolves per-branch
+ * `stores.opening_hours` via `getActiveStoreHours`. If the main store
+ * has `opening_hours.enabled = true`, the branch window is what we
+ * report (not the global `delivery_settings.hours`). If the branch is
+ * disabled OR unknown we fall back to the global config so the
+ * storefront never breaks on a bad row.
  */
 const handler = async () => {
   try {
-    const [status, hours] = await Promise.all([
-      getStoreStatusSettings(),
-      getDeliveryHours(),
-    ]);
-    const hoursStatus = buildHoursStatus(hours);
+    const status = await getStoreStatusSettings();
+    // Parallel-fetch the main-store id + global hours as a fallback so
+    // a slow branch query never blocks the public banner.
+    const { store: mainStoreRow } = await getMainStoreAndDistance(pool, null, null);
+    const mainStoreId = mainStoreRow?.id ?? null;
+    const branchHours = mainStoreId ? await getActiveStoreHours(pool, mainStoreId) : null;
+    // branchHours is `DeliveryHours | null`. When null (no main store
+    // or settings hiccup) we fall back to the open defaults via
+    // `buildHoursStatus`'s own fallback (hours arg can be undefined).
+    const hoursStatus = branchHours
+      ? buildHoursStatus(branchHours)
+      : { enabled: true, open: true, open_time: "09:00", close_time: "23:00", message: "", today_key: "" };
     // Effective "is the store buyable right now": both the admin
     // master switch AND the working-hours window must be open.
     const isOpen = status.is_open !== false && hoursStatus.open;

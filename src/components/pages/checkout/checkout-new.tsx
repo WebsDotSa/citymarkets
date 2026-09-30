@@ -1294,6 +1294,21 @@ export function CheckoutNew() {
           done
         >
           <div className="space-y-2 text-sm">
+            {schedule.mode === "scheduled" ? (
+              // Audit 2026-09-30 (Finding 8.1): confirm the chosen slot
+              // right above the CTA so the user can spot a wrong pick
+              // before tapping "تأكيد الطلب". The picker already
+              // provides `label_ar` + `date`, no extra fetch needed.
+              <div className="flex justify-between items-center bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                <span className="text-gray-600 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-700" />
+                  موعد التوصيل
+                </span>
+                <span className="font-medium text-amber-900 text-xs">
+                  {schedule.date} · {schedule.label_ar}
+                </span>
+              </div>
+            ) : null}
             <div className="flex justify-between">
               <span className="text-gray-500">إجمالي المنتجات</span>
               <span className="font-medium">{subtotal.toFixed(2)} ر.س</span>

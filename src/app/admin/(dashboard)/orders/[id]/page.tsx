@@ -178,7 +178,32 @@ export default function AdminOrderDetailPage() {
     subtotal: number;
     recovered_order_id: string | null;
   } | null>(null);
+  // Audit 2026-09-30 (Finding 8.3): render the slot_window's Arabic
+  // label ("صباحاً" not "morning"). Loaded lazily so the detail page
+  // doesn't refetch when the list page already has the same data.
+  const [slotLabels, setSlotLabels] = useState<Record<string, string>>({});
   const { showToast } = useToast();
+
+  useEffect(() => {
+    const ac = new AbortController();
+    fetch("/api/v1/delivery/slots", { credentials: "include", signal: ac.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (ac.signal.aborted) return;
+        const slots = Array.isArray(j?.slots) ? j.slots : [];
+        const map: Record<string, string> = {};
+        for (const s of slots) {
+          const id = String(s?.id ?? "");
+          const label = String(s?.label_ar ?? s?.label ?? "");
+          if (id && label) map[id] = label;
+        }
+        setSlotLabels(map);
+      })
+      .catch(() => {
+        /* leave map empty — fall back to raw id */
+      });
+    return () => ac.abort();
+  }, []);
 
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -712,7 +737,10 @@ export default function AdminOrderDetailPage() {
                 {order.slot_window ? (
                   <SummaryRow
                     label="فترة التوصيل"
-                    value={String(order.slot_window)}
+                    value={
+                      slotLabels[String(order.slot_window)] ??
+                      String(order.slot_window)
+                    }
                   />
                 ) : null}
               </div>
