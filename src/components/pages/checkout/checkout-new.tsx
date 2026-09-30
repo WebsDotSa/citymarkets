@@ -17,14 +17,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/cart-context";
 import { useAuthState } from "@/contexts/auth-context";
-import { useDeliveryLocationActions } from "@/contexts/delivery-location-context";
+import { useDeliveryLocationActions, useDeliveryLocationState } from "@/contexts/delivery-location-context";
 import { useDeliveryQuote } from "@/hooks/use-delivery-quote";
 import { CardIcon, ApplePayIcon, VisaIcon, MastercardIcon, AmexIcon, WalletIcon, BankIcon } from "@/components/icons/payment";
 import { MoyasarCheckoutForm, type CheckoutMoyasarMethod } from "@/components/checkout/moyasar-checkout-form";
 import { BankTransferCard } from "@/components/checkout/bank-transfer-card";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
-import { apiFetch } from '@/lib/catalog';
 import { groupCartItems } from "@/lib/catalog";
 import { PAYMENT_METHODS_UI, ONLINE_RETRY_METHODS_SET } from "@/lib/payments/payment-methods";
 import type { CouponValidateResult } from "@/lib/types";
@@ -183,10 +182,29 @@ export function CheckoutNew() {
   const router = useRouter();
   const { user } = useAuthState();
   const { openSheet } = useDeliveryLocationActions();
+  // Migration 078 (2026-09-30): pull the canonical address list +
+  // selection directly from the delivery-location context instead of
+  // running a parallel `fetch('/api/v1/addresses')` on mount. The
+  // context already GETs `/api/v1/delivery-addresses` (which supports
+  // BOTH user + guest sessions); doing a second round-trip on the
+  // checkout page created a race where the local `addresses` state
+  // and the context's `addresses` could disagree (e.g. after
+  // `addAddress` finishes in the sheet the local state would still
+  // show the stale list).
+  const {
+    addresses: contextAddresses,
+    selectedAddress: contextSelectedAddress,
+  } = useDeliveryLocationState();
   const { items, subtotal, clearCart, isHydrated } = useCart();
   const { showToast } = useToast();
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  // The checkout still keeps a local `addresses` shadow list so the
+  // delete handler can remove a row optimistically without round-
+  // tripping the context's `refreshAddresses`. The initial value
+  // comes from the context so the two lists stay in sync from frame 1.
+  const [addresses, setAddresses] = useState<Address[]>(contextAddresses);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(
+    contextSelectedAddress ?? null,
+  );
   // ميسر (Moyasar) is the default — picking it mounts the inline payment
   // form so the customer can enter card details without leaving the page.
   // Cash remains an opt-in for customers who prefer to pay on delivery.
@@ -288,20 +306,21 @@ export function CheckoutNew() {
   const addressTextOf = (a: Address | null | undefined): string =>
     (a?.address_text || a?.address || a?.description || "").trim();
 
+  // Sync from the delivery-location context (user + guest aware).
+  // Migration 078 (2026-09-30): removed the duplicate
+  // `fetch('/api/v1/addresses')` here — the context is the single
+  // source of truth. When the context adds/removes an address we
+  // mirror the change into our local `addresses` so the inline delete
+  // UX keeps working without a full refresh.
+  //
+  // The two types differ slightly (DeliveryAddress uses lat:number,
+  // local Address allows lat:number|string|null). Cast at the boundary.
   useEffect(() => {
-    // Fetch user addresses
-    const ac = new AbortController();
-    apiFetch<Address[]>("/api/v1/addresses", { signal: ac.signal })
-      .then((res) => {
-        if (res.success && res.data) {
-          setAddresses(res.data);
-          const defaultAddr = res.data.find((a) => a.is_default);
-          setSelectedAddress(defaultAddr || res.data[0]);
-        }
-      })
-      .catch(() => {});
-    return () => ac.abort();
-  }, []);
+    setAddresses(contextAddresses as unknown as Address[]);
+    if (!selectedAddress && contextSelectedAddress) {
+      setSelectedAddress(contextSelectedAddress as unknown as Address);
+    }
+  }, [contextAddresses, contextSelectedAddress]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // META PIXEL — fire InitiateCheckout exactly once per checkout page
   // mount, with the live cart contents. Carts in citymarkets.sa are

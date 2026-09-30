@@ -107,6 +107,19 @@ export default function AdminOrdersPage() {
   const [paymentFilter, setPaymentFilter] = useState<string>("");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  // Phase D (2026-09-30): scheduled-delivery filters — `?scheduled_date`
+  // narrows the list to a Riyadh calendar day, `?slot_window` narrows
+  // to one delivery slot (validated server-side against the live
+  // `delivery_settings.slots` config). Both default to empty so the
+  // existing behaviour is preserved when the admin hasn't picked one.
+  const [scheduledDate, setScheduledDate] = useState<string>("");
+  const [slotWindow, setSlotWindow] = useState<string>("");
+  // The slot-window dropdown options are loaded alongside the orders
+  // list (best-effort) so they always match the live config. Failing
+  // to load leaves the dropdown in "any slot" mode.
+  const [slotOptions, setSlotOptions] = useState<Array<{ id: string; label: string }>>(
+    [],
+  );
   const { showToast } = useToast();
 
   const fetchOrders = useCallback(
@@ -121,6 +134,8 @@ export default function AdminOrdersPage() {
         if (statusFilter) params.set("status", statusFilter);
         if (paymentFilter) params.set("payment_status", paymentFilter);
         if (search) params.set("search", search);
+        if (scheduledDate) params.set("scheduled_date", scheduledDate);
+        if (slotWindow) params.set("slot_window", slotWindow);
 
         const res = await fetch(`/api/admin/orders?${params.toString()}`, {
           credentials: "include",
@@ -140,7 +155,15 @@ export default function AdminOrdersPage() {
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [pagination.page, pagination.limit, statusFilter, paymentFilter, search]
+    [
+      pagination.page,
+      pagination.limit,
+      statusFilter,
+      paymentFilter,
+      search,
+      scheduledDate,
+      slotWindow,
+    ]
   );
 
   useEffect(() => {
@@ -148,6 +171,29 @@ export default function AdminOrdersPage() {
     fetchOrders(ac.signal);
     return () => ac.abort();
   }, [fetchOrders]);
+
+  // Fetch the live slot config so the dropdown mirrors the actual
+  // delivery window ids. Best-effort — a failure leaves the dropdown
+  // empty (admin can still type-freeze or remove the filter).
+  useEffect(() => {
+    const ac = new AbortController();
+    fetch("/api/v1/delivery/slots", { credentials: "include", signal: ac.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (ac.signal.aborted) return;
+        const slots = Array.isArray(j?.slots) ? j.slots : [];
+        setSlotOptions(
+          slots.map((s: { id: string; label: string; label_ar?: string }) => ({
+            id: String(s.id),
+            label: String(s.label_ar || s.label || s.id),
+          })),
+        );
+      })
+      .catch(() => {
+        /* leave dropdown empty */
+      });
+    return () => ac.abort();
+  }, []);
 
   const handleStatusChange = async (orderId: string | number, newStatus: string) => {
     const id = String(orderId);
@@ -185,6 +231,8 @@ export default function AdminOrdersPage() {
     setPaymentFilter("");
     setSearchInput("");
     setSearch("");
+    setScheduledDate("");
+    setSlotWindow("");
     setPagination((p) => ({ ...p, page: 1 }));
   };
 
@@ -214,7 +262,9 @@ export default function AdminOrdersPage() {
     };
   }, [orders, pagination.total]);
 
-  const filtersActive = Boolean(statusFilter || paymentFilter || search);
+  const filtersActive = Boolean(
+    statusFilter || paymentFilter || search || scheduledDate || slotWindow,
+  );
 
   return (
     <div className="space-y-6">
@@ -326,6 +376,34 @@ export default function AdminOrdersPage() {
             <option value="failed">فشل</option>
             <option value="refunded">مسترد</option>
           </select>
+          <input
+            type="date"
+            value={scheduledDate}
+            onChange={(e) => {
+              setScheduledDate(e.target.value);
+              setPagination((p) => ({ ...p, page: 1 }));
+            }}
+            className="h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-white"
+            aria-label="فلتر تاريخ التوصيل المجدول"
+            title="تاريخ التوصيل المجدول"
+          />
+          <select
+            value={slotWindow}
+            onChange={(e) => {
+              setSlotWindow(e.target.value);
+              setPagination((p) => ({ ...p, page: 1 }));
+            }}
+            className="h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-white"
+            aria-label="فلتر فترة التوصيل"
+            title="فترة التوصيل"
+          >
+            <option value="">كل فترات التوصيل</option>
+            {slotOptions.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
           {filtersActive && (
             <button
               type="button"
@@ -357,6 +435,16 @@ export default function AdminOrdersPage() {
                 dir="ltr"
               >
                 &quot;{search}&quot;
+              </span>
+            )}
+            {scheduledDate && (
+              <span className="px-2 py-0.5 bg-amber-50 text-amber-800 rounded-full font-medium" dir="ltr">
+                📅 {scheduledDate}
+              </span>
+            )}
+            {slotWindow && (
+              <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full font-medium">
+                ⏰ {slotOptions.find((s) => s.id === slotWindow)?.label || slotWindow}
               </span>
             )}
           </div>
@@ -530,7 +618,7 @@ function OrderRow({
         </Link>
       </td>
       <td className="px-4 py-3">
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-1">
           <span className="text-gray-700 text-xs">
             {row.created_at
               ? new Date(String(row.created_at)).toLocaleString("ar-SA", {
@@ -539,9 +627,21 @@ function OrderRow({
                 })
               : "—"}
           </span>
-          <span className="text-[10px] text-gray-400 mt-0.5">
+          <span className="text-[10px] text-gray-400">
             {relativeTime(row.created_at)}
           </span>
+          {row.scheduled && row.scheduled_for ? (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 w-fit"
+              title={`مجدول — فترة ${String(row.slot_window || "")}`}
+            >
+              📅 مجدول · {new Date(String(row.scheduled_for)).toLocaleString(
+                "ar-SA",
+                { dateStyle: "short", timeStyle: "short" },
+              )}
+              {row.slot_window ? ` · ${String(row.slot_window)}` : ""}
+            </span>
+          ) : null}
         </div>
       </td>
       <td className="px-4 py-3">

@@ -12,7 +12,10 @@ const adminCred: RequestInit = { credentials: "include" };
 // `@/lib/delivery-distance-fee` so the admin form behaves the same as
 // the server before the first save.
 const DEFAULT_BASE_SAR = 3;
-const DEFAULT_INCLUDED_KM = 2;
+// Migration 078 (2026-09-30): the canonical includedKm is 5 km, not 2.
+// The pre-078 form shipped with 2, which silently overrode the server's
+// `DELIVERY_INCLUDED_KM = 5` on the first save.
+const DEFAULT_INCLUDED_KM = 5;
 const DEFAULT_PER_EXTRA_KM_SAR = 1.5;
 
 function computeFeeAt(
@@ -58,6 +61,10 @@ export function AdminDeliverySettings() {
   // admin-tunable knob: distance-based fee (`baseSar`, `includedKm`,
   // `perExtraKmSar`) plus service fee + tax. Distance is computed
   // server-side from the main store lat/lng.
+  // Migration 078 (2026-09-30): the legacy `maxDiscount` field was
+  // never read by `computeOrderFees` — it was a leftover from the
+  // pre-migration coupon surface. Removed from the schema (and from
+  // this UI state) so the admin form no longer surfaces a dead knob.
   const [pricing, setPricing] = useState({
     baseSar: DEFAULT_BASE_SAR,
     includedKm: DEFAULT_INCLUDED_KM,
@@ -67,7 +74,6 @@ export function AdminDeliverySettings() {
     serviceFeeValue: 3,
     taxEnabled: false,
     taxPercent: 0,
-    maxDiscount: 0,
   });
 
   const [hours, setHours] = useState({
@@ -105,7 +111,9 @@ export function AdminDeliverySettings() {
       if (res.success && res.data?.pricing) {
         // Server may still echo legacy zone-pricing fields (baseFee etc.)
         // — we ignore those and only pick up the knobs the new schema
-        // still understands.
+        // still understands. `maxDiscount` was removed from the schema
+        // in migration 078 — if an old DB record still carries the key,
+        // it's silently dropped.
         const p = res.data.pricing;
         setPricing({
           baseSar: numberOr(p.baseSar, DEFAULT_BASE_SAR),
@@ -117,7 +125,6 @@ export function AdminDeliverySettings() {
           serviceFeeValue: Number(p.serviceFeeValue ?? 3),
           taxEnabled: p.taxEnabled === true,
           taxPercent: Number(p.taxPercent ?? 0),
-          maxDiscount: Number(p.maxDiscount ?? 0),
         });
       }
       if (res.success && res.data?.hours) {

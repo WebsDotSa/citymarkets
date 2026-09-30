@@ -18,9 +18,12 @@ import {
   toRiyadhDateKey,
   validateSlotSelection,
 } from '@/lib/delivery';
+import { evaluateHours } from '@/lib/delivery/delivery-hours';
+import { getActiveStoreHours } from '@/lib/delivery/store-hours';
 import { computeOrderFees, computeCouponDiscount, computeLoyaltyRedemption, type PricingSettings } from '@/lib/orders';
 import { getLoyaltySettings } from '@/lib/orders/loyalty';
 import { getMainStoreAndDistance } from '@/lib/delivery/main-store';
+import { resolvePaymentMethod } from '@/lib/payments/payment-methods';
 
 /**
  * Order item type for internal use
@@ -251,7 +254,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
   }
 
-  const paymentResolved = paymentMethod || payment_method || 'cash';
+  // P0-3 (full-system audit 2026-09-30): translate legacy payment-method
+  // tokens (`cash`, `tamara`, `moyasar_card`, `applepay`, …) into the
+  // canonical `PaymentMethodId` enum before INSERT. Without this, the
+  // analytics filters (`isElectronicPaymentMethod`) under-count
+  // electronic orders. Falls back to `wallet` for missing values
+  // (matches the original `'cash'` default semantically — driver
+  // collects / no gateway integration).
+  const paymentResolved = resolvePaymentMethod(paymentMethod || payment_method);
   const addressResolved = addressId || address_id;
 
   // SECURITY (Pay-Dup): hoist idempotency-key resolution out of the
@@ -321,6 +331,46 @@ export async function POST(request: NextRequest) {
   try {
     await client.query('BEGIN');
     txOpen = true;
+
+    // ---- Per-branch working-hours gate (migration 079) ----
+    // Legacy single-vendor POST previously skipped this check; the
+    // multi-vendor checkout enforced the global `delivery_settings.hours`
+    // but not the per-branch override. Now both flows gate against
+    // `getActiveStoreHours(pool, mainStoreId)` so a branch with
+    // custom hours is respected on every endpoint.
+    const { store: mainStoreRow } = await getMainStoreAndDistance(client, null, null);
+    const mainStoreId = mainStoreRow?.id ?? null;
+    if (!mainStoreId) {
+      await client.query('ROLLBACK');
+      txOpen = false;
+      return NextResponse.json(
+        { success: false, error: 'لم يتم تكوين الفرع الرئيسي' },
+        { status: 503 }
+      );
+    }
+    const hours = await getActiveStoreHours(pool, mainStoreId);
+    if (hours) {
+      const hoursCheck = evaluateHours(hours);
+      if (!hoursCheck.open) {
+        await client.query('ROLLBACK');
+        txOpen = false;
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              hoursCheck.message ||
+              hours.closed_message ||
+              'التوصيل متاح فقط خلال ساعات العمل',
+            outOfHours: true,
+            hours: {
+              open_time: hours.open_time,
+              close_time: hours.close_time,
+            },
+          },
+          { status: 503 }
+        );
+      }
+    }
 
     let orderItems: OrderItem[] = [];
 

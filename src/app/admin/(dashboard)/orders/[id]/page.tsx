@@ -24,6 +24,7 @@ import {
 import {
   ArrowRight,
   Camera,
+  Calendar,
   ExternalLink,
   Loader2,
   MapPin,
@@ -688,6 +689,39 @@ export default function AdminOrderDetailPage() {
             </p>
             <LastStatusChangeBadge change={lastStatusChange} />
           </div>
+
+          {/* Scheduled delivery window (Phase D, 2026-09-30) — only
+              renders when the order was created with
+              `scheduled=true`. The date/time + slot window come straight
+              from `orders` so the admin can confirm the customer will
+              be expecting the order at the right time. */}
+          {order.scheduled && order.scheduled_for ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 shadow-sm">
+              <h2 className="font-bold text-amber-900 flex items-center gap-2 mb-3">
+                <Calendar className="w-4 h-4 text-amber-700" />
+                موعد التوصيل المجدول
+              </h2>
+              <div className="space-y-2 text-sm">
+                <SummaryRow
+                  label="التاريخ والوقت"
+                  value={new Date(String(order.scheduled_for)).toLocaleString("ar-SA", {
+                    dateStyle: "full",
+                    timeStyle: "short",
+                  })}
+                />
+                {order.slot_window ? (
+                  <SummaryRow
+                    label="فترة التوصيل"
+                    value={String(order.slot_window)}
+                  />
+                ) : null}
+              </div>
+              <p className="text-xs text-amber-700 mt-3 pt-3 border-t border-amber-200">
+                تأكَّد من تجهيز الطلب قبل بداية الفترة المجدولة حتى لا
+                يتأخر عن العميل.
+              </p>
+            </div>
+          ) : null}
 
           {/* Payment Summary */}
           <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">

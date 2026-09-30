@@ -67,6 +67,47 @@ vi.mock('@/lib/identity', () => ({
   getGuestSessionIdFromRequest: vi.fn(),
 }));
 
+// Migration 079 (2026-09-30): the route now resolves per-branch
+// hours via getActiveStoreHours. Mock the new modules so the
+// regression tests stay DB-free.
+vi.mock('@/lib/delivery/store-hours', () => ({
+  getActiveStoreHours: vi.fn(async () => ({
+    enabled: true,
+    open_time: "08:00",
+    close_time: "23:00",
+    closed_message: null,
+    timezone: "Asia/Riyadh",
+  })),
+  evaluateStoreHours: vi.fn(() => ({ open: true, message: null })),
+  parseStoreHours: vi.fn(),
+  DEFAULT_STORE_OPENING_HOURS: {},
+}));
+vi.mock('@/lib/delivery/delivery-hours', () => ({
+  evaluateHours: vi.fn(() => ({ open: true, message: null })),
+  getDeliveryHours: vi.fn(async () => ({
+    enabled: true,
+    open_time: "08:00",
+    close_time: "23:00",
+    closed_message: null,
+    timezone: "Asia/Riyadh",
+  })),
+  parseDeliveryHours: vi.fn(),
+  DEFAULT_DELIVERY_HOURS: {},
+  buildHoursStatus: vi.fn(),
+}));
+vi.mock('@/lib/delivery/main-store', () => ({
+  getMainStoreAndDistance: vi.fn(async () => ({
+    store: {
+      id: "00000000-0000-0000-0000-000000000001",
+      name_ar: "الفرع الرئيسي",
+      lat: 24.7136,
+      lng: 46.6753,
+      is_active: true,
+    },
+    distanceKm: null,
+  })),
+}));
+
 vi.mock("@/lib/logger", () => ({
   error: vi.fn(),
   warn: vi.fn(),

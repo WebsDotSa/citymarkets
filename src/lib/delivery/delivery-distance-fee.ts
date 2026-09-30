@@ -24,6 +24,14 @@
  * Rounding: SAR uses 2 decimals (`toFixed(2)`). The `Number(...)` cast
  * strips floating-point drift (e.g. `0.1 + 0.2`) so the caller gets a
  * clean `3.15` instead of `3.1499999999…`.
+ *
+ * CONSTANTS vs BACKING CONFIG — keep them aligned:
+ *   - `DELIVERY_INCLUDED_KM` here (5) is the canonical default.
+ *   - `src/app/api/admin/delivery-settings/route.ts` GET response
+ *     backfills `includedKm = 5` when the DB value is missing.
+ *   - `src/components/admin/admin-delivery-settings.tsx` uses
+ *     `DEFAULT_INCLUDED_KM = 5` to mirror the server before first save.
+ *   - If you change the canonical value, update all three.
  */
 
 export const DELIVERY_BASE_SAR = 3;

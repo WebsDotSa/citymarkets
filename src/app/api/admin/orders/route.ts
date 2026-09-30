@@ -96,6 +96,35 @@ export async function GET(request: NextRequest) {
     const paymentStatusFilter = searchParams.get('payment_status')?.trim() || '';
     const search = searchParams.get('search')?.trim() || '';
 
+    // Scheduled-delivery filters (Phase D, 2026-09-30):
+    //   ?scheduled_date=YYYY-MM-DD → only orders whose scheduled_for
+    //     falls on that Riyadh calendar day.
+    //   ?slot_window=morning|noon|afternoon|evening → only orders
+    //     whose slot_window matches (validated against the live config
+    //     so a stale or typo'd value silently drops the filter rather
+    //     than 500s).
+    const scheduledDateRaw = searchParams.get('scheduled_date')?.trim() || '';
+    const slotWindowRaw = searchParams.get('slot_window')?.trim() || '';
+    // YYYY-MM-DD with a fixed length and digit shape — anything else
+    // is silently ignored so a stale UI link doesn't crash the route.
+    const scheduledDate =
+      /^\d{4}-\d{2}-\d{2}$/.test(scheduledDateRaw) ? scheduledDateRaw : '';
+    let slotWindow = '';
+    if (slotWindowRaw) {
+      try {
+        const { parseSlotsConfig } = await import('@/lib/delivery/delivery-slots');
+        const cfgRes = await query(
+          `SELECT value FROM delivery_settings WHERE key = 'slots' LIMIT 1`,
+        );
+        const cfg = parseSlotsConfig(cfgRes.rows[0]?.value);
+        slotWindow = cfg.windows.some((s) => s.id === slotWindowRaw)
+          ? slotWindowRaw
+          : '';
+      } catch {
+        slotWindow = '';
+      }
+    }
+
     // Validate statusFilter against known values — silently ignore invalid filters
     // instead of passing arbitrary strings to the SQL query. The canonical
     // list lives in `@/lib/orders/state-machine` so the API stays in sync
@@ -132,6 +161,19 @@ export async function GET(request: NextRequest) {
       );
       params.push(`%${search}%`);
       pi++;
+    }
+    if (scheduledDate) {
+      // The customer supplies Riyadh wall-clock; the column is timestamptz
+      // (UTC) so we map via `scheduled_for` directly. Using `DATE(...)` in
+      // the server timezone is good enough — orders are inserted with the
+      // resolved UTC instant, and the admin's UI strips the time component
+      // before submitting the filter.
+      conditions.push(`DATE(o.scheduled_for AT TIME ZONE 'Asia/Riyadh') = $${pi++}::date`);
+      params.push(scheduledDate);
+    }
+    if (slotWindow) {
+      conditions.push(`o.slot_window = $${pi++}`);
+      params.push(slotWindow);
     }
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 

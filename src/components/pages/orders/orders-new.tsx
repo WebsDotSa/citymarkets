@@ -50,6 +50,14 @@ interface Order {
   delivery_address: string | null;
   payment_method: string;
   payment_status?: string;
+  // Phase E1 (2026-09-30): scheduled-delivery fields surfaced from
+  // `orders.scheduled_for` / `orders.slot_window`. Both are optional
+  // because the catalog only stores them on scheduled orders — a
+  // missing value means "immediate delivery" and we keep the standing
+  // "30-45 دقيقة" promise.
+  scheduled?: boolean;
+  scheduled_for?: string | null;
+  slot_window?: string | null;
   items: {
     id: string;
     name_ar: string;
@@ -77,11 +85,21 @@ const CLOCK_FORMAT = new Intl.DateTimeFormat("ar-SA", {
 
 // `orders` has no delivery_time column — catalog orders are same-day express.
 // Show the real drop-off time once delivered, otherwise the standing promise.
+// For scheduled orders we honour the customer-picked window.
 function deliveryTimeLabel(order: Order): string {
   if (order.status === "delivered") {
     return `تم التوصيل ${CLOCK_FORMAT.format(new Date(order.updated_at))}`;
   }
   if (order.status === "cancelled") return "ملغي";
+  if (order.scheduled && order.scheduled_for) {
+    const when = new Date(order.scheduled_for);
+    if (!Number.isNaN(when.getTime())) {
+      const date = when.toLocaleDateString("ar-SA", { dateStyle: "medium" });
+      const time = CLOCK_FORMAT.format(when);
+      const slot = order.slot_window ? ` — ${order.slot_window}` : "";
+      return `مجدول · ${date} · ${time}${slot}`;
+    }
+  }
   return "متوقع خلال 30-45 دقيقة";
 }
 

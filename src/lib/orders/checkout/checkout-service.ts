@@ -34,7 +34,8 @@ import { pool } from "@/lib/db";
 import { multiVendorCheckoutSchema } from "@/lib/validation";
 import { error as logError, info as logInfo, warn as logWarn } from "@/lib/logger";
 import { getStoreStatusSettings } from "@/lib/app-settings";
-import { getDeliveryHours, evaluateHours } from '@/lib/delivery/delivery-hours';
+import { evaluateHours } from '@/lib/delivery/delivery-hours';
+import { getActiveStoreHours } from '@/lib/delivery/store-hours';
 import { checkClosedVendorsInCart } from '@/lib/delivery/vendor-closed-gate';
 import { getLoyaltySettings } from "../loyalty";
 import {
@@ -136,8 +137,29 @@ export async function runCheckout(
     };
   }
 
-  // 2. Daily working hours
-  const hours = await getDeliveryHours();
+  // 2. Daily working hours — resolve the main store id first so the
+  // gate respects per-branch `stores.opening_hours` (migration 079).
+  // Pre-079 the platform used a single global `delivery_settings.hours`
+  // and any branch could quietly breach it; now a branch with custom
+  // hours overrides the global config.
+  const { store: mainStoreRow } = await getMainStoreAndDistance(pool, null, null);
+  const mainStoreId = mainStoreRow?.id ?? null;
+  if (!mainStoreId) {
+    return {
+      kind: "no_main_store",
+      status: 503,
+      error: "لم يتم تكوين الفرع الرئيسي. أضف متجرًا رئيسيًا في إعدادات الفروع.",
+    };
+  }
+  const hours = await getActiveStoreHours(pool, mainStoreId);
+  if (!hours) {
+    // Defensive: shouldn't happen — we just resolved the id above.
+    return {
+      kind: "no_main_store",
+      status: 503,
+      error: "لم يتم العثور على إعدادات ساعات العمل للفرع الرئيسي.",
+    };
+  }
   const hoursCheck = evaluateHours(hours);
   if (!hoursCheck.open) {
     return {

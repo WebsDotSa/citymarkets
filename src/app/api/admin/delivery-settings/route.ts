@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         // `@/lib/delivery-distance-fee` so a fresh install behaves
         // identically to a deployment that has never saved pricing).
         baseSar: 3,
-        includedKm: 2,
+        includedKm: 5,
         perExtraKmSar: 1.5,
         // Service + tax knobs
         serviceFeeEnabled: true,
@@ -51,7 +51,12 @@ export async function GET(request: NextRequest) {
       // on `undefined`. The form saves the full object on next PUT.
       const p = settings.pricing as Record<string, unknown>;
       if (p.baseSar == null) p.baseSar = 3;
-      if (p.includedKm == null) p.includedKm = 2;
+      // Migration 078 (2026-09-30): canonical default for `includedKm`
+      // is 5 km (matches `DELIVERY_INCLUDED_KM` constant). The pre-078
+      // code defaulted to 2 — admins who saved with the old UI would
+      // have persisted `includedKm: 2`, silently changing the fee. We
+      // backfill any missing value to 5 here.
+      if (p.includedKm == null) p.includedKm = 5;
       if (p.perExtraKmSar == null) p.perExtraKmSar = 1.5;
     }
     // Mirror the same default for slots so the dashboard always has a

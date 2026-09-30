@@ -52,13 +52,16 @@ export const ORDER_BASE_COLUMNS = `
   o.guest_name, o.guest_phone,
   o.guest_city, o.guest_district, o.guest_street, o.guest_building,
   o.notes, o.internal_notes,
+  o.scheduled, o.scheduled_for, o.slot_window,
   o.created_at, o.updated_at
 `;
 
 /**
  * Slim variant for the admin orders list. Same as `ORDER_BASE_COLUMNS`
  * minus `internal_notes`, `guest_building`, `payment_reference` — the
- * list view never shows those.
+ * list view never shows those. Scheduled fields are kept so the
+ * operator can see at-a-glance whether a row is a scheduled delivery
+ * and which window it belongs to.
  */
 export const ORDER_LIST_COLUMNS = `
   o.id, o.status, o.payment_status, o.payment_method, o.payment_reference,
@@ -69,6 +72,7 @@ export const ORDER_LIST_COLUMNS = `
   o.total::float as total,
   o.guest_name, o.guest_phone,
   o.notes,
+  o.scheduled, o.scheduled_for, o.slot_window,
   o.created_at, o.updated_at
 `;
 

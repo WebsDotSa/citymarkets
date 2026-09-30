@@ -185,6 +185,13 @@ export const ALL_PAYMENT_METHODS = [
 ] as const satisfies readonly PaymentMethodId[];
 
 /**
+ * Set form of `ALL_PAYMENT_METHODS` for O(1) `.has()` lookups in
+ * `resolvePaymentMethod` and any other hot path that needs to ask
+ * "is this string already canonical?".
+ */
+export const ALL_PAYMENT_METHODS_SET: ReadonlySet<string> = new Set(ALL_PAYMENT_METHODS);
+
+/**
  * Legacy payment-method tokens that were removed from the customer-facing
  * picker on 2026-09-20 but still appear in:
  *
@@ -210,3 +217,63 @@ export const LEGACY_PAYMENT_METHODS = [
   'stc_pay',
   'tamara',
 ] as const;
+
+/**
+ * Legacy → canonical alias map. Pre-2026-09-20 clients (and any in-flight
+ * builds still using the old picker) POST strings that the canonical
+ * `ALLOWED_METHODS` set does NOT include. Without translation, those
+ * values land in `orders.payment_method` unchanged and break the
+ * revenue/SQL filters in `analytics-queries.ts` (`isElectronicPaymentMethod`
+ * and friends) — every legacy-string order is counted as "non-electronic"
+ * even when it was an electronic Moyasar charge.
+ *
+ * Apply this map at the **boundary** (the route handler, before INSERT)
+ * and NEVER inside SQL filters. The canonical set stays the only set
+ * stored in the DB from now on; existing legacy rows are read-only.
+ *
+ * P0-3 fix (full-system audit 2026-09-30):
+ *   - `cash`         → `wallet`     (manual, debited at confirm time)
+ *   - `card`         → `mada`       (degenerate to the dominant card brand)
+ *   - `moyasar`      → `mada`       (Moyasar card without brand hint)
+ *   - `moyasar_card` → `mada`       (alias already canonicalised upstream)
+ *   - `moyasar_applepay` → `apple_pay`
+ *   - `stc_pay`      → `bank_transfer` (no STC Pay integration; manual reconfirm)
+ *   - `tamara`       → `bank_transfer` (BNPL was removed 2026-09-20)
+ *   - `applepay`     → `apple_pay`  (typo / missing underscore)
+ *   - `stcpay`       → `bank_transfer`
+ *   - `cod`          → `wallet`     (drivers collect, debited on delivery)
+ *   - `cash_on_delivery` → `wallet`
+ *   - `master_card`  → `mastercard` (typo / missing 'd')
+ *
+ * Unknown legacy strings throw via `assertKnownPaymentMethod` so the
+ * caller fails loudly instead of silently writing garbage into the DB.
+ */
+export const PAYMENT_METHOD_ALIAS_MAP: Readonly<Record<string, PaymentMethodId>> = {
+  cash: 'wallet',
+  card: 'mada',
+  moyasar: 'mada',
+  moyasar_card: 'mada',
+  moyasar_applepay: 'apple_pay',
+  stc_pay: 'bank_transfer',
+  stcpay: 'bank_transfer',
+  tamara: 'bank_transfer',
+  applepay: 'apple_pay',
+  cod: 'wallet',
+  cash_on_delivery: 'wallet',
+  master_card: 'mastercard',
+};
+
+/**
+ * Resolve a payment-method string to its canonical `PaymentMethodId`.
+ * If the input is already canonical, it is returned as-is. If it's a
+ * known legacy alias, it's translated via `PAYMENT_METHOD_ALIAS_MAP`.
+ * Otherwise we throw — silent fallback would let arbitrary strings
+ * reach `orders.payment_method` and break every analytics filter.
+ */
+export function resolvePaymentMethod(raw: string | null | undefined): PaymentMethodId {
+  if (!raw) return 'wallet';
+  if (ALL_PAYMENT_METHODS_SET.has(raw)) return raw as PaymentMethodId;
+  const aliased = PAYMENT_METHOD_ALIAS_MAP[raw];
+  if (aliased) return aliased;
+  throw new Error(`Unknown payment_method: ${JSON.stringify(raw)}`);
+}

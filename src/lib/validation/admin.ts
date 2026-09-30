@@ -277,7 +277,6 @@ export const deliveryPricingSchema = z.object({
   serviceFeeValue: z.number().min(0).max(10000).optional(),
   taxEnabled: z.boolean().optional(),
   taxPercent: z.number().min(0).max(100).optional(),
-  maxDiscount: z.number().min(0).max(1000000).optional(),
 });
 
 /**
