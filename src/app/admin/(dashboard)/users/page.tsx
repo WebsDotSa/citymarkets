@@ -8,7 +8,7 @@ import { Users, Award, TrendingUp, UserCheck } from "lucide-react";
 import type { User } from "@/lib/types";
 import { csrfFetch } from "@/lib/csrf-client";
 import { apiFetch } from '@/lib/catalog';
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/format";
 
 type View = "list" | "new" | "edit";
 

@@ -16,7 +16,7 @@ import {
   X,
   Filter,
 } from "lucide-react";
-import { formatOrderId, formatPrice } from "@/lib/utils";
+import { formatOrderId, formatPrice } from "@/lib/format";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
 import {

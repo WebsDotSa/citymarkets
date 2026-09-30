@@ -2,7 +2,7 @@ import {
   getNotificationSettings,
   fillOrderNotificationTemplate,
 } from "@/lib/app-settings";
-import { buildWhatsAppUrl } from "@/lib/utils";
+import { buildWhatsAppUrl } from "@/lib/format";
 import { error as logError, info as logInfo } from "@/lib/logger";
 
 /** إشعار المدير بطلب جديد (واتساب — رابط جاهز للفتح) */

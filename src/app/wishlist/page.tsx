@@ -10,7 +10,7 @@ import {
 } from "@/contexts/wishlist-context";
 import { useCart } from "@/contexts/cart-context";
 import { ProductCard } from "@/components/storefront/product-card";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 import { BRAND } from "@/lib/brand-theme";
 import { useConfirm } from "@/components/ui/toast";
 

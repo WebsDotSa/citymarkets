@@ -11,7 +11,7 @@ import {
   googleMapsDirectionsUrl,
   googleMapsPlaceUrl,
   parseCoords,
-} from "@/lib/utils";
+} from "@/lib/format";
 import {
   CUSTOMER_PROGRESS_STEPS,
   ORDER_STATUS_DISPLAY,

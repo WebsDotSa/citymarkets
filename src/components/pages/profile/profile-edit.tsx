@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useAuthState, useAuthActions } from "@/contexts/auth-context";
 import { apiFetch } from '@/lib/catalog';
-import { formatPhone } from "@/lib/utils";
+import { formatPhone } from "@/lib/format";
 
 interface ProfileResponse {
   id: string;

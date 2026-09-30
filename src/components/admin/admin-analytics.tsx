@@ -19,7 +19,7 @@ import {
   Tags,
   ArrowUpRight,
 } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 import { safeFetchJsonStrict } from "@/lib/safe-fetch";
 import { getOrderStatusConfig, PAYMENT_METHOD_AR } from '@/lib/orders';
 import {

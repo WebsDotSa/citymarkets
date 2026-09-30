@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 import { csrfFetch } from "@/lib/csrf-client";
 import { SearchableSelect } from "@/components/admin/SearchableSelect";
 

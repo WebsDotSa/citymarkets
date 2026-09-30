@@ -6,7 +6,7 @@ import {
   type NotificationSettings,
 } from "@/lib/app-settings";
 import { logAdminAction } from "@/lib/admin-audit";
-import { buildWhatsAppUrl } from "@/lib/utils";
+import { buildWhatsAppUrl } from "@/lib/format";
 import { notificationSettingsSchema } from "@/lib/validation";
 import { error as logError } from "@/lib/logger";
 

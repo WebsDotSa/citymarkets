@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DataTable } from "@/components/admin/data-table";
 import { RefreshCw, ExternalLink } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 import { useToast } from "@/components/ui/toast";
 import { error as logError } from "@/lib/logger";
 
