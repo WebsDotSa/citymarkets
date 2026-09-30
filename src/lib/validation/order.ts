@@ -26,6 +26,7 @@ import {
   paymentMethodSchema,
   phoneSchema,
 } from "./schemas";
+import { ALL_PAYMENT_METHODS } from "@/lib/payments/payment-methods";
 import {
   ALL_ORDER_STATES,
   ALL_PAYMENT_STATES,
@@ -191,7 +192,7 @@ export const directOrderItemSchema = z.object({
 
 export const directOrderSchema = z.object({
   payment_method: z
-    .enum(["mada", "visa", "mastercard", "amex", "apple_pay", "wallet", "bank_transfer"])
+    .enum(ALL_PAYMENT_METHODS)
     .default("mada"),
   notes: z.string().max(700).optional().nullable(),
   voice_note_url: z.string().url().optional().nullable().or(z.literal("")),

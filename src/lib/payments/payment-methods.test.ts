@@ -10,9 +10,14 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { directOrderSchema, paymentMethodSchema } from "@/lib/validation";
 import {
   ALL_PAYMENT_METHODS,
   ALL_PAYMENT_METHODS_SET,
+  ALLOWED_METHODS,
+  LEGACY_PAYMENT_METHODS,
+  ONLINE_RETRY_METHODS,
+  PAYMENT_METHODS_UI,
   PAYMENT_METHOD_ALIAS_MAP,
   PaymentMethodId,
   resolvePaymentMethod,
@@ -78,5 +83,33 @@ describe("PAYMENT_METHOD_ALIAS_MAP integrity", () => {
       expect(ALL_PAYMENT_METHODS_SET.has(canonical)).toBe(true);
       expect(legacy).not.toBe(canonical); // no self-mapping
     }
+  });
+});
+
+describe("single source of truth (duplication audit 2026-09-30)", () => {
+  const sorted = (xs: Iterable<string>) => [...xs].sort();
+
+  it("ALLOWED_METHODS is the canonical tuple, not a parallel list", () => {
+    expect(sorted(ALLOWED_METHODS)).toEqual(sorted(ALL_PAYMENT_METHODS));
+  });
+
+  it("the checkout picker offers exactly the canonical methods", () => {
+    expect(sorted(PAYMENT_METHODS_UI.map((m) => m.id))).toEqual(sorted(ALL_PAYMENT_METHODS));
+  });
+
+  it("online-retry methods are a subset of the canonical methods", () => {
+    for (const m of ONLINE_RETRY_METHODS) expect(ALL_PAYMENT_METHODS_SET.has(m)).toBe(true);
+  });
+
+  it("directOrderSchema accepts every active method and rejects legacy tokens", () => {
+    const shape = directOrderSchema.shape.payment_method;
+    for (const m of ALL_PAYMENT_METHODS) expect(shape.safeParse(m).success).toBe(true);
+    for (const m of LEGACY_PAYMENT_METHODS) expect(shape.safeParse(m).success).toBe(false);
+  });
+
+  it("paymentMethodSchema = active ∪ legacy (legacy rows stay readable)", () => {
+    expect(sorted(paymentMethodSchema.options)).toEqual(
+      sorted([...ALL_PAYMENT_METHODS, ...LEGACY_PAYMENT_METHODS]),
+    );
   });
 });
