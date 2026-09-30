@@ -4,7 +4,7 @@
 1. Read the master plan.
 2. Inspect the current implementation and tests.
 3. Search all consumers.
-4. Identify the canonical implementation.
+4. Identify the canonical implementation — see `docs/architecture/canonical-sources.md`.
 5. Check schema/migration impact.
 6. Check iOS/API consumers for contract changes.
 
@@ -20,4 +20,4 @@
 - Never expose secrets/internal DB errors.
 
 ## After editing
-Run typecheck, lint, targeted tests, full tests, build, contract/E2E checks, and update docs/backlog.
+Run typecheck, lint, targeted tests, full tests, build, `npm run dup:gate`, contract/E2E checks, and update docs/backlog (including `canonical-sources.md` when ownership changes).

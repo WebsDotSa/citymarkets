@@ -1,5 +1,11 @@
 # City Markets — Production Completion Discrepancy Report
 
+> **HISTORICAL — point-in-time snapshot.** Findings below describe the code at the
+> time of writing; many have since been fixed (e.g. `/api/v1/wishlist/*` and the
+> address `[id]` routes now exist). For current ownership see
+> [`docs/architecture/canonical-sources.md`](../architecture/canonical-sources.md)
+> and the latest audit [`docs/audits/2026-09-30-duplication-audit.md`](../audits/2026-09-30-duplication-audit.md).
+
 **Date:** 2026-09-29
 **Branch:** `production-completion-2026-09-29` (forked from `main` HEAD `76f7849`)
 **Auditor:** Claude (MiniMax-M3) — against the 42-section production-completion master prompt

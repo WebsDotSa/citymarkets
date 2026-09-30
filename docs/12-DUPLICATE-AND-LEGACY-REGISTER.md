@@ -1,5 +1,10 @@
 # City Markets — Duplicate & Legacy Register
 
+> This table records the *target* architecture per area. The **current** canonical
+> owner of each responsibility is in [`architecture/canonical-sources.md`](architecture/canonical-sources.md);
+> the latest classified findings are in [`audits/2026-09-30-duplication-audit.md`](audits/2026-09-30-duplication-audit.md).
+> Run `npm run dup:scan` for a live report.
+
 | Area | Current observation | Canonical target | Retirement condition |
 |---|---|---|---|
 | Customer auth | JWT/cookie + Supabase fallback | modules/auth | all consumers use actor service |

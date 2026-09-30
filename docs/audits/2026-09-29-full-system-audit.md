@@ -1,4 +1,11 @@
 # تقرير فحص شامل — City Markets SA
+
+> **HISTORICAL — point-in-time snapshot.** Findings below describe the code at the
+> time of writing; many have since been fixed (e.g. `/api/v1/wishlist/*` and the
+> address `[id]` routes now exist). For current ownership see
+> [`docs/architecture/canonical-sources.md`](../architecture/canonical-sources.md)
+> and the latest audit [`docs/audits/2026-09-30-duplication-audit.md`](../audits/2026-09-30-duplication-audit.md).
+
 **التاريخ:** 2026-09-29
 **المدقق:** Claude (MiniMax-M3) — نيابة عن فريق العمليات
 **البيئة:** dev server `http://127.0.0.1:4040` + DB `citymarket_db` على `127.0.0.1:5432`

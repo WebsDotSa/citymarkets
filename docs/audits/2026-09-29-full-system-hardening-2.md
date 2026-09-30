@@ -1,5 +1,11 @@
 # City Markets SA — Final Full-System Hardening (Pass 2)
 
+> **HISTORICAL — point-in-time snapshot.** Findings below describe the code at the
+> time of writing; many have since been fixed (e.g. `/api/v1/wishlist/*` and the
+> address `[id]` routes now exist). For current ownership see
+> [`docs/architecture/canonical-sources.md`](../architecture/canonical-sources.md)
+> and the latest audit [`docs/audits/2026-09-30-duplication-audit.md`](../audits/2026-09-30-duplication-audit.md).
+
 **Branch**: `production/full-system-hardening-2`
 **Date**: 2026-09-29
 **Scope**: Targeted hardening of payment, validation, and driver flows
