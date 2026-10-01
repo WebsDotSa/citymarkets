@@ -97,8 +97,14 @@ jobs:
         #     because every banner row is guaranteed seed.
         run: |
           npx tsx scripts/migrate.ts --to=076_wishlist_server_persistence.sql
-          psql -h localhost -U ci_user -d ci_citymarket -v ON_ERROR_STOP=1 \
-            -c "DELETE FROM banners;"
+          # PGPASSWORD required: pgvector/pgvector:pg16 ships with
+          # `host all all all scram-sha-256` in pg_hba.conf and the
+          # GitHub Actions service exposes Postgres on localhost via
+          # IPv6 (`::1`), which the trust exception does not cover.
+          # Without PGPASSWORD, psql prints
+          # `fe_sendauth: no password supplied` and exits 2, failing CI.
+          PGPASSWORD="$POSTGRES_PASSWORD" psql -h localhost -U ci_user \
+            -d ci_citymarket -v ON_ERROR_STOP=1 -c "DELETE FROM banners;"
           npm run db:migrate
 
       - name: Migration drift report (against applied CI DB)
