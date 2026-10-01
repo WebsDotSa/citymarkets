@@ -52,7 +52,9 @@ function bannerHref(item: InlineBannerItem): string | null {
     case "product":
       return `/products/${v}`;
     case "vendor":
-      return `/vendor/${v}`;
+      // Public storefront route is `/vendors/<slug>`; `/vendor/*` is the vendor-admin
+      // subtree and middleware redirects unauthenticated visitors there to login.
+      return `/vendors/${v}`;
     case "external":
       return v;
     default:
@@ -647,7 +649,7 @@ export function StoresRenderer({ settings }: { settings: StoresSettings }) {
         {stores.map((s) => (
           <Link
             key={s.id}
-            href={`/vendor/${s.slug ?? s.id}`}
+            href={`/vendors/${s.slug ?? s.id}`}
             className={cn(
               "rounded-2xl bg-white border border-gray-100 overflow-hidden hover:shadow-md transition-shadow",
               display === "carousel" ? "w-40 sm:w-48 flex-shrink-0" : "",
