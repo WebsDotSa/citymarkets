@@ -9,11 +9,7 @@ import {
   createRateLimitHeaders,
 } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
-import {
-  isAppleReviewPhone,
-  APPLE_REVIEW_OTP,
-  APPLE_REVIEW_NAME,
-} from "@/lib/apple-review";
+import { isAppleReviewPhone, APPLE_REVIEW_OTP } from "@/lib/apple-review";
 import {
   signVendorSessionToken,
   vendorSessionCookieOptions,

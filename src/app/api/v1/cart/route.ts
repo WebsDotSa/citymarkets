@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 import { priceCartRow } from '@/lib/cart/pricing';
 
 import {
@@ -8,12 +8,7 @@ import {
   resolveCustomerUserIdFromRequest,
 } from '@/lib/identity';
 import { CITY_MARKETS_VENDOR_ID } from '@/lib/types';
-import {
-  checkRateLimit,
-  createRateLimitHeaders,
-  CART_OPERATION_CONFIG,
-  GENERAL_API_CONFIG,
-} from '@/lib/rate-limit';
+import { checkRateLimit, createRateLimitHeaders, CART_OPERATION_CONFIG } from '@/lib/rate-limit';
 
 async function resolveCartActors(request: NextRequest) {
   const userId = await resolveCustomerUserIdFromRequest(request);

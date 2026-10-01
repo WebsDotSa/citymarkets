@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query, pool } from "@/lib/db";
+import { query } from "@/lib/db";
 import { requireVendorRole, type VendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { hashPassword } from "@/lib/password";

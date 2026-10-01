@@ -3,7 +3,7 @@ import { pool } from "@/lib/db";
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { getLoyaltySettings } from '@/lib/orders/loyalty';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 // Legacy aliases kept so any imports of the constants from elsewhere
 // (e.g. third-party scripts) still resolve. New code should read the

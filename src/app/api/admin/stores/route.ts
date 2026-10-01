@@ -7,7 +7,7 @@ import {
   parseStoreHours,
 } from "@/lib/delivery/store-hours";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 function idCheck(url: URL) {
   const id = url.searchParams.get("id");

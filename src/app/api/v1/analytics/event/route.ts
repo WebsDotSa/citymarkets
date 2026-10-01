@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { error as logError, warn as logWarn } from "@/lib/logger";
+import { warn as logWarn } from "@/lib/logger";
 import { getGuestSessionIdFromRequest } from '@/lib/identity';
 
 /**

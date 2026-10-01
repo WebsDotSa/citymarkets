@@ -4,7 +4,7 @@ import path from "path";
 import crypto from "crypto";
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 export const dynamic = "force-dynamic";
 

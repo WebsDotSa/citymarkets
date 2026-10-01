@@ -6,7 +6,7 @@ import { cache } from "@/lib/cache";
 import { CITY_MARKETS_VENDOR_ID } from "@/lib/types";
 import { deleteFromR2, r2KeyFromUrl } from "@/lib/r2";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError, warn as logWarn } from '@/lib/logger';
 
 const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

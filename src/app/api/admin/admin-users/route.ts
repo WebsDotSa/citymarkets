@@ -6,7 +6,7 @@ import { logAdminAction } from '@/lib/admin-audit';
 import { adminStaffCreateSchema, adminStaffUpdateSchema } from '@/lib/validation/admin';
 import { normalizeSaudiToE164 } from '@/lib/phone-format';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 function idCheck(url: URL) {
   const id = url.searchParams.get('id');
