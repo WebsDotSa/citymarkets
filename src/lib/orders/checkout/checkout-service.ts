@@ -30,6 +30,7 @@
 // test with a fake Queryable.
 
 import type { PoolClient } from "pg";
+import crypto from "node:crypto";
 import { pool } from "@/lib/db";
 import { multiVendorCheckoutSchema } from "@/lib/validation";
 import { error as logError, info as logInfo, warn as logWarn } from "@/lib/logger";
@@ -108,6 +109,55 @@ export interface CheckoutReplayBody {
 }
 
 /**
+ * P2-7 (PCP-83): derive a stable server-side idempotency key from the
+ * checkout payload when the client did not supply one. The cart line
+ * items (sorted by product_id) + the user identity + a 60-second
+ * window form a unique-ish fingerprint that any retry within the
+ * same minute will reproduce, so the duplicate-detect SQL on
+ * `orders.idempotency_key` will replay instead of burning the coupon
+ * a second time.
+ *
+ * Window size rationale:
+ *   - 60s is short enough that a deliberate retry happens well
+ *     inside the window (network blips, gateway 502s, client double-
+ *     clicks)
+ *   - 60s is long enough that an honest user resending a checkout
+ *     from a different tab still gets a unique order (different
+ *     minute → different key → no false replay)
+ *
+ * Does NOT replace a client-supplied key when one is present. The
+ * client key wins.
+ *
+ * Returns: 32-char hex sha256 prefix — fits inside the
+ * `idempotency_key` column (TEXT) and the createPaymentSchema max-64 bound.
+ */
+function deriveContentIdempotencyKey(
+  v: { items?: Array<{ product_id?: string; quantity?: number }>; vendor_groups?: unknown[] },
+  caller: { userId?: string | null; sessionId?: string | null; clientIp?: string | null },
+  now: Date = new Date(),
+): string {
+  // Canonicalise items: sort by product_id, then qty.
+  const itemPart = (v.items ?? [])
+    .map((i) => `${i.product_id ?? "?"}:${i.quantity ?? 0}`)
+    .sort()
+    .join("|");
+  const groupPart = (v.vendor_groups ?? []).length;
+  // Identity: prefer userId (logged-in), else sessionId (guest cookie),
+  // else clientIp (last-resort bursty retry marker).
+  const identity = caller.userId
+    ? `u:${caller.userId}`
+    : caller.sessionId
+    ? `g:${caller.sessionId}`
+    : `ip:${caller.clientIp ?? "?"}`;
+  // 60-second window. now.getUTCMinutes() rolls over every minute on
+  // the wall clock; we add the second → the floor key changes once
+  // per minute at second=0.
+  const minuteWindow = Math.floor(now.getTime() / 60_000);
+  const material = `${itemPart}#groups=${groupPart}#${identity}#m=${minuteWindow}`;
+  return crypto.createHash("sha256").update(material).digest("hex").slice(0, 32);
+}
+
+/**
  * Run the full checkout pipeline. Never throws — every error path
  * returns a discriminated-union result so the caller can map directly
  * to a NextResponse.
@@ -126,6 +176,14 @@ export async function runCheckout(
     };
   }
   const v = validation.data;
+
+  // P2-7 (PCP-83): derive a stable content-based idempotency key when
+  // the client didn't supply one (timeout retry, double-tap, payment
+  // gateway 502). Without this fallback, the coupon burn inside
+  // create-checkout is non-idempotent for retry-without-key and a
+  // network blip can drain the customer's coupon balance.
+  const idempotencyKey: string =
+    v.idempotency_key ?? deriveContentIdempotencyKey(v, caller);
 
   // 1. Store open/closed (admin toggle)
   const storeStatus = await getStoreStatusSettings();
@@ -291,7 +349,7 @@ export async function runCheckout(
           max_redeem_percent: loyaltySettings.max_redeem_percent,
         },
         notes: v.notes ?? null,
-        idempotencyKey: v.idempotency_key ?? null,
+        idempotencyKey: idempotencyKey,
         scheduledFor,
         slotId,
       },
@@ -314,7 +372,7 @@ export async function runCheckout(
     const paymentUrl = await maybeInitiatePayment({
       paymentMethod,
       guestInfo,
-      idempotencyKey: v.idempotency_key ?? null,
+      idempotencyKey: idempotencyKey,
       parentOrderId: result.parentOrderId,
       vendorOrderIds: result.vendorOrderIds,
       total: result.totals.total,
@@ -397,16 +455,16 @@ export async function runCheckout(
       logWarn("idempotency_key unique violation — replaying existing order", {
         pgMessage: causeMsg ?? undefined,
       });
-      if (v.idempotency_key) {
-        const replay = await replayByIdempotencyKey(v.idempotency_key);
-        if (replay) return { kind: "replay", status: 200, body: replay };
-      }
+      // Always have a key now (content-derived fallback if client
+      // didn't supply one), so the replay path always works.
+      const replay = await replayByIdempotencyKey(idempotencyKey);
+      if (replay) return { kind: "replay", status: 200, body: replay };
     }
 
     logError("multi-vendor checkout error:", error, {
       pgMessage: causeMsg ?? undefined,
       userId: caller.userId ?? undefined,
-      idempotencyKey: v.idempotency_key ?? undefined,
+      idempotencyKey,
       itemsCount: (v.items ?? []).length,
       vendorGroupsCount: (v.vendor_groups ?? []).length,
     });
@@ -414,7 +472,7 @@ export async function runCheckout(
       surface: "checkout",
       route: "POST /api/v1/checkout",
       userId: caller.userId,
-      idempotencyKey: v.idempotency_key ?? null,
+      idempotencyKey: idempotencyKey,
       itemsCount: (v.items ?? []).length,
       vendorGroupsCount: (v.vendor_groups ?? []).length,
       paymentMethod: v.payment_method ?? null,
