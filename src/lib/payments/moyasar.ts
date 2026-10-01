@@ -366,17 +366,19 @@ export async function fetchPayment(
  *
  * Mapping:
  *   paid, captured        → 'paid'
- *   failed, voided, refunded → 'failed'
+ *   refunded              → 'refunded'
+ *   failed, voided        → 'failed'
  *   anything else         → 'pending'  (initial webhook; awaiting terminal state)
  *
- * `refunded` is treated as `failed` because it's a terminal negative
- * state from the customer's perspective (money is no longer with the
- * marketplace). The webhook's previous 'pending' mapping would have
- * left the row stuck at payment_status='pending' after a refund.
+ * `refunded` is preserved as `refunded` so that downstream systems
+ * (admin dashboard, customer timeline, accounting reports) see the
+ * terminal state the customer actually experienced instead of collapsing
+ * it into a generic failure.
  */
-export function mapMoyasarStatusToDb(remote: string): "paid" | "failed" | "pending" {
+export function mapMoyasarStatusToDb(remote: string): "paid" | "refunded" | "failed" | "pending" {
   if (remote === "paid" || remote === "captured") return "paid";
-  if (remote === "failed" || remote === "voided" || remote === "refunded") return "failed";
+  if (remote === "refunded") return "refunded";
+  if (remote === "failed" || remote === "voided") return "failed";
   return "pending";
 }
 
@@ -393,4 +395,93 @@ export function mapMoyasarStatusToDb(remote: string): "paid" | "failed" | "pendi
 export function isSarCurrency(currency: string | undefined | null): boolean {
   if (!currency) return true;
   return currency.trim().toUpperCase() === "SAR";
+}
+
+/**
+ * FIX (PCP-82): full and partial refund against Moyasar.
+ *
+ * Endpoint: `POST /v1/payments/{paymentId}/refund`
+ *   - amount is in halalas
+ *   - when `amountHalalas` is null we OMIT the amount so the gateway
+ *     performs a full refund. Passing `0` would be interpreted as "refund
+ *     0 halalas" by the gateway and silently no-op.
+ *
+ * Idempotency:
+ *   Moyasar honours the `Idempotency-Key` header on POST /refund the
+ * same way as create-invoice. We derive it from `paymentId + halalas +
+ * attempt` so a retry of the same refund never creates two ledger rows.
+ *
+ * Returns:
+ *   { success: true, id, status, amountHalalas, refundedAt }
+ *   { success: false, error }    // Arabic, sanitised
+ */
+export interface MoyasarRefundResult {
+  success: boolean;
+  id?: string;
+  status?: string;
+  amountHalalas?: number;
+  refundedAt?: string;
+  error?: string;
+}
+
+export async function refundMoyasarPayment(
+  paymentId: string,
+  amountHalalas?: number | null,
+): Promise<MoyasarRefundResult> {
+  if (!MOYASAR_SECRET_KEY) {
+    return { success: false, error: 'مفتاح ميسر غير مُعدّ' };
+  }
+  if (!paymentId) {
+    return { success: false, error: 'رقم الدفعة مطلوب' };
+  }
+
+  const idempotencyKey = `refund:${paymentId}:${amountHalalas ?? 'full'}:${Date.now()}`;
+
+  try {
+    const body: Record<string, unknown> = {};
+    if (typeof amountHalalas === 'number' && amountHalalas > 0) {
+      body.amount = amountHalalas;
+    }
+
+    const response = await fetch(
+          `${MOYASAR_API_BASE}/payments/${encodeURIComponent(paymentId)}/refund`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: authHeader(),
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              'Idempotency-Key': idempotencyKey,
+            },
+            body: JSON.stringify(body),
+            cache: 'no-store',
+          },
+        );
+
+    const data = (await response.json()) as {
+      id?: string;
+      status?: string;
+      amount?: number;
+      refunded_at?: string;
+      message?: string;
+    };
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: sanitizeGatewayError(data.message || `HTTP ${response.status}`, response.status),
+      };
+    }
+
+    return {
+      success: true,
+      id: data.id,
+      status: data.status,
+      amountHalalas: data.amount,
+      refundedAt: data.refunded_at,
+    };
+  } catch (error: unknown) {
+    logError('Moyasar refundPayment error', error);
+    return { success: false, error: 'تعذّر الاتصال ببوابة الدفع' };
+  }
 }

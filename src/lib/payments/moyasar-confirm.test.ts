@@ -379,10 +379,16 @@ describe("confirmMoyasarPaymentForOrder", () => {
     });
   });
 
-  it("treats 'voided' and 'refunded' as failed", async () => {
-    for (const status of ["voided", "refunded"]) {
+  it("treats 'voided' as failed and 'refunded' as refunded (PCP-81)", async () => {
+    const cases: Array<{ status: string; expected: "failed" | "refunded" }> = [
+      { status: "voided", expected: "failed" },
+      { status: "refunded", expected: "refunded" },
+    ];
+    for (const { status, expected } of cases) {
       calls.length = 0;
-      finalRow = { status: "pending", payment_status: "failed" };
+      // Mock the post-UPDATE SELECT to return the payment_status value
+      // that mapMoyasarStatusToDb produces for this remote status.
+      finalRow = { status: "pending", payment_status: expected };
       paymentResponse = {
         success: true,
         status,
@@ -396,7 +402,7 @@ describe("confirmMoyasarPaymentForOrder", () => {
         paymentId: `pay_${status}`,
       });
       expect(res.success).toBe(true);
-      expect(res.payment_status).toBe("failed");
+      expect(res.payment_status).toBe(expected);
     }
   });
 

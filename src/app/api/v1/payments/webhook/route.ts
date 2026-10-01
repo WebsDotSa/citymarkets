@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
       // downgrade paymentDb to 'pending' when guards fail so the
       // shared helper skips the paid-only branch but still records the
       // event.
-      let effectivePaymentDb: 'paid' | 'failed' | 'pending' = paymentDb;
+      let effectivePaymentDb: 'paid' | 'failed' | 'pending' | 'refunded' = paymentDb;
       if (remoteStatus === 'paid' || remoteStatus === 'captured') {
         const currencyOk = isSarCurrency(remote.currency);
         const amountOk =

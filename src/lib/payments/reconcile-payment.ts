@@ -54,7 +54,7 @@ import {
 } from "@/lib/orders/loyalty";
 import { error as logError } from "@/lib/logger";
 
-export type PaymentDbStatus = "paid" | "failed" | "pending";
+export type PaymentDbStatus = "paid" | "failed" | "pending" | "refunded";
 
 export interface ReconcileOrderRow {
   id: string;
