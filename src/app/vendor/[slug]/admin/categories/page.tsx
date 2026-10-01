@@ -369,6 +369,7 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
                       value={editNameAr}
                       onChange={(e) => setEditNameAr(e.target.value)}
                       placeholder="الاسم بالعربية"
+                      aria-label="الاسم بالعربية"
                       className="flex-1 rounded-lg border border-slate-300 px-2 py-1 text-sm"
                     />
                     <button
@@ -385,6 +386,7 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
                     value={editNameEn}
                     onChange={(e) => setEditNameEn(e.target.value)}
                     placeholder="الاسم بالإنجليزية (اختياري)"
+                    aria-label="الاسم بالإنجليزية (اختياري)"
                     dir="ltr"
                     className="rounded-lg border border-slate-300 px-2 py-1 text-sm"
                   />
