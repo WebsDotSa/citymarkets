@@ -140,7 +140,7 @@ export function PageHero({
             className="w-full h-14 sm:h-16 pe-14 ps-14 rounded-2xl bg-white border-2 border-slate-200/80 text-sm sm:text-base font-semibold text-slate-900 placeholder-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009345]/30 focus:border-[#009345]/50 transition-all"
           />
           <span
-            className="absolute right-4 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-l from-[#009345] to-[#00B359] text-white shadow-md shadow-[#009345]/20"
+            className="absolute end-4 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-l from-[#009345] to-[#00B359] text-white shadow-md shadow-[#009345]/20"
             aria-hidden="true"
           >
             <Search className="w-5 h-5" />
@@ -150,13 +150,13 @@ export function PageHero({
               type="button"
               onClick={() => onQuery("")}
               aria-label="مسح البحث"
-              className="absolute left-4 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500"
+              className="absolute start-4 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500"
             >
               <X className="w-4 h-4" />
             </button>
           ) : (
             <span
-              className="absolute left-4 top-1/2 -translate-y-1/2 hidden sm:inline text-[10px] font-bold text-slate-400 select-none"
+              className="absolute start-4 top-1/2 -translate-y-1/2 hidden sm:inline text-[10px] font-bold text-slate-400 select-none"
               aria-hidden="true"
             >
               ⌘K

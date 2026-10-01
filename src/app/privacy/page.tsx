@@ -70,7 +70,7 @@ export default function PrivacyPage() {
         </p>
       </section>
 
-      <section className="mb-8 border-r-4 border-primary pr-4">
+      <section className="mb-8 border-e-4 border-primary pe-4">
         <h2 className="text-lg font-semibold text-secondary mb-3">٦. ميزة «شيف سيتي» وخدمة OpenAI</h2>
         <p className="text-sm text-gray-700 leading-relaxed mb-3">
           تستخدم ميزة «شيف سيتي» خدمة OpenAI لمعالجة الأسئلة والنصوص التي يقدمها المستخدم وتوليد

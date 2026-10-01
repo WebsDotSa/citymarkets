@@ -198,12 +198,12 @@ export function NotificationsComposerTab({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="رابط الصورة" hint="اختياري">
               <div className="relative">
-                <ImageIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <ImageIcon className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   value={draft.image_url}
                   onChange={(e) => setField("image_url", e.target.value)}
                   placeholder="https://cdn.citymarkets.sa/banner.jpg"
-                  className="admin-input pr-9"
+                  className="admin-input pe-9"
                 />
               </div>
             </Field>

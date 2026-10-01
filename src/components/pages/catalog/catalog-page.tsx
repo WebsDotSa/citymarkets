@@ -564,7 +564,7 @@ function ProductCardGrid({ product, onAdd }: { product: Product; onAdd: () => vo
           <div className="flex items-center justify-center h-full text-4xl">📦</div>
         )}
         {product.discount_price && (
-          <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+          <span className="absolute top-2 end-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
             خصم
           </span>
         )}
@@ -582,7 +582,7 @@ function ProductCardGrid({ product, onAdd }: { product: Product; onAdd: () => vo
               {product.discount_price || product.price}ر.س
             </span>
             {product.discount_price && (
-              <span className="text-[10px] text-gray-400 line-through mr-1">{product.price}</span>
+              <span className="text-[10px] text-gray-400 line-through me-1">{product.price}</span>
             )}
           </div>
         </div>
@@ -635,7 +635,7 @@ function ProductCardList({ product, onAdd }: { product: Product; onAdd: () => vo
               {product.discount_price || product.price}ر.س
             </span>
             {product.discount_price && (
-              <span className="text-xs text-gray-400 line-through mr-1">{product.price}</span>
+              <span className="text-xs text-gray-400 line-through me-1">{product.price}</span>
             )}
           </div>
           <button

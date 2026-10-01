@@ -264,18 +264,18 @@ export default function HomeDesignAdminPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handlePreview}>
-            <Eye className="w-4 h-4 ml-1" />
+            <Eye className="w-4 h-4 ms-1" />
             معاينة
           </Button>
           <Button variant="outline" onClick={handleReset}>
-            <RotateCcw className="w-4 h-4 ml-1" />
+            <RotateCcw className="w-4 h-4 ms-1" />
             إعادة تعيين
           </Button>
           <Button onClick={handleSave} disabled={saving || loading}>
             {saving ? (
-              <Loader2 className="w-4 h-4 ml-1 animate-spin" />
+              <Loader2 className="w-4 h-4 ms-1 animate-spin" />
             ) : (
-              <Save className="w-4 h-4 ml-1" />
+              <Save className="w-4 h-4 ms-1" />
             )}
             حفظ
           </Button>
@@ -313,7 +313,7 @@ export default function HomeDesignAdminPage() {
       {loading ? (
         <div className="flex items-center justify-center py-20 bg-white rounded-2xl border border-gray-200">
           <Loader2 className="w-6 h-6 text-primary animate-spin" />
-          <span className="mr-2 text-gray-500">جاري التحميل...</span>
+          <span className="me-2 text-gray-500">جاري التحميل...</span>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">

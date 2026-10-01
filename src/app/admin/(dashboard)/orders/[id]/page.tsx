@@ -440,7 +440,7 @@ export default function AdminOrderDetailPage() {
             ) : null}
           </div>
           <p className="text-sm text-gray-500 mt-1">
-            <Clock className="w-3.5 h-3.5 inline-block ml-1 -mt-0.5" />
+            <Clock className="w-3.5 h-3.5 inline-block ms-1 -mt-0.5" />
             {order.created_at
               ? new Date(String(order.created_at)).toLocaleString("ar-SA", {
                   dateStyle: "full",
@@ -599,7 +599,7 @@ export default function AdminOrderDetailPage() {
 
             {order.address_description ? (
               <p className="text-sm text-gray-600 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3">
-                <MessageSquare className="w-3.5 h-3.5 inline-block ml-1" />
+                <MessageSquare className="w-3.5 h-3.5 inline-block ms-1" />
                 {String(order.address_description)}
               </p>
             ) : null}
@@ -846,7 +846,7 @@ export default function AdminOrderDetailPage() {
             <h2 className="font-bold text-secondary flex items-center gap-2 mb-3">
               <StickyNote className="w-4 h-4 text-primary" />
               ملاحظات داخلية
-              <span className="text-[10px] text-gray-400 font-normal mr-1">(للفريق فقط)</span>
+              <span className="text-[10px] text-gray-400 font-normal me-1">(للفريق فقط)</span>
             </h2>
             <textarea
               value={internalNotes}
@@ -893,7 +893,7 @@ export default function AdminOrderDetailPage() {
             {order.idempotency_key ? (
               <p className="flex justify-between">
                 <span className="text-gray-500">معرّف الجلسة:</span>
-                <span className="font-mono text-secondary truncate ml-2" dir="ltr">
+                <span className="font-mono text-secondary truncate ms-2" dir="ltr">
                   {String(order.idempotency_key).slice(0, 12)}…
                 </span>
               </p>

@@ -48,8 +48,8 @@ export function HeroSection() {
       }`}
     >
       {/* decorative blobs */}
-      <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="absolute -top-20 -end-20 w-72 h-72 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -start-20 w-80 h-80 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-8 sm:pb-12">
         {/* store status pill */}

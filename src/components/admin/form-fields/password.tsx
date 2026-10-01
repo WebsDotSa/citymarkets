@@ -34,12 +34,12 @@ export function PasswordField({
         onBlur={() => onBlur(field.key)}
         placeholder={field.placeholder}
         disabled={field.disabled}
-        className={`admin-input pl-10 ${errorClass}`}
+        className={`admin-input ps-10 ${errorClass}`}
       />
       <button
         type="button"
         onClick={() => onToggleVisibility(field.key)}
-        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+        className="absolute start-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
       >
         {showPassword ? (
           <EyeOff className="w-4 h-4" />

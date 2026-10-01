@@ -62,7 +62,7 @@ export function PWAProvider() {
   return (
     <div
       dir="rtl"
-      className="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-sm animate-in slide-in-from-bottom-4"
+      className="fixed bottom-20 start-4 end-4 z-50 mx-auto max-w-sm animate-in slide-in-from-bottom-4"
       role="dialog"
       aria-label="تثبيت التطبيق"
     >

@@ -831,7 +831,7 @@ export function CheckoutNew() {
         <div className="max-w-2xl mx-auto flex items-center gap-4">
           <Link
             href="/cart"
-            className="p-2 -mr-2 hover:bg-gray-100 rounded-xl transition-colors"
+            className="p-2 -me-2 hover:bg-gray-100 rounded-xl transition-colors"
             aria-label="العودة إلى السلة"
           >
             <ArrowLeft className="w-6 h-6 text-gray-600" />
@@ -1254,7 +1254,7 @@ export function CheckoutNew() {
           title="ملخص الطلب"
           done
         >
-          <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-60 overflow-y-auto pe-1">
             {items.map((item, index) => (
               <div
                 key={`${item.product.id}-${index}`}
@@ -1384,7 +1384,7 @@ export function CheckoutNew() {
           it doesn't shadow the form's own pay button. Validation
           errors surface here as a subtitle, not a modal. */}
       <div
-        className="fixed left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-2xl safe-bottom"
+        className="fixed start-0 end-0 z-50 bg-white border-t border-gray-100 shadow-2xl safe-bottom"
         style={{ bottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}
         role="region"
         aria-label="ملخص الدفع"

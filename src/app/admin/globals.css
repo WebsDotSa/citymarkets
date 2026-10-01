@@ -37,7 +37,7 @@
   }
 
   .admin-sidebar {
-    @apply fixed top-0 right-0 h-full w-[280px] bg-white border-l border-slate-200 z-50 flex flex-col shadow-xl;
+    @apply fixed top-0 end-0 h-full w-[280px] bg-white border-s border-slate-200 z-50 flex flex-col shadow-xl;
   }
 
   .admin-main {
@@ -46,7 +46,7 @@
 
   @media (min-width: 1024px) {
     .admin-main {
-      @apply mr-[280px];
+      @apply me-[280px];
     }
   }
 
@@ -55,7 +55,7 @@
   }
 
   .admin-content {
-    @apply p-4 lg:p-6 lg:mr-0 min-h-[calc(100vh-4rem)];
+    @apply p-4 lg:p-6 lg:me-0 min-h-[calc(100vh-4rem)];
   }
 
   /* Cards */
@@ -90,7 +90,7 @@
 
   .admin-stat-card::before {
     content: '';
-    @apply absolute top-0 left-0 w-full h-1 bg-gradient-to-r;
+    @apply absolute top-0 start-0 w-full h-1 bg-gradient-to-r;
   }
 
   .admin-stat-card.primary::before {
@@ -169,7 +169,7 @@
 
   .admin-label-required::after {
     content: '*';
-    @apply text-red-500 mr-1;
+    @apply text-red-500 me-1;
   }
 
   .admin-input {
@@ -218,7 +218,7 @@
 
   .admin-toggle-slider::before {
     content: '';
-    @apply absolute top-0.5 right-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform;
+    @apply absolute top-0.5 end-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform;
   }
 
   .admin-toggle-input:checked + .admin-toggle-slider::before {
@@ -336,7 +336,7 @@
   }
 
   .select2-container--default .select2-selection--single .select2-selection__arrow {
-    @apply h-11 left-2 right-auto;
+    @apply h-11 start-2 end-auto;
   }
 
   .select2-container--default .select2-selection--multiple {
@@ -471,7 +471,7 @@
 
   /* Dropdown Menu */
   .admin-dropdown {
-    @apply absolute top-full left-0 mt-2 w-56 bg-white rounded-xl border border-slate-200 shadow-xl shadow-slate-200/50 py-2 z-50;
+    @apply absolute top-full start-0 mt-2 w-56 bg-white rounded-xl border border-slate-200 shadow-xl shadow-slate-200/50 py-2 z-50;
   }
 
   .admin-dropdown-item {

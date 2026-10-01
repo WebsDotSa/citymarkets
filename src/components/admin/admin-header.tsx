@@ -158,13 +158,13 @@ export function AdminHeader({
         {showSearch && (
           <form onSubmit={handleSearch} className="hidden md:block">
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="بحث سريع..."
-                className="w-48 h-9 pr-9 pl-3 bg-slate-100 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all"
+                className="w-48 h-9 pe-9 ps-3 bg-slate-100 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all"
               />
             </div>
           </form>
@@ -210,7 +210,7 @@ export function AdminHeader({
           >
             <Bell className="w-5 h-5" />
             {notifications.some((n) => n.unread) && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
+              <span className="absolute top-1.5 end-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
             )}
           </button>
           {showNotifications && (

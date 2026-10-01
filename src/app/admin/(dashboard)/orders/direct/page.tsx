@@ -58,7 +58,7 @@ export default function AdminDirectOrdersPage() {
           </div>
           <button
             onClick={() => router.push('/orders/direct/chat')}
-            className="mr-auto text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2"
+            className="me-auto text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2"
             style={{ backgroundColor: BRAND.brandGreen }}
           >
             <MessageCircle className="w-4 h-4" />
@@ -125,7 +125,7 @@ export default function AdminDirectOrdersPage() {
                       )}
                     </div>
                     <div className="text-sm text-gray-700">
-                      <User className="inline w-3 h-3 ml-1" />
+                      <User className="inline w-3 h-3 ms-1" />
                       {o.user_name || o.guest_name || 'عميل'}{' '}
                       {o.user_phone || o.guest_phone ? `· ${o.user_phone || o.guest_phone}` : ''}
                     </div>

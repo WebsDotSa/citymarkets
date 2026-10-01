@@ -187,11 +187,11 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
                     <div className="text-[10px] text-gray-500">
                       ×{it.quantity}
                       {it.resolved_price ? (
-                        <span className="text-green-700 mr-2">
+                        <span className="text-green-700 me-2">
                           · {it.resolved_price.toFixed(2)} ر.س ✓
                         </span>
                       ) : (
-                        <span className="text-amber-700 mr-2">· بانتظار التأكيد</span>
+                        <span className="text-amber-700 me-2">· بانتظار التأكيد</span>
                       )}
                     </div>
                   </div>

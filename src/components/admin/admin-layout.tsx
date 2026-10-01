@@ -140,7 +140,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       />
 
       {/* Main content */}
-      <div className="lg:mr-[280px] transition-all duration-300">
+      <div className="lg:me-[280px] transition-all duration-300">
         {/* Header */}
         <AdminHeader
           onMenuClick={() => setSidebarOpen(true)}

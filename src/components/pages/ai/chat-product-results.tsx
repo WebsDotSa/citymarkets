@@ -142,7 +142,7 @@ export function ChatProductResults({
                   <Package className="h-6 w-6 text-primary/50" aria-hidden="true" />
                 )}
                 {inCart > 0 && (
-                  <span className="absolute -bottom-1 -left-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-black text-white shadow-sm">
+                  <span className="absolute -bottom-1 -start-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-black text-white shadow-sm">
                     {inCart}
                   </span>
                 )}

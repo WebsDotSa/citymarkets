@@ -354,7 +354,7 @@ export default function DirectOrderCreatePage() {
                   <Icon className="w-5 h-5" style={{ color: active ? BRAND.brandGreen : '#666' }} />
                   <span className="text-sm font-semibold">{opt.label}</span>
                   {active && (
-                    <CheckCircle2 className="w-4 h-4 mr-auto" style={{ color: BRAND.brandGreen }} />
+                    <CheckCircle2 className="w-4 h-4 me-auto" style={{ color: BRAND.brandGreen }} />
                   )}
                 </button>
               );

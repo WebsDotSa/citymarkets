@@ -362,12 +362,12 @@ function VendorDetailPanel({ detail }: { detail: VendorDetail }) {
               {getVendorTypeAr(vendor.vendorType)}
               {vendor.categorySlug && ` · ${vendor.categorySlug}`}
               {vendor.isFeatured && (
-                <span className="mr-2 inline-flex items-center gap-1 text-amber-600">
+                <span className="me-2 inline-flex items-center gap-1 text-amber-600">
                   <BarChart3 className="w-3 h-3" /> مميّز
                 </span>
               )}
               {!vendor.isActive && (
-                <span className="mr-2 text-red-600">· موقوف</span>
+                <span className="me-2 text-red-600">· موقوف</span>
               )}
             </p>
           </div>

@@ -72,7 +72,7 @@ function DriverSidebar({ user, isOpen, onClose, onLogout }: DriverSidebarProps) 
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 right-0 h-full w-[280px] bg-white border-l border-slate-200 z-50 flex flex-col
+          fixed top-0 end-0 h-full w-[280px] bg-white border-s border-slate-200 z-50 flex flex-col
           transform transition-all duration-300 ease-out
           ${isOpen ? "translate-x-0" : "translate-x-full"}
           lg:translate-x-0 shadow-xl
@@ -137,7 +137,7 @@ function DriverSidebar({ user, isOpen, onClose, onLogout }: DriverSidebarProps) 
                   <Icon className="w-5 h-5" />
                   <span>{item.label}</span>
                   {active && (
-                    <div className="mr-auto w-1.5 h-1.5 rounded-full bg-white" />
+                    <div className="me-auto w-1.5 h-1.5 rounded-full bg-white" />
                   )}
                 </Link>
               );
@@ -179,7 +179,7 @@ function DriverSidebar({ user, isOpen, onClose, onLogout }: DriverSidebarProps) 
 
 function DriverHeader({ onMenuClick, user }: { onMenuClick: () => void; user: DriverUser }) {
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:pr-6">
+    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:pe-6">
       {/* Mobile menu button */}
       <button
         onClick={onMenuClick}
@@ -298,7 +298,7 @@ export function DriverLayout({ children }: DriverLayoutProps) {
       />
 
       {/* Main content */}
-      <div className="lg:mr-[280px] transition-all duration-300">
+      <div className="lg:me-[280px] transition-all duration-300">
         {/* Header */}
         <DriverHeader onMenuClick={() => setSidebarOpen(true)} user={user} />
 

@@ -137,7 +137,7 @@ export function ProfileEdit() {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link
             href="/profile"
-            className="p-2 -mr-2 hover:bg-gray-100 rounded-xl transition-colors"
+            className="p-2 -me-2 hover:bg-gray-100 rounded-xl transition-colors"
             aria-label="العودة إلى الحساب"
           >
             <ChevronRight className="w-6 h-6 text-gray-600" />

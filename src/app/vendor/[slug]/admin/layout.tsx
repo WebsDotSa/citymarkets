@@ -178,7 +178,7 @@ export default function VendorAdminLayout({ children, params }: VendorLayoutProp
     <div className="min-h-screen bg-gray-100" dir="rtl">
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 right-0 w-64 bg-white shadow-xl transform transition-transform duration-300 z-50 lg:translate-x-0 ${
+        className={`fixed inset-y-0 end-0 w-64 bg-white shadow-xl transform transition-transform duration-300 z-50 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -205,7 +205,7 @@ export default function VendorAdminLayout({ children, params }: VendorLayoutProp
           ))}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
+        <div className="absolute bottom-0 start-0 end-0 p-4 border-t">
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-red-600 hover:bg-red-50 transition-colors"
@@ -225,7 +225,7 @@ export default function VendorAdminLayout({ children, params }: VendorLayoutProp
       )}
 
       {/* Main content */}
-      <div className="lg:mr-64">
+      <div className="lg:me-64">
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-white shadow-sm">
           <div className="flex items-center justify-between px-4 py-3">

@@ -455,7 +455,7 @@ export default function VendorPage() {
                   placeholder="ابحث في المنتجات..."
                   className="w-full h-10 px-10 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
-                <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
+                <svg className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.34-4.34" />
                   <circle cx="11" cy="11" r="8" />
                 </svg>
@@ -530,7 +530,7 @@ export default function VendorPage() {
                           />
                           {hasDiscount && (
                             <span
-                              className="absolute top-2 right-2 text-[10px] font-black px-2 py-0.5 rounded-full text-white shadow-sm"
+                              className="absolute top-2 end-2 text-[10px] font-black px-2 py-0.5 rounded-full text-white shadow-sm"
                               style={{ background: vendor.primaryColor }}
                             >
                               خصم
@@ -729,7 +729,7 @@ function CategoryStrip({
         type="button"
         onClick={() => scrollBy(-220)}
         aria-label="السابق"
-        className="hidden md:flex absolute -right-1 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center bg-white/95 border border-slate-200 shadow-md rounded-full hover:bg-white"
+        className="hidden md:flex absolute -end-1 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center bg-white/95 border border-slate-200 shadow-md rounded-full hover:bg-white"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <polyline points="9 18 15 12 9 6" />
@@ -740,7 +740,7 @@ function CategoryStrip({
         type="button"
         onClick={() => scrollBy(220)}
         aria-label="التالي"
-        className="hidden md:flex absolute -left-1 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center bg-white/95 border border-slate-200 shadow-md rounded-full hover:bg-white"
+        className="hidden md:flex absolute -start-1 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center bg-white/95 border border-slate-200 shadow-md rounded-full hover:bg-white"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <polyline points="15 18 9 12 15 6" />

@@ -61,7 +61,7 @@ export function ChatComposer({
   showSuggestions,
 }: ChatComposerProps) {
   return (
-    <footer className="fixed bottom-16 left-0 right-0 z-40 border-t border-white/70 bg-gradient-to-t from-white via-white/95 to-white/70 pt-2 shadow-[0_-12px_30px_-18px_rgba(15,40,30,0.18)] backdrop-blur-xl md:bottom-0">
+    <footer className="fixed bottom-16 start-0 end-0 z-40 border-t border-white/70 bg-gradient-to-t from-white via-white/95 to-white/70 pt-2 shadow-[0_-12px_30px_-18px_rgba(15,40,30,0.18)] backdrop-blur-xl md:bottom-0">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 px-3 sm:px-6">
         {voiceError ? (
           <VoiceErrorBanner

@@ -76,7 +76,7 @@ function VendorCard({ vendor }: { vendor: HomeVendor }) {
         />
 
         {/* open/closed pill */}
-        <div className="absolute top-3 right-3 z-10">
+        <div className="absolute top-3 end-3 z-10">
           <span
             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md ${
               vendor.isOpen

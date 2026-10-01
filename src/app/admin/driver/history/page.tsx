@@ -175,7 +175,7 @@ export default function DriverHistoryPage() {
               </button>
             );
           })}
-          <span className="text-xs text-gray-400 mr-2">
+          <span className="text-xs text-gray-400 me-2">
             {pagination.total} طلب
           </span>
         </div>

@@ -121,9 +121,9 @@ export default function DelegatePage() {
       {/* Hero */}
       <section className="relative bg-gradient-to-br from-[#009345] to-[#007A38] text-white py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 right-10 w-64 h-64 rounded-full bg-white/20" />
-          <div className="absolute bottom-10 left-10 w-48 h-48 rounded-full bg-white/10" />
-          <div className="absolute top-1/2 left-1/3 w-32 h-32 rounded-full bg-white/10" />
+          <div className="absolute top-10 end-10 w-64 h-64 rounded-full bg-white/20" />
+          <div className="absolute bottom-10 start-10 w-48 h-48 rounded-full bg-white/10" />
+          <div className="absolute top-1/2 start-1/3 w-32 h-32 rounded-full bg-white/10" />
         </div>
         <div className="max-w-5xl mx-auto px-4 relative z-10 text-center">
           <div className="inline-block bg-white/15 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-semibold mb-6">
@@ -230,7 +230,7 @@ export default function DelegatePage() {
                 key={i}
                 className="relative bg-gray-50 p-6 rounded-2xl hover:bg-primary-50 transition-colors"
               >
-                <div className="absolute -top-4 right-6 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">
+                <div className="absolute -top-4 end-6 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">
                   {i + 1}
                 </div>
                 <div className="text-4xl mb-3 mt-2">{r.icon}</div>
@@ -257,7 +257,7 @@ export default function DelegatePage() {
                 key={i}
                 className="relative bg-white p-8 rounded-2xl shadow-md border-t-4 border-primary"
               >
-                <div className="absolute -top-6 right-6 w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center font-extrabold text-xl shadow-lg">
+                <div className="absolute -top-6 end-6 w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center font-extrabold text-xl shadow-lg">
                   {s.n}
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3 mt-4">{s.title}</h3>

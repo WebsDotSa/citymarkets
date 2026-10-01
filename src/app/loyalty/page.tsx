@@ -16,8 +16,8 @@ export default function LoyaltyLandingPage() {
       {/* Hero */}
       <section className="relative bg-gradient-to-br from-[#009345] to-[#007A38] text-white py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-96 h-96 rounded-full bg-white/20" />
-          <div className="absolute bottom-10 left-10 w-64 h-64 rounded-full bg-white/10" />
+          <div className="absolute top-20 end-20 w-96 h-96 rounded-full bg-white/20" />
+          <div className="absolute bottom-10 start-10 w-64 h-64 rounded-full bg-white/10" />
         </div>
         <div className="max-w-5xl mx-auto px-4 relative z-10 text-center">
           <div className="text-6xl mb-6">🎁</div>
@@ -64,7 +64,7 @@ export default function LoyaltyLandingPage() {
                   <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
                     <span className="text-4xl">{item.icon}</span>
                   </div>
-                  <span className="absolute -top-2 -right-2 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  <span className="absolute -top-2 -end-2 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">
                     {item.step}
                   </span>
                 </div>

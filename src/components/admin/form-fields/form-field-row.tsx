@@ -20,14 +20,14 @@ export function FormFieldRow({ field, hasError, error, children }: FormFieldRowP
         >
           {field.label}
           {field.required && (
-            <span className="text-red-500 mr-1">*</span>
+            <span className="text-red-500 me-1">*</span>
           )}
         </label>
       )}
       {children}
       {hasError && (
         <p className="admin-error">
-          <AlertCircle className="w-3 h-3 inline ml-1" />
+          <AlertCircle className="w-3 h-3 inline ms-1" />
           {error}
         </p>
       )}

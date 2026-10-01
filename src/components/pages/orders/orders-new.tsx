@@ -209,7 +209,7 @@ export function OrdersNew() {
       <div className="bg-gradient-to-l from-primary-600 to-primary-700 px-4 pt-6 pb-20">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-6">
-            <Link href="/profile" className="p-2 -mr-2 hover:bg-white/20 rounded-xl transition-colors">
+            <Link href="/profile" className="p-2 -me-2 hover:bg-white/20 rounded-xl transition-colors">
               <ChevronRight className="w-6 h-6 text-white" />
             </Link>
             <h1 className="text-2xl font-bold text-white">طلباتي</h1>
@@ -256,9 +256,9 @@ export function OrdersNew() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="ابحث برقم الطلب..."
-              className="w-full h-12 pr-12 pl-4 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 border border-gray-200 focus:border-primary-500 transition-all"
+              className="w-full h-12 pe-12 ps-4 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 border border-gray-200 focus:border-primary-500 transition-all"
             />
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           </div>
 
           {/* Filters */}

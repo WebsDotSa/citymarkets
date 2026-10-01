@@ -110,7 +110,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
       {/* Skip to main content link */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:right-4 focus:z-[100] focus:px-6 focus:py-3 focus:bg-primary focus:text-white focus:rounded-2xl focus:font-semibold"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:end-4 focus:z-[100] focus:px-6 focus:py-3 focus:bg-primary focus:text-white focus:rounded-2xl focus:font-semibold"
       >
         تخطي إلى المحتوى الرئيسي
       </a>
@@ -175,13 +175,13 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="ابحث عن منتجات، فئات، أو العلامات..."
-                  className={`w-full h-11 pr-12 pl-4 rounded-2xl text-sm transition-all duration-200 ${
+                  className={`w-full h-11 pe-12 ps-4 rounded-2xl text-sm transition-all duration-200 ${
                     glassStyles
                       ? "bg-white/20 text-white placeholder:text-white/70 border border-white/30 focus:bg-white/30 focus:border-white/50"
                       : "bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-[#009345]/20"
                   }`}
                 />
-                <Search className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 ${
+                <Search className={`absolute end-4 top-1/2 -translate-y-1/2 w-4 h-4 ${
                   glassStyles ? "text-white/70" : "text-gray-400"
                 }`} />
               </form>
@@ -227,7 +227,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
               >
                 <Heart className="w-5 h-5" />
                 {wishlistCount > 0 && (
-                  <span className="absolute -top-0.5 -left-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-bounce-in">
+                  <span className="absolute -top-0.5 -start-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-bounce-in">
                     {wishlistCount > 9 ? "9+" : wishlistCount}
                   </span>
                 )}
@@ -246,7 +246,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
                 <div className="relative">
                   <ShoppingCart className="w-5 h-5" />
                   {itemCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-bounce-in shadow-lg shadow-orange-500/30">
+                    <span className="absolute -top-1.5 -end-1.5 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-bounce-in shadow-lg shadow-orange-500/30">
                       {itemCount > 9 ? "9+" : itemCount}
                     </span>
                   )}
@@ -283,7 +283,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
 
                   {/* User Dropdown */}
                   {userMenuOpen && (
-                    <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-scale-in origin-top-left">
+                    <div className="absolute start-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-scale-in origin-top-left">
                       {/* User Info */}
                       <div className="p-4 bg-gradient-to-l from-primary-50 to-white border-b border-gray-100">
                         <div className="flex items-center gap-3">
@@ -323,7 +323,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
                           <Heart className="w-5 h-5" />
                           <span className="font-medium">المفضلة</span>
                           {wishlistCount > 0 && (
-                            <span className="mr-auto px-2 py-0.5 bg-red-100 text-red-600 text-xs font-bold rounded-full">
+                            <span className="me-auto px-2 py-0.5 bg-red-100 text-red-600 text-xs font-bold rounded-full">
                               {wishlistCount}
                             </span>
                           )}
@@ -441,10 +441,10 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ابحث عن منتجات..."
-                className="w-full h-12 pr-12 pl-4 rounded-2xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-[#009345]/20"
+                className="w-full h-12 pe-12 ps-4 rounded-2xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-[#009345]/20"
                 autoFocus
               />
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             </form>
           </div>
         )}
@@ -458,7 +458,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="absolute top-0 right-0 w-full max-w-sm h-full bg-white shadow-2xl animate-slide-in-right"
+            className="absolute top-0 end-0 w-full max-w-sm h-full bg-white shadow-2xl animate-slide-in-right"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Menu Header */}
@@ -531,7 +531,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
                     <Heart className="w-5 h-5 text-primary" />
                     <span className="font-medium">المفضلة</span>
                     {wishlistCount > 0 && (
-                      <span className="mr-auto px-2 py-0.5 bg-red-100 text-red-600 text-xs font-bold rounded-full">
+                      <span className="me-auto px-2 py-0.5 bg-red-100 text-red-600 text-xs font-bold rounded-full">
                         {wishlistCount}
                       </span>
                     )}

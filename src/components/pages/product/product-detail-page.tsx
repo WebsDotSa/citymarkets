@@ -202,7 +202,7 @@ export function ProductDetailPage() {
   return (
     <div className="min-h-screen bg-white pb-28">
       {/* Header - floating overlay with RTL-aware button groups */}
-      <div className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between p-4 pointer-events-none">
+      <div className="fixed top-0 start-0 end-0 z-30 flex items-center justify-between p-4 pointer-events-none">
         {/* Visual right (RTL first position): voice record + back */}
         <div className="flex items-center gap-2 pointer-events-auto">
           <button
@@ -284,7 +284,7 @@ export function ProductDetailPage() {
       </div>
 
       {recordingError && (
-        <div className="fixed top-16 left-4 right-4 z-40 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-2 shadow-sm flex items-center justify-between gap-2">
+        <div className="fixed top-16 start-4 end-4 z-40 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-2 shadow-sm flex items-center justify-between gap-2">
           <span>{recordingError}</span>
           <button
             type="button"
@@ -301,7 +301,7 @@ export function ProductDetailPage() {
         {/* Discount Badge */}
         {hasDiscount && (
           <div 
-            className="absolute top-4 right-4 z-10 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg"
+            className="absolute top-4 end-4 z-10 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg"
             aria-label={`خصم ${discountPercentage}%`}
           >
             -{discountPercentage}%
@@ -487,13 +487,13 @@ export function ProductDetailPage() {
 
       {/* Sticky Add to Cart Bar */}
       <div
-        className="fixed left-0 right-0 z-40 px-4 py-3 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] space-y-2"
+        className="fixed start-0 end-0 z-40 px-4 py-3 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] space-y-2"
         style={{ bottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}
       >
         {/* Quantity Stepper - placed ABOVE the add-to-cart row, on the right side */}
         {product.stock_qty > 0 && (
           <div className="flex items-center justify-end gap-2">
-            <span className="text-xs text-gray-500 ml-1">الكمية:</span>
+            <span className="text-xs text-gray-500 ms-1">الكمية:</span>
             <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
               <button
                 type="button"
