@@ -543,6 +543,7 @@ function ProductsPage() {
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
+              aria-label="بحث بالاسم أو الباركود"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="بحث بالاسم أو الباركود..."
@@ -663,6 +664,7 @@ function ProductsPage() {
                     <th className="px-4 py-3 text-right">
                       <input
                         type="checkbox"
+                        aria-label="تحديد كل المنتجات"
                         checked={products.length > 0 && selectedIds.length === products.length}
                         onChange={(e) => handleSelectAll(e.target.checked)}
                         className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
@@ -687,6 +689,7 @@ function ProductsPage() {
                         <td className="px-4 py-3">
                           <input
                             type="checkbox"
+                            aria-label={`تحديد ${p.name_ar}`}
                             checked={selectedIds.includes(p.id)}
                             onChange={() => toggleSelect(p.id)}
                             className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
@@ -787,6 +790,7 @@ function ProductsPage() {
                     <div className="absolute top-4 left-4 z-10">
                       <input
                         type="checkbox"
+                        aria-label={`تحديد ${p.name_ar}`}
                         checked={selectedIds.includes(p.id)}
                         onChange={() => toggleSelect(p.id)}
                         className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
@@ -897,8 +901,9 @@ function ProductsPage() {
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
             <h3 className="text-lg font-bold text-secondary mb-4">تعديل المخزون للمنتجات المحددة</h3>
             <div className="mb-4">
-              <label className="block text-sm text-gray-500 mb-1">الكمية الجديدة (تطبق على الكل)</label>
+              <label htmlFor="bulk-quantity" className="block text-sm text-gray-500 mb-1">الكمية الجديدة (تطبق على الكل)</label>
               <input
+                id="bulk-quantity"
                 type="number"
                 value={bulkQuantity}
                 onChange={(e) => setBulkQuantity(e.target.value)}
