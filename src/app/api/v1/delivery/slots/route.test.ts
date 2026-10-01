@@ -117,8 +117,17 @@ describe("GET /api/v1/delivery/slots — migration 060/078 regression", () => {
 
   it("counts booked slots globally (no per-zone partition)", async () => {
     makeQueryMock({ slotBookings: { morning: 5, noon: 0 } });
+    // Pin a far-future date so the lead_time window doesn't expire
+    // the morning slot (production behaviour: today at Riyadh 13:38
+    // + 120min lead = 15:38 cutoff, morning 09:00 < 15:38 → unavailable;
+    // a test 14 days out never hits that gate).
+    const farFuture = new Date();
+    farFuture.setUTCDate(farFuture.getUTCDate() + 14);
+    const yyyy = farFuture.getUTCFullYear();
+    const mm = String(farFuture.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(farFuture.getUTCDate()).padStart(2, "0");
     const res = await GET(
-      mockRequest("http://localhost/api/v1/delivery/slots") as never,
+      mockRequest(`http://localhost/api/v1/delivery/slots?date=${yyyy}-${mm}-${dd}`) as never,
     );
     const body = await res.json();
     const morning = body.data.windows.find((w: { id: string }) => w.id === "morning");

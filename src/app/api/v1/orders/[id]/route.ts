@@ -40,7 +40,6 @@ export async function GET(
               o.tracking_code AS order_number, o.type,
               o.voice_note_url, o.voice_note_duration,
               o.user_id::text as user_id,
-              a.plus_code as address_plus_code,
               ${ORDER_ADDRESS_COLUMNS},
               ${ORDER_USER_COLUMNS},
               m.delivery_lat, m.delivery_lng, m.delivery_plus_code, m.city, m.district,
