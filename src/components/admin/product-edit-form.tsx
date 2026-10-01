@@ -300,7 +300,9 @@ export function ProductEditForm({
             </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   الصورة الرئيسية
                 </label>
                 <ImageUploader
@@ -443,10 +445,14 @@ export function ProductEditForm({
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="product-name-ar"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   اسم المنتج بالعربية <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="product-name-ar"
                   type="text"
                   value={nameAr}
                   onChange={(e) => setNameAr(e.target.value)}
@@ -456,10 +462,14 @@ export function ProductEditForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="product-name-en"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   اسم المنتج بالإنجليزية
                 </label>
                 <input
+                  id="product-name-en"
                   type="text"
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
@@ -470,30 +480,39 @@ export function ProductEditForm({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="product-category-id"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   <span className="inline-flex items-center gap-1">
                     <Layers className="w-3.5 h-3.5 text-gray-400" />
                     الفئة <span className="text-red-500">*</span>
                   </span>
                 </label>
-                <SearchableSelect
-                  value={categoryId}
-                  onChange={setCategoryId}
-                  options={categoryOptions.map((c) => ({ value: c.id, label: c.name_ar }))}
-                  placeholder="— اختر الفئة —"
-                  required
-                  allowClear={false}
-                />
+                <div id="product-category-id">
+                  <SearchableSelect
+                    value={categoryId}
+                    onChange={setCategoryId}
+                    options={categoryOptions.map((c) => ({ value: c.id, label: c.name_ar }))}
+                    placeholder="— اختر الفئة —"
+                    required
+                    allowClear={false}
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="product-barcode"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   <span className="inline-flex items-center gap-1">
                     <Barcode className="w-3.5 h-3.5 text-gray-400" />
                     الباركود
                   </span>
                 </label>
                 <input
+                  id="product-barcode"
                   type="text"
                   value={barcode}
                   onChange={(e) => setBarcode(e.target.value)}
@@ -513,11 +532,15 @@ export function ProductEditForm({
             </div>
             <div className="grid md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="product-price"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   السعر <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
+                    id="product-price"
                     type="number"
                     step="0.01"
                     min="0"
@@ -533,11 +556,15 @@ export function ProductEditForm({
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="product-discount-price"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   سعر الخصم
                 </label>
                 <div className="relative">
                   <input
+                    id="product-discount-price"
                     type="number"
                     step="0.01"
                     min="0"
@@ -555,18 +582,23 @@ export function ProductEditForm({
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="product-unit"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   الوحدة
                 </label>
-                <SearchableSelect
-                  value={unit}
-                  onChange={setUnit}
-                  options={UNIT_OPTIONS.map((u) => ({ value: u, label: u }))}
-                  placeholder="— اختر الوحدة —"
-                  includePlaceholderOption={false}
-                  searchable={false}
-                  allowClear={false}
-                />
+                <div id="product-unit">
+                  <SearchableSelect
+                    value={unit}
+                    onChange={setUnit}
+                    options={UNIT_OPTIONS.map((u) => ({ value: u, label: u }))}
+                    placeholder="— اختر الوحدة —"
+                    includePlaceholderOption={false}
+                    searchable={false}
+                    allowClear={false}
+                  />
+                </div>
               </div>
             </div>
           </section>
@@ -579,10 +611,14 @@ export function ProductEditForm({
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="product-stock-qty"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   الكمية في المخزون <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="product-stock-qty"
                   type="number"
                   min="0"
                   step="1"
@@ -628,13 +664,22 @@ export function ProductEditForm({
               <Info className="w-5 h-5 text-primary" />
               <h2 className="text-base font-bold text-secondary">الوصف</h2>
             </div>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="اكتب وصفاً تفصيلياً للمنتج… يعرض في صفحة المنتج."
-              rows={4}
-              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
-            />
+            <div>
+              <label
+                htmlFor="product-description"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                الوصف
+              </label>
+              <textarea
+                id="product-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="اكتب وصفاً تفصيلياً للمنتج… يعرض في صفحة المنتج."
+                rows={4}
+                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+              />
+            </div>
           </section>
 
           {/* Section: Visibility */}
