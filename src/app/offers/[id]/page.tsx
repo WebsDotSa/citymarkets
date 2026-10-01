@@ -27,7 +27,15 @@ interface OfferDetailRow {
   is_featured: boolean;
 }
 
+// Cheap UUID v4/v1/v5 shape check. Short-circuits malformed share-links
+// (e.g. /offers/1, /offers/preview) before they hit Postgres — without
+// it, `WHERE o.id = $1` raises `invalid input syntax for type uuid` and
+// pollutes server.log with stack traces for every typo'd URL.
+// Mirrors the same guard used in src/lib/catalog/seo/product.ts.
+const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 async function loadOffer(id: string) {
+  if (!UUID_LIKE.test(id)) return null;
   const res = await query(
     `SELECT o.id, o.title_ar, o.title_en, o.description_ar, o.description_en,
             o.image_url, o.discount_type, o.discount_value, o.max_discount,
