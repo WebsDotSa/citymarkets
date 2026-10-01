@@ -47,6 +47,7 @@ import type { CouponRow } from "../pricing";
 import { reportCheckoutError } from "@/lib/errors/checkout-error-reporter";
 import { markOrderPaymentFailed } from "@/lib/payments/payment-service";
 import { getMainStoreAndDistance } from "@/lib/delivery/main-store";
+import { deriveContentIdempotencyKey } from "./content-idempotency";
 
 /** Caller identity resolved upstream by the route handler. */
 export interface CheckoutServiceCaller {
@@ -126,6 +127,40 @@ export async function runCheckout(
     };
   }
   const v = validation.data;
+
+  // PCP-83: derive a content-derived idempotency key when the client
+  // didn't supply one. Two submissions of the same cart, by the same
+  // caller, within the same minute collapse to the same key — the
+  // existing `orders.idempotency_key` UNIQUE constraint then replays
+  // the first insert as a duplicate instead of burning the coupon a
+  // second time. Window + rationale are documented in
+  // `./content-idempotency.ts` and the create-checkout.ts header.
+  let resolvedIdempotencyKey: string | null = v.idempotency_key ?? null;
+  if (!resolvedIdempotencyKey) {
+    const guestPhone =
+      (v.guestInfo?.phone as string | undefined) ?? v.phone ?? null;
+    resolvedIdempotencyKey = deriveContentIdempotencyKey({
+      cart: {
+        items: (v.items ?? []).map((i) => ({
+          product_id: i.product_id,
+          quantity: i.quantity,
+        })),
+        vendor_groups: (v.vendor_groups ?? []).map((g) => ({
+          vendor_id: g.vendor_id,
+          items: g.items.map((i) => ({
+            product_id: i.product_id,
+            quantity: i.quantity,
+          })),
+        })),
+      },
+      caller: {
+        userId: caller.userId,
+        sessionId: caller.sessionId,
+        guestPhone,
+      },
+    });
+  }
+  const effectiveIdempotencyKey = resolvedIdempotencyKey;
 
   // 1. Store open/closed (admin toggle)
   const storeStatus = await getStoreStatusSettings();
@@ -291,7 +326,7 @@ export async function runCheckout(
           max_redeem_percent: loyaltySettings.max_redeem_percent,
         },
         notes: v.notes ?? null,
-        idempotencyKey: v.idempotency_key ?? null,
+        idempotencyKey: effectiveIdempotencyKey,
         scheduledFor,
         slotId,
       },
@@ -314,7 +349,7 @@ export async function runCheckout(
     const paymentUrl = await maybeInitiatePayment({
       paymentMethod,
       guestInfo,
-      idempotencyKey: v.idempotency_key ?? null,
+      idempotencyKey: effectiveIdempotencyKey,
       parentOrderId: result.parentOrderId,
       vendorOrderIds: result.vendorOrderIds,
       total: result.totals.total,
@@ -397,8 +432,11 @@ export async function runCheckout(
       logWarn("idempotency_key unique violation — replaying existing order", {
         pgMessage: causeMsg ?? undefined,
       });
-      if (v.idempotency_key) {
-        const replay = await replayByIdempotencyKey(v.idempotency_key);
+      // PCP-83: even if the client didn't send `idempotency_key`,
+      // the service has now derived one from the cart + identity, so
+      // we can still surface the original parent via replay.
+      if (effectiveIdempotencyKey) {
+        const replay = await replayByIdempotencyKey(effectiveIdempotencyKey);
         if (replay) return { kind: "replay", status: 200, body: replay };
       }
     }
@@ -406,7 +444,7 @@ export async function runCheckout(
     logError("multi-vendor checkout error:", error, {
       pgMessage: causeMsg ?? undefined,
       userId: caller.userId ?? undefined,
-      idempotencyKey: v.idempotency_key ?? undefined,
+      idempotencyKey: effectiveIdempotencyKey ?? undefined,
       itemsCount: (v.items ?? []).length,
       vendorGroupsCount: (v.vendor_groups ?? []).length,
     });
@@ -414,7 +452,7 @@ export async function runCheckout(
       surface: "checkout",
       route: "POST /api/v1/checkout",
       userId: caller.userId,
-      idempotencyKey: v.idempotency_key ?? null,
+      idempotencyKey: effectiveIdempotencyKey,
       itemsCount: (v.items ?? []).length,
       vendorGroupsCount: (v.vendor_groups ?? []).length,
       paymentMethod: v.payment_method ?? null,

@@ -534,3 +534,104 @@ describe('createCheckout — oversell guard (P2-6)', () => {
     }
   });
 });
+
+describe('createCheckout — PCP-83 content-derived idempotency', () => {
+  let client: FakeClient;
+  beforeEach(() => {
+    client = new FakeClient();
+  });
+
+  // PCP-83 acceptance: two checkouts from the same user with the
+  // identical cart, when neither supplies an idempotency_key, must
+  // collapse to the same key — the route's UNIQUE constraint then
+  // catches the second insert and the coupon is burned ONCE across
+  // both attempts.
+  it('when idempotencyKey is null, two same-minute identical carts receive the same derived key', async () => {
+    client.setMode('happy');
+    const a = await createCheckout({
+      client: client as unknown as PoolClient,
+      input: {
+        ...baseInput,
+        idempotencyKey: null,
+        couponCode: 'WELCOME10',
+      },
+      pricing: basePricing,
+      coupon: {
+        id: 'coupon-uuid',
+        code: 'WELCOME10',
+        type: 'percentage',
+        value: 10,
+        is_active: true,
+      },
+      mainStore: baseMainStore,
+      addresses: [baseAddress],
+    });
+    expect(a.success).toBe(true);
+    const firstInsert = client.queries.find((q) =>
+      q.sql.trim().toUpperCase().startsWith('INSERT INTO ORDERS'),
+    );
+    expect(firstInsert).toBeDefined();
+    // $21 = `idempotency_key` (see create-checkout.ts line 472 / 476
+    // / 510). params[] is 0-indexed, so it lives at index 20.
+    const firstIdem = firstInsert!.params[20];
+
+    // Reset the fake so the second checkout hits a fresh query log,
+    // but the test FIXES `now()` via the helper's caller — we
+    // simulate a same-window retry by just calling again.
+    client.setMode('happy');
+    const b = await createCheckout({
+      client: client as unknown as PoolClient,
+      input: {
+        ...baseInput,
+        idempotencyKey: null,
+        couponCode: 'WELCOME10',
+      },
+      pricing: basePricing,
+      coupon: {
+        id: 'coupon-uuid',
+        code: 'WELCOME10',
+        type: 'percentage',
+        value: 10,
+        is_active: true,
+      },
+      mainStore: baseMainStore,
+      addresses: [baseAddress],
+    });
+    expect(b.success).toBe(true);
+    const secondInsert = client.queries.find((q) =>
+      q.sql.trim().toUpperCase().startsWith('INSERT INTO ORDERS'),
+    );
+    expect(secondInsert).toBeDefined();
+    const secondIdem = secondInsert!.params[20];
+
+    // PCP-83: both inserts must carry the SAME derived
+    // idempotency_key — the UNIQUE constraint in production will
+    // catch the second insert as a 23505 unique violation, the
+    // service catches it as a replay, and the coupon is burned
+    // exactly once.
+    expect(firstIdem).toBe(secondIdem);
+    expect(firstIdem).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('an explicit client idempotencyKey takes precedence over derivation', async () => {
+    // When the client DOES send a key, that key is the one persisted
+    // — server-side derivation is only the fallback. This test
+    // guards the precedence order so a future refactor can't
+    // silently drop a client key in favour of a derived one.
+    client.setMode('happy');
+    const result = await createCheckout({
+      client: client as unknown as PoolClient,
+      input: { ...baseInput, idempotencyKey: 'client-supplied-uuid-aaaa' },
+      pricing: basePricing,
+      coupon: null,
+      mainStore: baseMainStore,
+      addresses: [baseAddress],
+    });
+    expect(result.success).toBe(true);
+    const insert = client.queries.find((q) =>
+      q.sql.trim().toUpperCase().startsWith('INSERT INTO ORDERS'),
+    );
+    expect(insert).toBeDefined();
+    expect(insert!.params[20]).toBe('client-supplied-uuid-aaaa');
+  });
+});

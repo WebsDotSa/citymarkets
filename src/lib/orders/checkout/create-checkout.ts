@@ -18,6 +18,60 @@
 //
 // On any error the transaction is rolled back and the caller gets a
 // structured error. The route decides which HTTP status to map.
+//
+// --------------------------------------------------------------------------
+// IDEMPOTENCY POLICY (PCP-83)
+// --------------------------------------------------------------------------
+// Two layers of protection against double-charge from a flaky client:
+//
+//   1. Client-supplied `idempotencyKey` (preferred). When the SPA
+//      generates a UUID per session and persists it across the
+//      submit-retry window, this is what reaches us. The UNIQUE
+//      constraint on `orders.idempotency_key` (migration 034) +
+//      `vendor_orders.idempotency_key` (migration 038) collapses a
+//      replay to the same parent order.
+//
+//   2. Server-derived `idempotencyKey` (PCP-83 fallback). When the
+//      client times out and retries WITHOUT a key (UUID was held
+//      only in memory and the second request comes from a fresh
+//      page-load), the checkout service computes
+//
+//          sha256(window_minute_iso | caller_identity |
+//                 sorted_cart_lines)
+//
+//      where:
+//        - window_minute_iso = ISO timestamp truncated to the
+//          start of the containing 60-second window
+//          (see IDEMPOTENCY_WINDOW_MS in `./content-idempotency.ts`)
+//        - caller_identity = user_id (preferred), `session:<sid>`
+//          (guest fallback), or `guest:<phone>` (last resort)
+//        - sorted_cart_lines = "catalog:<pid>:<qty>" and
+//          "vendor:<vid>:<pid>:<qty>" rows, sorted lexicographically
+//
+//      This collapses two same-minute submissions of the same cart
+//      by the same caller to the same key — the UNIQUE constraint
+//      then catches the second insert and the route replays the
+//      first parent order. Coupon burn and stock decrement happen
+//      ONCE.
+//
+// WHY 60 SECONDS: large enough to absorb network-flake retries +
+// user-click retries on the same cart, small enough that the same
+// user submitting again the next day creates a fresh order. The
+// window is pinned by the unit tests in
+// `content-idempotency.test.ts`.
+//
+// WHY WE CHOSE DERIVE-OVER-FAIL-CLOSED: the alternative was to
+// require `idempotencyKey` and 400 if missing. That trades UX for
+// safety — a customer whose first request silently failed and who
+// then re-submitted from a fresh tab would see a hard error instead
+// of a successful order. The derive-on-miss approach recovers the
+// same anti-duplicate guarantee without the UX cost. The fail-closed
+// path is preserved: if the caller has neither user_id, session id,
+// nor phone (currently impossible because the route 401s), the
+// service returns `idempotencyKey = null` and the request proceeds
+// without the protection — the unique constraint is the last line.
+//
+// --------------------------------------------------------------------------
 
 import type { PoolClient } from "pg";
 import { CITY_MARKETS_VENDOR_ID } from "@/lib/types";
@@ -41,6 +95,41 @@ import {
   toRiyadhDateKey,
   validateSlotSelection,
 } from '@/lib/delivery';
+import { deriveContentIdempotencyKey } from "./content-idempotency";
+
+// --------------------------------------------------------------------------
+// PCP-83 — Content-derived idempotency. The behaviour, window, and
+// rationale are documented in the header comment at the top of this file.
+// The single-source implementation lives in `./content-idempotency.ts`
+// (canonical signatures for route + service callers). This file re-uses
+// it; the per-vendor-group derivation here adapts the resolved cart
+// shape into the canonical helper's envelope.
+// --------------------------------------------------------------------------
+
+/**
+ * Wrapper that adapts the resolved `CheckoutInput` shape into the
+ * canonical helper's `cart + caller` signature. Kept in this file for
+ * co-location with the idempotency replay check that uses the result.
+ * Re-exported from `content-idempotency.ts` so callers outside this
+ * module that import the createCheckout-era signature keep working.
+ */
+export function deriveCheckoutInputIdempotencyKey(args: {
+  customerId: string | null;
+  guestPhone: string | null;
+  catalog: { product_id: string; quantity: number }[];
+  vendorGroups: { vendor_id: string; items: { product_id: string; quantity: number }[] }[];
+  now?: Date;
+}): string | null {
+  return deriveContentIdempotencyKey({
+    cart: { items: args.catalog, vendor_groups: args.vendorGroups },
+    caller: {
+      userId: args.customerId,
+      sessionId: null, // createCheckout doesn't have a session id in its envelope
+      guestPhone: args.guestPhone,
+    },
+    now: args.now,
+  });
+}
 
 export interface CheckoutInput {
   customerId: string | null;
@@ -289,7 +378,23 @@ export async function createCheckout(
   }
 
   // ---- 6. Idempotency replay check (parent-level) ----
-  if (input.idempotencyKey) {
+  // PCP-83: when the client didn't supply an idempotencyKey, derive
+  // a content-derived one from cart + identity + the truncated
+  // minute. Two submissions of the same cart by the same caller
+  // within the same minute collapse to the same key — the
+  // `orders.idempotency_key` UNIQUE constraint (migration 034)
+  // then catches the second insert as a replay below.
+  let effectiveIdempotencyKey: string | null = input.idempotencyKey ?? null;
+  if (!effectiveIdempotencyKey) {
+    effectiveIdempotencyKey = deriveCheckoutInputIdempotencyKey({
+      customerId: input.customerId,
+      guestPhone: input.guestInfo?.phone ?? null,
+      catalog: input.catalog,
+      vendorGroups: input.vendorGroups,
+    });
+  }
+
+  if (effectiveIdempotencyKey) {
     interface ExistingOrderRow {
       id: string;
       payment_method: string;
@@ -301,7 +406,7 @@ export async function createCheckout(
       `SELECT id, payment_method, catalog_subtotal, total
          FROM orders
         WHERE idempotency_key = $1`,
-      [input.idempotencyKey],
+      [effectiveIdempotencyKey],
     );
     if (row) {
       interface IdRow { id: string }
@@ -453,7 +558,7 @@ export async function createCheckout(
         coupon?.code ?? null,
         totals.pointsRedeemed,
         totals.pointsDiscount,
-        input.idempotencyKey ?? null,
+        effectiveIdempotencyKey ?? null,
         scheduledFlag,
         input.scheduledFor ?? null,
         input.slotId ?? null,
@@ -478,8 +583,8 @@ export async function createCheckout(
   for (const grp of resolved.vendorGroups) {
     const orderNumber = generateVendorOrderNumber(grp.vendor_slug);
     const childIdem =
-      input.idempotencyKey != null
-        ? `${input.idempotencyKey}:${grp.vendor_slug}`
+      effectiveIdempotencyKey != null
+        ? `${effectiveIdempotencyKey}:${grp.vendor_slug}`
         : null;
     const childId = (
       await queryOne<IdRow>(
