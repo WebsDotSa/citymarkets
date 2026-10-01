@@ -1,0 +1,294 @@
+# Dead imports by file
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/admin-users/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/auth/change-password/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/auth/login/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/broadcast-providers/status/route.ts`
+
+- `isNativePushConfigured`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/categories/route.ts`
+
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/coupons/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/delivery-settings/route.ts`
+
+- `DEFAULT_DELIVERY_HOURS`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/driver/orders/[id]/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/driver/orders/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/orders/route.ts`
+
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/payments/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/products/route.ts`
+
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/reviews/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/stores/route.ts`
+
+- `DEFAULT_STORE_OPENING_HOURS`
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/admin/upload/route.ts`
+
+- `r2PublicUrl`
+- `r2KeyFromUrl`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/ai-chat/history/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/ai-chat/route.ts`
+
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/analytics/event/route.ts`
+
+- `logError`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/auth/logout/route.ts`
+
+- `customerSessionCookieOptions`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/blog/[slug]/route.ts`
+
+- `CACHE_KEYS`
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/blog/route.ts`
+
+- `CACHE_KEYS`
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/cart/route.ts`
+
+- `logWarn`
+- `logInfo`
+- `GENERAL_API_CONFIG`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/categories/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/coupons/validate/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/loyalty/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/orders/track/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/payments/status/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/products/[id]/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/products/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/profile/delete/route.ts`
+
+- `customerSessionCookieOptions`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/profile/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/push/subscribe/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/reviews/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/spin/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/track/open/route.ts`
+
+- `NextResponse`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/upload/place-images/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/auth/login/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/auth/logout/route.ts`
+
+- `vendorSessionCookieOptions`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/auth/me/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/auth/otp/verify/route.ts`
+
+- `APPLE_REVIEW_NAME`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/coupons/[id]/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/coupons/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/dashboard/recent-orders/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/dashboard/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/dashboard/stats/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/orders/[id]/route.ts`
+
+- `NextRequest`
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/orders/[id]/status/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/orders/route.ts`
+
+- `NextRequest`
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/products/[id]/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/products/route.ts`
+
+- `VendorRole`
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/settings/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/staff/[id]/route.ts`
+
+- `query`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor/staff/route.ts`
+
+- `pool`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendor-applications/route.ts`
+
+- `GENERAL_API_CONFIG`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendors/[slug]/coupons/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendors/[slug]/orders/route.ts`
+
+- `GENERAL_API_CONFIG`
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendors/[slug]/products/[id]/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendors/[slug]/products/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendors/[slug]/route.ts`
+
+- `logWarn`
+- `logInfo`
+
+## `/var/www/citymarkets.sa/city-market-app/.worktrees/hermes-8e862231/src/app/api/v1/vendors/route.ts`
+
+- `logWarn`
+- `logInfo`
