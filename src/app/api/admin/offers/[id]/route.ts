@@ -9,6 +9,14 @@ import { offerInputSchema } from "@/lib/validation";
 import { cache } from "@/lib/cache";
 import { error as logError } from "@/lib/logger";
 
+// Module-scoped UUID validator. P2-9 (PCP-101 audit): we used to let
+// "bad-uuid" reach Postgres and bubble up as a 22P02 (invalid input
+// syntax for type uuid), which the route mapper then surfaced as a
+// generic 500 ("فشل جلب العرض"). Pre-validate and return 400 with a
+// clear Arabic message instead.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function toNumberOrNull(v: unknown): number | null {
   if (v == null || v === "") return null;
   const n = Number(v);
@@ -31,6 +39,9 @@ export async function GET(
     const { id } = await ctx.params;
     if (!id) {
       return NextResponse.json({ success: false, error: "المعرّف مطلوب" }, { status: 400 });
+    }
+    if (!UUID_RE.test(id)) {
+      return NextResponse.json({ success: false, error: "معرّف العرض غير صالح" }, { status: 400 });
     }
 
     const offerRes = await pool.query(
@@ -89,6 +100,9 @@ export async function PUT(
     const { id } = await ctx.params;
     if (!id) {
       return NextResponse.json({ success: false, error: "المعرّف مطلوب" }, { status: 400 });
+    }
+    if (!UUID_RE.test(id)) {
+      return NextResponse.json({ success: false, error: "معرّف العرض غير صالح" }, { status: 400 });
     }
 
     const body = await request.json();
@@ -181,6 +195,9 @@ export async function DELETE(
     const { id } = await ctx.params;
     if (!id) {
       return NextResponse.json({ success: false, error: "المعرّف مطلوب" }, { status: 400 });
+    }
+    if (!UUID_RE.test(id)) {
+      return NextResponse.json({ success: false, error: "معرّف العرض غير صالح" }, { status: 400 });
     }
     const result = await pool.query("DELETE FROM offers WHERE id = $1 RETURNING id", [id]);
     if (result.rows.length === 0) {

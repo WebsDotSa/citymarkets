@@ -16,6 +16,11 @@ import {
   ORDER_DETAIL_JOINS,
 } from '@/lib/orders/sql-fragments';
 
+// Module-scoped so both GET and PATCH reuse the same regex instance.
+// Validates the canonical 8-4-4-4-12 UUID shape (case-insensitive).
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * GET /api/admin/orders/[id]
  *
@@ -28,6 +33,20 @@ export async function GET(
   const gate = await requireAdminApi(request, 'manage_orders');
   if (gate instanceof NextResponse) return gate;
   const { id: orderId } = await ctx.params;
+
+  // P2-9 (PCP-101 audit): validate UUID before opening a DB connection so
+  // we surface 400 with an Arabic message instead of leaking a Postgres
+  // 22P02 ("invalid input syntax for type uuid") as a 500. Mirrors the
+  // same guard on src/app/api/v1/orders/[id]/route.ts.
+  if (!UUID_RE.test(orderId)) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "معرّف الطلب غير صالح",
+      },
+      { status: 400 }
+    );
+  }
 
   try {
     // Reuse the canonical column-list + JOIN fragment so adding a new
@@ -142,6 +161,14 @@ export async function PATCH(
   if (gate instanceof NextResponse) return gate;
   const { id: orderId } = await ctx.params;
   const admin = gate.admin;
+
+  // Same UUID guard as GET above — see note in GET handler.
+  if (!UUID_RE.test(orderId)) {
+    return NextResponse.json(
+      { success: false, error: "معرّف الطلب غير صالح" },
+      { status: 400 }
+    );
+  }
 
   let body: unknown;
   try {
