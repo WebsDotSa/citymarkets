@@ -383,24 +383,62 @@ export async function POST(
 
     const order = orderResult.rows[0];
 
-    // Create order items
-    for (const item of orderItems) {
-      await client.query(
-        `INSERT INTO vendor_order_items 
-          (order_id, product_id, product_name_snapshot, unit_price, quantity, line_total, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [order.id, item.productId, item.productName, item.unitPrice, item.quantity, item.lineTotal, item.notes]
-      );
+    // PERF (PCP-97 / PCP-76 audit F5): collapse the per-item
+    // INSERT + conditional UPDATE into single bulk statements. On a
+    // 20-item cart the old loop did 20 + (tracked subset) round-trips
+    // inside the held transaction; the unnest pattern below does it
+    // in one INSERT and (at most) one UPDATE. The validation loop
+    // above already filtered out missing products and stock overruns,
+    // and the per-row `track_stock` flag is still consulted here so
+    // non-tracked items never touch `vendor_products`.
+    const itemProductIds = orderItems.map((i) => i.productId);
+    const itemProductNames = orderItems.map((i) => i.productName);
+    const itemUnitPrices = orderItems.map((i) => i.unitPrice);
+    const itemQuantities = orderItems.map((i) => i.quantity);
+    const itemLineTotals = orderItems.map((i) => i.lineTotal);
+    const itemNotes = orderItems.map((i) => i.notes);
 
-      // Update stock if tracking
-      if (productMap.get(item.productId)?.track_stock) {
-        await client.query(
-          `UPDATE vendor_products 
-           SET stock_quantity = stock_quantity - $1 
-           WHERE id = $2`,
-          [item.quantity, item.productId]
-        );
-      }
+    await client.query(
+      `INSERT INTO vendor_order_items
+         (order_id, product_id, product_name_snapshot, unit_price, quantity, line_total, notes)
+       SELECT $1, product_id, product_name, unit_price, quantity, line_total, notes
+       FROM unnest(
+         $2::uuid[], $3::text[], $4::numeric[], $5::int[], $6::numeric[], $7::text[]
+       ) AS u(product_id, product_name, unit_price, quantity, line_total, notes)`,
+      [
+        order.id,
+        itemProductIds,
+        itemProductNames,
+        itemUnitPrices,
+        itemQuantities,
+        itemLineTotals,
+        itemNotes,
+      ]
+    );
+
+    // Bulk decrement stock only for tracked products. Items can repeat
+    // the same productId, so collapse to (product_id, total_qty) and
+    // skip non-tracked rows.
+    const trackedDeltaByProduct = new Map<string, number>();
+    for (const i of orderItems) {
+      if (!productMap.get(i.productId)?.track_stock) continue;
+      trackedDeltaByProduct.set(
+        i.productId,
+        (trackedDeltaByProduct.get(i.productId) ?? 0) + i.quantity
+      );
+    }
+    if (trackedDeltaByProduct.size > 0) {
+      const trackedProductIds = Array.from(trackedDeltaByProduct.keys());
+      const trackedQuantities = trackedProductIds.map(
+        (id) => trackedDeltaByProduct.get(id) as number
+      );
+      await client.query(
+        `UPDATE vendor_products vp
+         SET stock_quantity = stock_quantity - deltas.qty
+         FROM unnest($1::uuid[], $2::int[]) AS deltas(id, qty)
+         WHERE vp.id = deltas.id`,
+        [trackedProductIds, trackedQuantities]
+      );
     }
 
     await client.query("COMMIT");
