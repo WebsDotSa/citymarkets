@@ -8,7 +8,7 @@
  * caller. We accept-and-ignore the param now and always return
  * `zone_id: null`. This test pins the new contract.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 type QueryCall = { sql: string; params: unknown[] };
 
@@ -74,6 +74,28 @@ function makeQueryMock(opts?: { slotBookings?: Record<string, number>; slotsConf
 describe("GET /api/v1/delivery/slots — migration 060/078 regression", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  // Freeze the wall clock to a deterministic Riyadh-local morning so
+  // assertions on per-window availability (`morning.available === true`)
+  // are independent of when the test suite is executed. Without this,
+  // `buildAvailability` in `src/lib/delivery/delivery-slots.ts` correctly
+  // marks the 09:00–11:00 Riyadh morning window as unavailable once the
+  // wall clock has passed 11:00 local (e.g. CI runs after 17:00 Riyadh),
+  // or once `now + lead_time_minutes` (2h) has reached the window start.
+  // The route's production behaviour is correct — don't offer a window
+  // whose end time has passed — so the test must pin time instead.
+  // Pinned: 2026-09-01 03:00 UTC ≈ 06:00 Asia/Riyadh. The morning
+  // window starts at 09:00 Riyadh (06:00 UTC), so `now + 2h = 08:00
+  // Riyadh` is still before the window starts → not after the cutoff →
+  // `available: true` deterministically.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-01T03:00:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("returns 200 + windows even when caller passes the deprecated ?zone= param", async () => {
