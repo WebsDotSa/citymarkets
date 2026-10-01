@@ -139,12 +139,31 @@ export async function PATCH(
   if (gate instanceof NextResponse) return gate;
 
   const { id } = await params;
-  const body = await request.json();
-  const { status, failureReason, claim } = body as {
-    status?: string;
-    failureReason?: string;
-    claim?: boolean;
-  };
+
+  // PCP-95 (PCP-76.F3): request.json() can throw on a malformed body.
+  // Previously it ran before the try/catch that holds the pool client, so
+  // the catch on line 522 never fired and the user got Next.js's default
+  // 500 instead of our standard { success: false, error } envelope. There
+  // is no client acquired yet at this stage, so we just need to translate
+  // the JSON parse failure into a 400 envelope and bail out cleanly.
+  let body: { status?: string; failureReason?: string; claim?: boolean };
+  try {
+    body = (await request.json()) as {
+      status?: string;
+      failureReason?: string;
+      claim?: boolean;
+    };
+  } catch (parseErr) {
+    logWarn("[driver orders PATCH] invalid JSON body", {
+      orderId: id,
+      error: parseErr instanceof Error ? parseErr.message : String(parseErr),
+    });
+    return NextResponse.json(
+      { success: false, error: "صيغة جسم الطلب غير صالحة (JSON غير صالح)" },
+      { status: 400 }
+    );
+  }
+  const { status, failureReason, claim } = body;
 
   // P2-1 (production hardening 2): the driver-role transition table
   // now lives in `@/lib/orders/state-machine`. The set of legal `to`
