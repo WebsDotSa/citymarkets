@@ -289,16 +289,20 @@ describe("POST /api/v1/payments/webhook — Bug A regression", () => {
     const res = await POST(signedRequest({ id: "inv-paid-1" }) as never);
     expect(res.status).toBe(200);
 
-    // Find the orders.status UPDATE
+    // Find the orders.status flip (PCP-80: shipped as a CTE so the
+    // pending→confirmed flip is atomic with the order_status_logs write).
     const ordersStatus = calls.find(
       (c) =>
-        c.sql.trim().toUpperCase().startsWith("UPDATE ORDERS") &&
+        /\bWITH\b/i.test(c.sql) &&
+        /UPDATE\s+ORDERS/i.test(c.sql) &&
         /SET\s+STATUS/i.test(c.sql),
     );
     expect(ordersStatus).toBeDefined();
-    // The bug was passing ['paid', orderId]. The fix uses a CASE
+    // The bug was passing ['paid', orderId]. The CTE uses a CASE
     // expression with no literal status param. Verify no ['paid', ...] param.
     expect(JSON.stringify(ordersStatus?.params)).not.toMatch(/\"paid\"/);
+    // Sanity: the CTE must use CASE so a replay cannot regress to 'pending'.
+    expect(ordersStatus!.sql).toMatch(/CASE/i);
   });
 
   it("paid → vendor_orders.status='confirmed' (Slice-3 fan-out, NEVER 'paid')", async () => {
