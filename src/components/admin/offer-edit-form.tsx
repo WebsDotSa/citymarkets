@@ -368,8 +368,11 @@ export function OfferEditForm({
 
           {/* Discount type + value */}
           <div className="grid md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div role="radiogroup" aria-labelledby="offer-discount-type-label">
+              <label
+                id="offer-discount-type-label"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 نوع الخصم
               </label>
               <div className="flex items-center gap-2 h-11">
