@@ -14,6 +14,7 @@ type QueryCall = { sql: string; params: unknown[] };
  */
 class FakeClient {
   public queries: QueryCall[] = [];
+  public lastStatusLogInsert: QueryCall | null = null;
   private nextId = 0;
   private mode: 'happy' | 'replay' | 'productMissing' | 'stockShort' | 'vendorInactive' | 'oversell' = 'happy';
 
@@ -21,6 +22,7 @@ class FakeClient {
     this.mode = m;
     this.queries = [];
     this.nextId = 0;
+    this.lastStatusLogInsert = null;
   }
 
   async query(sql: string, params: unknown[] = []): Promise<{ rows: unknown[]; rowCount?: number }> {
@@ -161,6 +163,15 @@ class FakeClient {
 
     // -- order_items INSERT --
     if (norm.startsWith('INSERT INTO ORDER_ITEMS')) {
+      return { rows: [] };
+    }
+
+    // -- order_status_logs INSERT (PCP-79) --
+    // After the parent INSERT succeeds, create-checkout writes an
+    // initial (NULL → 'pending') transition row attributed to
+    // 'system:checkout'. The test below asserts this row was emitted.
+    if (norm.startsWith('INSERT INTO ORDER_STATUS_LOGS')) {
+      this.lastStatusLogInsert = { sql, params };
       return { rows: [] };
     }
 
@@ -460,6 +471,51 @@ describe('createCheckout', () => {
       // catalogSubtotal 120 + service 3 = 123
       expect(result.totals.total).toBe(123);
     }
+  });
+
+  it('writes an initial order_status_logs row on parent insert (PCP-79)', async () => {
+    client.setMode('happy');
+    const result = await createCheckout({
+      client: client as unknown as PoolClient,
+      input: baseInput,
+      pricing: basePricing,
+      coupon: null,
+      mainStore: baseMainStore,
+      addresses: [baseAddress],
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) throw new Error('expected success');
+
+    // The INSERT must have been emitted with the parent order id
+    // (the same id returned by the parent INSERT).
+    const log = client.lastStatusLogInsert;
+    expect(log).not.toBeNull();
+    if (!log) throw new Error('expected log insert');
+
+    // $1 = parentOrderId (the FakeClient returns 'parent-1').
+    expect(log.params[0]).toBe(result.parentOrderId);
+
+    // Body asserts: NULL → 'pending', 'system:checkout', 'order created'.
+    const sql = log.sql.toLowerCase();
+    expect(sql).toContain('insert into order_status_logs');
+    expect(sql).toContain('order_id, old_status, new_status, changed_by, notes');
+    expect(sql).toContain("values ($1, null, 'pending', 'system:checkout', 'order created')");
+  });
+
+  it('does not write a status-log row on idempotency replay (PCP-79)', async () => {
+    client.setMode('replay');
+    await createCheckout({
+      client: client as unknown as PoolClient,
+      input: baseInput,
+      pricing: basePricing,
+      coupon: null,
+      mainStore: baseMainStore,
+      addresses: [baseAddress],
+    });
+    // Replay path returns the existing parent without re-inserting
+    // anything, so the initial log row from the original checkout is
+    // still the one true row — we must not double-write.
+    expect(client.lastStatusLogInsert).toBeNull();
   });
 
   it('declares requiresOnlinePayment=false for cash and true for card', async () => {
