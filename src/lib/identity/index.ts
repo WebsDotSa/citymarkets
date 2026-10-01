@@ -43,13 +43,15 @@ export {
 export type { VerifiedAdminJwt } from "./admin-session";
 
 // ── Admin API guard ─────────────────────────────────────────────────────
-// Pure helpers (no DB). `requireAdminApi` (DB-backed) lives in
-// `admin-api-auth-db.ts` — deep import from server code only.
+// Pure helpers (no DB).
 export {
   adminForbidden,
   adminHasPermission,
   adminUnauthorized,
 } from "./admin-api-auth";
+// `requireAdminApi` is server-only (uses `@/lib/db` / `pg`); do not import
+// it from client components or middleware.
+export { requireAdminApi } from "./admin-api-auth-db";
 export type { AdminAuthUser } from "./admin-api-auth-db";
 
 // ── Vendor auth ─────────────────────────────────────────────────────────
