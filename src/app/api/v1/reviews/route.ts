@@ -10,6 +10,17 @@ export async function GET(request: NextRequest) {
   const mine = searchParams.get('mine') === '1';
   const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
 
+  // P2-12 (PCP-101 audit): reject non-UUID productId before opening a DB
+  // connection — Postgres would otherwise throw "invalid input syntax for
+  // type uuid" and the route would 500 instead of 400. Applies only to
+  // the productId branch; the "mine" branch doesn't filter by product.
+  if (productId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId)) {
+    return NextResponse.json(
+      { error: "معرّف المنتج غير صالح" },
+      { status: 400 },
+    );
+  }
+
   const client = await pool.connect();
 
   try {

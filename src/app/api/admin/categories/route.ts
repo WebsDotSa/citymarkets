@@ -77,6 +77,18 @@ export async function GET(request: NextRequest) {
   const gate = await requireAdminApi(request, "manage_categories");
   if (gate instanceof NextResponse) return gate;
   try {
+    // P2-11 (PCP-101 audit): LIMIT + offset pagination — full categories
+    // table was 89 KB / 156 rows; admin UI freezes on useMemo + render.
+    // Count is computed against the same WHERE clause so totalPages stays
+    // consistent with the page slice.
+    const url = new URL(request.url);
+    const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(url.searchParams.get("limit") ?? "50", 10) || 50),
+    );
+    const offset = (page - 1) * limit;
+
     const result = await query(
       `SELECT
          c.id,
@@ -115,9 +127,24 @@ export async function GET(request: NextRequest) {
          ORDER BY p.is_active DESC, p.updated_at DESC NULLS LAST, p.id
          LIMIT 1
        ) fp ON true
-       ORDER BY c.sort_order ASC, c.name_ar ASC`
+       ORDER BY c.sort_order ASC, c.name_ar ASC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset],
     );
-    return NextResponse.json({ success: true, data: result.rows });
+    const countRows = await query<{ total: string }>(
+      `SELECT COUNT(*)::int AS total FROM categories`,
+    );
+    const total = Number(countRows.rows[0]?.total ?? 0);
+    return NextResponse.json({
+      success: true,
+      data: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     logError("GET categories error:", error);
     return NextResponse.json(

@@ -38,7 +38,20 @@ import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logge
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // M1 (PCP-101 dogfood): guard against empty / non-JSON bodies. Some
+    // older admin clients (or curl probes) POST form-encoded bodies with
+    // Content-Type: application/x-www-form-urlencoded, which causes
+    // request.json() to throw "Unexpected token... in JSON". Catch and
+    // return a 400 with a clear Arabic message instead of a 500.
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'صيغة البيانات المرسلة غير صالحة' },
+        { status: 400 },
+      );
+    }
     const parsed = adminLoginInputSchema.safeParse(body);
     if (!parsed.success) {
       const first = parsed.error.issues[0];

@@ -48,13 +48,35 @@ export async function GET(
     }
 
     const items = await query(
-      `SELECT i.id, i.product_id, p.name_ar, p.image_url, p.price::float,
-              i.free_text, i.quantity, i.unit_price::float, i.notes,
-              i.resolved_price::float, i.resolved_at, i.resolved_by_admin_id::text
-       FROM direct_order_items i
-       LEFT JOIN products p ON p.id = i.product_id
-       WHERE i.order_id = $1
-       ORDER BY i.created_at ASC`,
+      // P2-8 (PCP-101 audit): order_items (95% of orders) vs direct_order_items
+      // have different schemas and a "TWO TABLES" union is required to surface
+      // catalog items. Direct table JOIN to products would silently miss
+      // catalog rows — verified live, 0 rows returned for 75/76 catalog orders.
+      `SELECT * FROM (
+         SELECT i.id, i.product_id, p.name_ar, p.image_url, p.price::float,
+                NULL::text       AS free_text,
+                i.qty            AS quantity,
+                i.unit_price::float, i.notes,
+                NULL::numeric    AS resolved_price,
+                NULL::uuid       AS resolved_product_id,
+                NULL::timestamp  AS resolved_at,
+                NULL::timestamp  AS created_at
+           FROM order_items i
+           LEFT JOIN (SELECT id, name_ar, name_en, price,
+                            COALESCE(NULLIF(image_url, ''), image_urls[1]) AS image_url
+                       FROM vendor_products) p ON p.id = i.product_id
+          WHERE i.order_id = $1
+         UNION ALL
+         SELECT i.id, i.product_id, p.name_ar, p.image_url, p.price::float,
+                i.free_text, i.quantity, i.unit_price::float, i.notes,
+                i.resolved_price::float, i.resolved_product_id, i.resolved_at, i.created_at,
+                i.resolved_by_admin_id::text
+           FROM direct_order_items i
+           LEFT JOIN (SELECT id, name_ar, name_en, price,
+                            COALESCE(NULLIF(image_url, ''), image_urls[1]) AS image_url
+                       FROM vendor_products) p ON p.id = i.product_id
+          WHERE i.order_id = $1
+       ) u ORDER BY created_at ASC NULLS LAST`,
       [orderId]
     );
 

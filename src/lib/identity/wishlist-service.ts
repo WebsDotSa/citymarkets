@@ -44,7 +44,6 @@ export interface WishlistProduct {
   id: string;
   name: string;
   name_ar: string | null;
-  slug: string;
   price: number;
   discount_price: number | null;
   image_url: string | null;
@@ -68,7 +67,7 @@ export interface WishlistAddResult {
 }
 
 const WISHLIST_PRODUCT_FIELDS = `
-  p.id, COALESCE(p.name_ar, p.name_en) AS name, p.name_ar, p.slug,
+  p.id, COALESCE(p.name_ar, p.name_en) AS name, p.name_ar,
   p.price::float8 AS price,
   p.discount_price::float8 AS discount_price,
   p.image_url,
@@ -100,7 +99,6 @@ export async function listWishlist(userId: string): Promise<WishlistItem[]> {
     id: string;
     name: string;
     name_ar: string | null;
-    slug: string;
     price: number;
     discount_price: number | null;
     image_url: string | null;
@@ -124,7 +122,6 @@ export async function listWishlist(userId: string): Promise<WishlistItem[]> {
       id: r.id,
       name: r.name,
       name_ar: r.name_ar,
-      slug: r.slug,
       price: Number(r.price),
       discount_price: r.discount_price != null ? Number(r.discount_price) : null,
       image_url: r.image_url,
@@ -183,7 +180,6 @@ export async function addToWishlist(
     id: string;
     name: string;
     name_ar: string | null;
-    slug: string;
     price: number;
     discount_price: number | null;
     image_url: string | null;
@@ -220,7 +216,6 @@ export async function addToWishlist(
         id: row.id,
         name: row.name,
         name_ar: row.name_ar,
-        slug: row.slug,
         price: Number(row.price),
         discount_price: row.discount_price != null ? Number(row.discount_price) : null,
         image_url: row.image_url,

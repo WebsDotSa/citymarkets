@@ -65,6 +65,17 @@ export default function VendorProductPage({
     fetchProduct();
   }, [slug, id]);
 
+  // H2 (PCP-101 dogfood): set <title> from the fetched product. The page
+  // is "use client" so generateMetadata isn't available; document.title
+  // gives at least the correct browser-tab title + SERP snippet. We don't
+  // have vendor name in the product fetch response, so we use product.name
+  // alone — same as the canonical iOS / web convention.
+  useEffect(() => {
+    if (product) {
+      document.title = `${product.name} | أسواق سيتي`;
+    }
+  }, [product]);
+
   async function fetchProduct() {
     try {
       const res = await fetch(`/api/v1/vendors/${slug}/products/${id}`);
@@ -299,7 +310,12 @@ export default function VendorProductPage({
             </div>
 
             {/* Add button */}
+            {/* C1 (PCP-101 dogfood): explicit type="button" so the click is
+                captured by onClick instead of bubbling as a form-submit.
+                Without this, the cart add-to-cart navigation races against
+                the BottomNav overlay and lands on /offers instead of /cart. */}
             <button
+              type="button"
               onClick={addToCart}
               disabled={adding}
               className="flex-1 py-3 rounded-xl bg-primary text-white font-bold flex items-center justify-center gap-2"

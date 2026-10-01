@@ -90,3 +90,4 @@ ios/fastlane/.snapfile_diff.json
 *.dSYM.zip
 *.dSYM
 .swiftpm/
+.worktrees/

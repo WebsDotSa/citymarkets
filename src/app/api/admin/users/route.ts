@@ -13,8 +13,40 @@ export async function GET(request: NextRequest) {
   const gate = await requireAdminApi(request, 'manage_users');
   if (gate instanceof NextResponse) return gate;
   try {
-    const result = await query('SELECT id, phone, name, email, loyalty_points, loyalty_tier, spin_count_today, created_at FROM users ORDER BY created_at DESC');
-    return NextResponse.json({ success: true, data: result.rows });
+    // P2-10 (PCP-101 audit): LIMIT + offset pagination — the previous
+    // "SELECT all users" response was 4.17 MB / 19,922 rows and froze
+    // the admin Users page on useMemo. Same pattern as /api/admin/vendors
+    // + /api/admin/products (per skill 'Pagination OOM' lesson).
+    const url = new URL(request.url);
+    const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(url.searchParams.get("limit") ?? "25", 10) || 25),
+    );
+    const offset = (page - 1) * limit;
+
+    const [rows, countRows] = await Promise.all([
+      query(
+        `SELECT id, phone, name, email, loyalty_points, loyalty_tier,
+                spin_count_today, created_at
+           FROM users
+          ORDER BY created_at DESC
+          LIMIT $1 OFFSET $2`,
+        [limit, offset],
+      ),
+      query<{ total: string }>(`SELECT COUNT(*)::int AS total FROM users`),
+    ]);
+    const total = Number(countRows.rows[0]?.total ?? 0);
+    return NextResponse.json({
+      success: true,
+      data: rows.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     return NextResponse.json({ success: false, error: 'فشل جلب المستخدمين' }, { status: 500 });
   }

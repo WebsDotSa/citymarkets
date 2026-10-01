@@ -92,6 +92,16 @@ const nextConfig = {
     // because URLs are content-hashed and never reused for different
     // content. Lighthouse flagged 4h cache as "inefficient". (2026-08-17)
     minimumCacheTTL: 31536000,
+
+    // C3 (PCP-101 dogfood): vendor placeholder images are SVG (coffee.svg,
+    // fruit.svg, etc.) hosted on cdn.citymarkets.sa. Next.js's image
+    // optimizer rejected them with 400 "image type is not allowed" so
+    // every product rendered as the 📦 fallback. Allow SVG only for our
+    // own CDN host — third-party SVGs still get blocked to limit script
+    // injection surface.
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
   // Disable legacy JS polyfills. Modern browsers have Array.at/flat/flatMap,

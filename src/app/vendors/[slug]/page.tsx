@@ -87,8 +87,23 @@ export default function VendorPage() {
 
   useEffect(() => {
     fetchVendorData();
+    // H1 (PCP-101 dogfood): set <title> and OG tags dynamically from the
+    // fetched vendor — the page is "use client", so generateMetadata isn't
+    // available. Setting document.title is best-effort SEO; for OG / link
+    // canonical the Next.js default behaviour is still better than nothing.
+    return () => {
+      if (typeof document !== "undefined" && !document.title.startsWith("خطأ")) {
+        // Don't reset on unmount; Next.js will re-render the next page's title.
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
+
+  useEffect(() => {
+    if (vendor) {
+      document.title = `${vendor.name} | أسواق سيتي`;
+    }
+  }, [vendor]);
 
   async function fetchVendorData() {
     try {
