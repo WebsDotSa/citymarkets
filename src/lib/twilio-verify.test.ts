@@ -238,3 +238,115 @@ describe("twilioVerifyHealthCheck", () => {
     expect(out.error).toBe("Unauthorized");
   });
 });
+
+/**
+ * Structured error logging — the real production diagnostic change.
+ *
+ * The previous log payload lost `more_info` (the canonical Twilio doc URL
+ * for the error code) and had no operator hint for known codes. After
+ * this change every Twilio error must log:
+ *   - httpStatus, twilioCode, twilioMessage, twilioMoreInfo
+ *   - operatorHint (looked up from the local hints table)
+ *   - verifyServiceSid (so the operator can correlate logs to the
+ *     account-side configuration of the failing service)
+ *   - label (which Twilio endpoint was hit: Verifications.create vs
+ *     VerificationCheck.create)
+ *
+ * Two assertions per code path: the labels are distinct, and the hint
+ * table lookup works for at least the recurring 60238 Geo Permissions
+ * block we hit in production.
+ */
+describe("twilioVerify structured error logging", () => {
+  let loggerError: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    process.env.TWILIO_ACCOUNT_SID = "AC" + "x".repeat(32);
+    process.env.TWILIO_AUTH_TOKEN = "tok" + "x".repeat(30);
+    process.env.TWILIO_VERIFY_SERVICE_SID = "VA" + "x".repeat(32);
+    process.env.TWILIO_MESSAGING_SERVICE_SID = "MG" + "x".repeat(32);
+    const logger = await import("@/lib/logger");
+    loggerError = logger.error as ReturnType<typeof vi.fn>;
+    loggerError.mockClear();
+    mockFetch.mockReset();
+  });
+
+  afterEach(() => {
+    process.env = { ...ORIGINAL };
+  });
+
+  it("logs more_info + operatorHint + serviceSid on Verifications.create 60238", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        code: 60238,
+        message: "Verification Creation Attempt blocked by Twilio",
+        more_info: "https://www.twilio.com/docs/errors/60238",
+        status: 400,
+      }),
+    });
+    const { twilioSendVerification } = await import("./twilio-verify");
+    await expect(twilioSendVerification("+966501234567")).rejects.toThrow(
+      /twilio_send_failed:60238/
+    );
+
+    expect(loggerError).toHaveBeenCalledTimes(1);
+    const payload = loggerError.mock.calls[0][2];
+    expect(payload).toMatchObject({
+      label: "Verifications.create",
+      httpStatus: 400,
+      twilioCode: 60238,
+      twilioMessage: "Verification Creation Attempt blocked by Twilio",
+      twilioMoreInfo: "https://www.twilio.com/docs/errors/60238",
+      verifyServiceSid: "VA" + "x".repeat(32),
+    });
+    expect(payload.operatorHint).toMatch(/Geo Permissions/);
+  });
+
+  it("logs more_info + operatorHint on VerificationCheck.create 60200", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        code: 60200,
+        message: "Invalid parameter",
+        more_info: "https://www.twilio.com/docs/errors/60200",
+        status: 400,
+      }),
+    });
+    const { twilioCheckVerification } = await import("./twilio-verify");
+    const ok = await twilioCheckVerification("+966501234567", "123456");
+    expect(ok).toBe(false);
+
+    expect(loggerError).toHaveBeenCalledTimes(1);
+    const payload = loggerError.mock.calls[0][2];
+    expect(payload).toMatchObject({
+      label: "VerificationCheck.create",
+      httpStatus: 400,
+      twilioCode: 60200,
+      twilioMessage: "Invalid parameter",
+      twilioMoreInfo: "https://www.twilio.com/docs/errors/60200",
+    });
+    expect(payload.operatorHint).toMatch(/Invalid parameter/);
+  });
+
+  it("logs undefined operatorHint for unknown Twilio error codes", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({
+        code: 99999,
+        message: "Something we don't know about yet",
+        more_info: "https://www.twilio.com/docs/errors/99999",
+        status: 500,
+      }),
+    });
+    const { twilioSendVerification } = await import("./twilio-verify");
+    await expect(twilioSendVerification("+966501234567")).rejects.toThrow();
+
+    const payload = loggerError.mock.calls[0][2];
+    expect(payload.twilioCode).toBe(99999);
+    expect(payload.operatorHint).toBeUndefined();
+    expect(payload.twilioMoreInfo).toBe("https://www.twilio.com/docs/errors/99999");
+  });
+});
