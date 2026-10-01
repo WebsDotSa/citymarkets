@@ -4,7 +4,7 @@ import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { SQL_REVENUE_ELIGIBLE } from '@/lib/orders';
 import { fetchInvoiceDetails, isMoyasarConfigured } from "@/lib/payments/moyasar";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   const gate = await requireAdminApi(request, "view_payments");

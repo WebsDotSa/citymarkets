@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 // BUGFIX (audit 2026-09-29): admin endpoint already guards with this
 // regex; mirror it on the public detail endpoint so callers passing

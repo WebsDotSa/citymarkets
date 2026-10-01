@@ -10,7 +10,7 @@ import { parseVoiceTranscript } from '@/lib/catalog';
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { checkRateLimitSync } from "@/lib/rate-limit";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError, warn as logWarn } from '@/lib/logger';
 
 export const dynamic = "force-dynamic";
 

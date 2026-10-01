@@ -17,7 +17,7 @@ import {
   twilioSendVerification,
 } from '@/lib/twilio-verify';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 /**
  * POST /api/admin/auth/login

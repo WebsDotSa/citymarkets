@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

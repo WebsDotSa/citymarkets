@@ -3,7 +3,7 @@ import { query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { couponInputSchema } from '@/lib/validation';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 function idCheck(url: URL) {
   const id = url.searchParams.get('id');
