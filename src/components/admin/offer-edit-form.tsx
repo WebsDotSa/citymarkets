@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useFormFieldIdFromLabel } from "@/hooks/use-form-field-id";
 import {
   ArrowRight,
   Save,
@@ -107,6 +108,21 @@ export function OfferEditForm({
   const [targets, setTargets] = useState<AdminOfferTarget[]>(initial.targets || []);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  // a11y: <label htmlFor>/<input id> pairings. Each is derived from the
+  // visible Arabic label so screen readers announce the correct field.
+  const titleArId = useFormFieldIdFromLabel("offer-form", "عنوان العرض بالعربية");
+  const titleEnId = useFormFieldIdFromLabel("offer-form", "عنوان العرض بالإنجليزية");
+  const discountValueId = useFormFieldIdFromLabel("offer-form", "قيمة الخصم");
+  const maxDiscountId = useFormFieldIdFromLabel("offer-form", "سقف الخصم");
+  const startsAtId = useFormFieldIdFromLabel("offer-form", "بداية العرض");
+  const endsAtId = useFormFieldIdFromLabel("offer-form", "نهاية العرض");
+  const pickerQueryId = useFormFieldIdFromLabel("offer-form", "بحث المنتجات");
+  const minOrderId = useFormFieldIdFromLabel("offer-form", "الحد الأدنى للطلب");
+  const sortOrderId = useFormFieldIdFromLabel("offer-form", "ترتيب العرض");
+  const isFeaturedId = useFormFieldIdFromLabel("offer-form", "عرض مميز");
+  const descriptionArId = useFormFieldIdFromLabel("offer-form", "وصف العرض عربي");
+  const descriptionEnId = useFormFieldIdFromLabel("offer-form", "وصف العرض إنجليزي");
 
   // Picker state — search-by-typeahead for products/categories/vendors.
   const [pickerType, setPickerType] = useState<Exclude<OfferTargetType, "all">>("product");
@@ -315,10 +331,14 @@ export function OfferEditForm({
           {/* Title row */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor={titleArId}
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 عنوان العرض بالعربية <span className="text-red-500">*</span>
               </label>
               <input
+                id={titleArId}
                 type="text"
                 value={titleAr}
                 onChange={(e) => setTitleAr(e.target.value)}
@@ -328,10 +348,14 @@ export function OfferEditForm({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor={titleEnId}
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 عنوان العرض بالإنجليزية
               </label>
               <input
+                id={titleEnId}
                 type="text"
                 value={titleEn}
                 onChange={(e) => setTitleEn(e.target.value)}
@@ -344,8 +368,11 @@ export function OfferEditForm({
 
           {/* Discount type + value */}
           <div className="grid md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div role="radiogroup" aria-labelledby="offer-discount-type-label">
+              <label
+                id="offer-discount-type-label"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 نوع الخصم
               </label>
               <div className="flex items-center gap-2 h-11">
@@ -374,10 +401,14 @@ export function OfferEditForm({
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor={discountValueId}
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 {discountLabel} <span className="text-red-500">*</span>
               </label>
               <input
+                id={discountValueId}
                 type="number"
                 value={discountValue}
                 onChange={(e) => setDiscountValue(e.target.value === "" ? "" : Number(e.target.value))}
@@ -389,10 +420,14 @@ export function OfferEditForm({
             </div>
             {discountType === "percentage" && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor={maxDiscountId}
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   سقف الخصم (ر.س)
                 </label>
                 <input
+                  id={maxDiscountId}
                   type="number"
                   value={maxDiscount}
                   onChange={(e) => setMaxDiscount(e.target.value === "" ? "" : Number(e.target.value))}
@@ -411,10 +446,14 @@ export function OfferEditForm({
           {/* Time window */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor={startsAtId}
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 بداية العرض <span className="text-red-500">*</span>
               </label>
               <input
+                id={startsAtId}
                 type="datetime-local"
                 value={startsAt}
                 onChange={(e) => setStartsAt(e.target.value)}
@@ -423,14 +462,18 @@ export function OfferEditForm({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor={endsAtId}
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 نهاية العرض <span className="text-red-500">*</span>
               </label>
               <input
+                id={endsAtId}
                 type="datetime-local"
                 value={endsAt}
                 onChange={(e) => setEndsAt(e.target.value)}
-                className="w-full h-11 px-4 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full h-11 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 dir="ltr"
               />
             </div>
@@ -466,12 +509,14 @@ export function OfferEditForm({
               <div className="space-y-3">
                 <div className="relative">
                   <input
-                    type="text"
-                    value={pickerQuery}
-                    onChange={(e) => setPickerQuery(e.target.value)}
-                    placeholder={`ابحث عن ${scopeType === "product" ? "منتج" : scopeType === "category" ? "تصنيف" : "متجر"}...`}
-                    className="w-full h-11 px-4 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
+                id={pickerQueryId}
+                type="text"
+                value={pickerQuery}
+                onChange={(e) => setPickerQuery(e.target.value)}
+                placeholder={`ابحث عن ${scopeType === "product" ? "منتج" : scopeType === "category" ? "تصنيف" : "متجر"}...`}
+                aria-label={`ابحث عن ${scopeType === "product" ? "منتج" : scopeType === "category" ? "تصنيف" : "متجر"}`}
+                className="w-full h-11 px-4 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
                   {pickerLoading && (
                     <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
                   )}
@@ -528,10 +573,14 @@ export function OfferEditForm({
           {/* Misc settings */}
           <div className="border-t border-gray-100 pt-6 grid md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor={minOrderId}
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 الحد الأدنى للطلب (ر.س)
               </label>
               <input
+                id={minOrderId}
                 type="number"
                 value={minOrder}
                 onChange={(e) => setMinOrder(e.target.value === "" ? "" : Number(e.target.value))}
@@ -542,10 +591,14 @@ export function OfferEditForm({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor={sortOrderId}
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 ترتيب العرض
               </label>
               <input
+                id={sortOrderId}
                 type="number"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(parseInt(e.target.value, 10) || 0)}
@@ -553,8 +606,12 @@ export function OfferEditForm({
               />
             </div>
             <div className="flex items-end">
-              <label className="flex items-center gap-2 cursor-pointer h-11">
+              <label
+                htmlFor={isFeaturedId}
+                className="flex items-center gap-2 cursor-pointer h-11"
+              >
                 <input
+                  id={isFeaturedId}
                   type="checkbox"
                   checked={isFeatured}
                   onChange={(e) => setIsFeatured(e.target.checked)}
@@ -568,11 +625,15 @@ export function OfferEditForm({
           {/* Descriptions */}
           <div className="grid md:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
             <div>
-              <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor={descriptionArId}
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1"
+              >
                 <Info className="w-3.5 h-3.5 text-gray-400" />
                 وصف العرض (عربي)
               </label>
               <textarea
+                id={descriptionArId}
                 value={descriptionAr}
                 onChange={(e) => setDescriptionAr(e.target.value)}
                 rows={3}
@@ -580,11 +641,15 @@ export function OfferEditForm({
               />
             </div>
             <div>
-              <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor={descriptionEnId}
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1"
+              >
                 <Info className="w-3.5 h-3.5 text-gray-400" />
                 وصف العرض (إنجليزي)
               </label>
               <textarea
+                id={descriptionEnId}
                 value={descriptionEn}
                 onChange={(e) => setDescriptionEn(e.target.value)}
                 rows={3}

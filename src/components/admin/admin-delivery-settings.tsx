@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { formatPrice } from "@/lib/format";
 import { csrfFetch } from "@/lib/csrf-client";
 import { SearchableSelect } from "@/components/admin/SearchableSelect";
+import { useFormFieldIdFromLabel, useIndexedFieldIds } from "@/hooks/use-form-field-id";
 
 const adminCred: RequestInit = { credentials: "include" };
 
@@ -180,6 +181,31 @@ export function AdminDeliverySettings() {
     }
   };
 
+  // Stable ids for every visible label/input pair on the form so screen
+  // readers associate the label with its input. Each call to
+  // `useFormFieldIdFromLabel` is hook-ordered; the loader early-return
+  // below would otherwise skip some of them and break hook ordering.
+  const baseFareId = useFormFieldIdFromLabel("admin-delivery", "السعر الأساسي (ر.س)");
+  const includedKmId = useFormFieldIdFromLabel("admin-delivery", "عدد الكيلو المشمولة");
+  const perExtraKmId = useFormFieldIdFromLabel("admin-delivery", "سعر الكيلو الإضافي (ر.س)");
+  const serviceFeeEnabledId = useFormFieldIdFromLabel("admin-delivery", "تفعيل رسوم الخدمة");
+  const serviceFeeTypeId = useFormFieldIdFromLabel("admin-delivery", "النوع");
+  const serviceFeeValueId = useFormFieldIdFromLabel("admin-delivery", "القيمة");
+  const taxEnabledId = useFormFieldIdFromLabel("admin-delivery", "إضافة ضريبة (VAT) على الطلبات");
+  const taxPercentId = useFormFieldIdFromLabel("admin-delivery", "نسبة الضريبة (%)");
+  const hoursEnabledId = useFormFieldIdFromLabel("admin-delivery", "تفعيل قيد ساعات العمل (منع الطلبات خارج الوقت المحدد)");
+  const openTimeId = useFormFieldIdFromLabel("admin-delivery", "من الساعة");
+  const closeTimeId = useFormFieldIdFromLabel("admin-delivery", "إلى الساعة");
+  const closedMessageId = useFormFieldIdFromLabel("admin-delivery", "رسالة للعميل خارج ساعات العمل");
+  const slotsEnabledId = useFormFieldIdFromLabel("admin-delivery", "تفعيل الحجز المسبق بفترات محددة");
+  const leadTimeId = useFormFieldIdFromLabel("admin-delivery", "أقل مدة تحضير (دقيقة)");
+  const maxDaysAheadId = useFormFieldIdFromLabel("admin-delivery", "أقصى حجز مسبق (يوم)");
+  const minDaysAheadId = useFormFieldIdFromLabel("admin-delivery", "أقل حجز مسبق (يوم)");
+  // Per-iteration ids for the dynamic slot rows so each rendered row gets
+  // its own `id`/`htmlFor` pair (same `useFormFieldIdFromLabel` value used
+  // across multiple rows would create duplicate ids in the DOM).
+  const slotRowId = useIndexedFieldIds("admin-delivery", "slot");
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -225,10 +251,14 @@ export function AdminDeliverySettings() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label
+                  htmlFor={baseFareId}
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
                   السعر الأساسي (ر.س)
                 </label>
                 <input
+                  id={baseFareId}
                   type="number"
                   min={0}
                   step={0.5}
@@ -246,10 +276,14 @@ export function AdminDeliverySettings() {
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label
+                  htmlFor={includedKmId}
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
                   عدد الكيلو المشمولة
                 </label>
                 <input
+                  id={includedKmId}
                   type="number"
                   min={0}
                   step={0.5}
@@ -270,10 +304,14 @@ export function AdminDeliverySettings() {
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label
+                  htmlFor={perExtraKmId}
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
                   سعر الكيلو الإضافي (ر.س)
                 </label>
                 <input
+                  id={perExtraKmId}
                   type="number"
                   min={0}
                   step={0.1}
@@ -334,8 +372,12 @@ export function AdminDeliverySettings() {
               🧾 رسوم الخدمة
             </h2>
             <div className="space-y-4">
-              <label className="flex items-center gap-2">
+              <label
+                htmlFor={serviceFeeEnabledId}
+                className="flex items-center gap-2"
+              >
                 <input
+                  id={serviceFeeEnabledId}
                   type="checkbox"
                   checked={pricing.serviceFeeEnabled}
                   onChange={(e) => setPricing({ ...pricing, serviceFeeEnabled: e.target.checked })}
@@ -345,8 +387,14 @@ export function AdminDeliverySettings() {
               </label>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">النوع</label>
+                  <label
+                    htmlFor={serviceFeeTypeId}
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
+                    النوع
+                  </label>
                   <SearchableSelect
+                    id={serviceFeeTypeId}
                     value={pricing.serviceFeeType}
                     onChange={(v) =>
                       setPricing({ ...pricing, serviceFeeType: v as "fixed" | "percent" })
@@ -362,10 +410,14 @@ export function AdminDeliverySettings() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label
+                    htmlFor={serviceFeeValueId}
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
                     القيمة {pricing.serviceFeeType === "percent" ? "(%)" : "(ر.س)"}
                   </label>
                   <input
+                    id={serviceFeeValueId}
                     type="number"
                     min="0"
                     step={pricing.serviceFeeType === "percent" ? "0.1" : "0.5"}
@@ -384,8 +436,12 @@ export function AdminDeliverySettings() {
               💸 الضريبة
             </h2>
             <div className="space-y-4">
-              <label className="flex items-center gap-2">
+              <label
+                htmlFor={taxEnabledId}
+                className="flex items-center gap-2"
+              >
                 <input
+                  id={taxEnabledId}
                   type="checkbox"
                   checked={pricing.taxEnabled}
                   onChange={(e) => setPricing({ ...pricing, taxEnabled: e.target.checked })}
@@ -394,8 +450,14 @@ export function AdminDeliverySettings() {
                 <span className="text-sm text-gray-700">إضافة ضريبة (VAT) على الطلبات</span>
               </label>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">نسبة الضريبة (%)</label>
+                <label
+                  htmlFor={taxPercentId}
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
+                  نسبة الضريبة (%)
+                </label>
                 <input
+                  id={taxPercentId}
                   type="number"
                   min="0"
                   max="100"
@@ -427,8 +489,12 @@ export function AdminDeliverySettings() {
               ⏰ ساعات العمل اليومية
             </h2>
             <div className="space-y-4">
-              <label className="flex items-center gap-2">
+              <label
+                htmlFor={hoursEnabledId}
+                className="flex items-center gap-2"
+              >
                 <input
+                  id={hoursEnabledId}
                   type="checkbox"
                   checked={hours.enabled}
                   onChange={(e) => setHours({ ...hours, enabled: e.target.checked })}
@@ -441,10 +507,14 @@ export function AdminDeliverySettings() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label
+                    htmlFor={openTimeId}
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
                     من الساعة
                   </label>
                   <input
+                    id={openTimeId}
                     type="time"
                     value={hours.open_time}
                     onChange={(e) => setHours({ ...hours, open_time: e.target.value })}
@@ -453,10 +523,14 @@ export function AdminDeliverySettings() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label
+                    htmlFor={closeTimeId}
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
                     إلى الساعة
                   </label>
                   <input
+                    id={closeTimeId}
                     type="time"
                     value={hours.close_time}
                     onChange={(e) => setHours({ ...hours, close_time: e.target.value })}
@@ -472,10 +546,14 @@ export function AdminDeliverySettings() {
               </p>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label
+                  htmlFor={closedMessageId}
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
                   رسالة للعميل خارج ساعات العمل
                 </label>
                 <textarea
+                  id={closedMessageId}
                   value={hours.closed_message}
                   onChange={(e) => setHours({ ...hours, closed_message: e.target.value })}
                   disabled={!hours.enabled}
@@ -501,8 +579,12 @@ export function AdminDeliverySettings() {
             </h2>
 
             <div className="space-y-4">
-              <label className="flex items-center gap-2">
+              <label
+                htmlFor={slotsEnabledId}
+                className="flex items-center gap-2"
+              >
                 <input
+                  id={slotsEnabledId}
                   type="checkbox"
                   checked={slots.enabled}
                   onChange={(e) => setSlots({ ...slots, enabled: e.target.checked })}
@@ -515,10 +597,14 @@ export function AdminDeliverySettings() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label
+                    htmlFor={leadTimeId}
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
                     أقل مدة تحضير (دقيقة)
                   </label>
                   <input
+                    id={leadTimeId}
                     type="number"
                     min={0}
                     max={1440}
@@ -533,10 +619,14 @@ export function AdminDeliverySettings() {
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label
+                    htmlFor={maxDaysAheadId}
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
                     أقصى حجز مسبق (يوم)
                   </label>
                   <input
+                    id={maxDaysAheadId}
                     type="number"
                     min={0}
                     max={60}
@@ -547,10 +637,14 @@ export function AdminDeliverySettings() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label
+                    htmlFor={minDaysAheadId}
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
                     أقل حجز مسبق (يوم)
                   </label>
                   <input
+                    id={minDaysAheadId}
                     type="number"
                     min={0}
                     max={60}
@@ -591,14 +685,25 @@ export function AdminDeliverySettings() {
                 </div>
 
                 <div className="space-y-2">
-                  {slots.windows.map((w, idx) => (
+                  {slots.windows.map((w, idx) => {
+                    const labelId = slotRowId(idx, "label");
+                    const startId = slotRowId(idx, "start");
+                    const endId = slotRowId(idx, "end");
+                    const capacityId = slotRowId(idx, "capacity");
+                    return (
                     <div
                       key={w.id || idx}
                       className="grid grid-cols-12 gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200"
                     >
                       <div className="col-span-3">
-                        <label className="block text-[10px] text-gray-500 mb-1">الاسم</label>
+                        <label
+                          htmlFor={labelId}
+                          className="block text-[10px] text-gray-500 mb-1"
+                        >
+                          الاسم
+                        </label>
                         <input
+                          id={labelId}
                           type="text"
                           value={w.label_ar}
                           onChange={(e) => {
@@ -611,8 +716,14 @@ export function AdminDeliverySettings() {
                         />
                       </div>
                       <div className="col-span-2">
-                        <label className="block text-[10px] text-gray-500 mb-1">من</label>
+                        <label
+                          htmlFor={startId}
+                          className="block text-[10px] text-gray-500 mb-1"
+                        >
+                          من
+                        </label>
                         <input
+                          id={startId}
                           type="time"
                           value={w.start}
                           onChange={(e) => {
@@ -625,8 +736,14 @@ export function AdminDeliverySettings() {
                         />
                       </div>
                       <div className="col-span-2">
-                        <label className="block text-[10px] text-gray-500 mb-1">إلى</label>
+                        <label
+                          htmlFor={endId}
+                          className="block text-[10px] text-gray-500 mb-1"
+                        >
+                          إلى
+                        </label>
                         <input
+                          id={endId}
                           type="time"
                           value={w.end}
                           onChange={(e) => {
@@ -639,8 +756,14 @@ export function AdminDeliverySettings() {
                         />
                       </div>
                       <div className="col-span-3">
-                        <label className="block text-[10px] text-gray-500 mb-1">السعة (طلب/فترة)</label>
+                        <label
+                          htmlFor={capacityId}
+                          className="block text-[10px] text-gray-500 mb-1"
+                        >
+                          السعة (طلب/فترة)
+                        </label>
                         <input
+                          id={capacityId}
                           type="number"
                           min={1}
                           max={10000}
@@ -668,7 +791,8 @@ export function AdminDeliverySettings() {
                         </button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>

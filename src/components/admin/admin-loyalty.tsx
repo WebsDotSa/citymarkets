@@ -160,8 +160,12 @@ export function AdminLoyalty() {
           )}
         </div>
 
-        <label className="flex items-center gap-3 text-sm">
+        <label
+          htmlFor="loyalty-enabled"
+          className="flex items-center gap-3 text-sm"
+        >
           <input
+            id="loyalty-enabled"
             type="checkbox"
             checked={settings.enabled}
             onChange={(e) =>
@@ -175,8 +179,10 @@ export function AdminLoyalty() {
         <Field
           label="نقاط لكل ريال (الكسب)"
           help="مثال: 0.1 يعني 10 ر.س = 1 نقطة"
+          htmlFor="loyalty-earn-points-per-sar"
         >
           <input
+            id="loyalty-earn-points-per-sar"
             type="number"
             step="0.01"
             min={0}
@@ -195,8 +201,10 @@ export function AdminLoyalty() {
         <Field
           label="قيمة النقطة بالريال (الاستبدال)"
           help="مثال: 0.05 يعني 100 نقطة = 5 ر.س"
+          htmlFor="loyalty-redeem-value-per-point"
         >
           <input
+            id="loyalty-redeem-value-per-point"
             type="number"
             step="0.01"
             min={0}
@@ -215,8 +223,10 @@ export function AdminLoyalty() {
         <Field
           label="الحد الأدنى للاستبدال (نقاط)"
           help="يُمنع المستخدم من استبدال أقل من هذا العدد"
+          htmlFor="loyalty-min-redeem-points"
         >
           <input
+            id="loyalty-min-redeem-points"
             type="number"
             step="10"
             min={0}
@@ -235,8 +245,10 @@ export function AdminLoyalty() {
         <Field
           label="سقف الاستخدام من الطلب (نسبة)"
           help="الحد الأعلى من قيمة الطلب الذي يمكن دفعه بالنقاط (0.5 = 50%)"
+          htmlFor="loyalty-max-redeem-percent"
         >
           <input
+            id="loyalty-max-redeem-percent"
             type="number"
             step="0.05"
             min={0}
@@ -299,15 +311,21 @@ function StatCard({
 function Field({
   label,
   help,
+  htmlFor,
   children,
 }: {
   label: string;
   help?: string;
+  /** Optional `htmlFor` to associate the inner input with the visible label (a11y). */
+  htmlFor?: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label
+        htmlFor={htmlFor}
+        className="block text-sm font-medium text-gray-700 mb-1"
+      >
         {label}
       </label>
       {children}

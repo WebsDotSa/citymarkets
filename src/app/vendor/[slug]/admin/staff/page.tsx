@@ -474,10 +474,14 @@ function StaffModal({
             {!editing && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="staff-email"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     البريد الإلكتروني
                   </label>
                   <input
+                    id="staff-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -488,10 +492,14 @@ function StaffModal({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="staff-password"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     كلمة المرور
                   </label>
                   <input
+                    id="staff-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -506,10 +514,14 @@ function StaffModal({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="staff-name-ar"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   الاسم (عربي)
                 </label>
                 <input
+                  id="staff-name-ar"
                   type="text"
                   value={fullNameAr}
                   onChange={(e) => setFullNameAr(e.target.value)}
@@ -518,10 +530,14 @@ function StaffModal({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="staff-name-en"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   الاسم (English)
                 </label>
                 <input
+                  id="staff-name-en"
                   type="text"
                   value={fullNameEn}
                   onChange={(e) => setFullNameEn(e.target.value)}
@@ -533,10 +549,14 @@ function StaffModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="staff-role"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 الدور
               </label>
               <select
+                id="staff-role"
                 value={role}
                 onChange={(e) => setRole(e.target.value as StaffMember["role"])}
                 disabled={
@@ -566,8 +586,12 @@ function StaffModal({
             </div>
 
             {editing && (
-              <label className="flex items-center gap-2">
+              <label
+                htmlFor="staff-is-active"
+                className="flex items-center gap-2"
+              >
                 <input
+                  id="staff-is-active"
                   type="checkbox"
                   checked={isActive}
                   onChange={(e) => setIsActive(e.target.checked)}
