@@ -48,35 +48,48 @@ export async function GET(
     }
 
     const items = await query(
-      // P2-8 (PCP-101 audit): order_items (95% of orders) vs direct_order_items
-      // have different schemas and a "TWO TABLES" union is required to surface
-      // catalog items. Direct table JOIN to products would silently miss
-      // catalog rows — verified live, 0 rows returned for 75/76 catalog orders.
-      `SELECT * FROM (
-         SELECT i.id, i.product_id, p.name_ar, p.image_url, p.price::float,
+      // P2-8 (PCP-101 audit): order_items (catalog) + direct_order_items have
+      // different schemas; single-table read returns 0 items for 75/76 orders.
+      // Union them. Note: order_items has no `created_at`, so use ROW_NUMBER
+      // via UNION ALL + ordinal column for ordering.
+      `SELECT
+         id, product_id, name_ar, image_url, price,
+         free_text, quantity, unit_price, notes,
+         resolved_price, resolved_product_id, resolved_at,
+         resolved_by_admin_id
+       FROM (
+         SELECT i.id, i.product_id,
+                p.name_ar,
+                COALESCE(NULLIF(p.image_url, ''), NULLIF(p.image_urls[1], '')) AS image_url,
+                p.price::float8 AS price,
                 NULL::text       AS free_text,
                 i.qty            AS quantity,
-                i.unit_price::float, i.notes,
+                i.unit_price::float8 AS unit_price,
+                i.notes,
                 NULL::numeric    AS resolved_price,
                 NULL::uuid       AS resolved_product_id,
                 NULL::timestamp  AS resolved_at,
-                NULL::timestamp  AS created_at
+                NULL::uuid       AS resolved_by_admin_id,
+                1                AS _ord
            FROM order_items i
-           LEFT JOIN (SELECT id, name_ar, name_en, price,
-                            COALESCE(NULLIF(image_url, ''), image_urls[1]) AS image_url
-                       FROM vendor_products) p ON p.id = i.product_id
+           LEFT JOIN vendor_products p ON p.id = i.product_id
           WHERE i.order_id = $1
          UNION ALL
-         SELECT i.id, i.product_id, p.name_ar, p.image_url, p.price::float,
-                i.free_text, i.quantity, i.unit_price::float, i.notes,
-                i.resolved_price::float, i.resolved_product_id, i.resolved_at, i.created_at,
-                i.resolved_by_admin_id::text
+         SELECT i.id, i.product_id,
+                p.name_ar,
+                COALESCE(NULLIF(p.image_url, ''), NULLIF(p.image_urls[1], '')) AS image_url,
+                p.price::float8 AS price,
+                i.free_text, i.quantity, i.unit_price::float8, i.notes,
+                i.resolved_price::float8,
+                i.resolved_product_id,
+                i.resolved_at,
+                i.resolved_by_admin_id,
+                2                AS _ord
            FROM direct_order_items i
-           LEFT JOIN (SELECT id, name_ar, name_en, price,
-                            COALESCE(NULLIF(image_url, ''), image_urls[1]) AS image_url
-                       FROM vendor_products) p ON p.id = i.product_id
+           LEFT JOIN vendor_products p ON p.id = i.product_id
           WHERE i.order_id = $1
-       ) u ORDER BY created_at ASC NULLS LAST`,
+       ) u
+       ORDER BY _ord ASC, quantity DESC NULLS LAST`,
       [orderId]
     );
 
