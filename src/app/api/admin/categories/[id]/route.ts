@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 import { error as logError } from '@/lib/logger';
 
 export async function GET(
@@ -11,12 +12,8 @@ export async function GET(
   if (gate instanceof NextResponse) return gate;
 
   const { id } = await params;
-  if (!id) {
-    return NextResponse.json(
-      { success: false, error: 'المعرّف مطلوب' },
-      { status: 400 }
-    );
-  }
+  const badId = validateUuidOrError(id, 'معرّف الفئة');
+  if (badId) return badId;
 
   try {
     const result = await query(

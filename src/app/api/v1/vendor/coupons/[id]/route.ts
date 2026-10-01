@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { requireVendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 import { error as logError } from '@/lib/logger';
 
 export async function PATCH(
@@ -18,6 +19,9 @@ export async function PATCH(
     if (unauthorized) return unauthorized;
 
     const { id } = await params;
+    const badId = validateUuidOrError(id, 'معرّف الكوبون');
+    if (badId) return badId;
+
     const body = await request.json();
 
     const checkResult = await query(
@@ -107,6 +111,9 @@ export async function DELETE(
     if (unauthorized) return unauthorized;
 
     const { id } = await params;
+
+    const badId = validateUuidOrError(id, 'معرّف الكوبون');
+    if (badId) return badId;
 
     const result = await query(
       "DELETE FROM vendor_coupons WHERE id = $1 AND vendor_id = $2 RETURNING id",
