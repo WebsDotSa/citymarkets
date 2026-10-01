@@ -277,7 +277,16 @@ NEW_JWT=$(openssl rand -base64 48)
 
 # Database password
 NEW_DB_PW=$(openssl rand -base64 32)
-# حدِّث في .env.local وفي DB نفسها.
+# حدِّث في .env.local وفي DB نفسها:
+sed -i "s|^DATABASE_PASSWORD=.*|DATABASE_PASSWORD=$NEW_DB_PW|" .env.local
+./scripts/sync-db-password.sh   # يطبّق التغيير على Postgres بدون لمس الـ schema
+docker compose restart citymarket-app
+
+# ملاحظة: بعد أي `docker compose up` على نسخة جديدة، شغّل
+# ./scripts/sync-db-password.sh مرة واحدة للتأكد أن الـ role
+# password في Postgres يطابق DATABASE_PASSWORD في الـ env.
+# migration 105_grants_rls_and_bypass_for_citymarket_user.sql
+# يضمن أن الـ grants والـ RLS state ثابتة بين الـ deploys.
 
 # API tokens
 # Moyasar, Twilio, Supabase — عبر dashboardsهم.
