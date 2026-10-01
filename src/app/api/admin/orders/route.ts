@@ -287,8 +287,12 @@ export async function PUT(request: NextRequest) {
     //
     // Phase 1 / T4: also capture the old driver_id so we can write an
     // audit row + system message when the assignment changed.
+    //
+    // P2-5 (PCP-76.F6): add FOR UPDATE so a concurrent admin cannot flip
+    // status between this SELECT and the assertValidTransition guard. Without
+    // the lock the state-machine check is advisory only.
     const oldStatusRes = await query(
-      `SELECT status, driver_id FROM orders WHERE id = $1 LIMIT 1`,
+      `SELECT status, driver_id FROM orders WHERE id = $1 LIMIT 1 FOR UPDATE`,
       [idCheckResult]
     );
     const oldStatus = oldStatusRes.rows[0]?.status ?? null;

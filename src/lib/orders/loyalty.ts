@@ -24,6 +24,7 @@
  */
 
 import type { PoolClient } from "pg";
+import { error as logError } from "@/lib/logger";
 import { getAppSetting } from "@/lib/app-settings";
 
 export interface LoyaltySettings {
@@ -204,4 +205,28 @@ export async function releaseRedeemHoldForOrder(
     [args.orderId],
   );
   return { released: (deleted.rowCount ?? 0) > 0 };
+}
+
+/**
+ * P2-3 (PCP-76.F2): self-contained variant that acquires its OWN
+ * connection. Use this from background / post-COMMIT paths where the
+ * caller's `PoolClient` is already released and we cannot reuse it.
+ *
+ * Best-effort: any connection failure is swallowed and surfaced via the
+ * logger so it never bubbles up to the caller. This matches the
+ * `.catch(() => {})` posture already used at the call sites.
+ */
+export async function releaseRedeemHoldForOrderSafe(
+  pool: import("pg").Pool,
+  args: { orderId: string },
+): Promise<void> {
+  const client = await pool.connect().catch(() => null);
+  if (!client) return;
+  try {
+    await releaseRedeemHoldForOrder(client, args);
+  } catch (err) {
+    logError("[loyalty] release hold failed (safe)", err, { orderId: args.orderId });
+  } finally {
+    client.release();
+  }
 }
