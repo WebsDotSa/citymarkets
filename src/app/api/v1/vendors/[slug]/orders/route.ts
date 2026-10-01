@@ -23,6 +23,22 @@ interface VendorOrderItem {
 }
 
 /**
+ * Database vendor_order_items row (plus joined vp.image_urls) — used by
+ * the batched ANY($1) items fetch in GET (see PCP-96).
+ */
+interface VendorOrderItemsRow {
+  id: string;
+  order_id: string;
+  product_id: string | null;
+  product_name_snapshot: string;
+  unit_price: string;
+  quantity: number;
+  line_total: string;
+  notes: string | null;
+  image_urls: string[] | null;
+}
+
+/**
  * Database product row type
  */
 interface VendorProductRow {
@@ -130,55 +146,71 @@ export async function GET(
       return NextResponse.json({ error: "لا توجد أوردرات" }, { status: 404 });
     }
 
-    const orders = await Promise.all(
-      result.rows.map(async (o) => {
-        // SECURITY: migration 054 makes vendor_order_items.product_id
-        // nullable (ON DELETE SET NULL). Use LEFT JOIN so historical
-        // rows where the product was deleted still render — fall back
-        // to the snapshot and a null image when `vp.id IS NULL`.
-        const itemsResult = await query(
-          `SELECT voi.*, vp.image_urls
-           FROM vendor_order_items voi
-           LEFT JOIN vendor_products vp ON voi.product_id = vp.id
-           WHERE voi.order_id = $1`,
-          [o.id]
-        );
+    // PERF (PCP-96): collapse the previous per-order items N+1 (one
+    // SELECT per order inside Promise.all) into a single ANY($1) round
+    // trip. Earlier code also queried items for orders[1..N] only to
+    // discard them when ?id= was set; here we always need items for
+    // every row in `result.rows`, so one batched query is sufficient.
+    // The idx_vendor_order_items_order(order_id) index (migrations/010)
+    // makes WHERE order_id = ANY($1) a cheap index scan.
+    // SECURITY: migration 054 makes vendor_order_items.product_id
+    // nullable (ON DELETE SET NULL). LEFT JOIN keeps historical rows
+    // where the product was deleted; fall back to the snapshot and a
+    // null image when `vp.id IS NULL`.
+    const orderIds = result.rows.map((o) => o.id);
+    const itemsByOrder = new Map<string, VendorOrderItemsRow[]>();
+    if (orderIds.length > 0) {
+      const itemsResult = await query<VendorOrderItemsRow>(
+        `SELECT voi.id, voi.order_id, voi.product_id, voi.product_name_snapshot,
+                voi.unit_price, voi.quantity, voi.line_total, voi.notes, vp.image_urls
+         FROM vendor_order_items voi
+         LEFT JOIN vendor_products vp ON voi.product_id = vp.id
+         WHERE voi.order_id = ANY($1)`,
+        [orderIds]
+      );
+      for (const i of itemsResult.rows) {
+        const bucket = itemsByOrder.get(i.order_id);
+        if (bucket) {
+          bucket.push(i);
+        } else {
+          itemsByOrder.set(i.order_id, [i]);
+        }
+      }
+    }
 
-        return {
-          id: o.id,
-          orderNumber: o.order_number,
-          status: o.status,
-          paymentStatus: o.payment_status,
-          paymentMethod: o.payment_method,
-          items: itemsResult.rows.map((i) => ({
-            id: i.id,
-            productId: i.product_id,
-            productName: i.product_name_snapshot,
-            image: i.image_urls?.[0] || null,
-            unitPrice: parseFloat(i.unit_price),
-            quantity: i.quantity,
-            lineTotal: parseFloat(i.line_total),
-            notes: i.notes,
-          })),
-          subtotal: parseFloat(o.subtotal),
-          deliveryFee: parseFloat(o.delivery_fee),
-          total: parseFloat(o.total),
-          customerName: o.customer_name,
-          customerPhone: o.customer_phone,
-          address: o.address_text,
-          notes: o.notes,
-          createdAt: o.created_at,
-          updatedAt: o.updated_at,
-          timeline: buildTimeline({
-            created_at: o.created_at,
-            confirmed_at: o.confirmed_at,
-            status: o.status,
-            delivered_at: o.delivered_at,
-            cancelled_at: o.cancelled_at,
-          }),
-        };
-      })
-    );
+    const orders = result.rows.map((o) => ({
+      id: o.id,
+      orderNumber: o.order_number,
+      status: o.status,
+      paymentStatus: o.payment_status,
+      paymentMethod: o.payment_method,
+      items: (itemsByOrder.get(o.id) ?? []).map((i) => ({
+        id: i.id,
+        productId: i.product_id,
+        productName: i.product_name_snapshot,
+        image: i.image_urls?.[0] || null,
+        unitPrice: parseFloat(i.unit_price),
+        quantity: i.quantity,
+        lineTotal: parseFloat(i.line_total),
+        notes: i.notes,
+      })),
+      subtotal: parseFloat(o.subtotal),
+      deliveryFee: parseFloat(o.delivery_fee),
+      total: parseFloat(o.total),
+      customerName: o.customer_name,
+      customerPhone: o.customer_phone,
+      address: o.address_text,
+      notes: o.notes,
+      createdAt: o.created_at,
+      updatedAt: o.updated_at,
+      timeline: buildTimeline({
+        created_at: o.created_at,
+        confirmed_at: o.confirmed_at,
+        status: o.status,
+        delivered_at: o.delivered_at,
+        cancelled_at: o.cancelled_at,
+      }),
+    }));
 
     return NextResponse.json({
       orders: orderId ? [orders[0]] : orders,
