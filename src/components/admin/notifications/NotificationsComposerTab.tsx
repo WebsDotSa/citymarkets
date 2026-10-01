@@ -156,6 +156,7 @@ export function NotificationsComposerTab({
         <Section title="محتوى البث" icon={<Mail className="w-4 h-4" />}>
           <Field label="عنوان البث" required>
             <input
+              type="text"
               value={draft.title}
               onChange={(e) => setField("title", e.target.value)}
               maxLength={120}
@@ -200,6 +201,7 @@ export function NotificationsComposerTab({
               <div className="relative">
                 <ImageIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
+                  type="text"
                   value={draft.image_url}
                   onChange={(e) => setField("image_url", e.target.value)}
                   placeholder="https://cdn.citymarkets.sa/banner.jpg"
@@ -210,6 +212,7 @@ export function NotificationsComposerTab({
             <div className="grid grid-cols-2 gap-3">
               <Field label="زر · عنوان">
                 <input
+                  type="text"
                   value={draft.cta_label}
                   onChange={(e) => setField("cta_label", e.target.value)}
                   maxLength={40}
@@ -219,6 +222,7 @@ export function NotificationsComposerTab({
               </Field>
               <Field label="زر · رابط">
                 <input
+                  type="text"
                   value={draft.cta_url}
                   onChange={(e) => setField("cta_url", e.target.value)}
                   placeholder="https://citymarkets.sa/offers"

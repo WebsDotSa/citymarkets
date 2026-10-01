@@ -226,6 +226,7 @@ function TemplateEditorModal({
             <label className="block">
               <span className="text-sm text-slate-600">الاسم</span>
               <input
+                type="text"
                 value={draft.name ?? ""}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                 className="mt-1 w-full border rounded-lg px-3 py-2"
@@ -234,6 +235,7 @@ function TemplateEditorModal({
             <label className="block">
               <span className="text-sm text-slate-600">الفئة</span>
               <input
+                type="text"
                 value={draft.category ?? ""}
                 onChange={(e) => setDraft({ ...draft, category: e.target.value })}
                 className="mt-1 w-full border rounded-lg px-3 py-2"
@@ -367,6 +369,7 @@ function ChannelEditor({
         <label className="block">
           <span className="text-sm text-slate-600">العنوان</span>
           <input
+            type="text"
             value={cur.subject ?? ""}
             onChange={(e) => set("subject", e.target.value)}
             className="mt-1 w-full border rounded-lg px-3 py-2"
@@ -403,6 +406,7 @@ function ChannelEditor({
         <label className="block">
           <span className="text-sm text-slate-600">العنوان</span>
           <input
+            type="text"
             value={cur.title ?? ""}
             onChange={(e) => set("title", e.target.value)}
             className="mt-1 w-full border rounded-lg px-3 py-2"
@@ -420,6 +424,7 @@ function ChannelEditor({
         <label className="block">
           <span className="text-sm text-slate-600">رابط (URL)</span>
           <input
+            type="text"
             value={cur.url ?? ""}
             onChange={(e) => set("url", e.target.value)}
             className="mt-1 w-full border rounded-lg px-3 py-2"
@@ -434,6 +439,7 @@ function ChannelEditor({
       <label className="block">
         <span className="text-sm text-slate-600">العنوان</span>
         <input
+          type="text"
           value={cur.title ?? ""}
           onChange={(e) => set("title", e.target.value)}
           className="mt-1 w-full border rounded-lg px-3 py-2"

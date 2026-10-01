@@ -93,7 +93,7 @@ export function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <CityMarketsLogo height={48} href={null} />
+            <CityMarketsLogo height={48} link={false} />
           </div>
           <p className="text-gray-500 mt-1">سجّل الدخول للتسوق</p>
         </div>

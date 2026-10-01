@@ -9,7 +9,16 @@ const LOGO_SRC = "/images/city-markets-logo.png";
 type CityMarketsLogoProps = {
   height?: number;
   className?: string;
-  href?: string | null;
+  /**
+   * Target URL for the optional link wrapper. Defaults to `"/"`.
+   * Pass an empty string or omit with `link={false}` to render without a link.
+   */
+  href?: string;
+  /**
+   * When false, the logo is rendered as a plain inline element with no anchor.
+   * Defaults to true so existing callers that only pass `height` keep linking.
+   */
+  link?: boolean;
   priority?: boolean;
 };
 
@@ -17,6 +26,7 @@ export function CityMarketsLogo({
   height = 28,
   className = "",
   href = "/",
+  link = true,
   priority = false,
 }: CityMarketsLogoProps) {
   const width = Math.round(height * CITY_MARKETS_LOGO_ASPECT);
@@ -33,13 +43,13 @@ export function CityMarketsLogo({
     />
   );
 
-  if (href) {
-    return (
-      <Link href={href} className="inline-flex items-center justify-center">
-        {logo}
-      </Link>
-    );
+  if (!link) {
+    return <span className="inline-flex items-center justify-center">{logo}</span>;
   }
 
-  return <span className="inline-flex items-center justify-center">{logo}</span>;
+  return (
+    <Link href={href} className="inline-flex items-center justify-center">
+      {logo}
+    </Link>
+  );
 }

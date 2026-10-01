@@ -130,7 +130,7 @@ export function AdminLoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <CityMarketsLogo height={48} href={null} />
+            <CityMarketsLogo height={48} link={false} />
           </div>
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-gray-100">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primaryDark flex items-center justify-center">
