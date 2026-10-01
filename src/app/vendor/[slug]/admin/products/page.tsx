@@ -202,6 +202,7 @@ export default function VendorProductsPage({ params }: ProductsPageProps) {
                   <Link
                     href={`/vendors/${slug}/products/${product.id}`}
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200"
                   >
                     👁️

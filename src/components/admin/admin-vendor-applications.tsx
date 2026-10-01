@@ -497,7 +497,7 @@ export function AdminVendorApplications() {
                         key={i}
                         href={d.url}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="block text-primary hover:underline truncate"
                       >
                         {d.kind}: {d.url}
