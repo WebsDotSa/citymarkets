@@ -9,10 +9,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import type { User } from "@/lib/types";
 import { isAuthDevBypass } from '@/lib/identity';
-import { supabase } from "@/lib/supabase/client";
 import { warn as logWarn } from "@/lib/logger";
 
 /**
@@ -120,32 +118,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       twilioRef.current = twilio;
       setTwilioOtpEnabled(twilio);
 
+      // Single source of truth for the current session: /api/v1/auth/me.
+      // The previous version of this module also consulted a Supabase
+      // session here, but @supabase/supabase-js was removed from the
+      // runtime in the 2026-09-30 cleanup. With Twilio OTP enabled
+      // (always true in prod), the Supabase fallback never ran anyway.
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (cancelled) return;
-
-        if (session) {
-          const { data } = await supabase
-            .from("users")
-            .select("*")
-            .eq("id", session.user.id)
-            .single();
-          if (data) setUser(data as User);
-        } else {
-          const me = await fetch("/api/v1/auth/me", { credentials: "include" });
-          if (me.ok) {
-            const j = await me.json();
-            if (j.user) setUser(j.user as User);
-          } else if (
-            isAuthDevBypass() &&
-            !twilio &&
-            typeof window !== "undefined"
-          ) {
-            const storedUser = localStorage.getItem("city_market_dev_user");
-            if (storedUser) setUser(JSON.parse(storedUser) as User);
-          }
+        const me = await fetch("/api/v1/auth/me", { credentials: "include" });
+        if (me.ok) {
+          const j = await me.json();
+          if (j.user) setUser(j.user as User);
+        } else if (
+          isAuthDevBypass() &&
+          !twilio &&
+          typeof window !== "undefined"
+        ) {
+          const storedUser = localStorage.getItem("city_market_dev_user");
+          if (storedUser) setUser(JSON.parse(storedUser) as User);
         }
       } catch {
         if (
@@ -160,41 +149,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled) setLoading(false);
       }
 
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange(
-        async (_event: AuthChangeEvent, session: Session | null) => {
-        if (session) {
-          const { data } = await supabase
-            .from("users")
-            .select("*")
-            .eq("id", session.user.id)
-            .single();
-          if (data) setUser(data as User);
-          return;
-        }
-        const me = await fetch("/api/v1/auth/me", { credentials: "include" });
-        if (me.ok) {
-          const j = await me.json();
-          if (j.user) {
-            setUser(j.user as User);
-            return;
-          }
-        }
-        if (
-          isAuthDevBypass() &&
-          !twilioRef.current &&
-          typeof window !== "undefined"
-        ) {
-          const storedUser = localStorage.getItem("city_market_dev_user");
-          if (storedUser) {
-            setUser(JSON.parse(storedUser) as User);
-            return;
-          }
-        }
-        setUser(null);
-      });
-      unsubscribe = () => subscription.unsubscribe();
+      // No Supabase auth-state subscription — the Twilio JWT cookie is
+      // refreshed by /api/v1/auth/twilio/verify, and any page navigation
+      // re-reads /me via refreshUser().
+      unsubscribe = () => {};
     };
 
     void bootstrap();
@@ -210,39 +168,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     twilioRef.current = useTwilio;
     setTwilioOtpEnabled(useTwilio);
 
-    if (useTwilio) {
-      try {
-        const res = await fetch("/api/v1/auth/twilio/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ phone }),
-        });
-        const j = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          return {
-            error:
-              typeof j.error === "string"
-                ? j.error
-                : "تعذر إرسال رمز التحقق",
-          };
-        }
-        return { error: null };
-      } catch {
-        return { error: "تعذر الاتصال بالخادم" };
-      }
+    if (!useTwilio) {
+      // Twilio OTP is the only supported customer login channel since
+      // the 2026-09-30 Supabase removal. If the toggle is off, the only
+      // way to send an OTP would be the deprecated Supabase path that
+      // has no backend running anymore. Surface a clear error rather
+      // than a silent failure.
+      return { error: "خدمة التحقق غير مفعّلة حالياً" };
     }
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: phone.startsWith("0") ? `+966${phone.slice(1)}` : phone,
-        options: { channel: "sms" },
+      const res = await fetch("/api/v1/auth/twilio/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ phone }),
       });
-      if (error) throw error;
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return {
+          error:
+            typeof j.error === "string"
+              ? j.error
+              : "تعذر إرسال رمز التحقق",
+        };
+      }
       return { error: null };
-    } catch (err: unknown) {
-      // No dev bypass for sign in - always require real auth
-      return { error: "تعذر إرسال رمز التحقق" };
+    } catch {
+      return { error: "تعذر الاتصال بالخادم" };
     }
   }, []);
 
@@ -251,81 +204,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     twilioRef.current = useTwilio;
     setTwilioOtpEnabled(useTwilio);
 
-    if (useTwilio) {
-      try {
-        const res = await fetch("/api/v1/auth/twilio/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ phone, code }),
-        });
-        const j = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          return {
-            error:
-              typeof j.error === "string"
-                ? j.error
-                : "رمز التحقق غير صحيح",
-          };
-        }
-        // Reconciliation: confirm the cookie is real by hitting /me rather
-        // than trusting `j.user` from the verify response alone. A forged or
-        // proxy-stripped Set-Cookie would otherwise let the header show the
-        // user as logged in while /api/v1/orders returns 401.
-        const me = await fetch("/api/v1/auth/me", { credentials: "include" });
-        if (!me.ok) {
-          return { error: "تعذر تأكيد الجلسة، حاول مرة أخرى" };
-        }
-        const meJson = await me.json();
-        if (!meJson.user) {
-          return { error: "تعذر تأكيد الجلسة، حاول مرة أخرى" };
-        }
-        setUser(meJson.user as User);
-        return { error: null };
-      } catch {
-        return { error: "تعذر الاتصال بالخادم" };
-      }
+    if (!useTwilio) {
+      return { error: "خدمة التحقق غير مفعّلة حالياً" };
     }
 
     try {
-      const fullPhone = phone.startsWith("0")
-        ? `+966${phone.slice(1)}`
-        : phone;
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: fullPhone,
-        token: code,
-        type: "sms",
+      const res = await fetch("/api/v1/auth/twilio/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ phone, code }),
       });
-      if (error) throw error;
-
-      if (data.user) {
-        const { data: profile } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", data.user.id)
-          .single();
-
-        if (!profile) {
-          await supabase.from("users").insert({
-            id: data.user.id,
-            phone: fullPhone,
-            loyalty_points: 0,
-            loyalty_tier: "bronze",
-            spin_count_today: 0,
-          });
-        }
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return {
+          error:
+            typeof j.error === "string"
+              ? j.error
+              : "رمز التحقق غير صحيح",
+        };
       }
-
+      // Reconciliation: confirm the cookie is real by hitting /me rather
+      // than trusting `j.user` from the verify response alone. A forged or
+      // proxy-stripped Set-Cookie would otherwise let the header show the
+      // user as logged in while /api/v1/orders returns 401.
+      const me = await fetch("/api/v1/auth/me", { credentials: "include" });
+      if (!me.ok) {
+        return { error: "تعذر تأكيد الجلسة، حاول مرة أخرى" };
+      }
+      const meJson = await me.json();
+      if (!meJson.user) {
+        return { error: "تعذر تأكيد الجلسة، حاول مرة أخرى" };
+      }
+      setUser(meJson.user as User);
       return { error: null };
-    } catch (err: unknown) {
-      // Dev bypass is only active if AUTH_DEV_BYPASS=true (requires explicit opt-in)
-      if (isAuthDevBypass()) {
-        logWarn("[DEV AUTH] OTP verify failed, using mock user", { error: (err as Error).message });
-        setUser(MOCK_USER);
-        localStorage.setItem("city_market_dev_user", JSON.stringify(MOCK_USER));
-        return { error: null };
-      }
-      return { error: "رمز التحقق غير صحيح أو انتهت صلاحيته" };
+    } catch {
+      return { error: "تعذر الاتصال بالخادم" };
     }
   }, []);
 
@@ -338,7 +252,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* ignore */
     }
-    await supabase.auth.signOut();
     setUser(null);
     localStorage.removeItem("city_market_dev_user");
   }, []);

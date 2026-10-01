@@ -5,16 +5,14 @@
  * Two distinct auth surfaces exist in this project:
  *
  *   `@/lib/customer-session.ts`  (FAST PATH — 99% of routes)
- *     - Reads the customer_session cookie OR `Authorization: Bearer`
+ *     - Reads the customer_session cookie OR `Authorization: ***`
  *       header, runs HMAC verification with `jose`, returns userId.
  *     - Edge-safe (no `next/headers`, no Supabase client).
  *     - Used by every /api/v1 route that needs "who is the caller?".
  *
  *   `@/lib/auth-helpers.ts`  (FULL USER PATH — 2 routes today)
  *     - `getServerUser()` returns the full `User` row from the DB.
- *     - Falls back to Supabase session if no JWT cookie (the OTP
- *       sign-in flow sets a Supabase session, not a JWT, so legacy
- *       logins still resolve here).
+ *     - JWT-only since Supabase was removed (2026-09-30 cleanup).
  *     - `requireAuth()` returns either `{ user }` or a 401 NextResponse.
  *     - Currently used by /api/v1/profile and /api/v1/profile/delete —
  *       routes that need the FULL user record (avatar, loyalty points,
@@ -22,24 +20,21 @@
  *
  * Keep these two modules separate: collapsing `getServerUser()` into
  * `customer-session.ts` would force every /api/v1 route to load a DB
- * row + Supabase client just to check who the caller is. The current
- * split keeps the hot path light.
+ * row just to check who the caller is. The current split keeps the
+ * hot path light.
  */
-import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getSupabasePublicConfig } from "@/lib/env";
 import { COOKIE_NAME, verifyCustomerToken } from "./customer-session";
 import { mapDbUserRow } from "./map-db-user";
 import type { User } from "@/lib/types";
 
 /**
  * H35 (audit 2026-09-30): file exports only functions (NOT a pure types
- * module — cannot be renamed to \`auth-types.ts\`). Exports:
+ * module — cannot be renamed to `auth-types.ts`). Exports:
  *   - getServerUser(): Promise<User | null>
  *   - requireAuth(): Promise<{ success: true, user: User } | NextResponse>
- *   - createServerSupabaseClientAsync(): Promise<SupabaseClient>
  */
 
 /**
@@ -48,36 +43,6 @@ import type { User } from "@/lib/types";
  */
 export async function getServerUser(): Promise<User | null> {
   const cookieStore = await cookies();
-
-  const { url: supabaseUrl, anonKey: supabaseAnon } = getSupabasePublicConfig();
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseAnon,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll() {
-          // We can't set cookies in API routes this way, so we ignore
-        },
-      },
-    }
-  );
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (session) {
-    const { data: user } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", session.user.id)
-      .single();
-    return (user as User) ?? null;
-  }
-
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
 
@@ -115,7 +80,7 @@ export async function getServerUser(): Promise<User | null> {
  */
 export async function requireAuth() {
   const user = await getServerUser();
-  
+
   if (!user) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أولاً" },
@@ -124,24 +89,4 @@ export async function requireAuth() {
   }
 
   return { success: true, user };
-}
-
-export async function createServerSupabaseClientAsync() {
-  const cookieStore = await cookies();
-
-  const { url: supabaseUrl, anonKey: supabaseAnon } = getSupabasePublicConfig();
-  return createServerClient(
-    supabaseUrl,
-    supabaseAnon,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          // Ignore cookie setting for API routes
-        },
-      },
-    }
-  );
 }
