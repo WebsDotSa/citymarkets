@@ -103,7 +103,12 @@ jobs:
           # IPv6 (`::1`), which the trust exception does not cover.
           # Without PGPASSWORD, psql prints
           # `fe_sendauth: no password supplied` and exits 2, failing CI.
-          PGPASSWORD="$POSTGRES_PASSWORD" psql -h localhost -U ci_user \
+          # Use $DATABASE_PASSWORD (set in the workflow env block above),
+          # NOT $POSTGRES_PASSWORD. The latter is a service-container env
+          # that is NOT exposed to the job's shell — PR #33 run 36900870263
+          # failed because $POSTGRES_PASSWORD expanded to empty, giving
+          # `fe_sendauth: no password supplied`.
+          PGPASSWORD="$DATABASE_PASSWORD" psql -h localhost -U ci_user \
             -d ci_citymarket -v ON_ERROR_STOP=1 -c "DELETE FROM banners;"
           npm run db:migrate
 
