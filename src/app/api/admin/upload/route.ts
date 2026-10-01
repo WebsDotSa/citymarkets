@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
-import { uploadToR2, r2PublicUrl, r2KeyFromUrl, deleteFromR2 } from '@/lib/r2';
+import { uploadToR2, deleteFromR2 } from '@/lib/r2';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 

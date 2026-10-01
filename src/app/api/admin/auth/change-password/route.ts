@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyPassword, hashPassword } from '@/lib/password';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 // POST /api/admin/auth/change-password
 export async function POST(request: NextRequest) {

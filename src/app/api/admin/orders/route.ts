@@ -5,7 +5,7 @@ import { logAdminAction } from '@/lib/admin-audit';
 import { updateOrderSchema } from '@/lib/validation';
 import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError, warn as logWarn } from '@/lib/logger';
 import { ALL_ORDER_STATES, ALL_PAYMENT_STATES, assertValidTransition, invalidTransitionMessage } from '@/lib/orders/state-machine';
 import {
   ORDER_BASE_COLUMNS,

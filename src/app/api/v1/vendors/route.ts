@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 // BUGFIX (audit 2026-09-29): consolidate the three duplicated `isStoreOpen`
 // implementations (vendors route, vendors/[slug], vendors/[slug]/orders)
 // onto the canonical Riyadh-tz-aware helper that already handles the

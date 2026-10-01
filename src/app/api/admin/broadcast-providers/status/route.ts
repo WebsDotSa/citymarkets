@@ -4,7 +4,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { isEmailConfigured } from "@/lib/email";
-import { isNativePushConfigured } from "@/lib/native-push";
 import { isTwilioMessagingConfigured } from "@/lib/twilio-messaging";
 import { isApnsConfigured } from "@/lib/env";
 import { isFcmSenderConfigured } from "@/lib/env";

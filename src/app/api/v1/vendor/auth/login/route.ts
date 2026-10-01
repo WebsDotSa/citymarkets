@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 import { verifyPassword } from "@/lib/password";
 import { vendorStaffLoginSchema } from "@/lib/validation/admin";
 import { normalizeSaudiToE164 } from "@/lib/phone-format";

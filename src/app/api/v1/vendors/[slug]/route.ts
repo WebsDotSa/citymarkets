@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 // BUGFIX (audit 2026-09-29): see siblings — replace local isStoreOpen
 // with the Riyadh-tz-aware helper that already exists in
 // `src/lib/delivery/vendor-store-hours`.

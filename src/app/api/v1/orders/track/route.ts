@@ -4,7 +4,7 @@ import { getOrderStatusConfig, PAYMENT_STATUS_AR } from '@/lib/orders';
 import { checkRateLimit, createRateLimitHeaders } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 const PHONE_RE = /^[+\d][\d\s\-()]{5,20}$/;
 

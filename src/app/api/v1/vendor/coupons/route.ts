@@ -4,7 +4,7 @@ import { requireVendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import crypto from "crypto";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 function generateCouponCode(): string {
   return crypto.randomBytes(4).toString("hex").toUpperCase();

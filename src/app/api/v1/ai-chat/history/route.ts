@@ -7,7 +7,7 @@ import type {
   ChatProductResult,
 } from '@/lib/catalog';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 export const dynamic = "force-dynamic";
 

@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { query } from '@/lib/db';
 import { getCustomerUserIdFromRequest } from '@/lib/identity';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 interface SpinResult {
   id: string;

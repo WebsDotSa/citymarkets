@@ -7,7 +7,7 @@ import { checkRateLimit, createRateLimitHeaders, GENERAL_API_CONFIG } from "@/li
 import { isVendorOpen, parseVendorHours } from "@/lib/delivery/vendor-store-hours";
 import { generateVendorOrderNumber } from "@/lib/orders/order-number";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 /**
  * Order item type for internal use
