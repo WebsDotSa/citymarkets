@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 
 import { error as logError } from '@/lib/logger';
 
@@ -9,6 +10,9 @@ export async function GET(
 ) {
   try {
     const { slug, id } = await params;
+
+    const badId = validateUuidOrError(id, 'معرّف المنتج');
+    if (badId) return badId;
 
     // Get vendor
     const vendorResult = await query(

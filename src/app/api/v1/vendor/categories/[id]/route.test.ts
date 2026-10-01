@@ -71,6 +71,21 @@ beforeEach(() => {
 });
 
 describe("PATCH /api/v1/vendor/categories/[id]", () => {
+  it("returns 400 with the canonical envelope for a malformed UUID (PCP-112)", async () => {
+    // Before the fix, a non-UUID id reached Postgres and crashed
+    // with 22P02 → surfaced as 500. The guard short-circuits before
+    // any SQL runs.
+    const res = await PATCH(makeRequest({ nameAr: "توت" }) as unknown as never, {
+      params: Promise.resolve({ id: "not-a-uuid" }),
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error).toBe("معرّف القسم غير صالح");
+    // Guard short-circuits before the ownership SELECT.
+    expect(calls.length).toBe(0);
+  });
+
   it("returns 401 when no vendor session", async () => {
     mockSession = null;
     const res = await PATCH(makeRequest({ nameAr: "توت" }) as unknown as never, {

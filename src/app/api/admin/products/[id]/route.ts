@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 import { error as logError } from '@/lib/logger';
-
-const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(
   request: NextRequest,
@@ -13,12 +12,8 @@ export async function GET(
   if (gate instanceof NextResponse) return gate;
 
   const { id } = await params;
-  if (!UUID_LIKE.test(id)) {
-    return NextResponse.json(
-      { success: false, error: 'المنتج غير موجود' },
-      { status: 404 }
-    );
-  }
+  const badId = validateUuidOrError(id, 'معرّف المنتج');
+  if (badId) return badId;
 
   try {
     const result = await query(

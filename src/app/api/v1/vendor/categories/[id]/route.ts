@@ -3,6 +3,7 @@ import { query } from "@/lib/db";
 import { requireVendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { cache } from "@/lib/cache";
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 
 import { error as logError } from "@/lib/logger";
 
@@ -43,6 +44,8 @@ export async function PATCH(
     if (forbidden) return forbidden;
 
     const { id } = await params;
+    const badId = validateUuidOrError(id, 'معرّف القسم');
+    if (badId) return badId;
     let body: Record<string, unknown>;
     try {
       body = (await request.json()) as Record<string, unknown>;
@@ -134,6 +137,9 @@ export async function DELETE(
     if (forbidden) return forbidden;
 
     const { id } = await params;
+
+    const badId = validateUuidOrError(id, 'معرّف القسم');
+    if (badId) return badId;
 
     const own = await query(
       `SELECT id FROM categories WHERE id = $1 AND vendor_id = $2 LIMIT 1`,
