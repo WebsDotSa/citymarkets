@@ -131,17 +131,63 @@ async function mirrorPaymentStatus(
  * Uses CASE so a late 'paid' callback can never regress an
  * already-confirmed/preparing/ready/etc. order back to pending.
  * Mirrors the change onto every `vendor_orders` child.
+ *
+ * AUDIT (PCP-80): also writes a parent-row `order_status_logs`
+ * entry when the parent order actually flips `pending → confirmed`.
+ * Replay-safe: the CTE atomically captures the pre-flip status
+ * (`old.status`), and the conditional INSERT only writes a log
+ * row when `old.status = 'pending'`. A duplicate paid webhook
+ * (orders.status already = 'confirmed') produces zero new log
+ * rows, so the audit trail stays clean even under gateway
+ * retry storms.
+ *
+ * Vendor-level audit gap (documented, NOT fixed in PCP-80):
+ * `order_status_logs.order_id` is FK'd to `orders.id` only (see
+ * migrations/050b_create_order_status_logs.sql) — there is no
+ * `vendor_order_status_logs` table and per-vendor
+ * `vendor_orders.status` transitions therefore leave no row-level
+ * audit trail. Closing that gap requires a new migration
+ * (vendor_order_status_logs with a polymorphic parent_id OR a
+ * vendor_orders_id column) and a sibling-issue. Out of scope
+ * for PCP-80.
  */
 async function flipFulfillmentLifecycle(
   client: PoolClient,
-  args: { orderId: string },
+  args: { orderId: string; gateway: PaymentGateway; eventType: string },
 ): Promise<void> {
-  const { orderId } = args;
+  const { orderId, gateway, eventType } = args;
+  // Single atomic statement:
+  //   1. CTE `old` snapshots the pre-update status (no row lock
+  //      needed — caller holds pg_advisory_xact_lock on this order).
+  //   2. CTE `upd` runs the CASE-guarded UPDATE on the parent.
+  //   3. CTE `log` conditionally INSERTs an `order_status_logs`
+  //      row only when the parent actually flipped from 'pending'
+  //      to 'confirmed'. A replay webhook leaves `old.status` at
+  //      'confirmed' (or later) and the INSERT writes zero rows.
+  //   4. Final SELECT returns the audit-written flag + new status
+  //      for log visibility.
   await client.query(
-    `UPDATE orders
-        SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
-      WHERE id = $1`,
-    [orderId],
+    `WITH old AS (
+       SELECT id, status FROM orders WHERE id = $1
+     ),
+     upd AS (
+       UPDATE orders
+          SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
+        WHERE id = $1
+        RETURNING id, status AS new_status
+     ),
+     audit AS (
+       INSERT INTO order_status_logs
+         (order_id, old_status, new_status, changed_by, notes)
+       SELECT $1, old.status, upd.new_status, 'system:payment_webhook', $2
+         FROM upd, old
+        WHERE old.status = 'pending'
+       RETURNING id
+     )
+     SELECT
+       (SELECT new_status FROM upd) AS new_status,
+       (SELECT COUNT(*) FROM audit)::int AS audit_rows_written`,
+    [orderId, `${gateway}:${eventType} → parent pending → confirmed`],
   );
   await client.query(
     `UPDATE vendor_orders
@@ -277,7 +323,7 @@ export async function reconcilePayment(
   let recoveredCount = 0;
   if (paymentDb === "paid") {
     // ---- 4a. Lifecycle flip ----
-    await flipFulfillmentLifecycle(client, { orderId });
+    await flipFulfillmentLifecycle(client, { orderId, gateway, eventType });
 
     // ---- 4b. Loyalty + abandoned-cart recovery ----
     ({ recoveredCount } = await runPaidSideEffects(client, {

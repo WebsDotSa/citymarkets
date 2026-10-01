@@ -138,12 +138,62 @@ describe("reconcilePayment", () => {
     expect(vendorUpdate).toBeDefined();
     expect(vendorUpdate!.params).toEqual(["paid", "order-1"]);
 
-    // Paid-only: lifecycle flip
+    // Paid-only: lifecycle flip — now a CTE that does UPDATE +
+    // conditional order_status_logs INSERT atomically.
     const lifecycle = calls.find((c) =>
-      /^UPDATE orders\s+SET status/i.test(c.sql.trim()),
+      /WITH old AS[\s\S]*UPDATE orders\s+SET status/i.test(c.sql),
     );
     expect(lifecycle).toBeDefined();
-    expect(lifecycle!.params).toEqual(["order-1"]);
+    // The CTE must include the conditional order_status_logs INSERT
+    // with `changed_by = 'system:payment_webhook'`.
+    expect(lifecycle!.sql).toMatch(/INSERT INTO order_status_logs/i);
+    expect(lifecycle!.sql).toMatch(/'system:payment_webhook'/i);
+    // The conditional INSERT only fires when old.status = 'pending'
+    // — replay safety for duplicate paid webhooks.
+    expect(lifecycle!.sql).toMatch(/WHERE old\.status = 'pending'/i);
+    // Params: orderId + notes string
+    expect(lifecycle!.params).toEqual([
+      "order-1",
+      "moyasar:payment.paid → parent pending → confirmed",
+    ]);
+  });
+
+  it("writes an order_status_logs row on paid webhook (parent pending → confirmed)", async () => {
+    const { client, calls } = makeMockClient();
+    await reconcilePayment(client, {
+      invoiceId: "inv-audit-1",
+      gateway: "moyasar",
+      eventType: "payment.paid",
+      paymentDb: "paid",
+      rawBody: { foo: "bar" },
+      orderRow: baseOrderRow,
+    });
+    const audit = calls.find(
+      (c) => /INSERT INTO order_status_logs/i.test(c.sql),
+    );
+    expect(audit).toBeDefined();
+    expect(audit!.sql).toMatch(/'system:payment_webhook'/i);
+    // Old status is captured from the pre-update CTE, new status is
+    // the literal 'confirmed'.
+    expect(audit!.sql).toMatch(/new_status/i);
+    expect(audit!.sql).toMatch(/'confirmed'/);
+  });
+
+  it("tamara approved webhook also writes the parent status log", async () => {
+    const { client, calls } = makeMockClient();
+    await reconcilePayment(client, {
+      invoiceId: "inv-audit-tamara",
+      gateway: "tamara",
+      eventType: "tamara.captured",
+      paymentDb: "paid",
+      rawBody: {},
+      orderRow: baseOrderRow,
+    });
+    const audit = calls.find(
+      (c) => /INSERT INTO order_status_logs/i.test(c.sql),
+    );
+    expect(audit).toBeDefined();
+    expect(audit!.params[1]).toMatch(/^tamara:tamara\.captured /);
   });
 
   it("skips paid-only side effects when paymentDb is 'failed'", async () => {

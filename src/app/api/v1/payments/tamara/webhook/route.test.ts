@@ -224,6 +224,67 @@ describe("POST /api/v1/payments/tamara/webhook — Bug A parity", () => {
     expect(mirror).toBeDefined();
     expect(mirror!.params[0]).toBe("paid");
   });
+
+  it("approved → writes order_status_logs row (parent pending → confirmed)", async () => {
+    const { client, calls } = makeFakeClient({ paymentEventResult: "inserted" });
+    vi.mocked(pool.connect).mockResolvedValueOnce(client as never);
+    vi.mocked(pool.query)
+      .mockResolvedValueOnce({ rows: [PARENT_ORDER] } as never)
+      .mockResolvedValueOnce({ rows: [{ vendor_id: "vendor-1" }] } as never);
+    vi.mocked(fetchOrderStatus).mockResolvedValueOnce({
+      success: true,
+      status: "approved",
+      amount: 20000,
+      currency: "SAR",
+    });
+    vi.mocked(recordPaymentEvent).mockResolvedValueOnce("inserted");
+
+    await POST(signedRequest(PAID_BODY) as never);
+
+    // PCP-80 audit gap: the shared reconcilePayment helper must
+    // also write a parent row to order_status_logs when the
+    // lifecycle flips pending → confirmed via the tamara webhook.
+    // The mock client lets every query through, so any
+    // INSERT INTO order_status_logs with system:payment_webhook
+    // is the helper's audit write.
+    const audit = calls.find(
+      (c) =>
+        /INSERT INTO order_status_logs/i.test(c.sql) &&
+        /'system:payment_webhook'/i.test(c.sql),
+    );
+    expect(audit).toBeDefined();
+    expect(audit!.params).toEqual([
+      PARENT_ORDER.id,
+      "tamara:tamara.approved → parent pending → confirmed",
+    ]);
+  });
+
+  it("declined → does NOT write order_status_logs", async () => {
+    const { client, calls } = makeFakeClient({ paymentEventResult: "inserted" });
+    vi.mocked(pool.connect).mockResolvedValueOnce(client as never);
+    vi.mocked(pool.query).mockResolvedValueOnce({
+      rows: [{ ...PARENT_ORDER, payment_status: "failed" }],
+    } as never);
+    vi.mocked(fetchOrderStatus).mockResolvedValueOnce({
+      success: true,
+      status: "declined",
+      amount: 20000,
+      currency: "SAR",
+    });
+    vi.mocked(recordPaymentEvent).mockResolvedValueOnce("inserted");
+
+    await POST(
+      signedRequest({ ...PAID_BODY, order_status: "declined" }) as never,
+    );
+
+    // The audit INSERT only fires when paymentDb === 'paid'.
+    // A declined/cancelled tamara callback must NOT log a
+    // pending → confirmed flip because none happened.
+    const audit = calls.find((c) =>
+      /INSERT INTO order_status_logs/i.test(c.sql),
+    );
+    expect(audit).toBeUndefined();
+  });
 });
 
 describe("POST /api/v1/payments/tamara/webhook — ledger + replay", () => {
