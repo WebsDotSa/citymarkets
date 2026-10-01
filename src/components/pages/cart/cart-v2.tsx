@@ -558,15 +558,18 @@ export function CartV2() {
             </p>
           )}
 
-          {/* Guest Checkout Option */}
-          {!user && (
-            <button
-              onClick={() => router.push("/checkout")}
-              className="w-full py-2 mt-1 text-primary-600 font-medium hover:text-primary-700 transition-colors text-sm"
-            >
-              أكمل كزائر
-            </button>
-          )}
+          {/* Guest Checkout Option — REMOVED 2026-10-01.
+              The middleware in src/middleware.ts PROTECTED_PREFIXES = ["/profile",
+              "/orders", "/checkout"] forces every unauthenticated visitor hitting
+              /checkout to bounce to /auth/login. The cart UI advertised a guest
+              flow that the server-side guard silently overrides. Without a
+              guest-checkout server path (different DB row, different webhook,
+              different SMS body), we removed the button rather than ship a
+              dead CTA. Future guest-checkout work would need to: (1) add a
+              guest_orders table or reuse vendor_orders.guest_*, (2) update
+              PROTECTED_PREFIXES to carve out /checkout when ?guest=1, and
+              (3) make the Moyasar webhook accept guest-only orders. Until
+              then, "أكمل كزائر" is not wired. */}
         </div>
       </div>
     </div>

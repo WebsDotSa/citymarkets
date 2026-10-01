@@ -77,6 +77,15 @@ const PROTECTED_PREFIXES = ["/profile", "/orders", "/checkout"];
 // `/admin` and `/admin/<anything>` are all protected.
 const PUBLIC_PROFILE_EXACT = new Set<string>(["/profile/loyalty"]);
 
+// PUBLIC_ORDERS_EXACT — order-tracking routes that must remain reachable
+// for guest customers. The /auth/login page advertises "تتبع طلبك هنا"
+// which deep-links to /orders/track. The PROTECTED_PREFIXES guard on
+// /orders would otherwise send every guest to the login wall and silently
+// drop the link. The /orders/track page itself accepts a phone + tracking
+// code lookup (no JWT required) — it just needs the middleware to let
+// the request through. Add any future public order surface here.
+const PUBLIC_ORDERS_EXACT = new Set<string>(["/orders/track"]);
+
 // Admin sub-paths that must stay reachable without a session.
 const ADMIN_PUBLIC_PREFIXES = ["/admin/login"];
 
@@ -98,8 +107,13 @@ function isPublicProfile(pathname: string): boolean {
   return PUBLIC_PROFILE_EXACT.has(pathname);
 }
 
+function isPublicOrders(pathname: string): boolean {
+  return PUBLIC_ORDERS_EXACT.has(pathname);
+}
+
 function isProtected(pathname: string): boolean {
   if (isPublicProfile(pathname)) return false;
+  if (isPublicOrders(pathname)) return false;
   return PROTECTED_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),
   );
