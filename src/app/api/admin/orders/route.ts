@@ -278,64 +278,95 @@ export async function PUT(request: NextRequest) {
     sets.push('updated_at = NOW()');
     vals.push(idCheckResult);
 
-    // Capture the OLD status before we mutate so we can record an accurate
-    // transition row in order_status_logs. We need it for two reasons:
-    //   * The log row needs (old_status, new_status, changed_by_admin_id)
-    //   * If the admin flips status to the same value (no-op), we still
-    //     want to know "they tried" — but a log row with old == new is
-    //     noise. Skip the insert in that case.
+    // PCP-76.F6 / PCP-98: wrap read-of-current-state + state-machine
+    // check + UPDATE in a single transaction with SELECT ... FOR UPDATE.
     //
-    // Phase 1 / T4: also capture the old driver_id so we can write an
-    // audit row + system message when the assignment changed.
-    const oldStatusRes = await query(
-      `SELECT status, driver_id FROM orders WHERE id = $1 LIMIT 1`,
-      [idCheckResult]
-    );
-    const oldStatus = oldStatusRes.rows[0]?.status ?? null;
-    const oldDriverId = oldStatusRes.rows[0]?.driver_id ?? null;
+    // Why: the old code did an unlocked SELECT, then asserted against
+    // the read snapshot, then ran the UPDATE in a separate autocommit
+    // statement. Two concurrent admins could both pass the guard (each
+    // reading a different in-flight `oldStatus`) and then overwrite each
+    // other's transition — the state-machine guard became advisory.
+    //
+    // We now (a) lock the row with FOR UPDATE so the second writer
+    // waits for our COMMIT and re-reads our new state, and (b) hold the
+    // lock across the UPDATE so the audit INSERT and the UPDATE either
+    // both land or neither does. Best-effort logging inside the
+    // transaction is no longer acceptable — if the order_status_logs row
+    // is a primary side-effect of the status change, it has to be
+    // atomic with the UPDATE.
+    const client = await pool.connect();
+    let txCommitted = false;
+    let oldStatus: string | null = null;
+    let oldDriverId: string | null = null;
+    try {
+      await client.query('BEGIN');
 
-    // Centralized state-machine guard. Admins get the documented escape
-    // hatch (delivered → cancelled); everything else follows the role
-    // table in `@/lib/orders/state-machine`.
-    if (status !== undefined && status !== null && oldStatus) {
-      try {
-        assertValidTransition('admin', 'orders', String(oldStatus), String(status));
-      } catch (err) {
-        const message = invalidTransitionMessage(
-          'admin',
-          'orders',
-          String(oldStatus),
-          String(status),
-        );
-        logWarn('[admin/orders PUT] rejected invalid transition', {
-          orderId: idCheckResult,
-          from: oldStatus,
-          to: status,
-          reason: err instanceof Error ? err.message : String(err),
-        });
-        return NextResponse.json(
-          { success: false, error: message },
-          { status: 400 },
-        );
+      // Capture the OLD status before we mutate so we can record an accurate
+      // transition row in order_status_logs. We need it for two reasons:
+      //   * The log row needs (old_status, new_status, changed_by_admin_id)
+      //   * If the admin flips status to the same value (no-op), we still
+      //     want to know "they tried" — but a log row with old == new is
+      //     noise. Skip the insert in that case.
+      //
+      // Phase 1 / T4: also capture the old driver_id so we can write an
+      // audit row + system message when the assignment changed.
+      //
+      // FOR UPDATE locks the row until COMMIT/ROLLBACK — a concurrent
+      // admin PUT against the same order will block on this SELECT and
+      // re-read the fresh value once we release.
+      const oldStatusRes = await client.query(
+        `SELECT status, driver_id FROM orders WHERE id = $1 LIMIT 1 FOR UPDATE`,
+        [idCheckResult]
+      );
+      oldStatus = oldStatusRes.rows[0]?.status ?? null;
+      oldDriverId = oldStatusRes.rows[0]?.driver_id ?? null;
+
+      // Centralized state-machine guard. Admins get the documented escape
+      // hatch (delivered → cancelled); everything else follows the role
+      // table in `@/lib/orders/state-machine`.
+      if (status !== undefined && status !== null && oldStatus) {
+        try {
+          assertValidTransition('admin', 'orders', String(oldStatus), String(status));
+        } catch (err) {
+          const message = invalidTransitionMessage(
+            'admin',
+            'orders',
+            String(oldStatus),
+            String(status),
+          );
+          logWarn('[admin/orders PUT] rejected invalid transition', {
+            orderId: idCheckResult,
+            from: oldStatus,
+            to: status,
+            reason: err instanceof Error ? err.message : String(err),
+          });
+          // ROLLBACK is idempotent; releasing the row lock on the 400
+          // path so the rejected admin's view of the state is fresh.
+          await client.query('ROLLBACK').catch(() => undefined);
+          return NextResponse.json(
+            { success: false, error: message },
+            { status: 400 },
+          );
+        }
       }
-    }
 
-    await query(
-      `UPDATE orders SET ${sets.join(', ')} WHERE id = $${n}`,
-      vals
-    );
+      await client.query(
+        `UPDATE orders SET ${sets.join(', ')} WHERE id = $${n}`,
+        vals
+      );
 
-    // Record the status transition. Best-effort: a failure here must NOT
-    // roll back the status change the admin just made. The admin's intent
-    // is the primary side-effect; the audit row is secondary.
-    if (
-      status !== undefined &&
-      status !== null &&
-      oldStatus !== null &&
-      oldStatus !== status
-    ) {
-      try {
-        await query(
+      // Record the status transition. Atomic with the UPDATE: if this
+      // INSERT throws we ROLLBACK so we never leave a status change
+      // without an audit row. The audit log is a primary side-effect of
+      // the status change — not "best-effort" — because the log row is
+      // what proves the state machine actually advanced.
+      if (
+        status !== undefined &&
+        status !== null &&
+        oldStatus !== null &&
+        oldStatus !== status
+      ) {
+        await client.query(
           `INSERT INTO order_status_logs
              (order_id, old_status, new_status, changed_by_admin_id, changed_by, notes)
            VALUES ($1, $2, $3, $4, $5, NULL)`,
@@ -347,12 +378,17 @@ export async function PUT(request: NextRequest) {
             `admin:${gate.admin.role}`,
           ]
         );
-      } catch (logErr) {
-        logWarn('[order_status_log] admin status log insert failed', {
-          orderId: idCheckResult,
-          error: logErr instanceof Error ? logErr.message : String(logErr),
-        });
       }
+
+      await client.query('COMMIT');
+      txCommitted = true;
+    } catch (err) {
+      if (!txCommitted) {
+        await client.query('ROLLBACK').catch(() => undefined);
+      }
+      throw err;
+    } finally {
+      client.release();
     }
 
     await logAdminAction(gate.admin, 'order.update', {
