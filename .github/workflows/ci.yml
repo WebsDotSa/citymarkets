@@ -79,19 +79,27 @@ jobs:
         run: npm run db:migrate:dry-run
 
       - name: Apply migrations to CI database (hard-fail)
-        # Runs the full migration chain (currently 001 → 076, count
-        # verified dynamically by the runner) against a fresh CI
-        # Postgres+pgvector. Any DDL failure (missing column, type
-        # mismatch, FK rejection, GRANT on a non-existent role, view
-        # referencing a missing table) MUST fail this job — the
-        # migration runner aborts on the first error and exits non-zero.
-        # This is the gate that prevented "schema-only-on-prod"
-        # regressions like the 004 addresses guest_key CREATE INDEX,
-        # the 007 reviews INTEGER-vs-UUID mismatch, and the 037 vendor
-        # cart COALESCE type error. We do NOT pass --mark-applied —
-        # every file must apply cleanly from a fresh DB. We do NOT use
+        # Runs the full migration chain against a fresh CI Postgres+pgvector.
+        # Any DDL failure (missing column, type mismatch, FK rejection,
+        # GRANT on a non-existent role, view referencing a missing table)
+        # MUST fail this job — the migration runner aborts on the first
+        # error and exits non-zero. We do NOT pass --mark-applied — every
+        # file must apply cleanly from a fresh DB. We do NOT use
         # `|| echo` / `|| true` — migration failures are hard failures.
-        run: npm run db:migrate
+        #
+        # Fresh-DB prerequisites (PCP-109, 2026-10-01):
+        #   * 000 creates citymarket_user so 001's GRANT doesn't abort.
+        #     (No-op on prod where the role already exists.)
+        #   * 077 refuses to drop a non-empty `banners` table; the seed
+        #     (002/003) populates 3 demo rows on every fresh DB. We apply
+        #     up to 076, clear those seed rows, then run the rest. 077's
+        #     production guard is preserved — the DELETE only runs here
+        #     because every banner row is guaranteed seed.
+        run: |
+          npx tsx scripts/migrate.ts --to=076_wishlist_server_persistence.sql
+          psql -h localhost -U ci_user -d ci_citymarket -v ON_ERROR_STOP=1 \
+            -c "DELETE FROM banners;"
+          npm run db:migrate
 
       - name: Migration drift report (against applied CI DB)
         # Runs db:drift-report against the freshly-migrated CI database.

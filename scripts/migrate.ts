@@ -78,23 +78,28 @@ const TRACKING_TABLE = "app_migrations";
 type CliArgs = {
   dryRun: boolean;
   from: string | null;
+  to: string | null;
   markApplied: boolean;
 };
 
 function parseArgs(argv: string[]): CliArgs {
   let dryRun = false;
   let from: string | null = null;
+  let to: string | null = null;
   let markApplied = false;
   for (const a of argv) {
     if (a === "--dry-run") dryRun = true;
     else if (a.startsWith("--from=")) from = a.slice("--from=".length);
+    else if (a.startsWith("--to=")) to = a.slice("--to=".length);
     else if (a === "--mark-applied") markApplied = true;
     else if (a === "--help" || a === "-h") {
       console.log(
-        "Usage: tsx scripts/migrate.ts [--dry-run] [--from=<file.sql>] [--mark-applied]\n" +
+        "Usage: tsx scripts/migrate.ts [--dry-run] [--from=<file.sql>] [--to=<file.sql>] [--mark-applied]\n" +
           "\n" +
           "  --dry-run        List pending migrations without applying.\n" +
           "  --from=<file>    Start from this file (lexicographic >=).\n" +
+          "  --to=<file>      Stop after this file (lexicographic <=). Lets CI seed or\n" +
+          "                   clean a fresh DB between two ranges.\n" +
           "  --mark-applied   Record a migration as applied WITHOUT running its SQL.\n" +
           "                   Use when the schema state is known to exist via another tool\n" +
           "                   (e.g. the file references columns that don't match the live\n" +
@@ -104,7 +109,7 @@ function parseArgs(argv: string[]): CliArgs {
       process.exit(0);
     }
   }
-  return { dryRun, from, markApplied };
+  return { dryRun, from, to, markApplied };
 }
 
 /**
@@ -267,9 +272,11 @@ async function main(): Promise<void> {
     await ensureTrackingTable(client);
     const appliedMap = await getAppliedMap(client);
     const all = listMigrations();
-    const after = args.from
-      ? all.filter((f) => f.localeCompare(args.from!) >= 0)
-      : all;
+    const after = all.filter(
+      (f) =>
+        (!args.from || f.localeCompare(args.from) >= 0) &&
+        (!args.to || f.localeCompare(args.to) <= 0),
+    );
 
     const legacyPrefixes =
       (appliedMap as Map<string, string> & { __legacyPrefixes?: Set<string> })
