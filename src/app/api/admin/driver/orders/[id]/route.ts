@@ -360,9 +360,24 @@ export async function PATCH(
         // `pending_redeem` hold for this cancelled order. Best-effort:
         // failure is logged but does not block the response (same
         // `.catch(() => {})` posture as the coupon release above).
-        releaseRedeemHoldForOrder(client, { orderId: id }).catch((err) => {
-          logError("[driver cancel] loyalty hold release failed", err, { orderId: id });
-        });
+        //
+        // PCP-94: acquire a FRESH pool.connect() instead of reusing
+        // `client`. The helper's contract (`releaseRedeemHoldForOrder`
+        // in @/lib/orders/loyalty) documents that the caller passes a
+        // PoolClient so it runs inside the parent transaction. We
+        // already ran COMMIT above, so reusing `client` would silently
+        // promote this DELETE to autocommit on a connection the rest of
+        // this handler still considers "ours" — fragile against any
+        // future change that adds BEGIN to the helper.
+        pool.connect()
+          .then((releaseClient) =>
+            releaseRedeemHoldForOrder(releaseClient, { orderId: id }).finally(
+              () => releaseClient.release(),
+            ),
+          )
+          .catch((err) => {
+            logError("[driver cancel] loyalty hold release failed", err, { orderId: id });
+          });
       }
 
       // P0-2 (full-system audit 2026-09-30): COD orders previously
@@ -478,9 +493,22 @@ export async function PATCH(
       // P1-7 (full-system audit 2026-09-30): release the loyalty
       // `pending_redeem` hold for this cancelled order. Same
       // best-effort posture as the claim branch above.
-      releaseRedeemHoldForOrder(client, { orderId: id }).catch((err) => {
-        logError("[driver cancel] loyalty hold release failed", err, { orderId: id });
-      });
+      //
+      // PCP-94: acquire a FRESH pool.connect() instead of reusing
+      // `client` — we have already run COMMIT above, and the helper's
+      // contract assumes the caller passes a PoolClient so it operates
+      // inside the parent transaction. Reusing `client` would silently
+      // promote this DELETE to autocommit on a connection the rest of
+      // this handler still considers "ours". Mirrors the claim branch.
+      pool.connect()
+        .then((releaseClient) =>
+          releaseRedeemHoldForOrder(releaseClient, { orderId: id }).finally(
+            () => releaseClient.release(),
+          ),
+        )
+        .catch((err) => {
+          logError("[driver cancel] loyalty hold release failed", err, { orderId: id });
+        });
     }
 
     // P0-2 (full-system audit 2026-09-30): mirror the COD loyalty

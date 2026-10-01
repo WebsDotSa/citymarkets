@@ -191,6 +191,17 @@ export async function resolveRedeemForOrder(
  *
  * Caller must pass a PoolClient so this runs inside the same
  * transaction as the parent status change.
+ *
+ * PCP-94 caveat: the DELETE is a plain statement — if the caller has
+ * already run COMMIT on `client`, the DELETE will be issued on that
+ * connection in autocommit mode (no BEGIN is opened by this helper).
+ * For the only post-COMMIT caller (the driver cancel flow in
+ * `src/app/api/admin/driver/orders/[id]/route.ts`) the route now
+ * acquires a fresh `pool.connect()` so the helper's "inside the
+ * parent transaction" contract is honored. Do NOT change this helper
+ * to issue `BEGIN` — that would silently break the post-COMMIT
+ * caller. If you need an explicit transaction, add a wrapper that
+ * opens its own transaction and call THAT instead.
  */
 export async function releaseRedeemHoldForOrder(
   client: PoolClient,
