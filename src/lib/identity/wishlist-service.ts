@@ -67,8 +67,15 @@ export interface WishlistAddResult {
   item?: WishlistItem;
 }
 
+// `products_unified` (the view joined below) does not expose a `slug`
+// column — only `sku`. PCP-107 audit found that authenticated wishlist
+// requests were 500-ing with `column p.slug does not exist` because the
+// view doesn't carry a product slug. We populate the `slug` field from
+// `sku` to keep the response shape stable for the wishlist UI (which
+// carries it through to `Product.slug` but does not use it for routing
+// — product links use `product.id`, see `src/app/wishlist/page.tsx`).
 const WISHLIST_PRODUCT_FIELDS = `
-  p.id, COALESCE(p.name_ar, p.name_en) AS name, p.name_ar, p.slug,
+  p.id, COALESCE(p.name_ar, p.name_en) AS name, p.name_ar, p.sku AS slug,
   p.price::float8 AS price,
   p.discount_price::float8 AS discount_price,
   p.image_url,
