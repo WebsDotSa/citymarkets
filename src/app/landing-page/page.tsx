@@ -66,7 +66,7 @@ export default function LandingPage() {
       <section className="bg-gradient-to-br from-primary via-primary to-primary-dark py-8 md:py-10">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="inline-block mb-2">
-            <CityMarketsLogo height={48} priority href={null} />
+            <CityMarketsLogo height={48} priority link={false} />
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">
             أسواق سيتي المركزية
