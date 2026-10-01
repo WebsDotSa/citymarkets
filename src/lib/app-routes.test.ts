@@ -157,13 +157,24 @@ describe("storefront pages must not call redirect()", () => {
       const route = "/" + (concrete ?? "");
       return { file: p, route };
     })
-    .filter((c) => isStorefrontRoute(c.route));
+    .filter((c) => isStorefrontRoute(c.route))
+    // Pages that intentionally bypass the no-redirect() rule — typically
+    // alias pages that point at a canonical route (e.g. `/driver →
+    // /delegate` from PCP-101 dogfood audit). Add `/* allow-redirect */`
+    // at the top of the page to register the bypass.
+    .filter((c) => {
+      const content = readFileSync(c.file, "utf8");
+      return !/\/\*\s*allow-redirect\s*\*\//.test(content);
+    });
 
   it.each(cases)("$route does not call redirect()", ({ file }) => {
     const content = readFileSync(file, "utf8");
     // Strip block comments and line comments before matching so the
     // test only catches real code references, not the words used in
-    // explanatory comments.
+    // explanatory comments. Special marker:
+    //   `/* allow-redirect: <reason> */`
+    // inside a page lets us document an intentional bypass (e.g. the
+    // `/driver → /delegate` redirect added by PCP-101).
     const stripped = content
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/^\s*\/\/.*$/gm, "");
