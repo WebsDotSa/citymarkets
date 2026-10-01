@@ -466,7 +466,7 @@ export function NotificationsProvidersTab() {
             <a
               href={previewUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
             >
               فتح رابط واتساب التجريبي ←

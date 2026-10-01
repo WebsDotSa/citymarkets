@@ -262,6 +262,7 @@ export function AdminHeader({
         <Link
           href="/"
           target="_blank"
+          rel="noopener noreferrer"
           className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm text-primary hover:bg-primary/5 rounded-lg font-medium transition-colors"
         >
           <span>الموقع</span>

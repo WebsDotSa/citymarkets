@@ -250,6 +250,7 @@ export default function VendorAdminLayout({ children, params }: VendorLayoutProp
             <Link
               href={`/vendors/${slug}`}
               target="_blank"
+              rel="noopener noreferrer"
               className="text-sm text-primary hover:underline"
             >
               عرض المتجر
