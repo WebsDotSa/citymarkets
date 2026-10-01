@@ -464,6 +464,26 @@ export async function createCheckout(
     throw new Error("parent order insert returned no id");
   }
 
+  // ---- 10b. Initial order_status_logs row (PCP-79 / PCP-77 finding #1)
+  // The customer timeline at /orders/[id] is rendered from
+  // order_status_logs. Without this row, the timeline starts blank for
+  // every new order. We insert a (NULL → 'pending') transition row
+  // attributed to `system:checkout` so:
+  //   * timeline shows "الطلب تم إنشاؤه" as the first event,
+  //   * subsequent admin/driver transitions are stacked on top, and
+  //   * the INSERT is inside the same transaction as the parent
+  //     order — a rollback unwinds the log row too, so we never end
+  //     up with an orphan log referencing a non-existent order.
+  // `changed_by` (legacy text column) carries the actor label;
+  // `changed_by_admin_id` stays NULL because system transitions have
+  // no admin actor.
+  await client.query(
+    `INSERT INTO order_status_logs
+       (order_id, old_status, new_status, changed_by, notes)
+     VALUES ($1, NULL, 'pending', 'system:checkout', 'order created')`,
+    [parentOrderId],
+  );
+
   // ---- 11. Insert order_items (catalog only) ----
   for (const it of resolved.catalog) {
     await client.query(
