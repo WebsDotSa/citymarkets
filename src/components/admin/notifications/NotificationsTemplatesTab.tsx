@@ -223,33 +223,42 @@ function TemplateEditorModal({
         </div>
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <label className="block">
-              <span className="text-sm text-slate-600">الاسم</span>
+            <div>
+              <label htmlFor="tpl-name" className="block">
+                <span className="text-sm text-slate-600">الاسم</span>
+              </label>
               <input
+                id="tpl-name"
                 value={draft.name ?? ""}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                 className="mt-1 w-full border rounded-lg px-3 py-2"
               />
-            </label>
-            <label className="block">
-              <span className="text-sm text-slate-600">الفئة</span>
+            </div>
+            <div>
+              <label htmlFor="tpl-category" className="block">
+                <span className="text-sm text-slate-600">الفئة</span>
+              </label>
               <input
+                id="tpl-category"
                 value={draft.category ?? ""}
                 onChange={(e) => setDraft({ ...draft, category: e.target.value })}
                 className="mt-1 w-full border rounded-lg px-3 py-2"
                 placeholder="ترحيب، عروض، تذكير…"
               />
-            </label>
+            </div>
           </div>
-          <label className="block">
-            <span className="text-sm text-slate-600">الوصف</span>
+          <div>
+            <label htmlFor="tpl-description" className="block">
+              <span className="text-sm text-slate-600">الوصف</span>
+            </label>
             <textarea
+              id="tpl-description"
               value={draft.description ?? ""}
               onChange={(e) => setDraft({ ...draft, description: e.target.value })}
               rows={2}
               className="mt-1 w-full border rounded-lg px-3 py-2"
             />
-          </label>
+          </div>
 
           <div>
             <p className="text-sm text-slate-600 mb-2">القنوات</p>
@@ -364,90 +373,114 @@ function ChannelEditor({
   if (channel === "email") {
     return (
       <div className="space-y-3">
-        <label className="block">
-          <span className="text-sm text-slate-600">العنوان</span>
+        <div>
+          <label htmlFor="tpl-email-subject" className="block">
+            <span className="text-sm text-slate-600">العنوان</span>
+          </label>
           <input
+            id="tpl-email-subject"
             value={cur.subject ?? ""}
             onChange={(e) => set("subject", e.target.value)}
             className="mt-1 w-full border rounded-lg px-3 py-2"
           />
-        </label>
-        <label className="block">
-          <span className="text-sm text-slate-600">HTML</span>
+        </div>
+        <div>
+          <label htmlFor="tpl-email-html" className="block">
+            <span className="text-sm text-slate-600">HTML</span>
+          </label>
           <textarea
+            id="tpl-email-html"
             value={cur.html ?? ""}
             onChange={(e) => set("html", e.target.value)}
             rows={6}
             className="mt-1 w-full border rounded-lg px-3 py-2 font-mono text-xs"
           />
-        </label>
+        </div>
       </div>
     );
   }
   if (channel === "sms") {
     return (
-      <label className="block">
-        <span className="text-sm text-slate-600">النص</span>
+      <div>
+        <label htmlFor="tpl-sms-body" className="block">
+          <span className="text-sm text-slate-600">النص</span>
+        </label>
         <textarea
+          id="tpl-sms-body"
           value={cur.body ?? ""}
           onChange={(e) => set("body", e.target.value)}
           rows={3}
           className="mt-1 w-full border rounded-lg px-3 py-2"
         />
-      </label>
+      </div>
     );
   }
   if (channel === "in_app") {
     return (
       <div className="space-y-3">
-        <label className="block">
-          <span className="text-sm text-slate-600">العنوان</span>
+        <div>
+          <label htmlFor="tpl-inapp-title" className="block">
+            <span className="text-sm text-slate-600">العنوان</span>
+          </label>
           <input
+            id="tpl-inapp-title"
             value={cur.title ?? ""}
             onChange={(e) => set("title", e.target.value)}
             className="mt-1 w-full border rounded-lg px-3 py-2"
           />
-        </label>
-        <label className="block">
-          <span className="text-sm text-slate-600">النص</span>
+        </div>
+        <div>
+          <label htmlFor="tpl-inapp-body" className="block">
+            <span className="text-sm text-slate-600">النص</span>
+          </label>
           <textarea
+            id="tpl-inapp-body"
             value={cur.body ?? ""}
             onChange={(e) => set("body", e.target.value)}
             rows={3}
             className="mt-1 w-full border rounded-lg px-3 py-2"
           />
-        </label>
-        <label className="block">
-          <span className="text-sm text-slate-600">رابط (URL)</span>
+        </div>
+        <div>
+          <label htmlFor="tpl-inapp-url" className="block">
+            <span className="text-sm text-slate-600">رابط (URL)</span>
+          </label>
           <input
+            id="tpl-inapp-url"
             value={cur.url ?? ""}
             onChange={(e) => set("url", e.target.value)}
             className="mt-1 w-full border rounded-lg px-3 py-2"
             placeholder="https://citymarkets.sa/offers"
           />
-        </label>
+        </div>
       </div>
     );
   }
   return (
     <div className="space-y-3">
-      <label className="block">
-        <span className="text-sm text-slate-600">العنوان</span>
+      <div>
+        <label htmlFor="tpl-default-title" className="block">
+          <span className="text-sm text-slate-600">العنوان</span>
+        </label>
         <input
+          id="tpl-default-title"
           value={cur.title ?? ""}
           onChange={(e) => set("title", e.target.value)}
           className="mt-1 w-full border rounded-lg px-3 py-2"
         />
-      </label>
-      <label className="block">
-        <span className="text-sm text-slate-600">النص</span>
+      </div>
+      <div>
+        <label htmlFor="tpl-default-body" className="block">
+          <span className="text-sm text-slate-600">النص</span>
+        </label>
         <textarea
+          id="tpl-default-body"
           value={cur.body ?? ""}
           onChange={(e) => set("body", e.target.value)}
           rows={3}
           className="mt-1 w-full border rounded-lg px-3 py-2"
         />
-      </label>
+      </div>
     </div>
   );
 }

@@ -213,10 +213,14 @@ export function CategoryEditForm({
           {/* Name + Slug + Parent row */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="category-name-ar"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 اسم الفئة بالعربية <span className="text-red-500">*</span>
               </label>
               <input
+                id="category-name-ar"
                 type="text"
                 value={nameAr}
                 onChange={(e) => setNameAr(e.target.value)}
@@ -226,10 +230,14 @@ export function CategoryEditForm({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="category-name-en"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 اسم الفئة بالإنجليزية
               </label>
               <input
+                id="category-name-en"
                 type="text"
                 value={nameEn}
                 onChange={(e) => setNameEn(e.target.value)}
@@ -239,16 +247,21 @@ export function CategoryEditForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="category-parent-id"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 القسم الأب (اختياري)
               </label>
-              <SearchableSelect
-                value={parentId}
-                onChange={setParentId}
-                options={parentOptions.map((p) => ({ value: p.id, label: p.name_ar }))}
-                placeholder="— قسم رئيسي (بدون أب) —"
-                disabled={mode === "edit" && initial.parent_name_ar ? true : false}
-              />
+              <div id="category-parent-id">
+                <SearchableSelect
+                  value={parentId}
+                  onChange={setParentId}
+                  options={parentOptions.map((p) => ({ value: p.id, label: p.name_ar }))}
+                  placeholder="— قسم رئيسي (بدون أب) —"
+                  disabled={mode === "edit" && initial.parent_name_ar ? true : false}
+                />
+              </div>
               <p className="text-xs text-gray-400 mt-1">
                 {isSubCategory
                   ? "سيظهر كقسم فرعي تحت القسم المختار"
@@ -257,10 +270,14 @@ export function CategoryEditForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="category-slug"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 الرابط (Slug)
               </label>
               <input
+                id="category-slug"
                 type="text"
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
@@ -274,10 +291,14 @@ export function CategoryEditForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="category-sort-order"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 ترتيب العرض
               </label>
               <input
+                id="category-sort-order"
                 type="number"
                 value={sortOrder}
                 onChange={(e) =>
@@ -291,10 +312,14 @@ export function CategoryEditForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="category-icon-key"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 مفتاح أيقونة قديم (اختياري)
               </label>
               <input
+                id="category-icon-key"
                 type="text"
                 value={iconKey}
                 onChange={(e) => setIconKey(e.target.value)}
@@ -308,11 +333,15 @@ export function CategoryEditForm({
           {/* Descriptions */}
           <div className="grid md:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
             <div>
-              <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="category-description-ar"
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1"
+              >
                 <Info className="w-3.5 h-3.5 text-gray-400" />
                 وصف القسم (عربي)
               </label>
               <textarea
+                id="category-description-ar"
                 value={descriptionAr}
                 onChange={(e) => setDescriptionAr(e.target.value)}
                 placeholder="يظهر في صفحة القسم، اختياري لتحسين SEO"
@@ -321,11 +350,15 @@ export function CategoryEditForm({
               />
             </div>
             <div>
-              <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="category-description-en"
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1"
+              >
                 <Info className="w-3.5 h-3.5 text-gray-400" />
                 وصف القسم (إنجليزي)
               </label>
               <textarea
+                id="category-description-en"
                 value={descriptionEn}
                 onChange={(e) => setDescriptionEn(e.target.value)}
                 placeholder="Shown on the category page, optional SEO copy"
