@@ -9,6 +9,7 @@ import {
 } from "@/lib/analytics-queries";
 import { query } from "@/lib/db";
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 /**
  * GET /api/admin/vendors/:id/analytics?period=7d|30d|90d
  *
@@ -27,6 +28,8 @@ export async function GET(
     if (gate instanceof NextResponse) return gate;
 
     const { id: vendorId } = await params;
+  const badId = validateUuidOrError(vendorId, "معرّف المتجر");
+  if (badId) return badId;
     // Cheap UUID guard so we don't waste a DB roundtrip on garbage.
     if (!/^[0-9a-f-]{32,36}$/i.test(vendorId)) {
       return NextResponse.json({ success: false, error: "Invalid vendor id" }, { status: 400 });

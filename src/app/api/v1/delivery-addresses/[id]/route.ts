@@ -21,6 +21,7 @@ import { sanitizePlaceImageUrls } from "@/lib/catalog";
 
 import { error as logError } from "@/lib/logger";
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 type Owner =
   | { kind: "user"; userId: string }
   | { kind: "guest"; guestKey: string };
@@ -57,6 +58,8 @@ export async function PUT(
   }
 
   const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف العنوان");
+  if (badId) return badId;
   if (!id || typeof id !== "string") {
     return NextResponse.json(
       { success: false, error: "المعرّف مطلوب" },
@@ -122,6 +125,8 @@ export async function DELETE(
   }
 
   const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف العنوان");
+  if (badId) return badId;
   if (!id || typeof id !== "string") {
     return NextResponse.json(
       { success: false, error: "المعرّف مطلوب" },

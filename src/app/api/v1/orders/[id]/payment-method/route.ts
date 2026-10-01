@@ -5,6 +5,7 @@ import { applyCsrfProtection } from "@/lib/csrf";
 import { error as logError, info as logInfo } from "@/lib/logger";
 import { ALLOWED_METHODS } from "@/lib/payments/payment-methods";
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 /**
  * PATCH /api/v1/orders/[id]/payment-method
  *
@@ -47,6 +48,8 @@ export async function PATCH(
   if (csrf) return csrf;
 
   const { id: orderId } = await params;
+  const badId = validateUuidOrError(orderId, "معرّف الطلب");
+  if (badId) return badId;
   if (!orderId || typeof orderId !== "string") {
     return NextResponse.json({ error: "معرّف الطلب مطلوب" }, { status: 400 });
   }

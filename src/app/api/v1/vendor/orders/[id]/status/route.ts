@@ -9,6 +9,7 @@ import {
 } from '@/lib/orders/state-machine';
 import { vendorOrderStatusSchema } from '@/lib/validation/order';
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -23,6 +24,8 @@ export async function PATCH(
     if (unauthorized) return unauthorized;
 
     const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف الطلب");
+  if (badId) return badId;
     const body = await request.json();
     const { notes } = body as { notes?: string };
 

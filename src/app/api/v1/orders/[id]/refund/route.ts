@@ -39,6 +39,7 @@ import { resolveCustomerUserIdFromRequest } from "@/lib/identity";
 import { applyCsrfProtection } from "@/lib/csrf";
 import { info as logInfo } from "@/lib/logger";
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 const REFUND_WINDOW_HOURS = 24;
 const ALLOWED_PRE_STATUSES = new Set(["confirmed", "preparing", "ready", "out_for_delivery", "delivered"]);
 
@@ -50,6 +51,8 @@ export async function POST(
   if (csrf) return csrf;
 
   const { id: orderId } = await params;
+  const badId = validateUuidOrError(orderId, "معرّف الطلب");
+  if (badId) return badId;
   if (!orderId || typeof orderId !== "string") {
     return NextResponse.json({ error: "معرّف الطلب مطلوب" }, { status: 400 });
   }

@@ -21,6 +21,7 @@ import { resolveCustomerUserIdFromRequest } from "@/lib/identity";
 import { setDefaultAddress as setDefaultAddressService } from "@/lib/identity/address-service";
 import { error as logError } from "@/lib/logger";
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -34,6 +35,8 @@ export async function POST(
   }
 
   const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف العنوان");
+  if (badId) return badId;
   if (!id || typeof id !== "string") {
     return NextResponse.json(
       { success: false, error: "معرّف العنوان مطلوب" },

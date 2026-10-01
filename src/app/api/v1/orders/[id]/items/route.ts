@@ -9,6 +9,7 @@ import {
 import { checkRateLimit, ORDER_CREATE_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';
 import { error as logError } from '@/lib/logger';
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 import {
   orderItemAddSchema as addItemSchema,
   orderItemUpdateSchema as updateItemSchema,
@@ -29,6 +30,8 @@ export async function POST(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const { id: orderId } = await ctx.params;
+  const badId = validateUuidOrError(orderId, "معرّف الطلب");
+  if (badId) return badId;
   const userId = await resolveCustomerUserIdFromRequest(request);
   const ip = getClientIp(request);
 
@@ -140,6 +143,8 @@ export async function PATCH(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const { id: orderId } = await ctx.params;
+  const badId = validateUuidOrError(orderId, "معرّف الطلب");
+  if (badId) return badId;
   const url = new URL(request.url);
   const itemId = url.searchParams.get('itemId');
   if (!itemId) {
@@ -209,6 +214,8 @@ export async function DELETE(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const { id: orderId } = await ctx.params;
+  const badId = validateUuidOrError(orderId, "معرّف الطلب");
+  if (badId) return badId;
   const url = new URL(request.url);
   const itemId = url.searchParams.get('itemId');
   if (!itemId) {

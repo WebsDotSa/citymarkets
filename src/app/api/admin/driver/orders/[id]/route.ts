@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { error as logError } from '@/lib/logger';
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 import {
   recordPaymentEvent,
   finalizePaymentEvent,
@@ -28,6 +29,8 @@ export async function GET(
   if (gate instanceof NextResponse) return gate;
 
   const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف الطلب");
+  if (badId) return badId;
 
   try {
     const result = await pool.query(
@@ -139,6 +142,8 @@ export async function PATCH(
   if (gate instanceof NextResponse) return gate;
 
   const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف الطلب");
+  if (badId) return badId;
   const client = await pool.connect();
   try {
     // P2-2 (PCP-76.F3): parse JSON inside the try block so a malformed

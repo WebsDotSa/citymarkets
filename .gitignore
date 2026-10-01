@@ -91,3 +91,5 @@ ios/fastlane/.snapfile_diff.json
 *.dSYM
 .swiftpm/
 .worktrees/
+ios-citymarkets/
+.env

@@ -4,6 +4,7 @@ import { requireVendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { error as logError } from '@/lib/logger';
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -15,6 +16,8 @@ export async function GET(
     }
 
     const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف المتجر");
+  if (badId) return badId;
 
     const result = await query(
       `SELECT id, vendor_id, name_ar, name_en, description_ar, description_en, image_urls, price, discount_price, sku, stock_quantity, track_stock, is_active, sort_order, category_id, metadata, created_at, updated_at
@@ -72,6 +75,8 @@ export async function PATCH(
     if (unauthorized) return unauthorized;
 
     const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف المتجر");
+  if (badId) return badId;
     const body = await request.json();
 
     // Check product exists
@@ -256,6 +261,8 @@ export async function DELETE(
     if (unauthorized) return unauthorized;
 
     const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف المتجر");
+  if (badId) return badId;
 
     const result = await query(
       "DELETE FROM vendor_products WHERE id = $1 AND vendor_id = $2 RETURNING id",

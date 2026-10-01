@@ -17,6 +17,7 @@ import { setDefaultAddress as setDefaultAddressService } from "@/lib/identity/ad
 
 import { error as logError } from "@/lib/logger";
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 type Owner =
   | { kind: "user"; userId: string }
   | { kind: "guest"; guestKey: string };
@@ -42,6 +43,8 @@ export async function POST(
   }
 
   const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف العنوان");
+  if (badId) return badId;
   if (!id || typeof id !== "string") {
     return NextResponse.json(
       { success: false, error: "معرّف العنوان مطلوب" },

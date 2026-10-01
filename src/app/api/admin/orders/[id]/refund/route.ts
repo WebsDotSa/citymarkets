@@ -39,6 +39,7 @@ import { refundMoyasarPayment } from "@/lib/payments/moyasar";
 import { logAdminAction } from "@/lib/admin-audit";
 import { error as logError, info as logInfo } from "@/lib/logger";
 import { recordPaymentEvent, finalizePaymentEvent } from "@/lib/payments/event-ledger";
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 
 export async function POST(
   request: NextRequest,
@@ -51,6 +52,8 @@ export async function POST(
   if (!orderId || typeof orderId !== "string") {
     return NextResponse.json({ success: false, error: "معرّف الطلب مطلوب" }, { status: 400 });
   }
+  const badId = validateUuidOrError(orderId, "معرّف الطلب");
+  if (badId) return badId;
 
   let payload: { amount_halazas?: number; refund_request_id?: string; reason?: string };
   try {

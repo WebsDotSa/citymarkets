@@ -30,7 +30,7 @@ function makeFakeClient(opts?: { rows?: unknown[] }) {
       //   2) SET is_default = true WHERE id = $2 AND user_id = $1 RETURNING ...
       // We return rows only on the second one (the "this row became default" one).
       if (s.includes("SET IS_DEFAULT = TRUE") && s.includes("RETURNING")) {
-        return { rows: opts?.rows ?? [{ id: "addr-1", is_default: true }], rowCount: 1 };
+        return { rows: opts?.rows ?? [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", is_default: true }], rowCount: 1 };
       }
       return { rows: [], rowCount: 0 };
     }),
@@ -75,7 +75,7 @@ describe("POST /api/v1/addresses/[id]/default (D12)", () => {
 
   it("returns 401 when no customer is resolved", async () => {
     vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue(null);
-    const res = await POST(mockRequest() as never, { params: PARAMS("addr-1") });
+    const res = await POST(mockRequest() as never, { params: PARAMS("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") });
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body.success).toBe(false);
@@ -90,7 +90,7 @@ describe("POST /api/v1/addresses/[id]/default (D12)", () => {
     const { client } = makeFakeClient({ rows: [] });
     vi.mocked(pool.connect).mockResolvedValueOnce(client as never);
 
-    const res = await POST(mockRequest() as never, { params: PARAMS("addr-1") });
+    const res = await POST(mockRequest() as never, { params: PARAMS("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") });
     expect(res.status).toBe(404);
     const body = await res.json();
     expect(body.success).toBe(false);
@@ -99,10 +99,10 @@ describe("POST /api/v1/addresses/[id]/default (D12)", () => {
 
   it("toggles defaults via the service (clear-others + set-target in one tx)", async () => {
     vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
-    const { client, txCalls } = makeFakeClient({ rows: [{ id: "addr-1", is_default: true }] });
+    const { client, txCalls } = makeFakeClient({ rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", is_default: true }] });
     vi.mocked(pool.connect).mockResolvedValueOnce(client as never);
 
-    const res = await POST(mockRequest() as never, { params: PARAMS("addr-1") });
+    const res = await POST(mockRequest() as never, { params: PARAMS("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -113,13 +113,13 @@ describe("POST /api/v1/addresses/[id]/default (D12)", () => {
       (c) => /SET is_default = false/i.test(c.sql) && /id <> \$2::uuid/i.test(c.sql),
     );
     expect(setFalse).toBeDefined();
-    expect(setFalse!.params).toEqual(["00000000-0000-0000-0000-000000000001", "addr-1"]);
+    expect(setFalse!.params).toEqual(["00000000-0000-0000-0000-000000000001", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"]);
 
     const setTrue = txCalls.find(
       (c) => /SET is_default = true/i.test(c.sql) && /RETURNING/i.test(c.sql),
     );
     expect(setTrue).toBeDefined();
-    expect(setTrue!.params).toEqual(["00000000-0000-0000-0000-000000000001", "addr-1"]);
+    expect(setTrue!.params).toEqual(["00000000-0000-0000-0000-000000000001", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"]);
 
     // The transaction must commit (not leave the rowCount=0 placeholder).
     const commit = txCalls.find((c) => c.sql.trim().toUpperCase().startsWith("COMMIT"));
@@ -135,7 +135,7 @@ describe("POST /api/v1/addresses/[id]/default (D12)", () => {
     };
     vi.mocked(pool.connect).mockResolvedValueOnce(errorClient as never);
 
-    const res = await POST(mockRequest() as never, { params: PARAMS("addr-1") });
+    const res = await POST(mockRequest() as never, { params: PARAMS("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") });
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.success).toBe(false);

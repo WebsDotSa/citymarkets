@@ -3,6 +3,7 @@ import { query } from "@/lib/db";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { error as logError } from '@/lib/logger';
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -14,6 +15,8 @@ export async function GET(
     }
 
     const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف الطلب");
+  if (badId) return badId;
 
     const orderResult = await query(
       `SELECT vo.*, v.name_ar as vendor_name
