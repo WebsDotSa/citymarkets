@@ -292,7 +292,7 @@ describe("POST /api/v1/payments/webhook — Bug A regression", () => {
     // Find the orders.status UPDATE
     const ordersStatus = calls.find(
       (c) =>
-        c.sql.trim().toUpperCase().startsWith("UPDATE ORDERS") &&
+        c.sql.trim().toUpperCase().startsWith("WITH OLD AS") &&
         /SET\s+STATUS/i.test(c.sql),
     );
     expect(ordersStatus).toBeDefined();

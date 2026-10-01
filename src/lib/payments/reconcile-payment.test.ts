@@ -138,12 +138,16 @@ describe("reconcilePayment", () => {
     expect(vendorUpdate).toBeDefined();
     expect(vendorUpdate!.params).toEqual(["paid", "order-1"]);
 
-    // Paid-only: lifecycle flip
+    // Paid-only: lifecycle flip (PCP-80 atomic CTE — matches WITH
+    // old AS / upd AS / audit AS subqueries plus the final SELECT).
     const lifecycle = calls.find((c) =>
-      /^UPDATE orders\s+SET status/i.test(c.sql.trim()),
+      /^WITH old AS/i.test(c.sql.trim()),
     );
     expect(lifecycle).toBeDefined();
-    expect(lifecycle!.params).toEqual(["order-1"]);
+    expect(lifecycle!.params).toEqual([
+      "order-1",
+      "moyasar:payment.paid → parent pending → confirmed",
+    ]);
   });
 
   it("skips paid-only side effects when paymentDb is 'failed'", async () => {

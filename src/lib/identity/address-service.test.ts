@@ -83,17 +83,17 @@ describe("resolveTitle", () => {
 describe("listAddresses", () => {
   it("queries by user_id for user owner", async () => {
     mockRows = [{ id: "a-1", label: "Home" }];
-    const rows = await listAddresses({ kind: "user", userId: "u-1" });
+    const rows = await listAddresses({ kind: "user", userId: "11111111-1111-4111-8111-111111111111" });
     expect(rows).toHaveLength(1);
     expect(calls[0]?.sql).toMatch(/user_id = \$1::uuid/);
-    expect(calls[0]?.params).toEqual(["u-1"]);
+    expect(calls[0]?.params).toEqual(["11111111-1111-4111-8111-111111111111"]);
   });
 
   it("queries by guest_key for guest owner", async () => {
     mockRows = [{ id: "a-2", label: "Hotel" }];
-    await listAddresses({ kind: "guest", guestKey: "g-1" });
+    await listAddresses({ kind: "guest", guestKey: "guest-key-0001" });
     expect(calls[0]?.sql).toMatch(/guest_key = \$1/);
-    expect(calls[0]?.params).toEqual(["g-1"]);
+    expect(calls[0]?.params).toEqual(["guest-key-0001"]);
   });
 });
 
@@ -102,53 +102,68 @@ describe("createAddress", () => {
     mockCount = 0; // first address → auto-promote to default
     mockRows = [{ id: "a-3", title: "Home" }];
     await createAddress(
-      { kind: "user", userId: "u-1" },
+      { kind: "user", userId: "11111111-1111-4111-8111-111111111111" },
       { label: "Home", description: null, lat: 24.7, lng: 46.6 },
     );
     const insertCall = calls.find((c) => /INSERT INTO addresses/i.test(c.sql));
     expect(insertCall).toBeDefined();
-    // params: [label, description, title, lat, lng, address_text, makeDefault, place_images]
-    expect(insertCall!.params[0]).toBe("Home");
-    expect(insertCall!.params[2]).toBe("Home"); // resolved title
-    expect(insertCall!.params[6]).toBe(true); // auto-promoted to default
+    // params: [owner, label, description, title, lat, lng, address_text, makeDefault, place_images]
+    expect(insertCall!.params[0]).toBe("11111111-1111-4111-8111-111111111111");
+    expect(insertCall!.params[1]).toBe("Home");
+    expect(insertCall!.params[3]).toBe("Home"); // resolved title
+    expect(insertCall!.params[7]).toBe(true); // auto-promoted to default
   });
 
   it("does NOT auto-promote when owner already has addresses", async () => {
     mockCount = 3; // not the first
     mockRows = [{ id: "a-4", is_default: false }];
     await createAddress(
-      { kind: "user", userId: "u-1" },
+      { kind: "user", userId: "11111111-1111-4111-8111-111111111111" },
       { label: "Office", lat: 24.7, lng: 46.6, is_default: false },
     );
     const insertCall = calls.find((c) => /INSERT INTO addresses/i.test(c.sql));
-    expect(insertCall!.params[6]).toBe(false);
+    expect(insertCall!.params[7]).toBe(false);
   });
 
   it("writes user_id for user owner", async () => {
     mockCount = 0;
     mockRows = [{ id: "a-5" }];
     await createAddress(
-      { kind: "user", userId: "u-7" },
+      { kind: "user", userId: "77777777-7777-4777-8777-777777777777" },
       { label: "X", lat: 0, lng: 0 },
     );
     const insertCall = calls.find((c) => /INSERT INTO addresses/i.test(c.sql));
     // Column list uses user_id (interpolated; safe — type-narrowed).
+    // The owner VALUE must be bound as $1, never spliced into the SQL.
     expect(insertCall!.sql).toMatch(/INSERT INTO addresses \(user_id,/);
-    expect(insertCall!.params[0]).toBe("X"); // label
+    expect(insertCall!.sql).toMatch(/VALUES \(\$1::uuid,/);
+    expect(insertCall!.sql).not.toContain("77777777-7777");
+    expect(insertCall!.params[0]).toBe("77777777-7777-4777-8777-777777777777");
+    expect(insertCall!.params[1]).toBe("X"); // label
   });
 
   it("writes guest_key for guest owner", async () => {
     mockCount = 0;
     mockRows = [{ id: "a-6" }];
     await createAddress(
-      { kind: "guest", guestKey: "g-9" },
+      { kind: "guest", guestKey: "guest-key-0009" },
       { label: "Hotel", lat: 24.7, lng: 46.6 },
     );
     const insertCall = calls.find((c) => /INSERT INTO addresses/i.test(c.sql));
     // Column list interpolates owner column name (safe — branch is
     // type-narrowed). The value is bound as $1.
     expect(insertCall!.sql).toMatch(/INSERT INTO addresses \(guest_key,/);
-    expect(insertCall!.params[0]).toBe("Hotel");
+    expect(insertCall!.sql).toMatch(/VALUES \(\$1,/);
+    expect(insertCall!.sql).not.toContain("guest-key-0009");
+    expect(insertCall!.params[0]).toBe("guest-key-0009");
+    expect(insertCall!.params[1]).toBe("Hotel");
+  });
+
+  it("rejects a malformed guest key before issuing any SQL", async () => {
+    await expect(
+      createAddress({ kind: "guest", guestKey: "x'), ('pwn" }, { label: "X", lat: 0, lng: 0 }),
+    ).rejects.toThrow(/invalid address owner/);
+    expect(calls).toHaveLength(0);
   });
 });
 
@@ -156,7 +171,7 @@ describe("updateAddress", () => {
   it("returns null when row not owned", async () => {
     mockRows = []; // UPDATE returned 0 rows
     const result = await updateAddress(
-      { kind: "user", userId: "u-1" },
+      { kind: "user", userId: "11111111-1111-4111-8111-111111111111" },
       "a-1",
       { label: "New" },
     );
@@ -166,7 +181,7 @@ describe("updateAddress", () => {
   it("returns the updated row on success", async () => {
     mockRows = [{ id: "a-7", label: "Updated" }];
     const result = await updateAddress(
-      { kind: "user", userId: "u-1" },
+      { kind: "user", userId: "11111111-1111-4111-8111-111111111111" },
       "a-7",
       { label: "Updated" },
     );
@@ -178,7 +193,7 @@ describe("deleteAddress", () => {
   it("returns rowCount from the DELETE", async () => {
     mockRows = [];
     const count = await deleteAddress(
-      { kind: "user", userId: "u-1" },
+      { kind: "user", userId: "11111111-1111-4111-8111-111111111111" },
       "a-1",
     );
     expect(typeof count).toBe("number");
@@ -188,7 +203,7 @@ describe("deleteAddress", () => {
 describe("setDefaultAddress", () => {
   it("clears the default flag on other rows first", async () => {
     mockRows = [{ id: "a-8", is_default: true }];
-    await setDefaultAddress({ kind: "user", userId: "u-1" }, "a-8");
+    await setDefaultAddress({ kind: "user", userId: "11111111-1111-4111-8111-111111111111" }, "a-8");
     // First UPDATE: clear other defaults
     const clearCall = calls.find(
       (c) =>

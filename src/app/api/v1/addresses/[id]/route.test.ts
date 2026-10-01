@@ -71,7 +71,7 @@ describe("DELETE /api/v1/addresses/[id] (D11)", () => {
   });
 
   it("returns 404 when the address row doesn't exist or belongs to another user", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     (query as any).mockRowCount = 0;
     const res = await DELETE(mockRequest() as never, { params: PARAMS("addr-1") });
     expect(res.status).toBe(404);
@@ -81,7 +81,7 @@ describe("DELETE /api/v1/addresses/[id] (D11)", () => {
   });
 
   it("deletes the address and returns 200 when rowCount=1", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     (query as any).mockRowCount = 1;
     (query as any).mockRows = [{ id: "addr-1" }];
     const res = await DELETE(mockRequest() as never, { params: PARAMS("addr-1") });
@@ -96,11 +96,11 @@ describe("DELETE /api/v1/addresses/[id] (D11)", () => {
     expect(sql).toMatch(/DELETE FROM addresses/);
     expect(sql).toMatch(/user_id = \$1::uuid/);
     expect(sql).toMatch(/id = \$2::uuid/);
-    expect(calls[0].params).toEqual(["user-1", "addr-1"]);
+    expect(calls[0].params).toEqual(["00000000-0000-0000-0000-000000000001", "addr-1"]);
   });
 
   it("returns 500 on DB error", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     vi.mocked(query).mockRejectedValueOnce(new Error("db_down"));
     const res = await DELETE(mockRequest() as never, { params: PARAMS("addr-1") });
     expect(res.status).toBe(500);

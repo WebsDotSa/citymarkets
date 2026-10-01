@@ -85,7 +85,7 @@ describe("POST /api/v1/addresses/[id]/default (D12)", () => {
   });
 
   it("returns 404 when the address does not belong to the caller", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     // Service returns null when the target row isn't owned → 404.
     const { client } = makeFakeClient({ rows: [] });
     vi.mocked(pool.connect).mockResolvedValueOnce(client as never);
@@ -98,7 +98,7 @@ describe("POST /api/v1/addresses/[id]/default (D12)", () => {
   });
 
   it("toggles defaults via the service (clear-others + set-target in one tx)", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     const { client, txCalls } = makeFakeClient({ rows: [{ id: "addr-1", is_default: true }] });
     vi.mocked(pool.connect).mockResolvedValueOnce(client as never);
 
@@ -113,13 +113,13 @@ describe("POST /api/v1/addresses/[id]/default (D12)", () => {
       (c) => /SET is_default = false/i.test(c.sql) && /id <> \$2::uuid/i.test(c.sql),
     );
     expect(setFalse).toBeDefined();
-    expect(setFalse!.params).toEqual(["user-1", "addr-1"]);
+    expect(setFalse!.params).toEqual(["00000000-0000-0000-0000-000000000001", "addr-1"]);
 
     const setTrue = txCalls.find(
       (c) => /SET is_default = true/i.test(c.sql) && /RETURNING/i.test(c.sql),
     );
     expect(setTrue).toBeDefined();
-    expect(setTrue!.params).toEqual(["user-1", "addr-1"]);
+    expect(setTrue!.params).toEqual(["00000000-0000-0000-0000-000000000001", "addr-1"]);
 
     // The transaction must commit (not leave the rowCount=0 placeholder).
     const commit = txCalls.find((c) => c.sql.trim().toUpperCase().startsWith("COMMIT"));
@@ -127,7 +127,7 @@ describe("POST /api/v1/addresses/[id]/default (D12)", () => {
   });
 
   it("returns 500 on DB error from the service", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     // Force pool.connect().query() to throw — exercises the catch-all.
     const errorClient = {
       query: vi.fn().mockRejectedValue(new Error("db_down")),
