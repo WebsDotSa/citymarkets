@@ -328,6 +328,7 @@ export default function HomeDesignAdminPage() {
               <Link
                 href={`/api/v1/home-layout?device=${activeDevice}`}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="text-xs text-gray-400 hover:text-primary"
               >
                 عرض JSON →

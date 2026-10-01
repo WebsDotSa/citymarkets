@@ -360,7 +360,7 @@ export function AdminVendors() {
         <p className="font-medium">💡 إدارة المتاجر</p>
         <p className="mt-1">
           أضف شعار ووصف ولون رئيسي لكل متجر. ستظهر هذه الهوية في صفحة{" "}
-          <Link href="/vendors" className="underline" target="_blank">
+          <Link href="/vendors" className="underline" target="_blank" rel="noopener noreferrer">
             المتاجر
           </Link>{" "}
           وعلى بطاقات المنتجات داخل المتجر.
