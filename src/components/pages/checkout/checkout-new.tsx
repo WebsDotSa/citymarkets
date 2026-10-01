@@ -52,6 +52,7 @@ import {
   Trash2,
   Loader2,
 } from "lucide-react";
+import { productUnitPrice } from "@/lib/catalog";
 
 interface Address {
   id: string;
@@ -365,7 +366,7 @@ export function CheckoutNew() {
       items: items.map((it) => ({
         item_id: it.product.id,
         item_name: it.product.name_ar ?? it.product.name_en ?? it.product.id,
-        price: Number(it.product.discount_price ?? it.product.price ?? 0),
+        price: productUnitPrice(it.product),
         quantity: it.quantity,
       })),
     });
@@ -1276,7 +1277,7 @@ export function CheckoutNew() {
                   <p className="text-xs text-gray-500">الكمية: {item.quantity}</p>
                 </div>
                 <span className="font-semibold text-primary-600 text-sm whitespace-nowrap">
-                  {((item.product.discount_price ?? item.product.price) * item.quantity).toFixed(2)} ر.س
+                  {(productUnitPrice(item.product) * item.quantity).toFixed(2)} ر.س
                 </span>
               </div>
             ))}

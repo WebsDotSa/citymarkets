@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState, useEffect, useMemo } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -107,7 +108,7 @@ export default function AdminCategoriesPage() {
         if (cleanedImgs) msg += ` وتنظيف ${cleanedImgs} صورة`;
         showToast(msg, "success");
       } else {
-        showToast(json.error || "فشل الحذف", "error");
+        showToast(getApiErrorMessage(json, "فشل الحذف"), "error");
       }
     } catch (error) {
       showToast("فشل في حذف الفئة", "error");
@@ -141,7 +142,7 @@ export default function AdminCategoriesPage() {
             c.id === cat.id ? { ...c, is_active: cat.is_active } : c
           )
         );
-        showToast(json.error || "فشل تحديث الحالة", "error");
+        showToast(getApiErrorMessage(json, "فشل تحديث الحالة"), "error");
       }
     } catch (error) {
       // Revert on error

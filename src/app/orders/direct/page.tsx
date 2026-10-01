@@ -1,5 +1,6 @@
 'use client';
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
@@ -215,7 +216,7 @@ export default function DirectOrderCreatePage() {
         }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل إنشاء الطلب');
+      if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل إنشاء الطلب'));
       // Open the dedicated chat page (matches "تأكيد الطلب وفتح محادثة مباشرة بعدها")
       router.push(`/orders/direct/chat/${data.orderId}`);
     } catch (err) {

@@ -1,5 +1,6 @@
 'use client';
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
@@ -17,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { InvoiceActions } from '@/components/orders/invoice-actions';
-import { getOrderStatusConfig } from '@/lib/orders';
+import { getOrderStatusConfig, ORDER_STATUS_DISPLAY } from '@/lib/orders';
 import type {
   AdminDirectOrder,
   AdminDirectOrderItem,
@@ -26,15 +27,9 @@ import type {
 type OrderDetail = AdminDirectOrder;
 type Item = AdminDirectOrderItem;
 
-const STATUS_OPTIONS = [
-  { value: 'pending', label: 'بانتظار التأكيد' },
-  { value: 'shopping', label: 'جارٍ التحضير' },
-  { value: 'accepted', label: 'تم القبول' },
-  { value: 'in_progress', label: 'قيد التنفيذ' },
-  { value: 'on_the_way', label: 'في الطريق' },
-  { value: 'delivered', label: 'تم التوصيل' },
-  { value: 'cancelled', label: 'ملغي' },
-];
+// Canonical `order_status_enum` options. The previous local list offered
+// `accepted` / `in_progress`, which `orderEditSchema` rejects (400).
+const STATUS_OPTIONS = ORDER_STATUS_DISPLAY;
 
 export default async function AdminDirectOrderDetailPage({
   params,
@@ -108,7 +103,7 @@ function AdminDirectOrderDetail({ orderId }: { orderId: string }) {
         }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل الحفظ');
+      if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل الحفظ'));
       setPriceEdits({});
       await fetchOrder();
     } catch (err) {
@@ -136,7 +131,7 @@ function AdminDirectOrderDetail({ orderId }: { orderId: string }) {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل الإضافة');
+      if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل الإضافة'));
       setNewItemText('');
       setNewItemQty(1);
       setNewItemUnitPrice('');

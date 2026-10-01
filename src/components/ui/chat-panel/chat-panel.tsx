@@ -1,5 +1,6 @@
 'use client';
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Send, Mic, Square, Loader2 } from 'lucide-react';
 import { BRAND } from '@/lib/brand-theme';
@@ -110,7 +111,7 @@ export function ChatPanel(props: ChatPanelProps) {
         body: JSON.stringify({ body: text.trim(), message_kind: 'text' }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل الإرسال');
+      if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل الإرسال'));
       setText('');
       await fetchMessages();
     } catch (err) {
@@ -156,7 +157,7 @@ export function ChatPanel(props: ChatPanelProps) {
             }),
           });
           const data = await res.json();
-          if (!data.success) throw new Error(data.error || 'فشل الإرسال');
+          if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل الإرسال'));
           await fetchMessages();
         } catch (err) {
           setError((err as Error).message || 'تعذر رفع الصوت');

@@ -53,8 +53,10 @@ import {
   resolveRedeemForOrder,
 } from "@/lib/orders/loyalty";
 import { error as logError } from "@/lib/logger";
+import type { PaymentState } from "@/lib/orders/state-machine";
 
-export type PaymentDbStatus = "paid" | "failed" | "pending";
+/** Statuses a gateway callback can report — canonical `PaymentState` minus `refunded`. */
+export type PaymentDbStatus = Exclude<PaymentState, "refunded">;
 
 export interface ReconcileOrderRow {
   id: string;

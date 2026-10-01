@@ -1,3 +1,4 @@
+import { postDirectOrderSystemMessage } from "@/lib/orders";
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
@@ -5,6 +6,7 @@ import {
   assertOrderOwnership,
   idempotencyKeyFromBody,
   idempotencyKeyFromQuery,
+  isDirectOrderCustomerEditable,
 } from '@/lib/orders';
 import { checkRateLimit, ORDER_CREATE_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';
@@ -18,7 +20,8 @@ import {
  * POST /api/v1/orders/[id]/items
  *
  * Customer adds a new line to their direct order. Order must be in
- * status pending OR in_progress (locked once driver picks it up).
+ * status is customer-editable (`isDirectOrderCustomerEditable`: pending or
+ * shopping — locked once the driver picks it up).
  *
  * SECURITY (F1): ownership is a positive proof via
  * `assertOrderOwnership`. Guest callers MUST include the order's
@@ -90,7 +93,7 @@ export async function POST(
         { status: 400 }
       );
     }
-    if (!['pending', 'shopping', 'preparing', 'accepted'].includes(o.status)) {
+    if (!isDirectOrderCustomerEditable(o.status)) {
       return NextResponse.json(
         { success: false, error: 'لا يمكن تعديل الطلب في هذه المرحلة' },
         { status: 409 }
@@ -113,12 +116,7 @@ export async function POST(
     );
 
     // System message in chat.
-    await client.query(
-      `INSERT INTO direct_order_messages
-        (order_id, sender_type, body, message_kind)
-       VALUES ($1, 'system', $2, 'system')`,
-      [orderId, `أضاف العميل عنصراً جديداً: ${data.free_text || ('منتج #' + (data.product_id || '').slice(0, 8))}`]
-    );
+    await postDirectOrderSystemMessage(client, { orderId: orderId, body: `أضاف العميل عنصراً جديداً: ${data.free_text || ('منتج #' + (data.product_id || '').slice(0, 8))}` });
 
     return NextResponse.json(
       { success: true, itemId: ins.rows[0].id },
@@ -172,7 +170,7 @@ export async function PATCH(
         { status: ownership.code }
       );
     }
-    if (!['pending', 'shopping', 'preparing', 'accepted'].includes(ownership.status)) {
+    if (!isDirectOrderCustomerEditable(ownership.status)) {
       return NextResponse.json(
         { success: false, error: 'لا يمكن تعديل الطلب في هذه المرحلة' },
         { status: 409 }
@@ -242,7 +240,7 @@ export async function DELETE(
         { status: ownership.code }
       );
     }
-    if (!['pending', 'shopping', 'preparing', 'accepted'].includes(ownership.status)) {
+    if (!isDirectOrderCustomerEditable(ownership.status)) {
       return NextResponse.json(
         { success: false, error: 'لا يمكن تعديل الطلب في هذه المرحلة' },
         { status: 409 }

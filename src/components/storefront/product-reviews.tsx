@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Star, Send, User } from "lucide-react";
@@ -71,7 +72,7 @@ export function ProductReviews({ productId, signedIn, userLabel }: ProductReview
         setComment("");
         loadReviews();
       } else {
-        setError(data.error || "حدث خطأ");
+        setError(getApiErrorMessage(data, "حدث خطأ"));
       }
     } catch {
       setError("خطأ في الاتصال");

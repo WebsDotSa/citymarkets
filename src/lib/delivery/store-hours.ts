@@ -23,6 +23,7 @@
  * `getActiveStoreHours(pool, storeId)` so the gate logic stays in
  * one place.
  */
+import { validHhmmOr } from "./riyadh-time";
 import { query } from "@/lib/db";
 import {
   DEFAULT_DELIVERY_HOURS,
@@ -60,15 +61,10 @@ export const DEFAULT_STORE_OPENING_HOURS: StoreOpeningHours = {
 export function parseStoreHours(raw: unknown): StoreOpeningHours {
   if (!raw || typeof raw !== "object") return { ...DEFAULT_STORE_OPENING_HOURS };
   const v = raw as Partial<StoreOpeningHours>;
-  const minutes = (s: unknown, fallback: string) => {
-    if (typeof s !== "string") return fallback;
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(s)) return fallback;
-    return s;
-  };
   return {
     enabled: typeof v.enabled === "boolean" ? v.enabled : false,
-    open_time: minutes(v.open_time, DEFAULT_STORE_OPENING_HOURS.open_time),
-    close_time: minutes(v.close_time, DEFAULT_STORE_OPENING_HOURS.close_time),
+    open_time: validHhmmOr(v.open_time, DEFAULT_STORE_OPENING_HOURS.open_time),
+    close_time: validHhmmOr(v.close_time, DEFAULT_STORE_OPENING_HOURS.close_time),
     timezone:
       typeof v.timezone === "string" && v.timezone.length > 0
         ? v.timezone

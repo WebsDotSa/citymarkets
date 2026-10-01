@@ -263,3 +263,18 @@ describe("createRateLimitHeaders", () => {
     expect(h["Retry-After"]).toBe("30");
   });
 });
+
+describe("rateLimitExceededResponse (shared 429 for auth/OTP routes)", () => {
+  it("keeps the legacy body and headers", async () => {
+    const { rateLimitExceededResponse } = await import("./rate-limit");
+    const res = rateLimitExceededResponse(
+      { allowed: false, remaining: 0, resetAt: 123, retryAfterMs: 1500 } as never,
+      "slow down",
+      "ip",
+    );
+    expect(res.status).toBe(429);
+    expect(await res.json()).toEqual({ error: "slow down", retryAfter: 2 });
+    expect(res.headers.get("X-RateLimit-By")).toBe("ip");
+    expect(res.headers.get("Retry-After")).toBe("2");
+  });
+});

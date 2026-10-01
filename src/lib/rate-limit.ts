@@ -5,6 +5,7 @@
  * falls back to in-memory Map for single-instance deployments.
  */
 
+import { NextResponse } from 'next/server';
 import { createClient, type RedisClientType } from 'redis';
 import { warn as logWarn, info as logInfo, error as logError } from '@/lib/logger';
 
@@ -543,4 +544,25 @@ export async function closeRateLimiter(): Promise<void> {
  */
 export function __resetRateLimitStoreForTests(): void {
   rateLimitStore.clear();
+}
+
+/**
+ * Standard 429 for the auth/OTP routes: `{ error, retryAfter }` body (seconds),
+ * the `X-RateLimit-*` headers and `X-RateLimit-By` naming the exhausted
+ * bucket. Replaces five identical per-route `rateLimitResponse()` copies.
+ */
+export function rateLimitExceededResponse(
+  result: RateLimitResult,
+  message: string,
+  by: "phone" | "ip",
+): NextResponse {
+  const response = NextResponse.json(
+    { error: message, retryAfter: Math.ceil((result.retryAfterMs || 0) / 1000) },
+    { status: 429 },
+  );
+  for (const [key, value] of Object.entries(createRateLimitHeaders(result))) {
+    response.headers.set(key, value);
+  }
+  response.headers.set("X-RateLimit-By", by);
+  return response;
 }

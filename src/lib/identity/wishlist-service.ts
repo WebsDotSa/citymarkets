@@ -36,9 +36,9 @@
  */
 
 import { query } from "@/lib/db";
+import { MAX_WISHLIST_SIZE } from "./wishlist-constants";
 
-/** Hard cap per user — protects against accidental bulk inserts. */
-export const MAX_WISHLIST_SIZE = 50;
+export { MAX_WISHLIST_SIZE };
 
 export interface WishlistProduct {
   id: string;

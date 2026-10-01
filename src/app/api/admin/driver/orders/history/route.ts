@@ -1,3 +1,4 @@
+import { findDriverIdByAdminUser } from "@/lib/orders";
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -20,11 +21,7 @@ export async function GET(request: NextRequest) {
   const gate = await requireAdminApi(request, "view_delivery_orders");
   if (gate instanceof NextResponse) return gate;
 
-  const driverRow = await pool.query(
-    `SELECT id FROM drivers WHERE admin_user_id = $1`,
-    [gate.admin.id],
-  );
-  const driverId = driverRow.rows[0]?.id as string | undefined;
+  const driverId = (await findDriverIdByAdminUser(pool, gate.admin.id)) ?? undefined;
 
   if (!driverId) {
     // Driver account exists in admin_users but linkage row is missing.

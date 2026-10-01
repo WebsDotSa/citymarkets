@@ -211,3 +211,21 @@ describe("ALL_*_STATES lists", () => {
     expect(ALL_VENDOR_ORDER_STATES).toContain("refunded");
   });
 });
+
+describe("canonical derived sets (duplication audit 2026-09-30)", () => {
+  it("ALL_ORDER_PAYMENT_STATUSES = PaymentState ∪ legacy 'unpaid'", async () => {
+    const { ALL_ORDER_PAYMENT_STATUSES, ALL_PAYMENT_STATES } = await import("./state-machine");
+    expect([...ALL_ORDER_PAYMENT_STATUSES].sort()).toEqual([...ALL_PAYMENT_STATES, "unpaid"].sort());
+  });
+
+  it("direct-order customer editability is a subset of order_status_enum", async () => {
+    const { ALL_ORDER_STATES, DIRECT_ORDER_CUSTOMER_EDITABLE_STATES, isDirectOrderCustomerEditable } =
+      await import("./state-machine");
+    for (const s of DIRECT_ORDER_CUSTOMER_EDITABLE_STATES) expect(ALL_ORDER_STATES).toContain(s);
+    expect(isDirectOrderCustomerEditable("pending")).toBe(true);
+    expect(isDirectOrderCustomerEditable("shopping")).toBe(true);
+    for (const s of ["confirmed", "on_the_way", "delivered", "cancelled", "accepted", "", null, undefined]) {
+      expect(isDirectOrderCustomerEditable(s as string | null | undefined)).toBe(false);
+    }
+  });
+});

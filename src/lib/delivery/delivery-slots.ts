@@ -16,6 +16,8 @@
  * figure out which window a given instant belongs to.
  */
 
+import { RIYADH_OFFSET_MIN, RIYADH_TZ } from "./riyadh-time";
+
 export type SlotWindow = {
   id: string;
   label_ar: string;
@@ -34,8 +36,7 @@ export type SlotsConfig = {
   windows: SlotWindow[];
 };
 
-export const RIYADH_TZ = "Asia/Riyadh";
-const RIYADH_OFFSET_MIN = 3 * 60; // +03:00, no DST
+export { RIYADH_TZ };
 
 export const DEFAULT_SLOTS_CONFIG: SlotsConfig = {
   enabled: true,

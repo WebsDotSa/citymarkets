@@ -50,12 +50,16 @@ export {
   ALL_ORDER_STATES,
   ALL_PAYMENT_STATES,
   ALL_VENDOR_ORDER_STATES,
+  ALL_ORDER_PAYMENT_STATUSES,
+  DIRECT_ORDER_CUSTOMER_EDITABLE_STATES,
+  isDirectOrderCustomerEditable,
   assertValidTransition,
   canTransition,
   invalidTransitionMessage,
   InvalidTransitionError,
 } from "./state-machine";
 export type {
+  OrderPaymentStatus,
   OrderState,
   PaymentState,
   Role,
@@ -118,3 +122,11 @@ export type {
   CheckoutTotals,
   VendorCheckoutGroup,
 } from "./checkout/pricing";
+
+// ── Canonical order-adjacent queries (server routes) ───────────────────
+export {
+  findDriverIdByAdminUser,
+  postDirectOrderSystemMessage,
+  releaseCouponUseForOrder,
+} from "./order-repository";
+export type { Queryable } from "./order-repository";

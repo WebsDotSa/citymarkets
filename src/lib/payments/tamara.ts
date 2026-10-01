@@ -19,6 +19,7 @@
  * Docs: https://docs.tamara.co/
  */
 
+import { getSiteUrl } from '@/lib/seo/site';
 import { error as logError, warn as logWarn } from '@/lib/logger';
 
 const TAMARA_API_BASE =
@@ -30,9 +31,7 @@ const TAMARA_API_BASE =
 const TAMARA_API_TOKEN = process.env.TAMARA_API_TOKEN?.trim() || null;
 const TAMARA_WEBHOOK_TOKEN = process.env.TAMARA_WEBHOOK_TOKEN?.trim() || null;
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
-  'https://citymarkets.sa';
+const SITE_URL = getSiteUrl();
 
 export interface TamaraCheckoutRequest {
   orderId: string;

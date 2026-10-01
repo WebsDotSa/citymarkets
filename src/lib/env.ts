@@ -120,13 +120,12 @@ export function getDatabaseConfig() {
 // default. Single-use env reads in tests or one-off scripts can stay
 // inline.
 
-/** Canonical site URL used by mobile-config, manifest, payment callbacks. */
-export function getSiteUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    "https://citymarkets.sa"
-  );
-}
+/**
+ * Canonical site URL (mobile-config, manifest, payment callbacks, SEO).
+ * Implemented once in `@/lib/seo/site` (pure, client-safe) and re-exported
+ * here so existing `@/lib/env` imports keep working.
+ */
+export { getSiteUrl } from "@/lib/seo/site";
 
 /** Moyasar publishable key (safe to ship to the client). Null when unset. */
 export function getMoyasarPublishableKey(): string | null {

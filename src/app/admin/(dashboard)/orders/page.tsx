@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
@@ -144,7 +145,7 @@ export default function AdminOrdersPage() {
         const json = await res.json();
         if (signal?.aborted) return;
         if (!res.ok || !json.success) {
-          setError(json.error || "فشل تحميل الطلبات");
+          setError(getApiErrorMessage(json, "فشل تحميل الطلبات"));
           return;
         }
         setOrders(Array.isArray(json.data) ? json.data : []);
@@ -207,7 +208,7 @@ export default function AdminOrdersPage() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        showToast(json.error || "فشل في تحديث حالة الطلب", "error");
+        showToast(getApiErrorMessage(json, "فشل في تحديث حالة الطلب"), "error");
         return;
       }
       setOrders((prev) =>

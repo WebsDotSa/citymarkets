@@ -5,6 +5,7 @@ import { getCategoryForSeo } from '@/lib/catalog/seo/product';
 import { buildPageMetadata, absoluteUrl, SITE_NAME } from "@/lib/seo/site";
 import { CategoryJsonLd } from "@/components/seo/category-json-ld";
 import { query } from "@/lib/db";
+import { productUnitPrice } from "@/lib/catalog";
 
 type PageProps = {
   searchParams: Promise<{ category?: string; q?: string; deals?: string }>;
@@ -122,7 +123,7 @@ async function CatalogItemListJsonLd({
       },
       idx: number,
     ) => {
-      const price = Number(row.discount_price ?? row.price ?? 0);
+      const price = productUnitPrice(row);
       return {
         "@type": "ListItem",
         position: idx + 1,

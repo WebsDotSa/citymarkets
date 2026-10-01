@@ -1,3 +1,4 @@
+import { UUID_RE as UUID_LIKE } from "@/lib/uuid";
 import { query } from "@/lib/db";
 import { cache, CACHE_TTL } from "@/lib/cache";
 
@@ -25,7 +26,6 @@ export type ProductSeoRow = {
 // or /products/preview — the DB would otherwise throw "invalid input
 // syntax for type uuid" and pollute server.log with stack traces for
 // every malformed share-link.
-const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function getProductForSeo(
   id: string

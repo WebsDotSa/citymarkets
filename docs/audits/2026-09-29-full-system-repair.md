@@ -1,5 +1,11 @@
 # City Markets — Production Full-System Repair Audit
 
+> **HISTORICAL — point-in-time snapshot.** Findings below describe the code at the
+> time of writing; many have since been fixed (e.g. `/api/v1/wishlist/*` and the
+> address `[id]` routes now exist). For current ownership see
+> [`docs/architecture/canonical-sources.md`](../architecture/canonical-sources.md)
+> and the latest audit [`docs/audits/2026-09-30-duplication-audit.md`](../audits/2026-09-30-duplication-audit.md).
+
 **Branch**: `production/full-system-repair` (HEAD `e764702`)
 **Date**: 2026-09-29
 **Source audits**: `docs/audits/2026-09-29-full-system-audit.md`,

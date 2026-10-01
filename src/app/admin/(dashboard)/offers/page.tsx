@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -77,7 +78,7 @@ function AdminOffersContent() {
         loadData();
         showToast("تم حذف العرض", "success");
       } else {
-        showToast(json.error || "فشل الحذف", "error");
+        showToast(getApiErrorMessage(json, "فشل الحذف"), "error");
       }
     } catch {
       showToast("فشل في حذف العرض", "error");

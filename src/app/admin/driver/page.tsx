@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -125,7 +126,7 @@ export default function DriverDashboard() {
         setSelectedOrder(null);
         setFailureReason("");
       } else {
-        showToast(data.error || "فشل تحديث الطلب", "error");
+        showToast(getApiErrorMessage(data, "فشل تحديث الطلب"), "error");
       }
     } catch (error) {
       console.error("Error updating order:", error);

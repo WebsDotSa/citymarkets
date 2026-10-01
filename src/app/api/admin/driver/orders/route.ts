@@ -1,3 +1,4 @@
+import { findDriverIdByAdminUser } from "@/lib/orders";
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -18,11 +19,7 @@ export async function GET(request: NextRequest) {
   // Without this filter, every driver would see every delivery order.
   // Lookup the driver record id from drivers.admin_user_id; fall back to
   // "unassigned only" if the linkage is missing.
-  const driverRow = await pool.query(
-    `SELECT id FROM drivers WHERE admin_user_id = $1`,
-    [gate.admin.id],
-  );
-  const driverId = driverRow.rows[0]?.id as string | undefined;
+  const driverId = (await findDriverIdByAdminUser(pool, gate.admin.id)) ?? undefined;
 
   const { searchParams } = new URL(request.url);
   // Driver-facing status values: pending (awaiting pickup), on_the_way

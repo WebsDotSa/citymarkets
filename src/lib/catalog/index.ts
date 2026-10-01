@@ -87,11 +87,16 @@ export {
 } from "./offers";
 export type {
   OfferInput,
+  OfferRow,
   OfferTargetInfo,
   ProductForOffer,
   ResolvedOffer,
   ResolvedOfferSource,
 } from "./offers";
+
+// ── Product unit price (canonical discount_price ?? price rule) ────────
+export { productUnitPrice } from "./product-price";
+export type { PriceFields } from "./product-price";
 
 // ── Vendors (type enum + label map) ─────────────────────────────────────
 export {

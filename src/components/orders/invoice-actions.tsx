@@ -1,5 +1,6 @@
 "use client";
 
+import type { InvoiceAddress, InvoiceItem } from "@/lib/orders/invoice-types";
 import { useState } from "react";
 import { Printer, Download, Loader2 } from "lucide-react";
 import { error as logError } from "@/lib/logger";
@@ -23,19 +24,8 @@ import { useToast } from "@/components/ui/toast";
  * receipts without depending on email.
  */
 
-interface InvoiceActionsItem {
-  name: string;
-  quantity: number;
-  unit_price: number;
-  notes?: string | null;
-}
-
-interface InvoiceActionsAddress {
-  label?: string | null;
-  text?: string | null;
-  city?: string | null;
-  district?: string | null;
-}
+type InvoiceActionsItem = InvoiceItem;
+type InvoiceActionsAddress = InvoiceAddress;
 
 interface InvoiceActionsProps {
   orderId: string;

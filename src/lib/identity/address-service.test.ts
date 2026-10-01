@@ -198,3 +198,31 @@ describe("setDefaultAddress", () => {
     expect(clearCall).toBeDefined();
   });
 });
+
+vi.mock("./customer-session", () => ({
+  resolveCustomerUserIdFromRequest: vi.fn(),
+}));
+
+describe("request owner + public DTO (canonical for /api/v1/delivery-addresses*)", () => {
+  const req = (headers: Record<string, string> = {}) =>
+    ({ headers: new Headers(headers) }) as unknown as import("next/server").NextRequest;
+
+  it("prefers the authenticated user, then x-guest-key, else null", async () => {
+    const { resolveCustomerUserIdFromRequest } = await import("./customer-session");
+    const { resolveAddressOwnerFromRequest } = await import("./address-service");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValueOnce("u1");
+    expect(await resolveAddressOwnerFromRequest(req({ "x-guest-key": "g" }))).toEqual({ kind: "user", userId: "u1" });
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValueOnce(null);
+    expect(await resolveAddressOwnerFromRequest(req({ "x-guest-key": "g" }))).toEqual({ kind: "guest", guestKey: "g" });
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValueOnce(null);
+    expect(await resolveAddressOwnerFromRequest(req())).toBeNull();
+  });
+
+  it("toPublicAddressRow strips owner fields and normalises place_images", async () => {
+    const { toPublicAddressRow } = await import("./address-service");
+    const out = toPublicAddressRow({ id: "a", user_id: "u", guest_key: "g", place_images: null } as never);
+    expect(out).not.toHaveProperty("user_id");
+    expect(out).not.toHaveProperty("guest_key");
+    expect(out.place_images).toEqual([]);
+  });
+});

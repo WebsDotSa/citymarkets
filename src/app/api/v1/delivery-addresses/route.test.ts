@@ -52,7 +52,7 @@ vi.mock("@/lib/db", () => ({
   }),
 }));
 
-vi.mock("@/lib/identity", () => ({
+vi.mock("@/lib/identity/customer-session", () => ({
   resolveCustomerUserIdFromRequest: vi.fn(),
 }));
 
@@ -70,7 +70,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 import { pool, query } from "@/lib/db";
-import { resolveCustomerUserIdFromRequest } from "@/lib/identity";
+import { resolveCustomerUserIdFromRequest } from "@/lib/identity/customer-session";
 import { GET, POST, PUT, DELETE } from "./route";
 import type { NextRequest } from "next/server";
 

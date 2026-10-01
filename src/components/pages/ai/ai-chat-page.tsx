@@ -16,6 +16,7 @@
  * the 800-line soft cap while staying behavior-preserving.
  */
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import {
   useCallback,
   useEffect,
@@ -343,7 +344,7 @@ export function AIChatPage() {
         });
         const data: AiChatResponse = await res.json();
         if (!data.success || !data.matched) {
-          throw new Error(data.error || "فشل المطابقة");
+          throw new Error(getApiErrorMessage(data, "فشل المطابقة"));
         }
         const added =
           data.matched.length > 0 ? addMatchedToCart(data.matched) : [];
@@ -422,7 +423,7 @@ export function AIChatPage() {
         const data: AiChatResponse = await res.json();
 
         if (!data.success || data.reply === undefined) {
-          throw new Error(data.error || "فشل الطلب");
+          throw new Error(getApiErrorMessage(data, "فشل الطلب"));
         }
 
         const matched = (data.matched || []) as MatchedProduct[];

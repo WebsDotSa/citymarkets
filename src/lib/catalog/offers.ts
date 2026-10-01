@@ -222,3 +222,24 @@ export function resolveOfferPrice(
     source,
   };
 }
+
+/** Raw `offers` row (+ `product_count`) as selected by the public offers API. */
+export interface OfferRow {
+  id: string;
+  title_ar: string;
+  title_en: string | null;
+  description_ar: string | null;
+  description_en: string | null;
+  image_url: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: string | number;
+  max_discount: string | number | null;
+  min_order: string | number | null;
+  starts_at: string;
+  ends_at: string;
+  is_active: boolean;
+  is_featured: boolean;
+  sort_order: number;
+  applies_to: "catalog" | "vendor" | "mixed";
+  product_count: string | number;
+}

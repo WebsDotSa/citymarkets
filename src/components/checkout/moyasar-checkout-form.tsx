@@ -1,21 +1,23 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { Loader2, AlertCircle } from "lucide-react";
 import { formatPrice } from "@/lib/format";
 import { error as logError } from "@/lib/logger";
+import type { ONLINE_RETRY_METHODS } from "@/lib/payments/payment-methods";
 
 const MOYASAR_JS = "https://cdn.jsdelivr.net/npm/moyasar-payment-form@2.2.9/dist/moyasar.umd.min.js";
 const MOYASAR_CSS = "https://cdn.jsdelivr.net/npm/moyasar-payment-form@2.2.9/dist/moyasar.css";
 
-export type CheckoutMoyasarMethod =
-  | "mada"
-  | "visa"
-  | "mastercard"
-  | "amex"
-  | "apple_pay"
-  | "stc_pay";
+/**
+ * Methods the inline Moyasar form can capture: the canonical
+ * `ONLINE_RETRY_METHODS` tuple (card brands + Apple Pay) plus the LEGACY
+ * `stc_pay` token, which `/checkout/pay?method=stc_pay` deep links from
+ * before the 2026-09-20 picker change can still carry.
+ */
+export type CheckoutMoyasarMethod = (typeof ONLINE_RETRY_METHODS)[number] | "stc_pay";
 
 interface MoyasarConfig {
   publishable_api_key: string;
@@ -112,7 +114,7 @@ export function MoyasarCheckoutForm({
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok || !data.success) {
-          setLoadError(data.error || "تعذّر تحميل إعدادات الدفع");
+          setLoadError(getApiErrorMessage(data, "تعذّر تحميل إعدادات الدفع"));
           return;
         }
         setConfig(data as MoyasarConfig);
@@ -144,7 +146,7 @@ export function MoyasarCheckoutForm({
         });
         const data = await res.json();
         if (!res.ok || !data.success) {
-          const msg = data.error || "تعذّر تأكيد الدفع";
+          const msg = getApiErrorMessage(data, "تعذّر تأكيد الدفع");
           setPayError(msg);
           onError?.(msg);
           return false;

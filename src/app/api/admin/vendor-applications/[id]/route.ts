@@ -28,6 +28,7 @@
  * All branches run inside a single transaction so partial approvals
  * never leave the database in a half-built state.
  */
+import { UUID_RE } from "@/lib/uuid";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { pool } from "@/lib/db";
@@ -37,7 +38,6 @@ import { generateSlug } from "@/lib/slug";
 
 import { error as logError } from "@/lib/logger";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$/;
 
 const patchSchema = z.discriminatedUnion("action", [

@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -192,7 +193,7 @@ export default function EmploymentPage() {
     });
     const json = await res.json();
     if (!res.ok || !json.success) {
-      throw new Error(json.error || "فشل رفع السيرة الذاتية");
+      throw new Error(getApiErrorMessage(json, "فشل رفع السيرة الذاتية"));
     }
     return json.data;
   };
@@ -225,7 +226,7 @@ export default function EmploymentPage() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || "فشل إرسال الطلب");
+        throw new Error(getApiErrorMessage(json, "فشل إرسال الطلب"));
       }
       setSubmitted(true);
     } catch (err) {

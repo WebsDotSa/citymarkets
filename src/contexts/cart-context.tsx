@@ -1,5 +1,6 @@
 "use client";
 
+import { UUID_RE } from "@/lib/uuid";
 import React, {
   createContext,
   useContext,
@@ -15,6 +16,7 @@ import {
   vendorFieldsFromProduct,
 } from '@/lib/catalog';
 import { trackAddToCart } from "@/lib/ga-events";
+import { productUnitPrice } from "@/lib/catalog";
 
 // -------- State slice --------
 interface CartStateValue {
@@ -120,7 +122,6 @@ function matchesCompositeKey(
 // to pass non-UUID ids into the checkout Zod schema, producing the
 // "معرّف غير صالح" error on /checkout/pay. Filtering here keeps the cart
 // self-healing across schema changes.
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isUuid(value: unknown): value is string {
   return typeof value === "string" && UUID_RE.test(value);
 }
@@ -219,9 +220,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // Google Analytics 4 — add_to_cart. Fire after the React state
         // commit so we always report what the user actually sees in the
         // cart bar (existing quantity + delta, not the original click).
-        const unitPrice = Number(
-          product.discount_price ?? product.price ?? 0,
-        );
+        const unitPrice = productUnitPrice(product);
         trackAddToCart({
           currency: "SAR",
           value: unitPrice * quantity,

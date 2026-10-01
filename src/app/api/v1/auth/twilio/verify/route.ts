@@ -1,3 +1,4 @@
+import { rateLimitExceededResponse } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { normalizeSaudiToE164, phoneForDb } from "@/lib/phone-format";
@@ -23,25 +24,6 @@ import { error as logError, info as logInfo } from '@/lib/logger';
 // budget on a number we don't own) AND ensures the user row exists in
 // the DB with name=APPLE_REVIEW_NAME so the iOS client renders a logged-
 // in session — the "Continue as guest" prompt is bypassed.
-
-function rateLimitResponse(
-  result: { retryAfterMs?: number; remaining: number; resetAt: number },
-  message: string,
-  by: "phone" | "ip"
-) {
-  const response = NextResponse.json(
-    {
-      error: message,
-      retryAfter: Math.ceil((result.retryAfterMs || 0) / 1000),
-    },
-    { status: 429 }
-  );
-  Object.entries(createRateLimitHeaders(result as any)).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
-  response.headers.set("X-RateLimit-By", by);
-  return response;
-}
 
 export async function POST(request: NextRequest) {
   let body: { phone?: string; code?: string };
@@ -87,7 +69,7 @@ export async function POST(request: NextRequest) {
     const clientIp = getClientIp(request);
     const ipLimit = await checkRateLimit(clientIp, OTP_VERIFY_IP_CONFIG);
     if (!ipLimit.allowed) {
-      return rateLimitResponse(
+      return rateLimitExceededResponse(
         ipLimit,
         "تم تجاوز عدد محاولات التحقق من هذا الجهاز. انتظر قليلاً ثم أعد المحاولة",
         "ip"
@@ -97,7 +79,7 @@ export async function POST(request: NextRequest) {
     // Per-phone rate limiting (existing).
     const rateLimitResult = await checkRateLimit(e164, OTP_VERIFY_CONFIG);
     if (!rateLimitResult.allowed) {
-      return rateLimitResponse(
+      return rateLimitExceededResponse(
         rateLimitResult,
         "تم تجاوز عدد محاولات التحقق. انتظر قليلاً ثم أعد المحاولة",
         "phone"

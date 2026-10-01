@@ -148,3 +148,15 @@ export function formatPhone(phone: string): string {
   }
   return phone;
 }
+
+/** Lenient numeric parse for DB NUMERIC columns (pg returns strings): null when absent or not finite. */
+export function toNumberOrNull(v: string | number | null | undefined): number | null {
+  if (v == null) return null;
+  const n = typeof v === "number" ? v : parseFloat(String(v));
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Same as `toNumberOrNull` but 0 instead of null. */
+export function toNumberOrZero(v: string | number | null | undefined): number {
+  return toNumberOrNull(v) ?? 0;
+}

@@ -13,6 +13,7 @@ import { ProductCard } from "@/components/storefront/product-card";
 import { formatPrice } from "@/lib/format";
 import { BRAND } from "@/lib/brand-theme";
 import { useConfirm } from "@/components/ui/toast";
+import { productUnitPrice } from "@/lib/catalog";
 
 export default function WishlistPage() {
   const router = useRouter();
@@ -111,9 +112,7 @@ export default function WishlistPage() {
                 items.reduce(
                   (sum, item) =>
                     sum +
-                    Number(
-                      item.product.discount_price ?? item.product.price
-                    ),
+                    productUnitPrice(item.product),
                   0
                 )
               )}
@@ -186,9 +185,7 @@ export default function WishlistPage() {
                     }`}
                   >
                     {formatPrice(
-                      Number(
-                        product.discount_price ?? product.price
-                      )
+                      productUnitPrice(product)
                     )}
                   </span>
                   <span className="text-[10px] text-gray-500">ر.س</span>

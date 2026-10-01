@@ -1,3 +1,4 @@
+import { requireIdParam } from "@/lib/request-params";
 import { NextRequest, NextResponse } from "next/server";
 import { query, pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -8,14 +9,6 @@ import { hashPassword } from "@/lib/password";
 import { generateSlug } from "@/lib/slug";
 
 import { error as logError } from '@/lib/logger';
-
-function idCheck(url: URL) {
-  const id = url.searchParams.get("id");
-  if (!id) {
-    return NextResponse.json({ success: false, error: "المعرّف مطلوب" }, { status: 400 });
-  }
-  return id;
-}
 
 /**
  * Whether the admin's request has at least one owner-credential field
@@ -329,7 +322,7 @@ export async function PUT(request: NextRequest) {
   if (gate instanceof NextResponse) return gate;
   try {
     const url = new URL(request.url);
-    const id = idCheck(url);
+    const id = requireIdParam(url);
     if (id instanceof NextResponse) return id;
     const body = await request.json();
     const parsed = vendorUpdateSchema.safeParse(body);
@@ -444,7 +437,7 @@ export async function DELETE(request: NextRequest) {
   if (gate instanceof NextResponse) return gate;
   try {
     const url = new URL(request.url);
-    const id = idCheck(url);
+    const id = requireIdParam(url);
     if (id instanceof NextResponse) return id;
 
     // Check for related products / orders before deleting

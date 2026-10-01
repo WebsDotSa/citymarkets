@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
@@ -32,7 +33,7 @@ export default function EditOfferPage() {
         if (ac.signal.aborted) return;
 
         if (!res.ok || !json.success) {
-          showToast(json.error || "تعذر تحميل العرض", "error");
+          showToast(getApiErrorMessage(json, "تعذر تحميل العرض"), "error");
           setLoading(false);
           return;
         }
@@ -81,7 +82,7 @@ export default function EditOfferPage() {
         router.push("/admin/offers");
         return { ok: true };
       }
-      const msg = json.error || "فشل تحديث العرض";
+      const msg = getApiErrorMessage(json, "فشل تحديث العرض");
       showToast(msg, "error");
       return { ok: false, error: msg };
     } catch {

@@ -1,3 +1,4 @@
+import { UUID_RE as UUID_LIKE } from "@/lib/uuid";
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -8,7 +9,6 @@ import { cache } from '@/lib/cache';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
-const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function idCheck(url: URL) {
   const id = url.searchParams.get('id');

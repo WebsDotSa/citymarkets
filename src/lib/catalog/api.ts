@@ -1,6 +1,6 @@
+import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from '@/lib/csrf-constants';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
-const CSRF_COOKIE_NAME = 'csrf_token';
-const CSRF_HEADER_NAME = 'x-csrf-token';
 
 function readCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;

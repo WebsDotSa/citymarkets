@@ -28,6 +28,7 @@
  */
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useState, useCallback } from "react";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -138,7 +139,7 @@ export function useOrderPolling(
         credentials: "include",
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || "فشل التحميل");
+      if (!data.success) throw new Error(getApiErrorMessage(data, "فشل التحميل"));
       setOrder(data.order);
       setItems(data.items || []);
       onFetched?.({ order: data.order, items: data.items || [], raw: data });
@@ -192,7 +193,7 @@ export async function addOrderItem(
     });
     const data = await res.json();
     if (!data.success) {
-      return { success: false, error: data.error || "فشل الإضافة" };
+      return { success: false, error: getApiErrorMessage(data, "فشل الإضافة") };
     }
     return { success: true };
   } catch (err) {
@@ -227,7 +228,7 @@ export async function removeOrderItem(
     );
     const data = await res.json().catch(() => ({}));
     if (!data.success) {
-      return { success: false, error: data.error || "فشل الحذف" };
+      return { success: false, error: getApiErrorMessage(data, "فشل الحذف") };
     }
     return { success: true };
   } catch (err) {

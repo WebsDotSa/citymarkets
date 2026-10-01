@@ -13,6 +13,7 @@
  * and admins get the same layout regardless of which path triggered
  * the download.
  */
+import type { InvoiceAddress, InvoiceItem } from "@/lib/orders/invoice-types";
 import * as React from "react";
 import fs from "node:fs";
 import path from "node:path";
@@ -123,19 +124,8 @@ async function buildTrackingQrPngDataUri(url: string): Promise<string | null> {
   }
 }
 
-export interface ServerInvoiceItem {
-  name: string;
-  quantity: number;
-  unit_price: number;
-  notes?: string | null;
-}
-
-export interface ServerInvoiceAddress {
-  label?: string | null;
-  text?: string | null;
-  city?: string | null;
-  district?: string | null;
-}
+export type ServerInvoiceItem = InvoiceItem;
+export type ServerInvoiceAddress = InvoiceAddress;
 
 export interface ServerInvoiceProps {
   orderNumber: string;

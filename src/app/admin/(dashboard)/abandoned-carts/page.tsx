@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
@@ -89,7 +90,7 @@ export default function AdminAbandonedCartsPage() {
           error?: string;
         };
         if (!json.success) {
-          throw new Error(json.error ?? "fetch_failed");
+          throw new Error(getApiErrorMessage(json, "fetch_failed"));
         }
         setRows(Array.isArray(json.data) ? json.data : []);
         if (json.pagination) setPagination(json.pagination);

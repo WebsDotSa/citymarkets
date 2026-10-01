@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -112,7 +113,7 @@ export function AddAddressFlow() {
         });
         const json = await res.json();
         if (!json.success) {
-          setUploadError(json.error || "فشل رفع الصورة");
+          setUploadError(getApiErrorMessage(json, "فشل رفع الصورة"));
           return;
         }
         setPlaceImages((prev) => [...prev, json.data.url]);

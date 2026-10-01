@@ -1,3 +1,4 @@
+import type { OrderState } from "@/lib/orders/state-machine";
 // Types for City Markets application
 
 export type User = {
@@ -245,13 +246,8 @@ export type CartItem = {
   vendor_name?: string | null;
 };
 
-export type OrderStatus =
-  | "pending"
-  | "confirmed"
-  | "shopping"
-  | "on_the_way"
-  | "delivered"
-  | "cancelled";
+/** Parent-order status — alias of the canonical `OrderState`. */
+export type OrderStatus = OrderState;
 
 export type OrderType = "catalog" | "direct";
 

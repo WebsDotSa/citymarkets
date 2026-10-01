@@ -13,6 +13,7 @@ import {
 import type { Product } from "@/lib/types";
 import { useAuthState } from "@/contexts/auth-context";
 import { apiFetch } from "@/lib/catalog";
+import { MAX_WISHLIST_SIZE } from "@/lib/identity/wishlist-constants";
 
 interface WishlistItem {
   product: Product;
@@ -51,7 +52,6 @@ const WishlistContext = createContext<WishlistContextValue | null>(null);
 // wishlist items. The legacy single-key `citymarket_wishlist` was a
 // data-isolation bug — see prompt bug D4 + D5.
 const LEGACY_STORAGE_KEY = "citymarket_wishlist";
-const MAX_WISHLIST_SIZE = 50;
 
 function storageKey(userId: string | undefined | null): string {
   // Anonymous browsers get a stable guest bucket. Authenticated users

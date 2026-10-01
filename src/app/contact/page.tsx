@@ -1,5 +1,6 @@
 'use client';
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useState } from 'react';
 import Link from 'next/link';
 
@@ -29,7 +30,7 @@ export default function ContactPage() {
       if (res.ok && data.success) {
         setSubmitted(true);
       } else {
-        setError(data.error || "حدث خطأ أثناء إرسال الرسالة");
+        setError(getApiErrorMessage(data, "حدث خطأ أثناء إرسال الرسالة"));
       }
     } catch {
       setError("تعذر الاتصال بالسيرفر، يرجى المحاولة لاحقاً");

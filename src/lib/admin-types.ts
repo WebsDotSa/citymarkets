@@ -1,4 +1,5 @@
 // Admin types and roles
+import type { OrderPaymentStatus, OrderState } from '@/lib/orders/state-machine';
 
 export type AdminRole = 'super_admin' | 'admin' | 'editor' | 'viewer' | 'delivery_driver';
 
@@ -23,15 +24,11 @@ export type AdminUser = {
 // nullable rather than `?` so consumers handle the "not yet loaded"
 // case explicitly.
 
-export type AdminOrderStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'preparing'
-  | 'shipped'
-  | 'delivered'
-  | 'cancelled';
-
-export type AdminPaymentStatus = 'unpaid' | 'pending' | 'paid' | 'failed' | 'refunded';
+// Parent `orders.status` / `orders.payment_status` as returned by the admin
+// API. Aliases of the canonical state machine (the previous local union
+// listed `preparing`/`shipped`, which `order_status_enum` never contained).
+export type AdminOrderStatus = OrderState;
+export type AdminPaymentStatus = OrderPaymentStatus;
 
 export type AdminOrderItem = {
   id: string;

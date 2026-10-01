@@ -1,3 +1,4 @@
+import { requireIdParam } from "@/lib/request-params";
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -6,13 +7,6 @@ import { validateBody } from "@/lib/validation";
 import { z } from "zod";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
-
-function idCheck(url: URL) {
-  const id = url.searchParams.get("id");
-  if (!id)
-    return NextResponse.json({ success: false, error: "المعرّف مطلوب" }, { status: 400 });
-  return id;
-}
 
 const reviewUpdateSchema = z
   .object({
@@ -63,7 +57,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const url = new URL(request.url);
-    const id = idCheck(url);
+    const id = requireIdParam(url);
     if (id instanceof NextResponse) return id;
 
     const raw = await request.json();

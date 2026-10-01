@@ -17,14 +17,12 @@ export const BANK_TRANSFER_DETAILS = {
   account_iban: 'SA9580000422608016336661',
 } as const;
 
-export type PaymentMethodId =
-  | 'mada'
-  | 'visa'
-  | 'mastercard'
-  | 'amex'
-  | 'apple_pay'
-  | 'wallet'
-  | 'bank_transfer';
+/**
+ * Active (customer-selectable) payment method ids. Derived from the
+ * `ALL_PAYMENT_METHODS` tuple below so the union and the runtime list
+ * cannot drift.
+ */
+export type PaymentMethodId = (typeof ALL_PAYMENT_METHODS)[number];
 
 export interface PaymentMethodUi {
   id: PaymentMethodId;
@@ -113,21 +111,6 @@ export const NON_ELECTRONIC_METHODS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Methods the order creation / update API accepts as `payment_method`.
- * Mirrors the `ALLOWED_METHODS` set in
- * `src/app/api/v1/orders/[id]/payment-method/route.ts`.
- */
-export const ALLOWED_METHODS: ReadonlySet<string> = new Set([
-  'mada',
-  'visa',
-  'mastercard',
-  'amex',
-  'apple_pay',
-  'wallet',
-  'bank_transfer',
-]);
-
-/**
  * The subset of `PaymentMethodId` that the customer-facing "pay / retry"
  * CTA can initiate via the online checkout or payment-retry endpoint.
  *
@@ -166,9 +149,9 @@ export const ONLINE_RETRY_METHODS_SET: ReadonlySet<string> = new Set(
 );
 
 /**
- * The full canonical payment-method tuple — every member of `PaymentMethodId`.
- * Exported as a runtime tuple so validation schemas can derive from a single
- * source of truth (audit S6). Mirrors `PaymentMethodId` exactly.
+ * The full canonical payment-method tuple — the single source of truth for
+ * active methods. `PaymentMethodId`, `ALLOWED_METHODS`, `paymentMethodSchema`
+ * and `directOrderSchema.payment_method` all derive from it (audit S6).
  */
 export const ALL_PAYMENT_METHODS = [
   'mada',
@@ -178,7 +161,7 @@ export const ALL_PAYMENT_METHODS = [
   'apple_pay',
   'wallet',
   'bank_transfer',
-] as const satisfies readonly PaymentMethodId[];
+] as const;
 
 /**
  * Set form of `ALL_PAYMENT_METHODS` for O(1) `.has()` lookups in
@@ -186,6 +169,14 @@ export const ALL_PAYMENT_METHODS = [
  * "is this string already canonical?".
  */
 export const ALL_PAYMENT_METHODS_SET: ReadonlySet<string> = new Set(ALL_PAYMENT_METHODS);
+
+/**
+ * Methods the order creation / update API accepts as `payment_method`
+ * (`PATCH /api/v1/orders/[id]/payment-method`, direct orders, checkout).
+ * Same membership as `ALL_PAYMENT_METHODS` — kept as a named alias because
+ * route code reads better as "allowed", not because the lists may diverge.
+ */
+export const ALLOWED_METHODS: ReadonlySet<string> = ALL_PAYMENT_METHODS_SET;
 
 /**
  * Legacy payment-method tokens that were removed from the customer-facing

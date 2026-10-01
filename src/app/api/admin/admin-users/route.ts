@@ -1,3 +1,4 @@
+import { requireIdParam } from "@/lib/request-params";
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { hashPassword } from '@/lib/password';
@@ -7,12 +8,6 @@ import { adminStaffCreateSchema, adminStaffUpdateSchema } from '@/lib/validation
 import { normalizeSaudiToE164 } from '@/lib/phone-format';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
-
-function idCheck(url: URL) {
-  const id = url.searchParams.get('id');
-  if (!id) return NextResponse.json({ success: false, error: 'المعرّف مطلوب' }, { status: 400 });
-  return id;
-}
 
 // GET /api/admin/admin-users
 export async function GET(request: NextRequest) {
@@ -91,7 +86,7 @@ export async function PUT(request: NextRequest) {
   if (gate instanceof NextResponse) return gate;
   try {
     const url = new URL(request.url);
-    const idCheckResult = idCheck(url);
+    const idCheckResult = requireIdParam(url);
     if (typeof idCheckResult !== 'string') return idCheckResult;
 
     const body = await request.json();
@@ -184,7 +179,7 @@ export async function DELETE(request: NextRequest) {
   if (gate instanceof NextResponse) return gate;
   try {
     const url = new URL(request.url);
-    const idCheckResult = idCheck(url);
+    const idCheckResult = requireIdParam(url);
     if (typeof idCheckResult !== 'string') return idCheckResult;
 
     // SECURITY (F6): prevent self-delete to avoid accidental lockout

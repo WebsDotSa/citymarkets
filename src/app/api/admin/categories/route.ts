@@ -1,3 +1,5 @@
+import { requireIdParam } from "@/lib/request-params";
+import { UUID_RE as UUID_LIKE } from "@/lib/uuid";
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -8,18 +10,6 @@ import { deleteFromR2, r2KeyFromUrl } from "@/lib/r2";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
-const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function idCheck(url: URL) {
-  const id = url.searchParams.get("id");
-  if (!id) {
-    return NextResponse.json(
-      { success: false, error: "المعرّف مطلوب" },
-      { status: 400 }
-    );
-  }
-  return id;
-}
 
 async function ensureSlugUnique(
   baseSlug: string,
@@ -208,7 +198,7 @@ export async function PUT(request: NextRequest) {
   if (gate instanceof NextResponse) return gate;
   try {
     const url = new URL(request.url);
-    const idCheckResult = idCheck(url);
+    const idCheckResult = requireIdParam(url);
     if (typeof idCheckResult !== "string") return idCheckResult;
     const body = await request.json();
     const {
@@ -306,7 +296,7 @@ export async function DELETE(request: NextRequest) {
   if (gate instanceof NextResponse) return gate;
   try {
     const url = new URL(request.url);
-    const idCheckResult = idCheck(url);
+    const idCheckResult = requireIdParam(url);
     if (typeof idCheckResult !== "string") return idCheckResult;
 
     // Two optional knobs let the admin choose how to deal with attached

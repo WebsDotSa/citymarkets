@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import React, {
   createContext,
   useCallback,
@@ -195,7 +196,7 @@ export function DeliveryLocationProvider({
           newAddr = rowToAddress(json.data);
           newAddr.labelType = input.labelType;
         } else if (isLoggedIn) {
-          throw new Error(json.error || "تعذّر حفظ العنوان");
+          throw new Error(getApiErrorMessage(json, "تعذّر حفظ العنوان"));
         }
       } catch (err) {
         if (isLoggedIn) {
@@ -260,7 +261,7 @@ export function DeliveryLocationProvider({
         });
         const json = await res.json();
         if (!json.success) {
-          throw new Error(json.error || "تعذّر تعديل العنوان");
+          throw new Error(getApiErrorMessage(json, "تعذّر تعديل العنوان"));
         }
         const mapped = rowToAddress(json.data);
         mapped.labelType = input.labelType;

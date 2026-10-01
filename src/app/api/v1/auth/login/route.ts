@@ -1,3 +1,4 @@
+import { rateLimitExceededResponse } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { isLegacyPhoneOtpAllowed } from "@/lib/env";
@@ -43,25 +44,6 @@ function maskPhone(phone: string): string {
   return `***${digits.slice(-4)}`;
 }
 
-function rateLimitResponse(
-  result: { retryAfterMs?: number; remaining: number; resetAt: number },
-  message: string,
-  by: "phone" | "ip"
-) {
-  const response = NextResponse.json(
-    {
-      error: message,
-      retryAfter: Math.ceil((result.retryAfterMs || 0) / 1000),
-    },
-    { status: 429 }
-  );
-  Object.entries(createRateLimitHeaders(result as any)).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
-  response.headers.set("X-RateLimit-By", by);
-  return response;
-}
-
 export async function POST(request: NextRequest) {
   if (!isLegacyPhoneOtpAllowed()) {
     return NextResponse.json({ error: "غير متوفر" }, { status: 404 });
@@ -88,7 +70,7 @@ export async function POST(request: NextRequest) {
   const clientIp = getClientIp(request);
   const ipLimit = await checkRateLimit(clientIp, LOGIN_LEGACY_IP_CONFIG);
   if (!ipLimit.allowed && !appleReviewBypass) {
-    return rateLimitResponse(
+    return rateLimitExceededResponse(
       ipLimit,
       "تم تجاوز عدد محاولات تسجيل الدخول من هذا الجهاز. انتظر قليلاً ثم أعد المحاولة",
       "ip"
@@ -96,7 +78,7 @@ export async function POST(request: NextRequest) {
   }
   const phoneLimit = await checkRateLimit(phone, LOGIN_LEGACY_CONFIG);
   if (!phoneLimit.allowed && !appleReviewBypass) {
-    return rateLimitResponse(
+    return rateLimitExceededResponse(
       phoneLimit,
       "تم تجاوز عدد محاولات تسجيل الدخول. انتظر قليلاً ثم أعد المحاولة",
       "phone"

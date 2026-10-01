@@ -41,6 +41,7 @@ import {
   AlertCircle,
   Store,
 } from "lucide-react";
+import { productUnitPrice } from "@/lib/catalog";
 
 interface SuggestedProduct {
   id: string;
@@ -269,7 +270,7 @@ export function CartV2() {
                       </div>
                       <p className="text-xs text-gray-700 line-clamp-2 mb-1">{p.name_ar}</p>
                       <p className="text-sm font-bold text-primary-600">
-                        {formatPrice(Number(p.discount_price ?? p.price))}
+                        {formatPrice(productUnitPrice(p))}
                       </p>
                     </Link>
                   ))}
@@ -606,7 +607,7 @@ function CartItemCardV2({
   const vendorId = item.vendor_id ?? null;
 
   const hasDiscount = product.discount_price && product.discount_price < product.price;
-  const displayPrice = product.discount_price ?? product.price;
+  const displayPrice = productUnitPrice(product);
   const discountPercent = hasDiscount
     ? Math.round((1 - product.discount_price! / product.price) * 100)
     : 0;

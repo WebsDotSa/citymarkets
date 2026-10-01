@@ -11,9 +11,9 @@
 // row (or vice-versa) regardless of how the id was guessed.
 
 import { NextRequest, NextResponse } from "next/server";
-import { resolveCustomerUserIdFromRequest } from "@/lib/identity";
 import {
-  type AddressRow,
+  resolveAddressOwnerFromRequest,
+  toPublicAddressRow,
   deleteAddress as deleteAddressService,
   updateAddress as updateAddressService,
 } from "@/lib/identity/address-service";
@@ -21,34 +21,14 @@ import { sanitizePlaceImageUrls } from "@/lib/catalog";
 
 import { error as logError } from "@/lib/logger";
 
-type Owner =
-  | { kind: "user"; userId: string }
-  | { kind: "guest"; guestKey: string };
 
-async function ownerFromRequest(request: NextRequest): Promise<Owner | null> {
-  const userId = await resolveCustomerUserIdFromRequest(request);
-  if (userId) return { kind: "user", userId };
-  const guestKey = request.headers.get("x-guest-key");
-  if (guestKey) return { kind: "guest", guestKey };
-  return null;
-}
-
-function toClientRow(row: AddressRow): Record<string, unknown> {
-  const { user_id: _u, guest_key: _g, ...rest } = row;
-  void _u;
-  void _g;
-  return {
-    ...rest,
-    place_images: Array.isArray(row.place_images) ? row.place_images : [],
-  };
-}
 
 // PUT /api/v1/delivery-addresses/[id] — edit an existing address
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
-  const owner = await ownerFromRequest(request);
+  const owner = await resolveAddressOwnerFromRequest(request);
   if (!owner) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },
@@ -98,7 +78,7 @@ export async function PUT(
       );
     }
 
-    return NextResponse.json({ success: true, data: toClientRow(row) });
+    return NextResponse.json({ success: true, data: toPublicAddressRow(row) });
   } catch (error) {
     logError("[delivery-addresses/[id]] PUT failed:", error);
     return NextResponse.json(
@@ -113,7 +93,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
-  const owner = await ownerFromRequest(request);
+  const owner = await resolveAddressOwnerFromRequest(request);
   if (!owner) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },

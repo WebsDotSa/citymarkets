@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -228,7 +229,7 @@ export default function HomeDesignAdminPage() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        showToast(json.error || "فشل الحفظ", "error");
+        showToast(getApiErrorMessage(json, "فشل الحفظ"), "error");
         return;
       }
       showToast(`تم الحفظ — ${sections.length} قسم`, "success");

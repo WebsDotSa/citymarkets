@@ -1,3 +1,4 @@
+import { UUID_RE } from "@/lib/uuid";
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -6,7 +7,6 @@ import { vendorPatchSchema } from "@/lib/validation";
 
 import { error as logError } from '@/lib/logger';
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // PATCH /api/admin/vendors/[id] — toggles (active/featured) so quick action
 // buttons on the list don't need to round-trip the full form.

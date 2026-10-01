@@ -1,3 +1,4 @@
+import { requireIdParam } from "@/lib/request-params";
 import { NextRequest, NextResponse } from "next/server";
 import { pool, query } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
@@ -8,13 +9,6 @@ import {
 } from "@/lib/delivery/store-hours";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
-
-function idCheck(url: URL) {
-  const id = url.searchParams.get("id");
-  if (!id)
-    return NextResponse.json({ success: false, error: "المعرّف مطلوب" }, { status: 400 });
-  return id;
-}
 
 /**
  * Coerce + validate `opening_hours` from the request body.
@@ -124,7 +118,7 @@ export async function PUT(request: NextRequest) {
   const client = await pool.connect();
   try {
     const url = new URL(request.url);
-    const id = idCheck(url);
+    const id = requireIdParam(url);
     if (id instanceof NextResponse) return id;
     const body = await request.json();
 
@@ -208,7 +202,7 @@ export async function DELETE(request: NextRequest) {
   if (gate instanceof NextResponse) return gate;
   try {
     const url = new URL(request.url);
-    const id = idCheck(url);
+    const id = requireIdParam(url);
     if (id instanceof NextResponse) return id;
 
     // Check if this is the main store

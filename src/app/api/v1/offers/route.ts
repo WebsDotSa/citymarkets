@@ -3,42 +3,13 @@
 // are filtered out by SQL. Optional `featured=true` narrows to offers
 // flagged for the homepage hero carousel.
 
+import { toNumberOrNull, toNumberOrZero } from "@/lib/format";
+import type { OfferRow } from "@/lib/catalog";
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { error as logError } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
-
-interface OfferRow {
-  id: string;
-  title_ar: string;
-  title_en: string | null;
-  description_ar: string | null;
-  description_en: string | null;
-  image_url: string;
-  discount_type: "percentage" | "fixed";
-  discount_value: string | number;
-  max_discount: string | number | null;
-  min_order: string | number | null;
-  starts_at: string;
-  ends_at: string;
-  is_active: boolean;
-  is_featured: boolean;
-  sort_order: number;
-  applies_to: "catalog" | "vendor" | "mixed";
-  product_count: string | number;
-}
-
-function toNumber(v: string | number | null | undefined): number | null {
-  if (v == null) return null;
-  const n = typeof v === "number" ? v : parseFloat(String(v));
-  return Number.isFinite(n) ? n : null;
-}
-
-function toNumberOrZero(v: string | number): number {
-  const n = typeof v === "number" ? v : parseFloat(String(v));
-  return Number.isFinite(n) ? n : 0;
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -98,8 +69,8 @@ export async function GET(request: NextRequest) {
       image_url: row.image_url,
       discount_type: row.discount_type,
       discount_value: toNumberOrZero(row.discount_value),
-      max_discount: toNumber(row.max_discount),
-      min_order: toNumber(row.min_order),
+      max_discount: toNumberOrNull(row.max_discount),
+      min_order: toNumberOrNull(row.min_order),
       starts_at: row.starts_at,
       ends_at: row.ends_at,
       is_active: row.is_active,

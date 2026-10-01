@@ -1,5 +1,6 @@
 'use client';
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
@@ -22,20 +23,15 @@ import {
   Clock,
   Plus,
 } from 'lucide-react';
+import { ORDER_STATUS_DISPLAY } from '@/lib/orders';
 
 type DirectOrderRow = AdminDirectOrder;
 type OrderItem = AdminDirectOrderItem;
 type OrderDetail = AdminDirectOrder;
 
-const STATUS_OPTIONS = [
-  { value: 'pending', label: 'بانتظار التأكيد' },
-  { value: 'shopping', label: 'جارٍ التحضير' },
-  { value: 'accepted', label: 'تم القبول' },
-  { value: 'in_progress', label: 'قيد التنفيذ' },
-  { value: 'on_the_way', label: 'في الطريق' },
-  { value: 'delivered', label: 'تم التوصيل' },
-  { value: 'cancelled', label: 'ملغي' },
-];
+// Canonical `order_status_enum` options. The previous local list offered
+// `accepted` / `in_progress`, which `orderEditSchema` rejects (400).
+const STATUS_OPTIONS = ORDER_STATUS_DISPLAY;
 
 export default function AdminChatHubPage() {
   const router = useRouter();
@@ -127,7 +123,7 @@ export default function AdminChatHubPage() {
         body: JSON.stringify({ product_id: productId, free_text: productName, quantity: 1 }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل');
+      if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل'));
       setAddingProduct(false);
       setNewProductSearch('');
       setProductResults([]);
@@ -155,7 +151,7 @@ export default function AdminChatHubPage() {
         }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل');
+      if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل'));
       setPriceEdits({});
       await fetchActiveOrder(activeId);
       await fetchOrders();
@@ -182,7 +178,7 @@ export default function AdminChatHubPage() {
         }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'فشل');
+      if (!data.success) throw new Error(getApiErrorMessage(data, 'فشل'));
       await fetchActiveOrder(activeId);
       await fetchOrders();
     } catch (err) {

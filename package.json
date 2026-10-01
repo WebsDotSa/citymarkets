@@ -14,6 +14,8 @@
     "worker:run": "tsx scripts/worker.ts",
     "proxy:guard": "tsx scripts/proxy-runtime-guard.ts",
     "domain:guard": "tsx scripts/check-domain-contracts.ts",
+    "dup:scan": "tsx scripts/scan-duplicates.ts",
+    "dup:gate": "tsx scripts/scan-duplicates.ts --gate",
     "auth:isolation": "tsx scripts/auth-isolation-audit.ts",
     "qa:smoke": "node scripts/qa-smoke.mjs",
     "qa:critical-paths": "node scripts/qa-critical-paths.mjs",

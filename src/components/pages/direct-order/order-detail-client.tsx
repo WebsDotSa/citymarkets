@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
 import { ChatPanel } from '@/components/ui/chat-panel/chat-panel';
 import { InvoiceActions } from '@/components/orders/invoice-actions';
-import { getOrderStatusConfig } from '@/lib/orders';
+import { getOrderStatusConfig, isDirectOrderCustomerEditable } from '@/lib/orders';
 import {
   ChevronLeft,
   MapPin,
@@ -91,7 +91,8 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
   }
 
   const isDirect = order?.type === 'direct';
-  const isLocked = Boolean(order && ['on_the_way', 'delivered', 'cancelled'].includes(order.status));
+  // Same rule the items API enforces (409 otherwise) — one canonical check.
+  const isLocked = Boolean(order && !isDirectOrderCustomerEditable(order.status));
   const statusConfig = order ? getOrderStatusConfig(order.status) : null;
   const statusColor = statusConfig?.hex ?? '#6B7280';
   const statusLabel = statusConfig?.label ?? '';

@@ -1,3 +1,4 @@
+import { toNumberOrNull, toNumberOrZero } from "@/lib/format";
 import type { Metadata } from "next";
 import { buildPageMetadata } from "@/lib/seo/site";
 import { query } from "@/lib/db";
@@ -52,18 +53,6 @@ const offerSelectSQL = `
    ORDER BY o.is_featured DESC, o.sort_order ASC, o.ends_at ASC
 `;
 
-function toNumberOrZero(v: string | number | null | undefined): number {
-  if (v == null) return 0;
-  const n = typeof v === "number" ? v : parseFloat(String(v));
-  return Number.isFinite(n) ? n : 0;
-}
-
-function toNumber(v: string | number | null | undefined): number | null {
-  if (v == null) return null;
-  const n = typeof v === "number" ? v : parseFloat(String(v));
-  return Number.isFinite(n) ? n : null;
-}
-
 export default async function OffersLandingPage() {
   const result = await query(offerSelectSQL, []);
   const rows = (result.rows ?? []) as unknown as OfferDbRow[];
@@ -74,8 +63,8 @@ export default async function OffersLandingPage() {
     image_url: r.image_url,
     discount_type: r.discount_type,
     discount_value: toNumberOrZero(r.discount_value),
-    max_discount: toNumber(r.max_discount),
-    min_order: toNumber(r.min_order),
+    max_discount: toNumberOrNull(r.max_discount),
+    min_order: toNumberOrNull(r.min_order),
     starts_at: r.starts_at,
     ends_at: r.ends_at,
     is_featured: r.is_featured,

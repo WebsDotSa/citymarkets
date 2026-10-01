@@ -16,6 +16,7 @@ import { BRAND } from "@/lib/brand-theme";
 import { ProductDetailSkeleton } from "@/components/design/skeleton";
 import { formatPrice } from "@/lib/format";
 import { trackViewItem } from "@/lib/ga-events";
+import { productUnitPrice } from "@/lib/catalog";
 
 export function ProductDetailPage() {
   const { user } = useAuthState();
@@ -83,7 +84,7 @@ export function ProductDetailPage() {
           // Google Analytics 4 — view_item. Fire on every successful
           // load (refresh included) so we capture repeat views too.
           const p = res.data;
-          const price = Number(p.discount_price ?? p.price ?? 0);
+          const price = productUnitPrice(p);
           trackViewItem({
             currency: "SAR",
             value: price,
@@ -118,7 +119,7 @@ export function ProductDetailPage() {
     );
   }
 
-  const price = Number(product.discount_price ?? product.price);
+  const price = productUnitPrice(product);
   const original = Number(product.price);
   const hasDiscount = product.discount_price != null && price < original;
 

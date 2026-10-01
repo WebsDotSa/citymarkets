@@ -1,16 +1,12 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useEffect, useMemo, useState } from "react";
 import { Award, Coins, TrendingUp, TrendingDown, Save } from "lucide-react";
 import { csrfFetch } from "@/lib/csrf-client";
 
-interface LoyaltySettings {
-  enabled: boolean;
-  earn_points_per_sar: number;
-  redeem_value_per_point: number;
-  min_redeem_points: number;
-  max_redeem_percent: number;
-}
+// Canonical settings shape (type-only import — erased from the client bundle).
+import type { LoyaltySettings } from "@/lib/orders/loyalty";
 
 interface LoyaltyStats {
   members: number;
@@ -63,7 +59,7 @@ export function AdminLoyalty() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || "فشل الحفظ");
+        throw new Error(getApiErrorMessage(json, "فشل الحفظ"));
       }
       setSettings(json.settings);
       setMessage({ kind: "ok", text: "تم حفظ الإعدادات" });
