@@ -18,8 +18,8 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#009345] to-[#007A38] text-white py-20 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 right-10 w-64 h-64 rounded-full bg-white/20" />
-          <div className="absolute bottom-10 left-10 w-48 h-48 rounded-full bg-white/10" />
+          <div className="absolute top-10 end-10 w-64 h-64 rounded-full bg-white/20" />
+          <div className="absolute bottom-10 start-10 w-48 h-48 rounded-full bg-white/10" />
         </div>
         <div className="max-w-7xl mx-auto px-4 relative z-10">
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-4">

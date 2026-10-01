@@ -147,7 +147,7 @@ export default function VendorOrdersPage({ params }: OrdersPageProps) {
               >
                 {tab.label}
                 {count > 0 && (
-                  <span className={`mr-1 px-1.5 py-0.5 rounded-full text-xs ${
+                  <span className={`me-1 px-1.5 py-0.5 rounded-full text-xs ${
                     activeTab === tab.key ? "bg-white/20" : "bg-gray-100"
                   }`}>
                     {count}
@@ -325,7 +325,7 @@ function OrderRow({
 
           {menuOpen && (
             <div
-              className="absolute left-0 top-full mt-1 w-44 rounded-xl border border-gray-200 bg-white shadow-lg z-20 overflow-hidden"
+              className="absolute start-0 top-full mt-1 w-44 rounded-xl border border-gray-200 bg-white shadow-lg z-20 overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {nextStatus && (

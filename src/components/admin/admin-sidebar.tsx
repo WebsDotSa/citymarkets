@@ -285,7 +285,7 @@ export function AdminSidebar({ user, isOpen, onClose, onLogout }: AdminSidebarPr
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 right-0 h-full w-[280px] bg-white border-l border-slate-200 z-50 flex flex-col
+          fixed top-0 end-0 h-full w-[280px] bg-white border-s border-slate-200 z-50 flex flex-col
           transform transition-all duration-300 ease-out
           ${isOpen ? "translate-x-0" : "translate-x-full"}
           lg:translate-x-0 shadow-xl
@@ -296,7 +296,7 @@ export function AdminSidebar({ user, isOpen, onClose, onLogout }: AdminSidebarPr
           <CityMarketsLogo height={28} />
           <button
             onClick={onClose}
-            className="lg:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors absolute left-3"
+            className="lg:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors absolute start-3"
             aria-label="إغلاق القائمة"
           >
             <X className="w-5 h-5" />
@@ -306,13 +306,13 @@ export function AdminSidebar({ user, isOpen, onClose, onLogout }: AdminSidebarPr
         {/* Search */}
         <div className="p-4 border-b border-slate-100 flex-shrink-0">
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={navSearch}
               onChange={(e) => setNavSearch(e.target.value)}
               placeholder="ابحث في القائمة..."
-              className="w-full h-10 pr-10 pl-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:bg-white transition-all"
+              className="w-full h-10 pe-10 ps-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:bg-white transition-all"
             />
           </div>
         </div>
@@ -391,7 +391,7 @@ export function AdminSidebar({ user, isOpen, onClose, onLogout }: AdminSidebarPr
                         ${isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}
                       `}
                     >
-                      <div className="space-y-0.5 pr-1">
+                      <div className="space-y-0.5 pe-1">
                         {group.items.map((item) => {
                           // Defensive: see note above for `searchResults`.
                           const Icon = iconMap[item.icon] ?? Boxes;
@@ -410,7 +410,7 @@ export function AdminSidebar({ user, isOpen, onClose, onLogout }: AdminSidebarPr
                                 ${active
                                   ? "bg-gradient-to-l from-primary to-primaryDark text-white shadow-lg shadow-primary/20"
                                   : isSub
-                                  ? "text-slate-500 hover:bg-slate-50 hover:text-slate-800 border-r-2 border-slate-200 me-2"
+                                  ? "text-slate-500 hover:bg-slate-50 hover:text-slate-800 border-e-2 border-slate-200 me-2"
                                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                                 }
                               `}

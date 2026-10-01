@@ -259,18 +259,18 @@ export default function AdminCategoriesPage() {
         {/* Filters */}
         <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-3">
           <div className="flex-1 relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="ابحث بالاسم أو الـ slug..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pr-9 pl-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="w-full h-10 pe-9 ps-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -431,7 +431,7 @@ function CategoryRowView({
       {/* Indent marker */}
       {isChild ? (
         <div className="flex items-center text-gray-300">
-          <span className="inline-block w-4 h-px bg-gray-300 ml-1" />
+          <span className="inline-block w-4 h-px bg-gray-300 ms-1" />
           <FolderOpen className="w-4 h-4" />
         </div>
       ) : (

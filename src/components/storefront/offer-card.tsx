@@ -56,7 +56,7 @@ export function OfferCard({ offer, variant = "standard", priority = false }: Off
             />
           ) : null}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-          <div className="absolute top-3 right-3 flex flex-wrap items-center gap-2">
+          <div className="absolute top-3 end-3 flex flex-wrap items-center gap-2">
             {offer.is_featured ? (
               <span className="inline-flex items-center gap-1 bg-amber-400 text-amber-900 text-[11px] font-bold px-2 py-1 rounded-full">
                 <Sparkles className="w-3 h-3" />
@@ -95,7 +95,7 @@ export function OfferCard({ offer, variant = "standard", priority = false }: Off
             className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : null}
-        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+        <div className="absolute top-2 end-2 flex flex-col items-end gap-1">
           <span className="inline-flex items-center gap-1 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
             {discountLabel(offer)}
           </span>

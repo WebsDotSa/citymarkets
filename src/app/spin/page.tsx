@@ -124,8 +124,8 @@ export default function SpinPage() {
         {/* Wheel */}
         <div className="relative w-72 h-72 mx-auto mb-8">
           {/* Pointer */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-10">
-            <div className="w-0 h-0 border-l-8 border-r-8 border-t-12 border-l-transparent border-r-transparent border-t-[#009345] drop-shadow-md" />
+          <div className="absolute top-0 start-1/2 -translate-x-1/2 -translate-y-2 z-10">
+            <div className="w-0 h-0 border-s-8 border-e-8 border-t-12 border-s-transparent border-e-transparent border-t-[#009345] drop-shadow-md" />
           </div>
 
           {/* Wheel */}
@@ -140,14 +140,14 @@ export default function SpinPage() {
                 return (
                   <div
                     key={i}
-                    className="absolute w-1/2 h-1/2 left-1/2 top-0 origin-bottom flex items-center justify-center"
+                    className="absolute w-1/2 h-1/2 start-1/2 top-0 origin-bottom flex items-center justify-center"
                     style={{
                       transform: `translateX(-50%) rotate(${angle}deg) translateY(50%)`,
                       backgroundColor: prize.color,
                     }}
                   >
                     <span
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl"
+                      className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl"
                       style={{ transform: `translateX(-50%) translateY(-50%) rotate(${angle}deg)` }}
                     >
                       {prize.label}
@@ -159,7 +159,7 @@ export default function SpinPage() {
           </div>
 
           {/* Center */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-primary">
+          <div className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-primary">
             <Gift className="w-6 h-6 text-primary" />
           </div>
         </div>

@@ -558,8 +558,8 @@ export function AIChatPage() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
       >
-        <div className="absolute -right-24 -top-32 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -bottom-40 -left-24 h-80 w-80 rounded-full bg-amber-200/25 blur-3xl" />
+        <div className="absolute -end-24 -top-32 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-40 -start-24 h-80 w-80 rounded-full bg-amber-200/25 blur-3xl" />
       </div>
 
       <ChatHeader hasHistory={hasHistory} onStartNewChat={startNewChat} />

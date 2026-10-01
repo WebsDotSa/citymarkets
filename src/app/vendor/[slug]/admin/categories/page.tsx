@@ -407,7 +407,7 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
               ) : (
                 <div
                   key={c.id}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 pl-2 pr-3 py-1.5 text-sm text-amber-900"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 ps-2 pe-3 py-1.5 text-sm text-amber-900"
                   title={c.slug}
                 >
                   <Lock className="w-3 h-3 text-amber-600" aria-hidden />

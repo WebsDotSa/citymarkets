@@ -153,7 +153,7 @@ export default function VendorProductPage({
         {/* Back button */}
         <button
           onClick={() => router.back()}
-          className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow"
+          className="absolute top-4 end-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -163,14 +163,14 @@ export default function VendorProductPage({
         {/* Vendor badge */}
         <Link
           href={`/vendors/${product.vendorSlug}`}
-          className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur shadow text-sm font-medium"
+          className="absolute top-4 start-4 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur shadow text-sm font-medium"
         >
           {product.vendorName}
         </Link>
 
         {/* Image thumbnails */}
         {product.images.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          <div className="absolute bottom-4 start-1/2 -translate-x-1/2 flex gap-2">
             {product.images.map((_, idx) => (
               <button
                 key={idx}
@@ -279,7 +279,7 @@ export default function VendorProductPage({
 
       {/* Add to cart */}
       {product.inStock && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100">
+        <div className="fixed bottom-0 start-0 end-0 p-4 bg-white border-t border-gray-100">
           <div className="flex items-center gap-3">
             {/* Quantity selector */}
             <div className="flex items-center border border-gray-200 rounded-xl">

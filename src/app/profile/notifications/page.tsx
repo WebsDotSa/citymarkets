@@ -112,7 +112,7 @@ function Toggle({
         <span
           className={
             "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform " +
-            (checked ? "right-0.5" : "right-[1.375rem]")
+            (checked ? "end-0.5" : "right-[1.375rem]")
           }
         />
       </button>

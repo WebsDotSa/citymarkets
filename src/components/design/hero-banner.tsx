@@ -136,14 +136,14 @@ export function HeroBanner({
         <>
           <button
             onClick={prev}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all z-10"
+            className="absolute end-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all z-10"
             aria-label="السابق"
           >
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-[#111827]" />
           </button>
           <button
             onClick={next}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all z-10"
+            className="absolute start-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all z-10"
             aria-label="التالي"
           >
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-[#111827]" />
@@ -228,8 +228,8 @@ export function StaticHero({
       </div>
 
       {/* Decorative Elements */}
-      <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/10 rounded-full translate-x-1/3 translate-y-1/3" />
+      <div className="absolute top-0 start-0 w-32 h-32 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute bottom-0 end-0 w-48 h-48 bg-white/10 rounded-full translate-x-1/3 translate-y-1/3" />
     </div>
   );
 }

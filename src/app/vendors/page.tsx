@@ -90,7 +90,7 @@ function FeaturedCarousel({ vendors }: { vendors: VendorWithStats[] }) {
                 sizes="320px"
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <div className="absolute top-2 right-2 bg-white/95 backdrop-blur px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-600 shadow-sm">
+              <div className="absolute top-2 end-2 bg-white/95 backdrop-blur px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-600 shadow-sm">
                 ⭐ مميز
               </div>
             </div>
@@ -142,7 +142,7 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
           />
         )}
         <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/30 to-transparent" />
-        <div className="absolute top-2 left-2 flex gap-1">
+        <div className="absolute top-2 start-2 flex gap-1">
           {vendor.is_featured && (
             <span className="bg-amber-400 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
               ⭐
@@ -152,7 +152,7 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
       </div>
 
       <div className="pt-0 px-4 pb-4 relative">
-        <div className="absolute -top-7 right-4">
+        <div className="absolute -top-7 end-4">
           <div className="w-14 h-14 rounded-2xl bg-white border-4 border-white shadow-md flex items-center justify-center overflow-hidden"
                style={{ borderColor: vendor.primary_color ?? "#009345" }}>
             <SafeImage

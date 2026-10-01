@@ -99,7 +99,7 @@ export function ProductCard({ product, compact, priority = false }: ProductCardP
           )}
           {hasOffer && (
             <span
-              className="absolute top-2 right-2 inline-flex items-center gap-1 bg-gradient-to-r from-pink-500 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow"
+              className="absolute top-2 end-2 inline-flex items-center gap-1 bg-gradient-to-r from-pink-500 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow"
               aria-label={`عرض: ${product.active_offer?.title_ar ?? "عرض خاص"}`}
             >
               <Sparkles className="w-3 h-3" />
@@ -108,7 +108,7 @@ export function ProductCard({ product, compact, priority = false }: ProductCardP
           )}
           {hasDiscount && !hasOffer && (
             <span
-              className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold w-7 h-7 rounded-full flex items-center justify-center"
+              className="absolute top-2 end-2 bg-red-500 text-white text-[10px] font-bold w-7 h-7 rounded-full flex items-center justify-center"
               aria-label={`خصم ${Math.round((1 - price / original) * 100)}%`}
             >
               %
@@ -125,7 +125,7 @@ export function ProductCard({ product, compact, priority = false }: ProductCardP
           )}
           {product.stock_qty > 0 && product.stock_qty <= 5 && (
             <span
-              className="absolute bottom-2 right-2 bg-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full"
+              className="absolute bottom-2 end-2 bg-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full"
               aria-label={`متبقي ${product.stock_qty} فقط`}
             >
               متبقي {product.stock_qty}
@@ -140,7 +140,7 @@ export function ProductCard({ product, compact, priority = false }: ProductCardP
               e.stopPropagation();
               toggleItem(product);
             }}
-            className={`absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+            className={`absolute top-2 start-2 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
               inWishlist
                 ? "bg-red-50 text-red-500"
                 : "bg-white/80 text-gray-400 hover:text-red-500 hover:bg-white"
@@ -154,7 +154,7 @@ export function ProductCard({ product, compact, priority = false }: ProductCardP
           <button
             type="button"
             onClick={handleAdd}
-            className={`absolute bottom-2 left-2 w-9 h-9 rounded-full shadow-md flex items-center justify-center transition-colors ${
+            className={`absolute bottom-2 start-2 w-9 h-9 rounded-full shadow-md flex items-center justify-center transition-colors ${
               added ? "bg-green-500 text-white" : "bg-white text-gray-900"
             }`}
             aria-label={added ? `تمت إضافة ${product.name_ar} للسلة` : `إضافة ${product.name_ar} للسلة`}
@@ -193,7 +193,7 @@ export function ProductCard({ product, compact, priority = false }: ProductCardP
             </span>
             <span className="text-[10px] text-gray-500" aria-hidden="true">ر.س</span>
             {hasDiscount && (
-              <span className="text-[10px] text-gray-400 line-through mr-1" aria-label={`السعر الأصلي: ${original.toFixed(2)} ريال`}>
+              <span className="text-[10px] text-gray-400 line-through me-1" aria-label={`السعر الأصلي: ${original.toFixed(2)} ريال`}>
                 {original.toFixed(2)}
               </span>
             )}

@@ -269,7 +269,7 @@ export function DeliverySchedulePicker({
           {/* Date selector */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-2">
-              <Calendar className="w-3.5 h-3.5 inline-block ml-1" />
+              <Calendar className="w-3.5 h-3.5 inline-block ms-1" />
               اليوم
             </label>
             <div className="relative">
@@ -285,14 +285,14 @@ export function DeliverySchedulePicker({
                   </option>
                 ))}
               </select>
-              <Calendar className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Calendar className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             </div>
           </div>
 
           {/* Window grid */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-2">
-              <Clock className="w-3.5 h-3.5 inline-block ml-1" />
+              <Clock className="w-3.5 h-3.5 inline-block ms-1" />
               الفترة
             </label>
             {loading ? (

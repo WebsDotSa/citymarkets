@@ -237,13 +237,13 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
         <div className="flex flex-col lg:flex-row gap-3">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full h-11 pr-10 pl-4 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:bg-white transition-all"
+              className="w-full h-11 pe-10 ps-4 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:bg-white transition-all"
             />
           </div>
 
@@ -258,7 +258,7 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
               <Filter className="w-4 h-4" />
               <span>تصفية</span>
               {activeFilterCount > 0 && (
-                <span className="absolute -top-1 -left-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -start-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center">
                   {activeFilterCount}
                 </span>
               )}

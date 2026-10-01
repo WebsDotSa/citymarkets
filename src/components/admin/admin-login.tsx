@@ -122,8 +122,8 @@ export function AdminLoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-primary/5 flex items-center justify-center p-4" dir="rtl">
       {/* Background pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -end-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -start-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
       </div>
 
       <div className="w-full max-w-md relative">
@@ -197,7 +197,7 @@ export function AdminLoginPage() {
               <div className="admin-form-group">
                 <label className="admin-label">البريد الإلكتروني أو اسم المستخدم</label>
                 <div className="relative">
-                  <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
                     value={identifier}
@@ -205,7 +205,7 @@ export function AdminLoginPage() {
                     placeholder="admin@citymarkets.sa"
                     dir="ltr"
                     autoComplete="username"
-                    className="w-full h-12 pr-12 pl-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all"
+                    className="w-full h-12 pe-12 ps-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all"
                     required
                   />
                 </div>
@@ -214,7 +214,7 @@ export function AdminLoginPage() {
               <div className="admin-form-group">
                 <label className="admin-label">كلمة المرور</label>
                 <div className="relative">
-                  <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Lock className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
@@ -222,13 +222,13 @@ export function AdminLoginPage() {
                     placeholder="••••••••"
                     dir="ltr"
                     autoComplete="current-password"
-                    className="w-full h-12 pr-12 pl-12 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all"
+                    className="w-full h-12 pe-12 ps-12 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute start-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -258,8 +258,8 @@ export function AdminLoginPage() {
               <div className="admin-form-group">
                 <label className="admin-label">رقم الجوال</label>
                 <div className="relative">
-                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400" dir="ltr">
+                  <Phone className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-gray-400" dir="ltr">
                     +966
                   </span>
                   <input
@@ -269,7 +269,7 @@ export function AdminLoginPage() {
                     placeholder="5XXXXXXXX"
                     dir="ltr"
                     disabled={codeSent}
-                    className="w-full h-12 pr-12 pl-16 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all disabled:opacity-60"
+                    className="w-full h-12 pe-12 ps-16 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all disabled:opacity-60"
                     required
                   />
                 </div>

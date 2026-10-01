@@ -89,7 +89,7 @@ export default function TrackOrderPage() {
           <label className="block">
             <span className="text-xs text-gray-600 mb-1 block">رقم الجوال</span>
             <div className="relative">
-              <Phone className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+              <Phone className="w-4 h-4 absolute end-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true" />
               <input
                 type="tel"
                 inputMode="tel"
@@ -97,7 +97,7 @@ export default function TrackOrderPage() {
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="05XXXXXXXX"
                 required
-                className="w-full h-11 pr-9 pl-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="w-full h-11 pe-9 ps-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 aria-label="رقم الجوال"
               />
             </div>
@@ -106,7 +106,7 @@ export default function TrackOrderPage() {
           <label className="block">
             <span className="text-xs text-gray-600 mb-1 block">رمز التتبع (6 أرقام)</span>
             <div className="relative">
-              <Hash className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+              <Hash className="w-4 h-4 absolute end-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true" />
               <input
                 type="text"
                 inputMode="numeric"
@@ -116,7 +116,7 @@ export default function TrackOrderPage() {
                 onChange={(e) => setCode(e.target.value.replace(/[^\d]/g, ""))}
                 placeholder="123456"
                 required
-                className="w-full h-11 pr-9 pl-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="w-full h-11 pe-9 ps-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-primary/40"
                 aria-label="رمز التتبع"
               />
             </div>

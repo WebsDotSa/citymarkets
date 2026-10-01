@@ -248,7 +248,7 @@ export function SearchableSelect({
           {searchable && (
             <div className="p-2 border-b border-gray-100">
               <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   ref={searchRef}
                   type="text"
@@ -256,7 +256,7 @@ export function SearchableSelect({
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="ابحث..."
-                  className="w-full h-10 pr-9 pl-3 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary"
+                  className="w-full h-10 pe-9 ps-3 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary"
                 />
               </div>
             </div>

@@ -31,7 +31,7 @@ export function BottomNavV2() {
   const { itemCount: wishlistCount } = useWishlistState();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 safe-bottom shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+    <nav className="fixed bottom-0 start-0 end-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 safe-bottom shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
       <div className="max-w-7xl mx-auto flex items-stretch justify-around h-16 px-1">
         {navItems.map((item) => {
           const isActive =
@@ -76,7 +76,7 @@ export function BottomNavV2() {
                 {/* Wishlist badge */}
                 {item.showBadge && wishlistCount > 0 && (
                   <span
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 md:w-5 md:h-5 bg-red-500 text-white text-[9px] md:text-[10px] font-bold rounded-full flex items-center justify-center min-w-[16px]"
+                    className="absolute -top-1.5 -end-1.5 w-4 h-4 md:w-5 md:h-5 bg-red-500 text-white text-[9px] md:text-[10px] font-bold rounded-full flex items-center justify-center min-w-[16px]"
                     style={{ animation: "bounce-in 0.3s ease-out" }}
                   >
                     {wishlistCount > 9 ? "9+" : wishlistCount}
@@ -97,7 +97,7 @@ export function BottomNavV2() {
                 {item.label}
               </span>
               {isActive && !item.accent && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
+                <span className="absolute top-0 start-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
               )}
             </Link>
           );
@@ -121,7 +121,7 @@ export function BottomNavCompact({ cartCount = 0 }: { cartCount?: number }) {
   const { user } = useAuthState();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 safe-bottom shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+    <nav className="fixed bottom-0 start-0 end-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100 safe-bottom shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
       <div className="max-w-7xl mx-auto flex items-stretch justify-around h-16 px-1">
         {compactNavItems.map((item) => {
           const isActive =
@@ -145,7 +145,7 @@ export function BottomNavCompact({ cartCount = 0 }: { cartCount?: number }) {
                 {/* Cart badge */}
                 {item.showBadge && cartCount > 0 && (
                   <span
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
+                    className="absolute -top-1.5 -end-1.5 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
                     style={{ animation: "bounce-in 0.3s ease-out" }}
                   >
                     {cartCount > 9 ? "9+" : cartCount}
@@ -160,7 +160,7 @@ export function BottomNavCompact({ cartCount = 0 }: { cartCount?: number }) {
                 {item.label}
               </span>
               {isActive && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
+                <span className="absolute top-0 start-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
               )}
             </Link>
           );

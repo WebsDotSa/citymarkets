@@ -26,7 +26,7 @@ export function ChatHeader({ hasHistory, onStartNewChat }: ChatHeaderProps) {
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-700 text-white shadow-md shadow-primary/25">
             <ChefHat className="h-5 w-5" aria-hidden="true" />
-            <span className="absolute -bottom-1 -left-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 ring-2 ring-white">
+            <span className="absolute -bottom-1 -start-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 ring-2 ring-white">
               <Sparkles
                 className="h-2.5 w-2.5 text-amber-900"
                 aria-hidden="true"

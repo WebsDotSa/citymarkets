@@ -228,7 +228,7 @@ export function SearchableSelect({
           {searchable && (
             <div className="p-2 border-b border-gray-100 bg-gray-50/50">
               <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 <input
                   ref={inputRef}
                   type="text"
@@ -236,7 +236,7 @@ export function SearchableSelect({
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={onListKeyDown}
                   placeholder="ابحث..."
-                  className="w-full h-9 pr-9 pl-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full h-9 pe-9 ps-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                   aria-controls={listboxId}
                   aria-autocomplete="list"
                   aria-activedescendant={

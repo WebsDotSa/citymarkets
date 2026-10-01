@@ -32,7 +32,7 @@ export function QuickOrderFab() {
     <Link
       href="/orders/direct"
       aria-label="طلب سريع"
-      className="fixed right-4 z-40 flex items-center gap-2 text-white font-bold rounded-full shadow-lg active:scale-95 transition-transform"
+      className="fixed end-4 z-40 flex items-center gap-2 text-white font-bold rounded-full shadow-lg active:scale-95 transition-transform"
       style={{
         bottom: 84, // 64 (bottom-nav) + 20 (gap)
         backgroundColor: BRAND.brandGreen,

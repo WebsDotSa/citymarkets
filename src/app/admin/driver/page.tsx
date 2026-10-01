@@ -277,7 +277,7 @@ export default function DriverDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-bold text-lg">#{order.order_number || order.id.slice(0, 8)}</span>
-                      <span className={`inline-flex items-center gap-1 mr-2 px-2 py-1 rounded-full text-xs ${config.color}`}>
+                      <span className={`inline-flex items-center gap-1 me-2 px-2 py-1 rounded-full text-xs ${config.color}`}>
                         <StatusIcon className="w-4 h-4" />
                         {config.label}
                       </span>
@@ -422,7 +422,7 @@ export default function DriverDashboard() {
 
                   {(order.status === "delivered" || order.status === "cancelled") && (
                     <div className="flex items-center justify-center text-gray-500">
-                      <CheckCircle className="w-4 h-4 mr-2" />
+                      <CheckCircle className="w-4 h-4 me-2" />
                       {order.status === "delivered"
                         ? "تم التوصيل"
                         : "تم تسجيل الفشل"}

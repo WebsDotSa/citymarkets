@@ -182,13 +182,13 @@ export function AdminEmployment() {
           </p>
         </div>
         <div className="relative w-full md:w-72">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="ابحث بالاسم، الجوال، الوظيفة..."
-            className="w-full h-10 pr-10 pl-3 bg-white border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary"
+            className="w-full h-10 pe-10 ps-3 bg-white border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary"
           />
         </div>
       </div>
@@ -247,7 +247,7 @@ export function AdminEmployment() {
             }`}
           >
             {tab.label}
-            <span className="mr-2 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+            <span className="me-2 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
               {tab.count}
             </span>
           </button>
@@ -276,7 +276,7 @@ export function AdminEmployment() {
                   <li
                     key={row.id}
                     className={`p-4 cursor-pointer transition-colors ${
-                      isActive ? "bg-primary/5 border-r-4 border-primary" : "hover:bg-slate-50"
+                      isActive ? "bg-primary/5 border-e-4 border-primary" : "hover:bg-slate-50"
                     }`}
                     onClick={() => setActiveId(row.id)}
                   >

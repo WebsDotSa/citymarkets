@@ -218,7 +218,7 @@ export function AddAddressFlow() {
             <button
               type="button"
               onClick={goToCurrentLocation}
-              className="absolute bottom-24 left-1/2 -translate-x-1/2 z-[600] flex items-center gap-2 bg-white px-4 py-2.5 rounded-full shadow-lg text-sm font-semibold text-gray-800"
+              className="absolute bottom-24 start-1/2 -translate-x-1/2 z-[600] flex items-center gap-2 bg-white px-4 py-2.5 rounded-full shadow-lg text-sm font-semibold text-gray-800"
             >
               <LocateFixed className="w-4 h-4" />
               موقعي الحالي
@@ -303,7 +303,7 @@ export function AddAddressFlow() {
                     <button
                       type="button"
                       onClick={() => removeImage(url)}
-                      className="absolute top-1 left-1 w-6 h-6 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center"
+                      className="absolute top-1 start-1 w-6 h-6 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center"
                       aria-label="حذف الصورة"
                     >
                       <X className="w-3.5 h-3.5" />

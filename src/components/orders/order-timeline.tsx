@@ -124,9 +124,9 @@ export function OrderTimeline({
           </div>
         )}
         <div className="relative">
-          <div className="absolute top-6 right-6 left-6 h-1 bg-gray-200 rounded-full" />
+          <div className="absolute top-6 end-6 start-6 h-1 bg-gray-200 rounded-full" />
           <div
-            className="absolute top-6 right-6 h-1 bg-primary-600 rounded-full transition-all duration-500"
+            className="absolute top-6 end-6 h-1 bg-primary-600 rounded-full transition-all duration-500"
             style={{
               width: `${(Math.max(effectiveIndex, 0) / (progressSteps.length - 1)) * 100}%`,
             }}

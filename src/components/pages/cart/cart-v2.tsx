@@ -491,7 +491,7 @@ export function CartV2() {
             each axis so the bar stays out of the way of the
             recommendations grid above. */}
       <div
-        className="fixed left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-2xl safe-bottom"
+        className="fixed start-0 end-0 z-50 bg-white border-t border-gray-100 shadow-2xl safe-bottom"
         style={{ bottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}
         role="region"
         aria-label="ملخص السلة"

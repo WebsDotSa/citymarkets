@@ -376,7 +376,7 @@ export function AddressesNew() {
           <h1 className="text-lg font-bold text-gray-900">عناويني</h1>
           <Link
             href="/profile"
-            className="p-2 -mr-2 hover:bg-gray-100 rounded-xl transition-colors"
+            className="p-2 -me-2 hover:bg-gray-100 rounded-xl transition-colors"
           >
             <ChevronRight className="w-6 h-6 text-gray-600" />
           </Link>

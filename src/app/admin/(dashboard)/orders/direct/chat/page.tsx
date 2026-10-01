@@ -208,7 +208,7 @@ export default function AdminChatHubPage() {
 
       <div className="grid lg:grid-cols-12 gap-0 h-[calc(100vh-60px)]">
         {/* Left: Order list */}
-        <div className={`lg:col-span-4 bg-white border-l border-gray-200 ${activeId ? 'hidden lg:block' : 'block'}`}>
+        <div className={`lg:col-span-4 bg-white border-s border-gray-200 ${activeId ? 'hidden lg:block' : 'block'}`}>
           <div className="p-3 border-b border-gray-200 sticky top-0 bg-white z-10">
             <div className="relative">
               <input
@@ -216,9 +216,9 @@ export default function AdminChatHubPage() {
                 placeholder="بحث برقم الطلب أو الاسم..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pr-10 pl-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                className="w-full pe-10 ps-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500"
               />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             </div>
           </div>
 
@@ -238,7 +238,7 @@ export default function AdminChatHubPage() {
                     key={o.id}
                     onClick={() => setActiveId(o.id)}
                     className={`w-full text-right p-3 hover:bg-gray-50 transition ${
-                      activeId === o.id ? 'bg-green-50 border-r-4 border-green-500' : ''
+                      activeId === o.id ? 'bg-green-50 border-e-4 border-green-500' : ''
                     }`}
                   >
                     <div className="flex items-start gap-2">
@@ -283,7 +283,7 @@ export default function AdminChatHubPage() {
           ) : (
             <div className="grid md:grid-cols-2 h-full">
               {/* Order management column */}
-              <div className="bg-gray-50 border-l border-gray-200 overflow-y-auto p-4 space-y-3">
+              <div className="bg-gray-50 border-s border-gray-200 overflow-y-auto p-4 space-y-3">
                 <div className="lg:hidden mb-2">
                   <button onClick={() => setActiveId(null)} className="text-sm flex items-center gap-1" style={{ color: BRAND.brandGreen }}>
                     <ChevronLeft className="w-4 h-4" /> العودة للقائمة

@@ -83,7 +83,7 @@ export function MainCatsImageStrip({
             type="button"
             onClick={() => scroll("right")}
             aria-label="التمرير لليمن"
-            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-200 text-slate-700 hover:bg-white hover:scale-105 active:scale-95 transition-all"
+            className="hidden md:flex absolute end-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-200 text-slate-700 hover:bg-white hover:scale-105 active:scale-95 transition-all"
           >
             <ChevronLeft className="w-4 h-4 rotate-180" aria-hidden="true" />
           </button>
@@ -164,7 +164,7 @@ export function MainCatsImageStrip({
             type="button"
             onClick={() => scroll("left")}
             aria-label="التمرير لليسار"
-            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-200 text-slate-700 hover:bg-white hover:scale-105 active:scale-95 transition-all"
+            className="hidden md:flex absolute start-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-200 text-slate-700 hover:bg-white hover:scale-105 active:scale-95 transition-all"
           >
             <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </button>

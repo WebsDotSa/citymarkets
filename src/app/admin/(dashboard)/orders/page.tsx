@@ -335,13 +335,13 @@ export default function AdminOrdersPage() {
       <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-3">
         <div className="flex flex-col md:flex-row gap-3">
           <form onSubmit={handleSearchSubmit} className="flex-1 relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <input
               type="text"
               placeholder="ابحث برقم الطلب، اسم العميل، الجوال..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full h-10 pr-9 pl-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-colors"
+              className="w-full h-10 pe-9 ps-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-colors"
             />
           </form>
           <select
@@ -692,7 +692,7 @@ function OrderRow({
             value={status}
             onChange={(e) => onStatusChange(e.target.value)}
             disabled={updating}
-            className={`appearance-none text-xs font-semibold pl-7 pr-3 py-1.5 rounded-full cursor-pointer border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 ${STATUS_COLORS[status] || "bg-gray-100 text-gray-700"}`}
+            className={`appearance-none text-xs font-semibold ps-7 pe-3 py-1.5 rounded-full cursor-pointer border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 ${STATUS_COLORS[status] || "bg-gray-100 text-gray-700"}`}
             aria-label="تغيير حالة الطلب"
           >
             {STATUS_OPTIONS.map((opt) => (
@@ -701,7 +701,7 @@ function OrderRow({
               </option>
             ))}
           </select>
-          <StatusIcon className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-70" />
+          <StatusIcon className="w-3.5 h-3.5 absolute end-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-70" />
         </div>
       </td>
       <td className="px-4 py-3">

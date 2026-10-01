@@ -315,7 +315,7 @@ export function ProductDetailSkeleton() {
         <Skeleton height={16} className="w-5/6" />
         <Skeleton height={16} className="w-4/6" />
       </div>
-      <div className="fixed bottom-20 left-0 right-0 p-4 bg-white border-t">
+      <div className="fixed bottom-20 start-0 end-0 p-4 bg-white border-t">
         <Skeleton height={48} className="w-full rounded-2xl" />
       </div>
     </div>

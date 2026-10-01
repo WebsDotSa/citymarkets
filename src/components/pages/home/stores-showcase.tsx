@@ -109,7 +109,7 @@ function VendorCard({ vendor }: VendorCardProps) {
         </div>
 
         {/* Open / closed pill — top-left in RTL */}
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 end-2">
           <span
             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur ${
               vendor.isOpen
@@ -234,14 +234,14 @@ export function StoresShowcase() {
             <button
               onClick={() => scrollBy("right")}
               aria-label="السابق"
-              className="hidden sm:flex absolute -right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-white shadow-lg rounded-full items-center justify-center hover:bg-gray-50 z-10 border border-gray-100"
+              className="hidden sm:flex absolute -end-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-white shadow-lg rounded-full items-center justify-center hover:bg-gray-50 z-10 border border-gray-100"
             >
               <ChevronRight className="w-4 h-4 text-gray-700" />
             </button>
             <button
               onClick={() => scrollBy("left")}
               aria-label="التالي"
-              className="hidden sm:flex absolute -left-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-white shadow-lg rounded-full items-center justify-center hover:bg-gray-50 z-10 border border-gray-100"
+              className="hidden sm:flex absolute -start-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-white shadow-lg rounded-full items-center justify-center hover:bg-gray-50 z-10 border border-gray-100"
             >
               <ChevronLeft className="w-4 h-4 text-gray-700" />
             </button>

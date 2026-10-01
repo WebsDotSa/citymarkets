@@ -30,7 +30,7 @@ export function ImageField({
           <button
             type="button"
             onClick={() => onRemoveImage(field.key)}
-            className="absolute top-2 left-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-lg"
+            className="absolute top-2 start-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-lg"
           >
             <Trash2 className="w-4 h-4" />
           </button>

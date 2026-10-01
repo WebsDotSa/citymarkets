@@ -473,7 +473,7 @@ export function OfferEditForm({
                     className="w-full h-11 px-4 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                   {pickerLoading && (
-                    <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+                    <Loader2 className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
                   )}
                   {pickerOptions.length > 0 && (
                     <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">

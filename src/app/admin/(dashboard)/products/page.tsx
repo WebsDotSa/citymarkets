@@ -488,7 +488,7 @@ function ProductsPage() {
             </span>
             <button
               onClick={() => setSelectedIds([])}
-              className="p-1 hover:bg-gray-200/50 rounded-full text-gray-500 transition-colors mr-2"
+              className="p-1 hover:bg-gray-200/50 rounded-full text-gray-500 transition-colors me-2"
               title="إلغاء التحديد"
             >
               <X className="w-4 h-4" />
@@ -540,13 +540,13 @@ function ProductsPage() {
       <div className="bg-white rounded-2xl border border-gray-100 p-4">
         <div className="flex flex-col lg:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="بحث بالاسم أو الباركود..."
-              className="w-full h-11 pr-10 pl-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:bg-white transition-colors"
+              className="w-full h-11 pe-10 ps-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:bg-white transition-colors"
             />
           </div>
           <div className="lg:w-56">
@@ -709,7 +709,7 @@ function ProductsPage() {
                                 </div>
                               )}
                               {p.is_featured && (
-                                <span className="absolute top-0.5 right-0.5 text-[9px] bg-amber-400 text-white px-1 rounded">
+                                <span className="absolute top-0.5 end-0.5 text-[9px] bg-amber-400 text-white px-1 rounded">
                                   ⭐
                                 </span>
                               )}
@@ -784,7 +784,7 @@ function ProductsPage() {
                 const stock = Number(p.stock_qty) || 0;
                 return (
                   <div key={p.id} className="p-4 space-y-2 relative">
-                    <div className="absolute top-4 left-4 z-10">
+                    <div className="absolute top-4 start-4 z-10">
                       <input
                         type="checkbox"
                         checked={selectedIds.includes(p.id)}

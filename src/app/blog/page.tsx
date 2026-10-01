@@ -79,7 +79,7 @@ export default async function BlogPage() {
                   <div className="absolute inset-0 bg-gradient-to-br from-[#009345] to-[#007A38]" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+                <div className="absolute bottom-0 start-0 end-0 p-6 md:p-8">
                   <span className="inline-block px-3 py-1 bg-primary text-white text-sm rounded-full mb-3">
                     مقال مميز
                   </span>

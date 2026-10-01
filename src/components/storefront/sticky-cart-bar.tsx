@@ -26,7 +26,7 @@ export function StickyCartBar() {
 
   return (
     <div
-      className="fixed left-4 right-4 z-40 md:hidden flex items-center gap-2"
+      className="fixed start-4 end-4 z-40 md:hidden flex items-center gap-2"
       style={{ bottom: "calc(4.25rem + env(safe-area-inset-bottom, 0px))" }}
     >
       <div
@@ -47,7 +47,7 @@ export function StickyCartBar() {
         <div className="relative">
           <ShoppingBag className="w-5 h-5" />
           <span
-            className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+            className="absolute -top-2 -end-2 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
             style={{ backgroundColor: BRAND.primary }}
           >
             {itemCount > 9 ? "9+" : itemCount}

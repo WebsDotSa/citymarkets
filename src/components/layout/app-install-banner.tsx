@@ -71,7 +71,7 @@ export function AppInstallBanner() {
                 className="w-7 h-7"
               />
             </div>
-            <span className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-amber-400 border-2 border-primary-600 flex items-center justify-center">
+            <span className="absolute -top-1 -start-1 w-4 h-4 rounded-full bg-amber-400 border-2 border-primary-600 flex items-center justify-center">
               <Sparkles className="w-2.5 h-2.5 text-amber-900" strokeWidth={3} />
             </span>
           </div>

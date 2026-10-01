@@ -155,7 +155,7 @@ function ToggleInput({
           className="sr-only peer"
         />
         <div className="w-11 h-6 bg-gray-200 rounded-full peer-checked:bg-primary transition-colors" />
-        <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform" />
+        <div className="absolute top-0.5 start-0.5 w-5 h-5 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform" />
       </div>
       <div>
         <p className="text-sm font-medium text-secondary">{label}</p>
@@ -359,11 +359,11 @@ function BannersForm({
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-semibold">البنرات ({settings.banners.length})</p>
           <Button type="button" variant="outline" size="sm" onClick={addBanner}>
-            <Plus className="w-4 h-4 ml-1" />
+            <Plus className="w-4 h-4 ms-1" />
             إضافة بانر
           </Button>
         </div>
-        <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+        <div className="space-y-3 max-h-96 overflow-y-auto pe-1">
           {settings.banners.length === 0 && (
             <p className="text-sm text-gray-400 text-center py-6 border border-dashed border-gray-200 rounded-xl">
               لا توجد بنرات بعد. أضف واحداً للبدء.
@@ -596,11 +596,11 @@ function OffersStripForm({
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-semibold">بنرات العروض ({settings.banners.length})</p>
           <Button type="button" variant="outline" size="sm" onClick={addBanner}>
-            <Plus className="w-4 h-4 ml-1" />
+            <Plus className="w-4 h-4 ms-1" />
             إضافة بانر عرض
           </Button>
         </div>
-        <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+        <div className="space-y-3 max-h-96 overflow-y-auto pe-1">
           {settings.banners.length === 0 && (
             <p className="text-sm text-gray-400 text-center py-6 border border-dashed border-gray-200 rounded-xl">
               لا توجد بنرات عروض بعد.

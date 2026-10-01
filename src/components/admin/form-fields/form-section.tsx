@@ -38,7 +38,7 @@ export function FormRow({ label, required, children, className = "" }: FormRowPr
     <div className={`flex items-center gap-4 ${className}`}>
       <label className="w-32 text-sm font-medium text-slate-700 flex-shrink-0">
         {label}
-        {required && <span className="text-red-500 mr-1">*</span>}
+        {required && <span className="text-red-500 me-1">*</span>}
       </label>
       <div className="flex-1">{children}</div>
     </div>

@@ -184,13 +184,13 @@ export function ImageUploader({
 
       {/* URL input fallback */}
       <div className="relative">
-        <ImageIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <ImageIcon className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           placeholder="أو أدخل رابط الصورة مباشرة..."
-          className="w-full h-10 pr-10 pl-4 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          className="w-full h-10 pe-10 ps-4 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
         />
       </div>
     </div>

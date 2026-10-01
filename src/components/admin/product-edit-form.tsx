@@ -369,7 +369,7 @@ export function ProductEditForm({
                         className="w-full h-full object-cover pointer-events-none"
                       />
                       {idx === 0 && (
-                        <span className="absolute top-1 right-1 text-[9px] bg-primary text-white px-1.5 py-0.5 rounded">
+                        <span className="absolute top-1 end-1 text-[9px] bg-primary text-white px-1.5 py-0.5 rounded">
                           رئيسية
                         </span>
                       )}
@@ -378,7 +378,7 @@ export function ProductEditForm({
                           affordance beyond the grab cursor. Bottom-
                           centered to keep the top-right reserved for
                           the "رئيسية" badge on the primary image. */}
-                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-black/40 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center gap-0.5">
+                      <span className="absolute bottom-1 start-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-black/40 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center gap-0.5">
                         <GripVertical className="w-3 h-3" />
                         <span className="text-[9px]">اسحب</span>
                       </span>
@@ -391,7 +391,7 @@ export function ProductEditForm({
                           e.stopPropagation();
                           removeGalleryImage(idx);
                         }}
-                        className="absolute top-1 left-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 start-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                         aria-label="حذف الصورة"
                       >
                         <X className="w-3 h-3" />
@@ -524,10 +524,10 @@ export function ProductEditForm({
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0.00"
-                    className="w-full h-11 px-4 pl-10 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full h-11 px-4 ps-10 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                     required
                   />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
                     ر.س
                   </span>
                 </div>
@@ -544,9 +544,9 @@ export function ProductEditForm({
                     value={discountPrice}
                     onChange={(e) => setDiscountPrice(e.target.value)}
                     placeholder="اختياري"
-                    className="w-full h-11 px-4 pl-10 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full h-11 px-4 ps-10 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
                     ر.س
                   </span>
                 </div>

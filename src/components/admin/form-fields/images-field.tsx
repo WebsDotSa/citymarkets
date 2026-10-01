@@ -35,7 +35,7 @@ export function ImagesField({
             <button
               type="button"
               onClick={() => onRemoveImage(field.key, idx)}
-              className="absolute top-0.5 left-0.5 p-1 bg-red-500 text-white rounded text-xs"
+              className="absolute top-0.5 start-0.5 p-1 bg-red-500 text-white rounded text-xs"
             >
               <X className="w-3 h-3" />
             </button>
