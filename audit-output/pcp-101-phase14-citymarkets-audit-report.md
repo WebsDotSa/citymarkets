@@ -266,7 +266,7 @@ PCP-134 nor PCP-136 changes test behavior.
 ## Commits
 
 - `27a2600` — `fix(admin): PCP-134 — soft-delete users with PII anonymize instead of 500ing on FK`
-- (this branch) — `fix(db): PCP-136 — add 5 missing FK indexes (orders_refunds, refund_requests, wishlist_items)`
+- `f84e33c` — `fix(db): PCP-136 — add 5 missing FK indexes (orders_refunds, refund_requests, wishlist_items)` (this commit)
 
 ## Branch
 
