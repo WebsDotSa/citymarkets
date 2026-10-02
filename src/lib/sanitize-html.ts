@@ -103,8 +103,33 @@ const ALLOWED_ATTRS = new Set([
   'loading',
 ]);
 
-const DANGEROUS_PROTOCOLS = /^(?:javascript|vbscript|data\s*:[^,]*text\/html|file|mocha|livescript):/i;
-const SAFE_IMAGE_DATA_URI = /^data:image\/(?:png|jpe?g|gif|webp|svg\+xml);/i;
+// Protocol check is applied to a NORMALIZED URL: control bytes (NUL),
+// tabs, newlines, and other ASCII whitespace inside the scheme can be
+// used to bypass naive regexes (e.g. `java\tscript:`, `java\nscript:`,
+// `j%0Aavascript:` after browser normalization). Strip them first, then
+// test against a strict allowlist.
+//
+// Only the most common dangerous schemes are listed. Anything not on
+// the safe-image list is rejected on `data:` URIs.
+function isDangerousUrl(raw: string): boolean {
+  // Strip ASCII control chars and whitespace from the scheme area
+  // (anything before the first `:` at the start, or before the first
+  // non-scheme character).
+  const normalized = raw.replace(/[\x00-\x1f\x7f\s]+/g, '').toLowerCase();
+  // Block list of dangerous schemes.
+  if (/^(?:javascript|vbscript|file|mocha|livescript):/.test(normalized)) {
+    return true;
+  }
+  // Block `data:` URIs that aren't in the safe-image allowlist.
+  // `data:image/svg+xml` is rejected because SVGs can carry active
+  // content; we already strip <svg> from the document, but a browser
+  // loading an SVG via <img src> could still execute scripts in some
+  // contexts. Defense-in-depth: allow only raster data URIs.
+  if (/^data:/.test(normalized)) {
+    return !/^data:image\/(?:png|jpe?g|gif|webp);/.test(normalized);
+  }
+  return false;
+}
 
 function stripDangerousTags(html: string): string {
   let out = html;
@@ -140,11 +165,9 @@ function sanitizeAttributes(html: string): string {
       const name = m[1].toLowerCase();
       const raw = m[2] ?? m[3] ?? m[4] ?? '';
       if (!ALLOWED_ATTRS.has(name)) continue;
-      if ((name === 'href' || name === 'src') && DANGEROUS_PROTOCOLS.test(raw)) {
-        // Allow data: only for images on src.
-        if (name === 'src' && SAFE_IMAGE_DATA_URI.test(raw)) {
-          kept.push(`${name}="${raw.replace(/"/g, '&quot;')}"`);
-        }
+      if ((name === 'href' || name === 'src') && isDangerousUrl(raw)) {
+        // Block: any non-http(s) URL with a dangerous scheme, and
+        // any data: URI that isn't a safe raster image.
         continue;
       }
       // Force rel="noopener noreferrer" on external <a>.

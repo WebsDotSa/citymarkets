@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { query } from '@/lib/db';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 import type { BlogPost } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -132,7 +133,7 @@ export default async function BlogPostPage({
         <div className="mt-8 bg-white rounded-2xl shadow-lg p-6 md:p-8">
           <div
             className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-primary prose-strong:text-gray-900"
-            dangerouslySetInnerHTML={{ __html: post.content_ar }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content_ar) }}
           />
 
           {/* Share */}
