@@ -35,6 +35,7 @@ import { pool } from "@/lib/db";
 import { multiVendorCheckoutSchema } from "@/lib/validation";
 import { error as logError, info as logInfo, warn as logWarn } from "@/lib/logger";
 import { getStoreStatusSettings } from "@/lib/app-settings";
+import { resolvePaymentMethod } from "@/lib/payments/payment-methods";
 import { evaluateHours } from '@/lib/delivery/delivery-hours';
 import { getActiveStoreHours } from '@/lib/delivery/store-hours';
 import { checkClosedVendorsInCart } from '@/lib/delivery/vendor-closed-gate';
@@ -317,7 +318,20 @@ export async function runCheckout(
     const deliveryMode = (v.deliveryType ?? v.delivery_type ?? "delivery") as
       | "delivery"
       | "pickup";
-    const paymentMethod = (v.paymentMethod ?? v.payment_method ?? "mada") as string;
+    // PC P-135: canonicalise legacy payment-method tokens at the
+    // boundary so `cash` / `card` / `moyasar` / `stc_pay` / `tamara` /
+    // `cod` / `applepay` (typo) / `master_card` (typo) / `cash_on_delivery`
+    // are translated to their canonical `PaymentMethodId` BEFORE either
+    // INSERT writes them to `orders.payment_method` /
+    // `vendor_orders.payment_method`. Previously the route cast the raw
+    // string and stored it verbatim — every legacy-token order was
+    // counted as non-electronic in analytics, even when the underlying
+    // charge was a Moyasar card. `resolvePaymentMethod` throws on
+    // unknown tokens, surfacing the bug at the boundary instead of
+    // letting garbage reach the DB.
+    const paymentMethod = resolvePaymentMethod(
+      (v.paymentMethod ?? v.payment_method ?? "mada") as string | null | undefined,
+    );
     const addressId = (v.addressId ?? v.address_id) as string | undefined;
     const couponCode = v.coupon_code ?? null;
     const pointsRequested = v.points_redeemed ?? 0;
