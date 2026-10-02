@@ -592,6 +592,52 @@ export const REFUND_REQUEST_IP_CONFIG: RateLimitConfig = {
 };
 
 /**
+ * Custom analytics event ingestion (POST /api/v1/analytics/event).
+ * Fire-and-forget from the client; always returns 204. Without a cap,
+ * a single script can flood `analytics_events` with arbitrary
+ * `event_name='purchase'` and fake `revenue` values, distorting every
+ * downstream KPI dashboard. CSRF is enforced by middleware, so a
+ * scripted attacker would need a fresh csrf token per request — but
+ * the per-IP cap is the right floor. 60/min is well above the natural
+ * one-event-per-pageview rate (≈1–5/min for an active session) and
+ * cuts the bulk-inject vector.
+ */
+export const ANALYTICS_EVENT_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 60,
+  keyPrefix: 'analytics:event:ip',
+};
+
+/**
+ * Public delivery quote (POST /api/v1/delivery/quote). Already
+ * CSRF-exempt (stateless fee quote) but the route runs a
+ * distance-fee SQL+haversine per call. A single IP could otherwise
+ * pin a worker on a flood. 30/min is well above the cart UI's
+ * debounce rate and stops scripted distance-fee DoS.
+ */
+export const DELIVERY_QUOTE_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 30,
+  keyPrefix: 'delivery:quote:ip',
+};
+
+/**
+ * Customer push subscription registration (POST /api/v1/push/subscribe).
+ * The route does not require an authenticated user — guests can
+ * subscribe to the public track-page push feed. CSRF middleware blocks
+ * unauthenticated cross-origin POSTs, but a fresh `csrf_token` is
+ * issued on the very first GET to any page, so a scripted attacker
+ * can still pull one down and then spam subscriptions to a NULL
+ * user_id, which the broadcast worker would then try to fan-out to.
+ * 10/min/IP is well above the legitimate "subscribe once" flow.
+ */
+export const PUSH_SUBSCRIBE_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+  keyPrefix: 'push:subscribe:ip',
+};
+
+/**
  * Create rate limit response headers
  */
 export function createRateLimitHeaders(result: RateLimitResult): Record<string, string> {

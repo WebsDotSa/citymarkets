@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { warn as logWarn } from "@/lib/logger";
 import { getGuestSessionIdFromRequest } from '@/lib/identity';
+import { getClientIp } from "@/lib/request-ip";
+import { checkRateLimit, ANALYTICS_EVENT_IP_CONFIG } from "@/lib/rate-limit";
 
 /**
  * POST /api/v1/analytics/event
@@ -62,6 +64,22 @@ function coerceRevenue(value: unknown): number | null {
 }
 
 export async function POST(req: NextRequest) {
+  // SECURITY (PCP-139): per-IP cap on analytics ingestion. The
+  // route is CSRF-protected and returns 204 (fire-and-forget) but
+  // each accepted request still writes a row to `analytics_events`.
+  // A scripted attacker otherwise inflates the table with fake
+  // `event_name='purchase'` and bogus `revenue` values, distorting
+  // every downstream KPI. Input validation below (ALLOWED_EVENTS
+  // check) runs BEFORE the bucket so a malformed-payload flood
+  // cannot burn the IP's quota (PCP-133 lesson).
+  const analyticsRl = await checkRateLimit(
+    `analytics:event:${getClientIp(req)}`,
+    ANALYTICS_EVENT_IP_CONFIG,
+  );
+  if (!analyticsRl.allowed) {
+    return new NextResponse(null, { status: 204 });
+  }
+
   let body: Record<string, unknown> = {};
   try {
     body = (await req.json()) as Record<string, unknown>;
