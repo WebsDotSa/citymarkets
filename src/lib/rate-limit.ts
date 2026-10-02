@@ -508,6 +508,18 @@ export const REVIEW_SUBMIT_IP_CONFIG: RateLimitConfig = {
   keyPrefix: 'reviews:submit:ip',
 };
 
+export const REFUND_REQUEST_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 3,             // > 3 refund requests / hour / user is suspicious
+  keyPrefix: 'refund:request',
+};
+
+export const REFUND_REQUEST_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 10,            // > 10 refund requests / hour / IP is suspicious (covers guest flows)
+  keyPrefix: 'refund:request:ip',
+};
+
 /**
  * Create rate limit response headers
  */

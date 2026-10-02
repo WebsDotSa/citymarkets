@@ -38,6 +38,7 @@ import { pool } from "@/lib/db";
 import { resolveCustomerUserIdFromRequest } from "@/lib/identity";
 import { applyCsrfProtection } from "@/lib/csrf";
 import { info as logInfo } from "@/lib/logger";
+import { checkRateLimit, REFUND_REQUEST_CONFIG, REFUND_REQUEST_IP_CONFIG, createRateLimitHeaders } from "@/lib/rate-limit";
 
 import { validateUuidOrError } from "@/lib/api/uuid-guard";
 const REFUND_WINDOW_HOURS = 24;
@@ -49,6 +50,27 @@ export async function POST(
 ) {
   const csrf = await applyCsrfProtection(request);
   if (csrf) return csrf;
+
+  // ---- Rate limit ----
+  // PCP-114: refund endpoints need rate limiting. Without it, a
+  // authenticated user (or guest with the secret) could repeatedly POST
+  // refund requests on the same orderId, spamming refund_requests +
+  // order_status_logs with duplicate INSERTs (UNIQUE-per-order blocks
+  // duplicates but logs still grow) and creating log-noise that hides
+  // genuine refund-replay attacks.
+  const clientIp =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+  const ipLimit = await checkRateLimit(clientIp, REFUND_REQUEST_IP_CONFIG);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { error: "تجاوز عدد محاولات استرداد المبلغ. حاول بعد ساعة." },
+      { status: 429, headers: createRateLimitHeaders(ipLimit) },
+    );
+  }
+  // Per-user limit is applied AFTER we know the user id (or guest id)
+  // so the key reflects the principal, not the IP. See below.
 
   const { id: orderId } = await params;
   const badId = validateUuidOrError(orderId, "معرّف الطلب");
@@ -69,6 +91,15 @@ export async function POST(
 
   // ---- Auth ----
   const userId = await resolveCustomerUserIdFromRequest(request);
+
+  // Per-user rate limit (after we know the principal)
+  const userLimit = await checkRateLimit(userId ?? `guest:${clientIp}`, REFUND_REQUEST_CONFIG);
+  if (!userLimit.allowed) {
+    return NextResponse.json(
+      { error: "تجاوز عدد محاولات استرداد المبلغ. حاول بعد ساعة." },
+      { status: 429, headers: createRateLimitHeaders(userLimit) },
+    );
+  }
 
   const client = await pool.connect();
   let refundRequestId: string | null = null;
