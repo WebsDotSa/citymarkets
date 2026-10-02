@@ -20,27 +20,16 @@ import {
   resolveCategoryImageSrc,
 } from '@/lib/catalog';
 import { emojiForCategoryName } from '@/lib/catalog';
+import { mapApiItemToProduct } from './categories-helpers';
 import type { Product, CategoryRow } from "@/lib/types";
+import type { ProductsApiItem } from './categories-helpers';
 
 type Sort = "popular" | "price-asc" | "price-desc" | "newest";
 
 const PAGE_SIZE = 24;
 type ProductApiResponse = {
   success: boolean;
-  data: Array<{
-    id: string;
-    name_ar: string;
-    name_en: string | null;
-    image_url: string | null;
-    price: number;
-    discount_price: number | null;
-    stock_qty: number;
-    unit: string | null;
-    is_featured: boolean;
-    is_active: boolean;
-    category_name: string;
-    category_slug: string;
-  }>;
+  data: ProductsApiItem[];
   pagination: { total: number; page: number; totalPages: number };
 };
 
@@ -97,27 +86,7 @@ export function CategoryDetailClient({
     const json: ProductApiResponse = await res.json();
     if (!json.success) throw new Error("API returned success=false");
 
-    const mapped: Product[] = json.data.map((p) => ({
-      id: p.id,
-      category_id: "",
-      name_ar: p.name_ar,
-      name_en: p.name_en,
-      barcode: null,
-      description: null,
-      image_url: p.image_url,
-      images: [],
-      price: p.price,
-      discount_price: p.discount_price,
-      stock_qty: p.stock_qty,
-      unit: p.unit ?? "قطعة",
-      is_featured: p.is_featured,
-      is_active: p.is_active,
-      category_name: p.category_name,
-      category_slug: p.category_slug,
-      category_icon: null,
-      created_at: "",
-      updated_at: "",
-    }));
+    const mapped: Product[] = json.data.map(mapApiItemToProduct);
 
     setProducts((prev) => (append ? [...prev, ...mapped] : mapped));
     setTotal(json.pagination.total);
@@ -128,6 +97,7 @@ export function CategoryDetailClient({
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setPage(1);  // Reset page when filters/sort change
     fetchPage(1, false, sort, inStockOnly).catch((e) => {
       if (!cancelled) setError(String(e?.message ?? e));
     }).finally(() => {
@@ -171,31 +141,43 @@ export function CategoryDetailClient({
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
-      {/* Sticky breadcrumb header */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-        <nav
+      {/* Sticky breadcrumb header — positioned below HeaderV2 (which is 64px/80px) */}
+      <div className="sticky top-[64px] sm:top-20 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+        <ol
           aria-label="مسار التنقل"
           className="px-4 pt-3 pb-2 flex items-center gap-1.5 text-[11px] text-gray-500 overflow-x-auto scrollbar-hide"
         >
-          <Link href="/categories" className="hover:text-primary font-bold whitespace-nowrap">
-            الأقسام
-          </Link>
+          <li>
+            <Link href="/categories" className="hover:text-primary font-bold whitespace-nowrap">
+              الرئيسية
+            </Link>
+          </li>
           {parent ? (
             <>
-              <ChevronLeft className="w-3 h-3 text-gray-300 rotate-180" aria-hidden="true" />
-              <Link
-                href={`/categories/${encodeURIComponent(parent.slug)}`}
-                className="hover:text-primary font-bold whitespace-nowrap"
-              >
-                {parent.name_ar}
-              </Link>
+              <li aria-hidden="true" className="text-gray-300">
+                /
+              </li>
+              <li>
+                <Link
+                  href={`/categories/${encodeURIComponent(parent.slug)}`}
+                  className="hover:text-primary font-bold whitespace-nowrap"
+                >
+                  {parent.name_ar}
+                </Link>
+              </li>
             </>
           ) : null}
-          <ChevronLeft className="w-3 h-3 text-gray-300 rotate-180" aria-hidden="true" />
-          <span className="text-gray-900 font-bold whitespace-nowrap" aria-current="page">
-            {category.name_ar}
-          </span>
-        </nav>
+          {parent ? (
+            <li aria-hidden="true" className="text-gray-300">
+              /
+            </li>
+          ) : null}
+          <li>
+            <span className="text-gray-900 font-bold whitespace-nowrap" aria-current="page">
+              {category.name_ar}
+            </span>
+          </li>
+        </ol>
       </div>
 
       {/* Hero */}
@@ -264,12 +246,12 @@ export function CategoryDetailClient({
         <SiblingRail parent={parent} siblings={siblings} currentSlug={category.slug} />
       ) : null}
 
-      {/* Toolbar */}
-      <div className="sticky top-[41px] z-10 bg-gray-50/95 backdrop-blur-sm border-b border-gray-100">
+      {/* Toolbar — positioned below breadcrumb (64+40px = 104px on mobile, 80+40px = 120px on sm+) */}
+      <div className="sticky top-[104px] sm:top-[120px] z-10 bg-gray-50/95 backdrop-blur-sm border-b border-gray-100">
         <div className="px-4 py-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
           <SortPill current={sort} onChange={setSort} />
           <StockToggle value={inStockOnly} onChange={setInStockOnly} />
-          <span className="ms-auto text-[11px] text-gray-500 font-bold whitespace-nowrap" dir="ltr">
+          <span className="ms-auto text-[11px] text-gray-500 font-bold whitespace-nowrap">
             {total} منتج
           </span>
         </div>

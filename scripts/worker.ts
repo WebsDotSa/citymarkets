@@ -7,6 +7,7 @@
 import { pool } from '../src/lib/db';
 import { sendPushToUser } from '../src/lib/push';
 import { processBroadcasts } from '../src/lib/broadcasts/worker';
+import { cleanupOldPageViews } from '../src/lib/analytics/page-views-retention';
 // Deep-import (NOT the @/lib/queue barrel) because the barrel starts
 // with `import "server-only"` which throws when the file is loaded by
 // plain tsx outside of Next.js — the worker is a long-lived Node
@@ -55,6 +56,15 @@ const tasks: ScheduledTask[] = [
     interval: 60 * 60 * 1000, // 1 hour
     handler: deactivateExpiredCoupons,
   },
+  {
+    // PCP-148: page_views is append-only analytics at ~120 rows/day with
+    // 7 indexes. Without a retention policy it grows to ~28 MB in a year.
+    // Window is read from public.page_views_retention_days() (default 90
+    // days) so future tuning is a one-line migration, not a code change.
+    name: 'cleanup-old-page-views',
+    interval: 24 * 60 * 60 * 1000, // 24 hours
+    handler: cleanupOldPageViewsTask,
+  },
 ];
 
 async function cleanupExpiredOtps(): Promise<void> {
@@ -78,6 +88,18 @@ async function cleanupOldNotifications(): Promise<void> {
     console.log(`[Worker] Deleted ${result.rowCount} old notifications`);
   } catch (error) {
     console.error('[Worker] Failed to cleanup notifications:', error);
+  }
+}
+
+async function cleanupOldPageViewsTask(): Promise<void> {
+  console.log('[Worker] Cleaning up old page views...');
+  try {
+    const result = await cleanupOldPageViews();
+    console.log(
+      `[Worker] Deleted ${result.deleted} page_views older than ${result.retentionDays} days (cutoff=${result.cutoffIso})`
+    );
+  } catch (error) {
+    console.error('[Worker] Failed to cleanup page views:', error);
   }
 }
 

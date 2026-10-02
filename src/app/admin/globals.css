@@ -119,7 +119,7 @@
   }
 
   .admin-btn-primary {
-    @apply admin-btn bg-gradient-to-br from-primary to-primaryDark text-white hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0;
+    @apply admin-btn bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0;
   }
 
   .admin-btn-secondary {
@@ -396,7 +396,7 @@
   }
 
   .admin-spinner {
-    @apply w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin;
+    @apply w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin;
   }
 
   /* Page Header */
