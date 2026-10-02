@@ -27,16 +27,25 @@ export async function GET(request: NextRequest) {
       defaultLimit: 25,
     });
 
+    // PCP-145: exclude soft-deleted tombstones from the listing. PII is
+    // already anonymised (phone → 'deleted-<id8>', name/email NULL) but
+    // `id`, `created_at`, `loyalty_points`, `loyalty_tier`,
+    // `spin_count_today` are still present on the row. The DELETE
+    // handler zeros loyalty/spin fields, but historical rows soft-deleted
+    // before that fix shipped still leak here.
     const [rows, countRows] = await Promise.all([
       query(
         `SELECT id, phone, name, email, loyalty_points, loyalty_tier,
                 spin_count_today, created_at
            FROM users
+          WHERE deleted_at IS NULL
           ORDER BY created_at DESC
           LIMIT $1 OFFSET $2`,
         [limit, offset],
       ),
-      query<{ total: string }>(`SELECT COUNT(*)::int AS total FROM users`),
+      query<{ total: string }>(
+        `SELECT COUNT(*)::int AS total FROM users WHERE deleted_at IS NULL`,
+      ),
     ]);
     const total = Number(countRows.rows[0]?.total ?? 0);
     return NextResponse.json({
@@ -171,6 +180,9 @@ export async function DELETE(request: NextRequest) {
     // not collide if a new user signs up with the same number. Email is
     // NULLed out — auth_login by email will not match, matching the
     // customer-side behaviour.
+    // PCP-145: zero loyalty counters so the tombstone cannot surface
+    // (e.g. as a "top tier user" in admin reports) and cannot trigger
+    // spin-cycle bypasses against a deleted account.
     await client.query(
       `UPDATE users
          SET deleted_at = NOW(),
@@ -178,6 +190,9 @@ export async function DELETE(request: NextRequest) {
              name = NULL,
              email = NULL,
              avatar_url = NULL,
+             loyalty_points = 0,
+             loyalty_tier = 'bronze',
+             spin_count_today = 0,
              updated_at = NOW()
        WHERE id = $1`,
       [userId],
