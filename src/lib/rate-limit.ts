@@ -480,6 +480,43 @@ export const SPIN_CONFIG: RateLimitConfig = {
 };
 
 /**
+ * Vendor staff creation (POST /api/v1/vendor/staff). Each successful
+ * call performs a bcrypt hash (cost 12) and an INSERT — together ~300ms
+ * on the dev box. Per-vendor cap so a manager cannot script N staff
+ * rows in a burst; 10/min is well above a real owner's onboarding flow
+ * (typically 1–3 invites at a time).
+ */
+export const VENDOR_STAFF_CREATE_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+  keyPrefix: 'vendor:staff:create',
+};
+
+/**
+ * Vendor product creation (POST /api/v1/vendor/products). Per-vendor
+ * cap. Products are much cheaper than staff (no bcrypt) but a flood
+ * still bloats the catalog and competes with legitimate vendor traffic.
+ * 30/min is generous for legitimate bulk upload flows.
+ */
+export const VENDOR_PRODUCT_CREATE_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 30,
+  keyPrefix: 'vendor:product:create',
+};
+
+/**
+ * Customer push-ack (POST /api/v1/events/ack). Per-user cap. The
+ * endpoint is idempotent but the request body still hits PG on every
+ * call; a scripted client can otherwise create unbounded UPDATE
+ * churn on `notifications`. 60/min is well above natural usage.
+ */
+export const EVENTS_ACK_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 60,
+  keyPrefix: 'events:ack',
+};
+
+/**
  * Rate limit for the anonymous audio upload endpoint
  * (POST /api/v1/upload/audio). One voice note every ~6s on average;
  * tighter than GENERAL because each upload writes to disk and we don't
