@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { pool, query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { adminUserInputSchema as userInputSchema } from '@/lib/validation';
 import { parsePagination } from "@/lib/api/pagination";
+import { logAdminAction } from '@/lib/admin-audit';
+import { error as logError } from '@/lib/logger';
 
 function idCheck(url: URL) {
   const id = url.searchParams.get('id');
@@ -110,13 +112,113 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const gate = await requireAdminApi(request, 'manage_users');
   if (gate instanceof NextResponse) return gate;
+  const admin = gate.admin;
+
+  const url = new URL(request.url);
+  const idCheckResult = idCheck(url);
+  if (typeof idCheckResult !== 'string') return idCheckResult;
+  const userId = idCheckResult;
+
+  const client = await pool.connect();
   try {
-    const url = new URL(request.url);
-    const idCheckResult = idCheck(url);
-    if (typeof idCheckResult !== 'string') return idCheckResult;
-    await query('DELETE FROM users WHERE id = $1', [idCheckResult]);
-    return NextResponse.json({ success: true });
+    await client.query('BEGIN');
+
+    // Lock the row first so a concurrent customer soft-delete or admin
+    // re-delete cannot race us. Also confirms the user exists.
+    const existing = await client.query<{
+      deleted_at: string | null;
+      phone: string;
+      has_orders: string;
+    }>(
+      `SELECT u.deleted_at,
+              u.phone,
+              EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id) AS has_orders
+         FROM users u
+        WHERE u.id = $1
+        FOR UPDATE OF u`,
+      [userId],
+    );
+    if (existing.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return NextResponse.json(
+        { success: false, error: 'المستخدم غير موجود' },
+        { status: 404 },
+      );
+    }
+    const row = existing.rows[0];
+    if (row.deleted_at) {
+      // Idempotent: already soft-deleted, return success without re-touching
+      // PII (preserves the original deletion timestamp for audit).
+      await client.query('COMMIT');
+      return NextResponse.json({
+        success: true,
+        message: 'المستخدم محذوف مسبقاً',
+        already_deleted: true,
+      });
+    }
+
+    // PCP-134: soft-delete + PII anonymize (mirrors
+    // src/app/api/v1/profile/delete/route.ts). Hard delete is unsafe because
+    //   - orders.user_id is ON DELETE RESTRICT (intentional, for legal/tax)
+    //   - refund_requests.requested_by_user_id is ON DELETE SET NULL
+    //   - payment_events.related_order_id points at orders (which still own
+    //     the user_id FK)
+    // so any user with even one historical order throws an FK violation
+    // and the admin sees a 500 with the raw PG error in app logs.
+    //
+    // Phone is replaced with a unique placeholder so the partial unique
+    // index uniq_users_phone_active (phone WHERE deleted_at IS NULL) does
+    // not collide if a new user signs up with the same number. Email is
+    // NULLed out — auth_login by email will not match, matching the
+    // customer-side behaviour.
+    await client.query(
+      `UPDATE users
+         SET deleted_at = NOW(),
+             phone = 'deleted-' || LEFT(id::text, 8),
+             name = NULL,
+             email = NULL,
+             avatar_url = NULL,
+             updated_at = NOW()
+       WHERE id = $1`,
+      [userId],
+    );
+
+    // Detach FK-SET-NULL links so push tokens / spin wins do not continue
+    // attributing activity to the deleted account.
+    await client.query(
+      `UPDATE push_subscriptions SET user_id = NULL WHERE user_id = $1`,
+      [userId],
+    );
+    await client.query(
+      `UPDATE spin_results SET user_id = NULL WHERE user_id = $1`,
+      [userId],
+    );
+
+    await client.query('COMMIT');
+
+    // Audit log OUTSIDE the transaction so a failed log write cannot roll
+    // back the actual deletion. logAdminAction swallows its own errors
+    // (see src/lib/admin-audit.ts).
+    void logAdminAction(admin, 'user.soft_delete', {
+      entityType: 'user',
+      entityId: userId,
+      details: { had_orders: row.has_orders === 't' },
+      request,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'تم حذف المستخدم بنجاح',
+      had_orders: row.has_orders === 't',
+    });
   } catch (error) {
-    return NextResponse.json({ success: false, error: 'فشل حذف المستخدم' }, { status: 500 });
+    await client.query('ROLLBACK').catch(() => {});
+    logError('admin user soft-delete failed:', error);
+    return NextResponse.json(
+      { success: false, error: 'فشل حذف المستخدم' },
+      { status: 500 },
+    );
+  } finally {
+    client.release();
   }
 }
