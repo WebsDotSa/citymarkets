@@ -76,7 +76,7 @@ export default function WishlistPage() {
           >
             <ShoppingBag className="w-6 h-6" />
             {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -end-1 w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
                 {cartCount}
               </span>
             )}
@@ -135,7 +135,7 @@ export default function WishlistPage() {
         {items.map(({ product, addedAt }) => (
           <div key={product.id} className="relative">
             {/* Date badge */}
-            <div className="absolute top-2 left-2 z-10 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full">
+            <div className="absolute top-2 start-2 z-10 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full">
               {new Date(addedAt).toLocaleDateString("ar-SA", {
                 day: "numeric",
                 month: "short",
@@ -146,7 +146,7 @@ export default function WishlistPage() {
             <button
               type="button"
               onClick={() => removeItem(product.id)}
-              className="absolute top-2 right-2 z-10 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-white shadow-sm transition-colors"
+              className="absolute top-2 end-2 z-10 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-white shadow-sm transition-colors"
               aria-label={`حذف ${product.name_ar}`}
             >
               <Trash2 className="w-4 h-4" />
