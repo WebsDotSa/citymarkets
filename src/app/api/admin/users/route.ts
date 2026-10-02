@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { adminUserInputSchema as userInputSchema } from '@/lib/validation';
+import { parsePagination } from "@/lib/api/pagination";
 
 function idCheck(url: URL) {
   const id = url.searchParams.get('id');
@@ -17,13 +18,12 @@ export async function GET(request: NextRequest) {
     // "SELECT all users" response was 4.17 MB / 19,922 rows and froze
     // the admin Users page on useMemo. Same pattern as /api/admin/vendors
     // + /api/admin/products (per skill 'Pagination OOM' lesson).
+    // PCP-118: use the centralised parsePagination helper for consistent
+    // clamp + edge-case handling across every list endpoint.
     const url = new URL(request.url);
-    const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt(url.searchParams.get("limit") ?? "25", 10) || 25),
-    );
-    const offset = (page - 1) * limit;
+    const { limit, page, offset } = parsePagination(url.searchParams, {
+      defaultLimit: 25,
+    });
 
     const [rows, countRows] = await Promise.all([
       query(

@@ -7,6 +7,7 @@ import { CITY_MARKETS_VENDOR_ID } from "@/lib/types";
 import { deleteFromR2, r2KeyFromUrl } from "@/lib/r2";
 
 import { error as logError, warn as logWarn } from '@/lib/logger';
+import { parsePagination } from "@/lib/api/pagination";
 
 const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -81,13 +82,11 @@ export async function GET(request: NextRequest) {
     // table was 89 KB / 156 rows; admin UI freezes on useMemo + render.
     // Count is computed against the same WHERE clause so totalPages stays
     // consistent with the page slice.
+    // PCP-118: use the centralised parsePagination helper so every list
+    // route applies the same clamp (default 50, max 100) and the same
+    // edge-case handling (NaN, negative, empty, page > MAX_PAGE).
     const url = new URL(request.url);
-    const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt(url.searchParams.get("limit") ?? "50", 10) || 50),
-    );
-    const offset = (page - 1) * limit;
+    const { limit, page, offset } = parsePagination(url.searchParams);
 
     const result = await query(
       `SELECT
