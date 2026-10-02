@@ -23,6 +23,7 @@ import { ProductCard } from "@/components/storefront/product-card";
 import { OfferCard, type OfferCardData } from "@/components/storefront/offer-card";
 import { OfferCountdown } from "@/components/storefront/offer-countdown";
 import { apiFetch } from '@/lib/catalog';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 import type {
   BannersSettings,
   CategoriesSettings,
@@ -760,11 +761,11 @@ export function HtmlBlockRenderer({ settings }: { settings: HtmlBlockSettings })
     >
       <div
         className="py-4 prose prose-sm max-w-none"
-        // Admin-only block. The admin form should sanitize before save.
-        // For belt-and-braces we strip <script> tags at render time.
-        dangerouslySetInnerHTML={{
-          __html: content_html.replace(/<script[\s\S]*?<\/script>/gi, ""),
-        }}
+        // Admin-only block. Defense-in-depth: render through the central
+        // allowlist sanitizer so any direct-SQL write, future importer,
+        // or compromised admin form cannot smuggle <iframe>/<object>/
+        // <svg onload>/javascript: URIs past the render boundary.
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(content_html) }}
       />
     </section>
   );
