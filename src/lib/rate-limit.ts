@@ -638,6 +638,21 @@ export const PUSH_SUBSCRIBE_IP_CONFIG: RateLimitConfig = {
 };
 
 /**
+ * Pageview beacon (POST /api/v1/analytics/pageview). The DB has a
+ * (path, session_id, time_bucket) throttle that dedups within a 30s
+ * window, but a scripted attacker can rotate sessionIds at will and
+ * keep inserting. The endpoint is also a worker-pinning vector —
+ * each accepted request still acquires a PG connection and runs an
+ * INSERT. 120/min/IP is well above natural pageview rate (typical
+ * active session is ~1–3 pageviews/min).
+ */
+export const PAGEVIEW_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 120,
+  keyPrefix: 'analytics:pageview:ip',
+};
+
+/**
  * Create rate limit response headers
  */
 export function createRateLimitHeaders(result: RateLimitResult): Record<string, string> {

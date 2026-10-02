@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { error as logError } from "@/lib/logger";
+import { getClientIp } from "@/lib/request-ip";
+import { checkRateLimit, PAGEVIEW_IP_CONFIG } from "@/lib/rate-limit";
 
 const MAX_PATH = 500;
 const MAX_REF = 500;
@@ -53,6 +55,22 @@ function classifyDevice(
 }
 
 export async function POST(req: NextRequest) {
+  // SECURITY (PCP-142): per-IP cap on pageview beacon. The DB has a
+  // (path, session_id, time_bucket) throttle that dedups within 30s
+  // for a single session, but a scripted attacker can rotate
+  // sessionIds and keep inserting. The endpoint is also a
+  // worker-pinning vector — each accepted request still acquires
+  // a PG connection. 120/min/IP is well above natural pageview
+  // rate (≈1–3/min for an active session). Returns success on rate
+  // limit to preserve the fire-and-forget contract.
+  const pvRl = await checkRateLimit(
+    `analytics:pageview:${getClientIp(req)}`,
+    PAGEVIEW_IP_CONFIG,
+  );
+  if (!pvRl.allowed) {
+    return NextResponse.json({ success: true, rate_limited: true });
+  }
+
   let body: any;
   try {
     body = await req.json();
