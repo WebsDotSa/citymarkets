@@ -9,9 +9,7 @@ import {
   useWishlistActions,
 } from "@/contexts/wishlist-context";
 import { useCart } from "@/contexts/cart-context";
-import { ProductCard } from "@/components/storefront/product-card";
 import { formatPrice } from "@/lib/format";
-import { BRAND } from "@/lib/brand-theme";
 import { useConfirm } from "@/components/ui/toast";
 
 export default function WishlistPage() {
@@ -179,7 +177,7 @@ export default function WishlistPage() {
                   </p>
                 </Link>
 
-                <div className="flex items-baseline gap-1 mt-2">
+                <div className="mt-2">
                   <span
                     className={`text-sm font-bold ${
                       product.discount_price ? "text-red-600" : "text-secondary"
@@ -191,7 +189,6 @@ export default function WishlistPage() {
                       )
                     )}
                   </span>
-                  <span className="text-[10px] text-gray-500">ر.س</span>
                 </div>
 
                 <button

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, ArrowLeft, Percent } from "lucide-react";
+import { stripPublicPrefix, validateExternalUrl } from "@/lib/banner-link-utils";
 
 interface HeroBannerProps {
   banners: {
@@ -21,17 +22,27 @@ interface HeroBannerProps {
 
 function getBannerHref(linkType?: string, linkValue?: string | null): string {
   if (!linkValue || linkType === "none") return "/catalog";
-  if (linkType === "category") return `/categories/${encodeURIComponent(linkValue)}`;
-  if (linkType === "product") return `/products/${encodeURIComponent(linkValue)}`;
+  if (linkType === "category") {
+    // BUG FIX (PCP-143): the admin banner editor saves `link_value`
+    // either as a raw slug ("الخضروات-والفواكه") OR as the full
+    // storefront path ("/categories/الخضروات-والفواكه"). Previous
+    // behaviour happened to work because `encodeURIComponent` masked
+    // the leading slash — but the duplicate prefix then lived inside
+    // the encoded payload and hit `/categories//categories/<slug>` on
+    // the storefront, which 404s. Normalise first.
+    const slug = stripPublicPrefix(linkValue);
+    return slug ? `/categories/${encodeURIComponent(slug)}` : "/catalog";
+  }
+  if (linkType === "product") {
+    const slug = stripPublicPrefix(linkValue);
+    return slug ? `/products/${encodeURIComponent(slug)}` : "/catalog";
+  }
+  if (linkType === "vendor") {
+    const slug = stripPublicPrefix(linkValue);
+    return slug ? `/vendors/${encodeURIComponent(slug)}` : "/catalog";
+  }
   if (linkType === "external") {
-    try {
-      const url = new URL(linkValue);
-      return url.protocol === "http:" || url.protocol === "https:"
-        ? url.toString()
-        : "/catalog";
-    } catch {
-      return "/catalog";
-    }
+    return validateExternalUrl(linkValue) ?? "/catalog";
   }
   return "/catalog";
 }

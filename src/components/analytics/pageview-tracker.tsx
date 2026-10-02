@@ -7,6 +7,20 @@ const COOKIE_NAME = "session_id";
 const SESSION_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
+/**
+ * SECURITY (PCP-144, Phase 15 Frontend Audit): the session_id cookie is
+ * set client-side via `document.cookie`, so the browser only includes
+ * the `Secure` flag when the page itself was served over HTTPS — the
+ * dev server at http://127.0.0.1:3005 would otherwise refuse to write
+ * the cookie. We probe `window.location.protocol` and append `Secure`
+ * only when the page is HTTPS. Production is HTTPS (terminated at the
+ * proxy), so production deployments correctly receive the flag.
+ */
+function isHttps(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.location?.protocol === "https:";
+}
+
 function getSessionId(): string {
   if (typeof document === "undefined") return "";
   // Reuse session_id cookie set by middleware when present.
@@ -19,7 +33,8 @@ function getSessionId(): string {
   // Otherwise mint a short-lived one.
   const id = crypto.randomUUID?.() ?? `s_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
   const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_MS).toUTCString();
-  document.cookie = `${COOKIE_NAME}=${id}; path=/; max-age=${COOKIE_MAX_AGE}; samesite=lax`;
+  const secure = isHttps() ? "; Secure" : "";
+  document.cookie = `${COOKIE_NAME}=${id}; path=/; max-age=${COOKIE_MAX_AGE}; samesite=lax${secure}`;
   return id;
 }
 

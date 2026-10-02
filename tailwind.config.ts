@@ -30,6 +30,9 @@ const config: Config = {
           800: "#005F2B",
           900: "#003F1C",
         },
+        // Convenience aliases for admin components using camelCase gradients
+        "primary-dark": "#007A38",
+        "primary-light": "#E6F5EC",
         secondary: "#1A1A2E",
         accent: "#F59E0B",
         "accent-2": "#10B981",
