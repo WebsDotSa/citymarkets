@@ -1,7 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
 
 import { error as logError } from "@/lib/logger";
+
+// SECURITY (PCP-133): rate limit public employment applications.
+// Without this, the form (and the resulting `employment_applications`
+// row) can be flooded from a single IP. 5/hour/IP + 3/hour/phone
+// (the latter is the real key — captures the same applicant across
+// NAT'd networks).
+const EMPLOYMENT_APPLY_IP_CONFIG = {
+  maxRequests: 5,
+  windowMs: 60 * 60 * 1000,
+  keyPrefix: "employment:apply:ip",
+} as const;
+
+const EMPLOYMENT_APPLY_PHONE_CONFIG = {
+  maxRequests: 3,
+  windowMs: 60 * 60 * 1000,
+  keyPrefix: "employment:apply:phone",
+} as const;
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +81,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "رقم الجوال غير صالح" },
         { status: 400 }
+      );
+    }
+
+    // SECURITY (PCP-133): rate limit AFTER input validation so a bad
+    // phone doesn't pollute the per-phone bucket. IP-first (caps NAT
+    // floods); per-phone second (caps one applicant across IPs).
+    const clientIp = getClientIp(request);
+    const ipLimit = await checkRateLimit(clientIp, EMPLOYMENT_APPLY_IP_CONFIG);
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: "تجاوزت عدد الطلبات، حاول لاحقاً" },
+        { status: 429 }
+      );
+    }
+    const phoneLimit = await checkRateLimit(phone, EMPLOYMENT_APPLY_PHONE_CONFIG);
+    if (!phoneLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: "تم استلام طلبك مسبقاً" },
+        { status: 429 }
       );
     }
     if (!VALID_JOBS.has(jobId)) {

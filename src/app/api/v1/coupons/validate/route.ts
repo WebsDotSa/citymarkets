@@ -1,7 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { getClientIp } from '@/lib/request-ip';
 
 import { error as logError } from '@/lib/logger';
+
+// SECURITY (PCP-132): rate limit coupon validation. Coupon codes are
+// short alphanumeric (typically 6-12 chars), so an attacker can brute
+// force valid codes by hammering this endpoint from a single IP. The
+// per-IP cap is 30/min; per-code cap is 10/min (real users retry the
+// SAME code at most a few times during checkout).
+const COUPON_VALIDATE_IP_CONFIG = {
+  maxRequests: 30,
+  windowMs: 60 * 1000,
+  keyPrefix: 'coupon:validate:ip',
+} as const;
+
+const COUPON_VALIDATE_CODE_CONFIG = {
+  maxRequests: 10,
+  windowMs: 60 * 1000,
+  keyPrefix: 'coupon:validate:code',
+} as const;
 
 /**
  * Public coupon validation endpoint.
@@ -25,6 +44,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, valid: false, error: 'كود الخصم مطلوب' },
         { status: 400 },
+      );
+    }
+
+    // SECURITY (PCP-132): rate limit coupon validation. IP-first
+    // (catches code enumeration); per-code second (catches one
+    // attacker pummeling the same code to learn e.g. min_order).
+    const clientIp = getClientIp(request);
+    const ipLimit = await checkRateLimit(clientIp, COUPON_VALIDATE_IP_CONFIG);
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        { success: false, valid: false, error: 'تجاوزت عدد المحاولات، حاول لاحقاً' },
+        { status: 429 },
+      );
+    }
+    const codeLimit = await checkRateLimit(rawCode, COUPON_VALIDATE_CODE_CONFIG);
+    if (!codeLimit.allowed) {
+      return NextResponse.json(
+        { success: false, valid: false, error: 'تجاوزت عدد المحاولات على هذا الكود' },
+        { status: 429 },
       );
     }
 

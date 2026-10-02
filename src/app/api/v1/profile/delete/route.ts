@@ -6,6 +6,25 @@ import {
   customerSessionCookieOptions,
 } from '@/lib/identity';
 import { error as logError } from "@/lib/logger";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
+
+// SECURITY (PCP-131): rate limit account deletion. Without this, an
+// attacker who steals a session can spam the delete endpoint to
+// either (a) DoS the user into involuntary account churn or (b)
+// force PII wipe + re-signup cycles that bypass fraud signals.
+// 3/day per user is plenty (real users delete once, maybe a typo).
+const PROFILE_DELETE_CONFIG = {
+  maxRequests: 3,
+  windowMs: 24 * 60 * 60 * 1000,
+  keyPrefix: "profile:delete",
+} as const;
+
+const PROFILE_DELETE_IP_CONFIG = {
+  maxRequests: 10,
+  windowMs: 24 * 60 * 60 * 1000,
+  keyPrefix: "profile:delete:ip",
+} as const;
 
 // POST /api/v1/profile/delete
 //
@@ -32,6 +51,25 @@ export async function POST(request: NextRequest) {
   if (!("user" in authResult)) return authResult;
 
   const userId = authResult.user.id;
+
+  // SECURITY (PCP-131): rate limit account deletion by IP first then
+  // user. The user bucket is a hard ceiling (3/day); the IP bucket
+  // catches one attacker rotating among many stolen sessions.
+  const clientIp = getClientIp(request);
+  const ipLimit = await checkRateLimit(clientIp, PROFILE_DELETE_IP_CONFIG);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد المحاولات، حاول لاحقاً" },
+      { status: 429 }
+    );
+  }
+  const userLimit = await checkRateLimit(`user:${userId}`, PROFILE_DELETE_CONFIG);
+  if (!userLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد المحاولات، حاول لاحقاً" },
+      { status: 429 }
+    );
+  }
 
   let body: { confirmation?: string; password?: string } = {};
   try {

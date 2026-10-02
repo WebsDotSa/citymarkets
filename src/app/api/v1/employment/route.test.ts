@@ -34,6 +34,18 @@ vi.mock("@/lib/logger", () => ({
   info: vi.fn(),
 }));
 
+// SECURITY (PCP-133): mock the rate limiter so the test doesn't
+// share buckets across runs. checkRateLimit always allows.
+vi.mock("@/lib/rate-limit", () => ({
+  checkRateLimit: vi.fn(async () => ({ allowed: true, remaining: 100, resetMs: 0 })),
+  EMPLOYMENT_APPLY_IP_CONFIG: {},
+  EMPLOYMENT_APPLY_PHONE_CONFIG: {},
+  createRateLimitHeaders: vi.fn(),
+}));
+vi.mock("@/lib/request-ip", () => ({
+  getClientIp: vi.fn(() => "127.0.0.1"),
+}));
+
 import { query } from "@/lib/db";
 import { POST } from "./route";
 

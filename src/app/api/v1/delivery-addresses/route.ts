@@ -10,7 +10,27 @@ import {
   updateAddress as updateAddressService,
 } from '@/lib/identity/address-service';
 
-import { error as logError } from '@/lib/logger';
+import { error as logError } from "@/lib/logger";
+
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
+
+// SECURITY (PCP-130): rate limit on address creation/deletion. An
+// authenticated user could otherwise spam the delivery_addresses
+// table (1 INSERT per request) and balloon the row count. 30/hour
+// per user, 60/hour per IP — caps legitimate-use while still
+// allowing address book cleanups.
+const ADDRESS_WRITE_CONFIG = {
+  maxRequests: 30,
+  windowMs: 60 * 60 * 1000,
+  keyPrefix: "address:write",
+} as const;
+
+const ADDRESS_WRITE_IP_CONFIG = {
+  maxRequests: 60,
+  windowMs: 60 * 60 * 1000,
+  keyPrefix: "address:write:ip",
+} as const;
 
 // SECURITY: place_images validation now mirrors the strict C3 RBAC
 // allowlist from `@/lib/place-image`. Previous prefix-only check
@@ -95,6 +115,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },
       { status: 400 }
+    );
+  }
+
+  // SECURITY (PCP-130): rate limit writes. IP-first (catches unauth
+  // guest floods) then per-owner. The owner key is namespaced by kind
+  // so user A and guest G never share a bucket.
+  const clientIp = getClientIp(request);
+  const ipLimit = await checkRateLimit(clientIp, ADDRESS_WRITE_IP_CONFIG);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد العمليات، حاول لاحقاً" },
+      { status: 429 }
+    );
+  }
+  const ownerKey =
+    owner.kind === "user" ? `user:${owner.userId}` : `guest:${owner.guestKey}`;
+  const userLimit = await checkRateLimit(ownerKey, ADDRESS_WRITE_CONFIG);
+  if (!userLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد العمليات، حاول لاحقاً" },
+      { status: 429 }
     );
   }
 
