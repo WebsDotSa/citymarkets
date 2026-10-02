@@ -4,6 +4,8 @@ import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 
 import { error as logError } from '@/lib/logger';
 import { parsePagination } from "@/lib/api/pagination";
+import { checkRateLimit, REVIEW_SUBMIT_IP_CONFIG } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -102,6 +104,19 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // SECURITY (PCP-125): rate limit review submission by IP. The
+  // REVIEW_SUBMIT_IP_CONFIG (5/min) was added in Phase 2 but the
+  // route was never wired to call it. Without this, an attacker can
+  // flood product_reviews with fake reviews from a single IP.
+  const clientIp = getClientIp(request);
+  const ipLimit = await checkRateLimit(clientIp, REVIEW_SUBMIT_IP_CONFIG);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { error: 'تجاوزت عدد التقييمات المسموح بها. حاول بعد دقيقة.' },
+      { status: 429 }
+    );
+  }
+
   const userId = await resolveCustomerUserIdFromRequest(request);
   if (!userId) {
     return NextResponse.json(
