@@ -188,7 +188,7 @@
 # 1. Authenticate
 curl -X POST http://179.198.212.32:3100/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"[REDACTED]","password":"[REDACTED]"}'
+  -d '{"email":"__BOOTSTRAP_EMAIL__","password":"__BOOTSTRAP_PASSWORD__"}'
 
 # 2. Get session cookie, then dispatch each agent:
 curl -X POST http://179.198.212.32:3100/api/tasks \
