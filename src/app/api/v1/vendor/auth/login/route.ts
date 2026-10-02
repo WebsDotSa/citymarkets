@@ -4,6 +4,8 @@ import { error as logError } from '@/lib/logger';
 import { verifyPassword } from "@/lib/password";
 import { vendorStaffLoginSchema } from "@/lib/validation/admin";
 import { normalizeSaudiToE164 } from "@/lib/phone-format";
+import { checkRateLimit, VENDOR_LOGIN_CONFIG, VENDOR_LOGIN_IP_CONFIG } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
 
 import {
   signVendorSessionToken,
@@ -48,6 +50,30 @@ export async function POST(request: NextRequest) {
       );
     }
     const { identifier, password, vendorSlug } = parsed.data;
+
+    // SECURITY (PCP-124): brute-force protection. Without this, an
+    // attacker can attempt vendor-staff credentials at full network
+    // speed. 5/identifier/15min and 10/IP/15min mirrors the admin login
+    // rate limit (ADMIN_LOGIN_CONFIG) because the credential check
+    // shape and blast radius are identical.
+    const clientIp = getClientIp(request);
+    const ipRateLimit = await checkRateLimit(clientIp, VENDOR_LOGIN_IP_CONFIG);
+    if (!ipRateLimit.allowed) {
+      return NextResponse.json(
+        { error: "تجاوزت عدد المحاولات. انتظر 15 دقيقة ثم حاول مجدداً." },
+        { status: 429 }
+      );
+    }
+    const idRateLimit = await checkRateLimit(
+      `${vendorSlug}:${identifier.toLowerCase()}`,
+      VENDOR_LOGIN_CONFIG
+    );
+    if (!idRateLimit.allowed) {
+      return NextResponse.json(
+        { error: "تجاوزت عدد المحاولات. انتظر 15 دقيقة ثم حاول مجدداً." },
+        { status: 429 }
+      );
+    }
 
     // Find vendor by slug
     const vendorResult = await query(

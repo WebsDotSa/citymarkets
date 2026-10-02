@@ -425,6 +425,26 @@ export const ADMIN_LOGIN_IP_CONFIG: RateLimitConfig = {
 };
 
 /**
+ * Rate limit config for vendor staff login (PCP-124).
+ *
+ * Brute-force protection: 5/identifier/15min and 10/IP/15min. Same shape
+ * as admin login because the credential check is identical (bcrypt
+ * compare + Postgres lookup), and the impact of a successful brute force
+ * is the same: full vendor-side access.
+ */
+export const VENDOR_LOGIN_CONFIG: RateLimitConfig = {
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  maxRequests: 5,
+  keyPrefix: 'vendor:login',
+};
+
+export const VENDOR_LOGIN_IP_CONFIG: RateLimitConfig = {
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  maxRequests: 10,
+  keyPrefix: 'vendor:login:ip',
+};
+
+/**
  * Broadcast send trigger — caps how many campaigns a single admin can
  * fire (or schedule) in a 10-minute window. A misconfigured template
  * or wrong audience could otherwise burn SMS / email quota in seconds.

@@ -17,6 +17,21 @@ function isAllowedFolderName(value: string): value is AllowedFolder {
   return (ALLOWED_FOLDERS as readonly string[]).includes(value);
 }
 
+/**
+ * Build the absolute local-fallback image URL from the request.
+ *
+ * SECURITY (PCP-123): NEVER trust `x-forwarded-origin` / `origin` headers
+ * from the client — they can be spoofed to make the resulting `image_url`
+ * point at an attacker-controlled server. Only the URL the server itself
+ * derived from the request line is trustworthy.
+ *
+ * Strip trailing slash for consistent URL construction.
+ */
+export function buildLocalImageUrl(request: Request, localImageUrl: string): string {
+  const origin = new URL(request.url).origin;
+  return `${origin.replace(/\/$/, "")}${localImageUrl}`;
+}
+
 // Allowed image types with their magic bytes (file signatures)
 const ALLOWED_TYPES = {
   'image/jpeg': {
@@ -198,11 +213,12 @@ export async function POST(request: NextRequest) {
     // the image_url field always passes the product Zod schema (which
     // requires `z.string().url()`). Without this, an R2 outage silently
     // turns into "Invalid url" on every product/category/banner save.
-    const origin =
-      request.headers.get("x-forwarded-origin") ??
-      request.headers.get("origin") ??
-      new URL(request.url).origin;
-    const localImageUrlAbsolute = `${origin.replace(/\/$/, "")}${localImageUrl}`;
+    // SECURITY (PCP-123): only trust the request's own URL — never
+    // x-forwarded-origin / origin headers from the client, which can
+    // be spoofed to make the localImageUrlAbsolute point at an attacker
+    // server. The image_url stored in the DB must resolve to OUR host
+    // or it leaks upload paths to an attacker-controlled origin.
+    const localImageUrlAbsolute = buildLocalImageUrl(request, localImageUrl);
 
     // R2 mirror. Only folders that the public website actually loads
     // via the `<Image>` component get mirrored; vendor placeholders and

@@ -105,6 +105,28 @@ vi.mock("@/lib/logger", () => ({
   info: vi.fn(),
 }));
 
+// Default rate-limit mock — every test gets unlimited unless it overrides
+// (PCP-124 test mutates the implementation per-test). We re-export all
+// the named config objects so the route's imports keep working.
+vi.mock("@/lib/rate-limit", () => {
+  const unlimited = {
+    allowed: true,
+    remaining: 999,
+    resetAt: new Date(Date.now() + 60_000),
+  };
+  return {
+    checkRateLimit: vi.fn(async () => unlimited),
+    checkRateLimitSync: vi.fn(() => unlimited),
+    createRateLimitHeaders: vi.fn(),
+    VENDOR_LOGIN_CONFIG: { windowMs: 1, maxRequests: 5, keyPrefix: "vendor:login" },
+    VENDOR_LOGIN_IP_CONFIG: { windowMs: 1, maxRequests: 10, keyPrefix: "vendor:login:ip" },
+  };
+});
+
+vi.mock("@/lib/request-ip", () => ({
+  getClientIp: vi.fn(() => "127.0.0.1"),
+}));
+
 import { query } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 import { signVendorSessionToken } from "@/lib/identity";
@@ -304,5 +326,59 @@ describe("POST /api/v1/vendor/auth/login — failure paths", () => {
       }) as never,
     );
     expect(res.status).toBe(400);
+  });
+
+  // PCP-124: brute-force protection. Without the rate limit, an attacker
+  // can iterate every vendor_staff password at full network speed.
+  it("returns 429 after 5 failed attempts with same identifier (PCP-124)", async () => {
+    // Re-mock checkRateLimit to enforce the 5/identifier cap, since the
+    // default per-test mock is unlimited. Note: vi.clearAllMocks() runs
+    // in the per-describe beforeEach, so we re-apply the override here.
+    const rateLimit = await import("@/lib/rate-limit");
+    let calls = 0;
+    vi.mocked(rateLimit.checkRateLimit).mockImplementation(((...args: unknown[]) => {
+      const cfg = args[1] as { keyPrefix?: string };
+      if (cfg.keyPrefix === "vendor:login") {
+        calls += 1;
+        return Promise.resolve(
+          calls > 5
+            ? { allowed: false, remaining: 0, resetAt: new Date(Date.now() + 60_000) }
+            : { allowed: true, remaining: 5 - calls, resetAt: new Date(Date.now() + 60_000) }
+        );
+      }
+      return Promise.resolve({ allowed: true, remaining: 999, resetAt: new Date(Date.now() + 60_000) });
+    }) as never);
+
+    vi.mocked(query).mockImplementation(async (sql: string) => {
+      const norm = sql.replace(/\s+/g, " ").trim().toLowerCase();
+      if (norm.startsWith("select") && norm.includes("from vendors")) {
+        return { rows: [VENDOR_ACTIVE] } as never;
+      }
+      if (norm.startsWith("select") && norm.includes("from vendor_staff")) {
+        return { rows: [] } as never; // unknown staff → 401 path
+      }
+      return { rows: [] } as never;
+    });
+
+    for (let i = 0; i < 5; i += 1) {
+      const res = await POST(
+        postJson({
+          identifier: "staff@example.com",
+          password: "wrong",
+          vendorSlug: "burger-palace",
+        }) as never,
+      );
+      expect(res.status).toBe(401);
+    }
+
+    // 6th attempt → rate-limited
+    const res6 = await POST(
+      postJson({
+        identifier: "staff@example.com",
+        password: "wrong",
+        vendorSlug: "burger-palace",
+      }) as never,
+    );
+    expect(res6.status).toBe(429);
   });
 });
