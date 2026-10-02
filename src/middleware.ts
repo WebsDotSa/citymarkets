@@ -166,7 +166,6 @@ const CSRF_EXEMPT_PATHS: readonly string[] = [
   // HMAC-authenticated /api/v1/payments/webhook. /api/v1/vendors/[slug]/payment
   // (the legacy single-vendor payment initiate) was also removed; the
   // multi-vendor checkout pipeline is the only canonical payment path.
-  "/api/v1/auth/me", // GET only
   "/api/v1/track-order", // guest lookup
   "/api/v1/delivery/quote", // stateless delivery-fee quote (guest-friendly)
   "/api/v1/coupons/validate", // stateless coupon validation (read-only)

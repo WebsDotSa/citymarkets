@@ -727,6 +727,27 @@ async function maybeInitiatePayment(args: {
   const customerName = guestInfo?.name || "عميل";
   const customerMobile = guestInfo?.phone || "0500000000";
 
+  // SECURITY (PCP-120): lock the parent order row before any UPDATE.
+  // Two concurrent /initiate calls on the same parentOrderId would
+  // otherwise race on `payment_reference` and `payment_status` writes.
+  // The FOR UPDATE serialises them — the second caller blocks until
+  // the first commits, then sees the updated row and can short-circuit.
+  const orderRow = await pool.query<{ payment_status: string; payment_reference: string | null }>(
+    `SELECT payment_status, payment_reference FROM orders WHERE id = $1 FOR UPDATE`,
+    [parentOrderId],
+  );
+  if (orderRow.rows.length === 0) {
+    logError(`initiatePayment: parent order ${parentOrderId} not found`);
+    return { kind: "failure", error: "الطلب غير موجود" };
+  }
+  const currentStatus = orderRow.rows[0].payment_status;
+  if (currentStatus && currentStatus !== "unpaid") {
+    // Another initiate (or a webhook) already moved the order out of
+    // 'unpaid' state. Return success-without-redirect so the client
+    // doesn't bounce a duplicate payment through the gateway.
+    return { kind: "ok", url: null, inline: false };
+  }
+
   // Cash / wallet / pickup — no gateway call.
   if (paymentMethod === "cash" || paymentMethod === "wallet") {
     return { kind: "ok", url: null, inline: false };
