@@ -4,6 +4,7 @@ import { requireVendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { parsePagination } from "@/lib/api/pagination";
 import { error as logError } from '@/lib/logger';
+import { checkRateLimit, createRateLimitHeaders, VENDOR_PRODUCT_CREATE_CONFIG } from '@/lib/rate-limit';
 
 export async function GET(request: Request) {
   try {
@@ -115,6 +116,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "اسم المنتج والسعر مطلوبان" },
         { status: 400 }
+      );
+    }
+
+    // SECURITY (PCP-137): per-vendor rate limit on product creation.
+    // The body schema check above is fast and rejects bad input without
+    // touching this bucket (PCP-133 lesson). 30/min covers legitimate
+    // bulk upload flows and stops scripted catalog flooding.
+    const productRl = await checkRateLimit(
+      `vendor:product:create:${session.vendorId}`,
+      VENDOR_PRODUCT_CREATE_CONFIG,
+    );
+    if (!productRl.allowed) {
+      return NextResponse.json(
+        { error: "تم تجاوز عدد المحاولات، حاول لاحقاً" },
+        { status: 429, headers: createRateLimitHeaders(productRl) },
       );
     }
 

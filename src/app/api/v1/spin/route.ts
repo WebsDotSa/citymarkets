@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { query } from '@/lib/db';
+import { pool, query } from '@/lib/db';
 import { getCustomerUserIdFromRequest } from '@/lib/identity';
+import { checkRateLimit, createRateLimitHeaders, SPIN_CONFIG } from '@/lib/rate-limit';
 
 import { error as logError } from '@/lib/logger';
 
@@ -120,83 +121,125 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user can spin
-    const userResult = await query(
-      `SELECT spin_count_today, last_spin_at FROM users WHERE id = $1`,
-      [userId]
-    );
-
-    if (userResult.rows.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    const user = userResult.rows[0];
-    const today = new Date().toDateString();
-    const lastSpinDate = user.last_spin_at
-      ? new Date(user.last_spin_at).toDateString()
-      : null;
-
-    let canSpin = false;
-    if (lastSpinDate !== today) {
-      canSpin = true;
-    } else if (user.spin_count_today < 3) {
-      canSpin = true;
-    }
-
-    if (!canSpin) {
+    // Per-user rate limit (PCP-135). DB-side FOR UPDATE below is the
+    // authoritative 3/day cap; this just keeps the row-lock churn sane
+    // when someone scripts the endpoint.
+    const rl = await checkRateLimit(`spin:${userId}`, SPIN_CONFIG);
+    if (!rl.allowed) {
       return NextResponse.json(
-        { success: false, error: 'No spins remaining today' },
-        { status: 400 }
+        { success: false, error: 'تم تجاوز عدد المحاولات، حاول لاحقاً' },
+        { status: 429, headers: createRateLimitHeaders(rl) }
       );
     }
 
-    // Determine prize
-    const prizeValue = getRandomPrize();
-    const isWinner = prizeValue >= 50; // Only 50+ points count as "wins"
+    // SECURITY (PCP-135): The previous implementation read
+    // `spin_count_today`, decided `canSpin`, then issued a separate
+    // UPDATE/INSERT. Two concurrent requests could both pass the
+    // `canSpin` check and each get a 200 + 100/150/200 points, draining
+    // the loyalty wallet past the documented 3/day cap. The fix wraps
+    // the read + write in a single transaction and locks the user row
+    // (SELECT ... FOR UPDATE) so the second request blocks until the
+    // first commits, then re-reads the bumped count and is rejected.
+    const client = await pool.connect();
+    let spinId: string;
+    let prizeType: string;
+    let prizeValue: number;
+    let isWinner: boolean;
+    try {
+      await client.query('BEGIN');
 
-    // Save spin result
-    const result = await query(
-      `INSERT INTO spin_results (user_id, prize_type, prize_value, is_winner)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, prize_type, prize_value, is_winner`,
-      [userId, 'points', prizeValue, isWinner]
-    );
+      const userResult = await client.query(
+        `SELECT spin_count_today, last_spin_at FROM users WHERE id = $1 FOR UPDATE`,
+        [userId]
+      );
 
-    // Update user spin count and add points if won
-    if (lastSpinDate !== today) {
-      // New day, reset count
-      await query(
-        `UPDATE users 
-         SET spin_count_today = 1, 
-             last_spin_at = NOW(),
-             loyalty_points = loyalty_points + $1
-         WHERE id = $2`,
-        [prizeValue, userId]
+      if (userResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      const user = userResult.rows[0];
+      const today = new Date().toDateString();
+      const lastSpinDate = user.last_spin_at
+        ? new Date(user.last_spin_at).toDateString()
+        : null;
+
+      // Same-day check vs. reset-on-new-day, evaluated *after* the row
+      // is locked so we cannot race another concurrent spin.
+      let canSpin = false;
+      let isNewDay = false;
+      if (lastSpinDate !== today) {
+        canSpin = true;
+        isNewDay = true;
+      } else if (user.spin_count_today < 3) {
+        canSpin = true;
+      }
+
+      if (!canSpin) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { success: false, error: 'No spins remaining today' },
+          { status: 400 }
+        );
+      }
+
+      // Determine prize
+      prizeValue = getRandomPrize();
+      isWinner = prizeValue >= 50; // Only 50+ points count as "wins"
+      prizeType = 'points';
+
+      // Save spin result
+      const result = await client.query(
+        `INSERT INTO spin_results (user_id, prize_type, prize_value, is_winner)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, prize_type, prize_value, is_winner`,
+        [userId, prizeType, prizeValue, isWinner]
       );
-    } else {
-      await query(
-        `UPDATE users 
-         SET spin_count_today = spin_count_today + 1,
-             loyalty_points = loyalty_points + $1
-         WHERE id = $2`,
-        [prizeValue, userId]
+      spinId = result.rows[0].id;
+
+      // Update user spin count and add points. The WHERE clause keeps
+      // the row locked until COMMIT and is the authoritative cap.
+      if (isNewDay) {
+        await client.query(
+          `UPDATE users
+           SET spin_count_today = 1,
+               last_spin_at = NOW(),
+               loyalty_points = loyalty_points + $1
+           WHERE id = $2`,
+          [prizeValue, userId]
+        );
+      } else {
+        await client.query(
+          `UPDATE users
+           SET spin_count_today = spin_count_today + 1,
+               loyalty_points = loyalty_points + $1
+           WHERE id = $2`,
+          [prizeValue, userId]
+        );
+      }
+
+      // Log loyalty transaction
+      await client.query(
+        `INSERT INTO loyalty_transactions (user_id, points, type, reason)
+         VALUES ($1, $2, 'earn', 'عجلة الحظ')`,
+        [userId, prizeValue]
       );
+
+      await client.query('COMMIT');
+    } catch (e) {
+      try { await client.query('ROLLBACK'); } catch { /* noop */ }
+      throw e;
+    } finally {
+      client.release();
     }
-
-    // Log loyalty transaction
-    await query(
-      `INSERT INTO loyalty_transactions (user_id, points, type, reason)
-       VALUES ($1, $2, 'earn', 'عجلة الحظ')`,
-      [userId, prizeValue]
-    );
 
     return NextResponse.json({
       success: true,
       data: {
-        id: result.rows[0].id,
-        prize_type: result.rows[0].prize_type,
-        prize_value: result.rows[0].prize_value,
-        is_winner: result.rows[0].is_winner,
+        id: spinId!,
+        prize_type: prizeType!,
+        prize_value: prizeValue!,
+        is_winner: isWinner!,
       },
     });
   } catch (error) {

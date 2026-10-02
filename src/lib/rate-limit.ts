@@ -466,6 +466,57 @@ export const BROADCAST_SEND_IP_CONFIG: RateLimitConfig = {
 };
 
 /**
+ * Loyalty-wheel spin (POST /api/v1/spin). Caps how many times a single
+ * user can hit the endpoint per minute. The DB-side FOR UPDATE on
+ * `users` (added with PCP-135) is the authoritative 3-per-day gate; this
+ * rate limit just throttles abuse / burst attempts that would otherwise
+ * pile up contended row locks. 20/min is well above legitimate use
+ * (the server permits at most 3/day anyway).
+ */
+export const SPIN_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 20,
+  keyPrefix: 'spin',
+};
+
+/**
+ * Vendor staff creation (POST /api/v1/vendor/staff). Each successful
+ * call performs a bcrypt hash (cost 12) and an INSERT — together ~300ms
+ * on the dev box. Per-vendor cap so a manager cannot script N staff
+ * rows in a burst; 10/min is well above a real owner's onboarding flow
+ * (typically 1–3 invites at a time).
+ */
+export const VENDOR_STAFF_CREATE_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+  keyPrefix: 'vendor:staff:create',
+};
+
+/**
+ * Vendor product creation (POST /api/v1/vendor/products). Per-vendor
+ * cap. Products are much cheaper than staff (no bcrypt) but a flood
+ * still bloats the catalog and competes with legitimate vendor traffic.
+ * 30/min is generous for legitimate bulk upload flows.
+ */
+export const VENDOR_PRODUCT_CREATE_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 30,
+  keyPrefix: 'vendor:product:create',
+};
+
+/**
+ * Customer push-ack (POST /api/v1/events/ack). Per-user cap. The
+ * endpoint is idempotent but the request body still hits PG on every
+ * call; a scripted client can otherwise create unbounded UPDATE
+ * churn on `notifications`. 60/min is well above natural usage.
+ */
+export const EVENTS_ACK_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 60,
+  keyPrefix: 'events:ack',
+};
+
+/**
  * Rate limit for the anonymous audio upload endpoint
  * (POST /api/v1/upload/audio). One voice note every ~6s on average;
  * tighter than GENERAL because each upload writes to disk and we don't
@@ -538,6 +589,67 @@ export const REFUND_REQUEST_IP_CONFIG: RateLimitConfig = {
   windowMs: 60 * 60 * 1000,  // 1 hour
   maxRequests: 10,            // > 10 refund requests / hour / IP is suspicious (covers guest flows)
   keyPrefix: 'refund:request:ip',
+};
+
+/**
+ * Custom analytics event ingestion (POST /api/v1/analytics/event).
+ * Fire-and-forget from the client; always returns 204. Without a cap,
+ * a single script can flood `analytics_events` with arbitrary
+ * `event_name='purchase'` and fake `revenue` values, distorting every
+ * downstream KPI dashboard. CSRF is enforced by middleware, so a
+ * scripted attacker would need a fresh csrf token per request — but
+ * the per-IP cap is the right floor. 60/min is well above the natural
+ * one-event-per-pageview rate (≈1–5/min for an active session) and
+ * cuts the bulk-inject vector.
+ */
+export const ANALYTICS_EVENT_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 60,
+  keyPrefix: 'analytics:event:ip',
+};
+
+/**
+ * Public delivery quote (POST /api/v1/delivery/quote). Already
+ * CSRF-exempt (stateless fee quote) but the route runs a
+ * distance-fee SQL+haversine per call. A single IP could otherwise
+ * pin a worker on a flood. 30/min is well above the cart UI's
+ * debounce rate and stops scripted distance-fee DoS.
+ */
+export const DELIVERY_QUOTE_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 30,
+  keyPrefix: 'delivery:quote:ip',
+};
+
+/**
+ * Customer push subscription registration (POST /api/v1/push/subscribe).
+ * The route does not require an authenticated user — guests can
+ * subscribe to the public track-page push feed. CSRF middleware blocks
+ * unauthenticated cross-origin POSTs, but a fresh `csrf_token` is
+ * issued on the very first GET to any page, so a scripted attacker
+ * can still pull one down and then spam subscriptions to a NULL
+ * user_id, which the broadcast worker would then try to fan-out to.
+ * 10/min/IP is well above the legitimate "subscribe once" flow.
+ */
+export const PUSH_SUBSCRIBE_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+  keyPrefix: 'push:subscribe:ip',
+};
+
+/**
+ * Pageview beacon (POST /api/v1/analytics/pageview). The DB has a
+ * (path, session_id, time_bucket) throttle that dedups within a 30s
+ * window, but a scripted attacker can rotate sessionIds at will and
+ * keep inserting. The endpoint is also a worker-pinning vector —
+ * each accepted request still acquires a PG connection and runs an
+ * INSERT. 120/min/IP is well above natural pageview rate (typical
+ * active session is ~1–3 pageviews/min).
+ */
+export const PAGEVIEW_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 120,
+  keyPrefix: 'analytics:pageview:ip',
 };
 
 /**
