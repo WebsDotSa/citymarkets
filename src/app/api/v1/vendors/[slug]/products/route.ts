@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { parsePagination } from "@/lib/api/pagination";
 
 import { error as logError } from '@/lib/logger';
 
@@ -14,8 +15,7 @@ export async function GET(
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
     const search = searchParams.get("search");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 20 });
 
     // Get vendor
     const vendorResult = await query(
@@ -28,8 +28,6 @@ export async function GET(
     }
 
     const vendor = vendorResult.rows[0];
-    const offset = (page - 1) * limit;
-
     // Build query
     let whereClause = "WHERE vendor_id = $1 AND is_active = TRUE";
     const values: any[] = [vendor.id];

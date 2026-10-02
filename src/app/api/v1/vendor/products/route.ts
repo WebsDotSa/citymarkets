@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { requireVendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
+import { parsePagination } from "@/lib/api/pagination";
 import { error as logError } from '@/lib/logger';
 
 export async function GET(request: Request) {
@@ -12,14 +13,10 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 20 });
     const search = searchParams.get("search");
     const isActive = searchParams.get("isActive");
     const lowStock = searchParams.get("lowStock");
-
-    const offset = (page - 1) * limit;
-
     let whereClause = "WHERE vendor_id = $1";
     const values: (string | number | boolean)[] = [session.vendorId];
     let paramIndex = 2;

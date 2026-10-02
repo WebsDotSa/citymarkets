@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { error as logError } from '@/lib/logger';
+import { parsePagination } from "@/lib/api/pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
   // Driver-facing status values: pending (awaiting pickup), on_the_way
   // (driver has the order), delivered, cancelled (failed/abandoned).
   const status = searchParams.get("status");
-  const limit = parseInt(searchParams.get("limit") || "50");
+  const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 50 });
 
   try {
     // Build query based on status filter

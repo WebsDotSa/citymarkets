@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { error as logError } from "@/lib/logger";
+import { parsePagination } from "@/lib/api/pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -41,8 +42,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
-  const limit = Math.min(parseInt(searchParams.get("limit") || "30", 10) || 30, 100);
-  const offset = Math.max(parseInt(searchParams.get("offset") || "0", 10) || 0, 0);
+  const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 30 });
 
   try {
     // delivered_at is virtual: orders.delivered_at doesn't exist, so we pull

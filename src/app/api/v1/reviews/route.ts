@@ -3,12 +3,13 @@ import { pool } from '@/lib/db';
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 
 import { error as logError } from '@/lib/logger';
+import { parsePagination } from "@/lib/api/pagination";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const productId = searchParams.get('productId');
   const mine = searchParams.get('mine') === '1';
-  const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
+  const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 20 });
 
   // P2-12 (PCP-101 audit): reject non-UUID productId before opening a DB
   // connection — Postgres would otherwise throw "invalid input syntax for

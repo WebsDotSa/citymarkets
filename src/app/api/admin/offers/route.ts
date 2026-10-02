@@ -13,6 +13,7 @@ import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { offerInputSchema } from "@/lib/validation";
 import { cache } from "@/lib/cache";
 import { error as logError } from "@/lib/logger";
+import { parsePagination } from "@/lib/api/pagination";
 
 function toNumberOrZero(v: unknown): number {
   const n = Number(v);
@@ -31,9 +32,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50")));
-    const offset = (page - 1) * limit;
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 50 });
     const search = searchParams.get("search")?.trim();
     const isActive = searchParams.get("is_active");
     const isFeatured = searchParams.get("is_featured");

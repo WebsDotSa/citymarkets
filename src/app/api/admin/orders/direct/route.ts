@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { error as logError } from '@/lib/logger';
+import { parsePagination } from "@/lib/api/pagination";
 
 /**
  * GET /api/admin/orders/direct
@@ -15,8 +16,7 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const status = url.searchParams.get('status') || '';
   const search = url.searchParams.get('search') || '';
-  const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 200);
-  const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10), 0);
+  const { limit, page, offset } = parsePagination(url.searchParams, { defaultLimit: 50, maxLimit: 200 });
 
   const client = await pool.connect();
   try {

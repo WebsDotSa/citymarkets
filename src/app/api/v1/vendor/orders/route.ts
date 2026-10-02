@@ -3,6 +3,7 @@ import { query } from "@/lib/db";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { error as logError } from '@/lib/logger';
 import { ALL_VENDOR_ORDER_STATES } from "@/lib/orders/state-machine";
+import { parsePagination } from "@/lib/api/pagination";
 
 export async function GET(request: Request) {
   try {
@@ -12,15 +13,11 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 20 });
     const status = searchParams.get("status");
     const search = searchParams.get("search");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
-
-    const offset = (page - 1) * limit;
-
     let whereClause = "WHERE vo.vendor_id = $1";
     const values: any[] = [session.vendorId];
     let paramIndex = 2;

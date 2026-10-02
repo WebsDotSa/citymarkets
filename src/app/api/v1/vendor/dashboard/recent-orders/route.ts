@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
+import { parsePagination } from "@/lib/api/pagination";
 import { error as logError } from '@/lib/logger';
 
 export async function GET(request: Request) {
@@ -11,7 +12,7 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit") || "10");
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 10 });
     const status = searchParams.get("status");
 
     let whereClause = "WHERE vo.vendor_id = $1";
