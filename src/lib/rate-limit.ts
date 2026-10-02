@@ -541,6 +541,30 @@ export const REFUND_REQUEST_IP_CONFIG: RateLimitConfig = {
 };
 
 /**
+ * Payment-method PATCH (PCP-136). Limits how often a single principal
+ * (logged-in user OR guest + IP) can flip the payment method on the same
+ * orderId. Without it, an authenticated user can hammer the endpoint to
+ * flood `orders.payment_method` + `vendor_orders.payment_method` audit
+ * rows via the surrounding FOR UPDATE lock, and a guest (with a stolen
+ * idempotency_key) can churn the row to obscure a tampering attempt.
+ *
+ * Same shape as REFUND_REQUEST_* (3/hour/user, 10/hour/IP) — payment
+ * method is a low-frequency action in normal UX (≤ once per checkout
+ * session), so anything past 3 per hour is suspicious.
+ */
+export const PAYMENT_METHOD_PATCH_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 3,
+  keyPrefix: 'payment-method:patch',
+};
+
+export const PAYMENT_METHOD_PATCH_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 10,
+  keyPrefix: 'payment-method:patch:ip',
+};
+
+/**
  * Create rate limit response headers
  */
 export function createRateLimitHeaders(result: RateLimitResult): Record<string, string> {
