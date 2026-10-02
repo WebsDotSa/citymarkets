@@ -230,4 +230,70 @@ describe("reconcilePayment", () => {
     const lock = calls.find((c) => /pg_advisory_xact_lock/i.test(c.sql));
     expect(lock!.params).toEqual(["order:other-9"]);
   });
+
+  // PCP-80: the lifecycle CTE must write the parent order_status_logs
+  // row when the parent flips pending → confirmed. These tests pin the
+  // SQL contract (INSERT ... 'system:payment_webhook', old=pending,
+  // new=confirmed) and the replay-safety guard (duplicate paid webhook
+  // must NOT write a second audit row).
+  it("writes an order_status_logs row on paid webhook (parent pending → confirmed)", async () => {
+    const { client, calls } = makeMockClient();
+    await reconcilePayment(client, {
+      invoiceId: "inv-audit-1",
+      gateway: "moyasar",
+      eventType: "payment.paid",
+      paymentDb: "paid",
+      rawBody: { foo: "bar" },
+      orderRow: baseOrderRow,
+    });
+    const audit = calls.find((c) =>
+      /INSERT INTO order_status_logs/i.test(c.sql),
+    );
+    expect(audit).toBeDefined();
+    expect(audit!.sql).toMatch(/'system:payment_webhook'/i);
+    // The CTE captures pre-update status and writes it as old_status;
+    // the literal 'confirmed' is the post-update new_status.
+    expect(audit!.sql).toMatch(/old_status/i);
+    expect(audit!.sql).toMatch(/new_status/i);
+    expect(audit!.sql).toMatch(/'confirmed'/);
+  });
+
+  it("tamara approved webhook also writes the parent status log", async () => {
+    const { client, calls } = makeMockClient();
+    await reconcilePayment(client, {
+      invoiceId: "inv-audit-tamara",
+      gateway: "tamara",
+      eventType: "tamara.captured",
+      paymentDb: "paid",
+      rawBody: {},
+      orderRow: baseOrderRow,
+    });
+    const audit = calls.find(
+      (c) => /INSERT INTO order_status_logs/i.test(c.sql),
+    );
+    expect(audit).toBeDefined();
+    // Notes param is bound as $2; it should be the gateway-prefixed
+    // lifecycle label so the audit trail is self-describing.
+    expect(audit!.params[1]).toMatch(/^tamara:tamara\.captured /);
+  });
+
+  it("CTE conditional INSERT only fires when old.status = 'pending' (replay safety)", async () => {
+    const { client, calls } = makeMockClient();
+    await reconcilePayment(client, {
+      invoiceId: "inv-audit-replay",
+      gateway: "moyasar",
+      eventType: "payment.paid",
+      paymentDb: "paid",
+      rawBody: {},
+      orderRow: baseOrderRow,
+    });
+    const lifecycle = calls.find((c) => /^WITH old AS/i.test(c.sql.trim()));
+    expect(lifecycle).toBeDefined();
+    // The conditional INSERT must guard on old.status = 'pending' so
+    // a duplicate paid webhook (orders.status already = 'confirmed')
+    // writes zero new audit rows.
+    expect(lifecycle!.sql).toMatch(/WHERE old\.status = 'pending'/i);
+    // And the changed_by actor must be the canonical webhook label.
+    expect(lifecycle!.sql).toMatch(/'system:payment_webhook'/i);
+  });
 });
