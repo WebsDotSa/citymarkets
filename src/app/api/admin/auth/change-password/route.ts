@@ -38,7 +38,15 @@ export async function POST(request: NextRequest) {
     }
 
     const newHash = await hashPassword(plain);
-    await query('UPDATE admin_users SET password_hash = $1 WHERE id = $2', [newHash, admin.id]);
+    // SECURITY (PCP-128): bump token_version so any existing JWT for this
+    // admin becomes invalid. Without this, an attacker who stole the
+    // current session keeps their access even after the legitimate
+    // owner rotated the password. Migration 027 created the column; the
+    // rotation logic is the caller's responsibility.
+    await query(
+      'UPDATE admin_users SET password_hash = $1, token_version = token_version + 1 WHERE id = $2',
+      [newHash, admin.id]
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -3,10 +3,28 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
 
 import { error as logError } from '@/lib/logger';
 
 export const dynamic = "force-dynamic";
+
+// SECURITY (PCP-129): rate limit place-images upload. Without this, an
+// authenticated user (or anyone via stolen session) can fill the disk
+// by uploading 5 MB images at network speed. 20/hour/user + 100/hour/IP
+// mirrors the audio upload config shape.
+const PLACE_IMAGE_UPLOAD_CONFIG = {
+  maxRequests: 20,
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  keyPrefix: "place-image:upload",
+} as const;
+
+const PLACE_IMAGE_UPLOAD_IP_CONFIG = {
+  maxRequests: 100,
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  keyPrefix: "place-image:upload:ip",
+} as const;
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "images", "place-images");
 
@@ -61,6 +79,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { success: false, error: "غير مصرح" },
       { status: 401 }
+    );
+  }
+
+  // SECURITY (PCP-129): rate limit by IP first (cheaper, no DB), then by user.
+  const clientIp = getClientIp(request);
+  const ipLimit = await checkRateLimit(clientIp, PLACE_IMAGE_UPLOAD_IP_CONFIG);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد مرات رفع الصور، حاول لاحقاً" },
+      { status: 429 }
+    );
+  }
+  const userLimit = await checkRateLimit(`user:${userId}`, PLACE_IMAGE_UPLOAD_CONFIG);
+  if (!userLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد مرات رفع الصور، حاول لاحقاً" },
+      { status: 429 }
     );
   }
 
@@ -125,6 +160,24 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json(
       { success: false, error: "غير مصرح" },
       { status: 401 }
+    );
+  }
+
+  // SECURITY (PCP-129): same rate limit on DELETE so an attacker
+  // who steals a session can't rapidly enumerate or wipe files.
+  const clientIp = getClientIp(request);
+  const ipLimit = await checkRateLimit(clientIp, PLACE_IMAGE_UPLOAD_IP_CONFIG);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد المحاولات، حاول لاحقاً" },
+      { status: 429 }
+    );
+  }
+  const userLimit = await checkRateLimit(`user:${userId}`, PLACE_IMAGE_UPLOAD_CONFIG);
+  if (!userLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد المحاولات، حاول لاحقاً" },
+      { status: 429 }
     );
   }
 
