@@ -1,16 +1,16 @@
 -- 109_harden_against_060_rollback.sql
--- PCP-113: prevent migrations/060_rollback.sql from corrupting fresh cluster builds.
+-- PCP-113: prevent migrations/060a_rollback.sql from corrupting fresh cluster builds.
 --
 -- Background:
 --   The audit (commit after e0bfc3f) found three live "drift" issues
 --   between app_migrations and the migrations/ directory:
 --
---     1. migrations/060_rollback.sql — a destructive rollback script
+--     1. migrations/060a_rollback.sql — a destructive rollback script
 --        committed to the migrations directory. It IS already in
 --        app_migrations (applied on the current cluster, where it was
 --        effectively a no-op because the data was already renamed),
 --        but on a fresh cluster that runs migrations/ in numeric
---        order AFTER 060_vendors_cleanup_and_split.sql, this file
+--        order AFTER 060b_vendors_cleanup_and_split.sql, this file
 --        will rename aamiz-kafeh back to qahwa-amaze, delete
 --        aamiz-lilwarood, recreate abaya-store + gifts empty,
 --        and reactivate root categories. That regresses the vendor
@@ -35,7 +35,7 @@
 -- Fix:
 --   (a) Delete the 106_payment_refunds.sql bookkeeping row so future
 --       runners do not see a missing-file warning.
---   (b) Make 060_rollback.sql a safe no-op on fresh clusters by
+--   (b) Make 060a_rollback.sql a safe no-op on fresh clusters by
 --       pre-empting the rename it tries to do — DO nothing, just
 --       emit a NOTICE. This is a documentation guard, not a DDL
 --       change. The file itself was NOT deleted (it is a legitimate
@@ -67,7 +67,7 @@ DELETE FROM app_migrations
  WHERE filename = '106_payment_refunds.sql';
 
 -- (b) Insert a guard row that flips a feature flag the rollback checks
--- for. We do NOT delete 060_rollback.sql because it is a valid
+-- for. We do NOT delete 060a_rollback.sql because it is a valid
 -- emergency-recovery script for the specific cluster it was authored
 -- against (the pre-split city-markets data). The guard below makes
 -- any future attempt to run it via a fresh migration runner a no-op.
@@ -92,10 +92,10 @@ ON CONFLICT (guard_name) DO UPDATE SET active = EXCLUDED.active;
 
 COMMIT;
 
--- Post-commit NOTICE: if 060_rollback.sql is ever invoked (manual
+-- Post-commit NOTICE: if 060a_rollback.sql is ever invoked (manual
 -- emergency recovery), the guard makes it a no-op.
 DO $$
 BEGIN
-  RAISE NOTICE 'PCP-113 hardened: 060_rollback.sql will be a no-op on this cluster. The app_migrations drift for 106_payment_refunds.sql has been removed. See migrations/109_harden_against_060_rollback.sql for the audit notes.';
+  RAISE NOTICE 'PCP-113 hardened: 060a_rollback.sql will be a no-op on this cluster. The app_migrations drift for 106_payment_refunds.sql has been removed. See migrations/109_harden_against_060_rollback.sql for the audit notes.';
 END
 $$;

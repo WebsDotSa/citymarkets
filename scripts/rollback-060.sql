@@ -1,5 +1,9 @@
--- 060_rollback.sql
--- Reverse migration 060_vendors_cleanup_and_split.sql
+-- 060a_rollback.sql (renamed from 060_rollback.sql in PCP-115)
+-- Reverse migration 060b_vendors_cleanup_and_split.sql (renamed from
+-- 060_vendors_cleanup_and_split.sql in PCP-115). The 060 prefix
+-- collided with 060_drop_delivery_zones, and 060b collided with the
+-- new 059b/c split — see migrations/110_pcp115_rename_duplicate
+-- prefixes for the full audit.
 -- Restores: aamiz-kafeh → qahwa-amaze, aamiz-lilwarood deleted,
 -- abaya-store + gifts recreated EMPTY, products back under city-markets,
 -- root categories reactivated.
