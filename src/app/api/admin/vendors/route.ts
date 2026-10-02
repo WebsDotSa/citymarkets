@@ -134,6 +134,13 @@ async function upsertVendorOwner(
     const passwordHash = await hashPassword(password!);
     updates.push(`password_hash = $${i++}`);
     params.push(passwordHash);
+    // SECURITY (PCP-134): invalidating any active session for this owner
+    // on password rotation. Without this, a stolen JWT remains valid
+    // even after the legitimate admin rotates the password via the
+    // /admin/vendors edit screen. token_version is the same mechanism
+    // used by the /admin/auth/change-password and /vendor/staff/[id]
+    // PATCH paths — keep them in sync.
+    updates.push(`token_version = token_version + 1`);
   }
   if (updates.length === 0) return null;
   params.push(existing.rows[0].id);
