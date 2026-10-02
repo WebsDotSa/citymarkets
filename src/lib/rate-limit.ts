@@ -466,6 +466,20 @@ export const BROADCAST_SEND_IP_CONFIG: RateLimitConfig = {
 };
 
 /**
+ * Loyalty-wheel spin (POST /api/v1/spin). Caps how many times a single
+ * user can hit the endpoint per minute. The DB-side FOR UPDATE on
+ * `users` (added with PCP-135) is the authoritative 3-per-day gate; this
+ * rate limit just throttles abuse / burst attempts that would otherwise
+ * pile up contended row locks. 20/min is well above legitimate use
+ * (the server permits at most 3/day anyway).
+ */
+export const SPIN_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 20,
+  keyPrefix: 'spin',
+};
+
+/**
  * Rate limit for the anonymous audio upload endpoint
  * (POST /api/v1/upload/audio). One voice note every ~6s on average;
  * tighter than GENERAL because each upload writes to disk and we don't
