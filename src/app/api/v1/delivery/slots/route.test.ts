@@ -116,9 +116,19 @@ describe("GET /api/v1/delivery/slots — migration 060/078 regression", () => {
   });
 
   it("counts booked slots globally (no per-zone partition)", async () => {
+    // Query 3 days ahead so all windows fall inside the lead-time +
+    // lookahead window regardless of the wall-clock time of the run.
+    // (Default `date=today` is flaky: morning/noon/afternoon become
+    // `available:false` past their Riyadh wall-clock end, which is the
+    // correct production behavior but makes the assertion time-bound.)
+    const future = new Date();
+    future.setUTCDate(future.getUTCDate() + 3);
+    const yyyy = future.getUTCFullYear();
+    const mm = String(future.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(future.getUTCDate()).padStart(2, "0");
     makeQueryMock({ slotBookings: { morning: 5, noon: 0 } });
     const res = await GET(
-      mockRequest("http://localhost/api/v1/delivery/slots") as never,
+      mockRequest(`http://localhost/api/v1/delivery/slots?date=${yyyy}-${mm}-${dd}`) as never,
     );
     const body = await res.json();
     const morning = body.data.windows.find((w: { id: string }) => w.id === "morning");
