@@ -38,6 +38,7 @@ import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { refundMoyasarPayment } from "@/lib/payments/moyasar";
 import { logAdminAction } from "@/lib/admin-audit";
 import { error as logError, info as logInfo } from "@/lib/logger";
+import { checkRateLimit, REFUND_REQUEST_CONFIG, REFUND_REQUEST_IP_CONFIG, createRateLimitHeaders } from "@/lib/rate-limit";
 import { recordPaymentEvent, finalizePaymentEvent } from "@/lib/payments/event-ledger";
 import { validateUuidOrError } from "@/lib/api/uuid-guard";
 
@@ -47,6 +48,32 @@ export async function POST(
 ) {
   const gate = await requireAdminApi(request, "manage_orders");
   if (gate instanceof NextResponse) return gate;
+
+  // ---- Rate limit ----
+  // PCP-114: refund endpoints need rate limiting. Without it a misclick
+  // storm from an admin or a stolen admin session could fire many refund
+  // calls in seconds (each one a Moyasar API hit + ledger write). The
+  // per-user limit (3/hour) is the operational signal; the per-IP limit
+  // (10/hour) covers admin sessions reused across shifts.
+  const adminUserIdForRate = (gate as { userId?: string }).userId ?? "unknown";
+  const clientIp =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+  const ipLimit = await checkRateLimit(clientIp, REFUND_REQUEST_IP_CONFIG);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوز عدد عمليات الاسترداد. حاول بعد ساعة." },
+      { status: 429, headers: createRateLimitHeaders(ipLimit) },
+    );
+  }
+  const userLimit = await checkRateLimit(`admin:${adminUserIdForRate}`, REFUND_REQUEST_CONFIG);
+  if (!userLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوز عدد عمليات الاسترداد لهذا المستخدم. حاول بعد ساعة." },
+      { status: 429, headers: createRateLimitHeaders(userLimit) },
+    );
+  }
 
   const { id: orderId } = await params;
   if (!orderId || typeof orderId !== "string") {
@@ -66,7 +93,7 @@ export async function POST(
     : null;
   const explicitRequestId = payload.refund_request_id ?? null;
   const reason = (payload.reason ?? "").trim().slice(0, 500) || null;
-  const adminUserId = (gate as { userId?: string }).userId ?? null;
+  const adminUserId = adminUserIdForRate !== "unknown" ? adminUserIdForRate : null;
 
   const client = await pool.connect();
   let refundRequestId: string | null = null;
