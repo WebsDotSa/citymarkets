@@ -282,4 +282,41 @@ describe("event-ledger: replay-protection contract (gate for webhook handlers)",
     expect(r1).toBe("inserted");
     expect(r2).toBe("inserted");
   });
+
+  // ---- PCP-190 (Phase 16 audit cross-find): a payment gateway will
+  //  retry the webhook 5+ times in production. The ledger MUST keep
+  //  the first call as 'inserted' and flag every subsequent call as
+  //  'duplicate' so the side-effect handlers in the webhook route
+  //  (loyalty credit, push notification, abandoned-cart recovery) run
+  //  exactly once. If this ever returns 'inserted' twice, the order
+  //  will be over-credited. ----
+  it("PCP-190: 5x replay — first 'inserted', next 4 are 'duplicate'", async () => {
+    let callCount = 0;
+    const insert = vi.fn(async () => {
+      callCount += 1;
+      if (callCount === 1) return { rows: [], rowCount: 1 };
+      throw pgError("23505");
+    });
+    const client = fakeClient({ insert });
+
+    const results = [];
+    for (let i = 0; i < 5; i++) {
+      results.push(
+        await recordPaymentEvent(client, {
+          invoiceId: "inv-5x",
+          gateway: "moyasar",
+          eventType: "payment.paid",
+          raw: { attempt: i + 1 },
+        }),
+      );
+    }
+
+    expect(results[0]).toBe("inserted");
+    for (let i = 1; i < 5; i++) {
+      expect(results[i]).toBe("duplicate");
+    }
+    // 5 calls total, one INSERT attempted per call (the duplicate
+    // path consumes the 23505 but the side effect is skipped).
+    expect(insert).toHaveBeenCalledTimes(5);
+  });
 });
