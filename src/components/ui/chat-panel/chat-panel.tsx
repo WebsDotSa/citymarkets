@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Send, Mic, Square, Loader2 } from 'lucide-react';
 import { BRAND } from '@/lib/brand-theme';
+import { useBrandColorVars } from '@/hooks/use-color-vars';
 
 export interface ChatMessage {
   id: string;
@@ -47,6 +48,7 @@ function fmtDuration(seconds?: number | null): string {
 }
 
 export function ChatPanel(props: ChatPanelProps) {
+  const colorVars = useBrandColorVars();
   const {
     orderId,
     perspective,
@@ -193,11 +195,11 @@ export function ChatPanel(props: ChatPanelProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-200 overflow-hidden" style={colorVars}>
       {/* Header */}
       <div
         className="px-4 py-3 text-white text-sm font-semibold flex items-center justify-between"
-        style={{ backgroundColor: BRAND.brandGreen }}
+        style={{ backgroundColor: 'var(--brand-green)' }}
       >
         <span>المحادثة</span>
         <span className="text-xs opacity-80">طلب #{orderId.slice(0, 8)}</span>
@@ -228,7 +230,7 @@ export function ChatPanel(props: ChatPanelProps) {
                   mine ? 'rounded-bl-sm' : 'rounded-br-sm'
                 }`}
                 style={{
-                  backgroundColor: mine ? BRAND.brandGreen : '#ffffff',
+                  backgroundColor: mine ? 'var(--brand-green)' : '#ffffff',
                   color: mine ? '#fff' : '#111',
                   border: mine ? 'none' : '1px solid #e5e7eb',
                 }}
@@ -299,7 +301,7 @@ export function ChatPanel(props: ChatPanelProps) {
               onClick={sendText}
               disabled={sending || !text.trim() || recording}
               className="p-2 rounded-full text-white disabled:opacity-50"
-              style={{ backgroundColor: BRAND.brandGreen }}
+              style={{ backgroundColor: 'var(--brand-green)' }}
               aria-label="إرسال"
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
