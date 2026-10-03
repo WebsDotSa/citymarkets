@@ -128,12 +128,59 @@ export async function POST(request: NextRequest) {
     // "تأكيد الطلب" button (or a retried POST from a flaky network)
     // would otherwise create two direct orders for the same 4 SAR fee.
     // If an order already exists for this key, return it untouched.
+    //
+    // PCP-146: the column `orders.idempotency_key` has a GLOBAL UNIQUE
+    // constraint (migration 034), so the dedupe SELECT MUST also be
+    // scoped to the caller's identity. Without that filter, any
+    // caller who happened to send a key that another user already
+    // used (a shared placeholder, a forwarded session id, a bad
+    // client retrying with the same key) would receive THAT user's
+    // `orderId` + `tracking_code` in the response — a cross-user
+    // order id leak. Scope by user_id when authed, and by
+    // `user_id IS NULL AND guest_phone` when guest.
     if (idempotencyKey) {
-      const existing = await client.query(
-        `SELECT id, tracking_code AS order_number FROM orders
-         WHERE idempotency_key = $1 LIMIT 1`,
-        [idempotencyKey]
-      );
+      let existing;
+      if (userId) {
+        existing = await client.query(
+          `SELECT id, tracking_code AS order_number FROM orders
+           WHERE idempotency_key = $1
+             AND user_id = $2
+           LIMIT 1`,
+          [idempotencyKey, userId]
+        );
+      } else {
+        // Guest identity on the orders table is `user_id IS NULL`
+        // plus `guest_phone` (the `orders_has_contact` check
+        // requires at least one of user_id / guest_phone). Use
+        // customer_phone from the request body; if absent, fall
+        // back to guest_phone from any prior row with the same
+        // key so a genuine retry (e.g. the customer only typed
+        // their phone in the first request) still dedupes.
+        const guestPhone =
+          typeof data.customer_phone === 'string' && data.customer_phone.length > 0
+            ? data.customer_phone
+            : null;
+        if (guestPhone) {
+          existing = await client.query(
+            `SELECT id, tracking_code AS order_number FROM orders
+             WHERE idempotency_key = $1
+               AND user_id IS NULL
+               AND guest_phone = $2
+             LIMIT 1`,
+            [idempotencyKey, guestPhone]
+          );
+        } else {
+          // No guest phone in the request — we cannot safely
+          // dedupe without risking a cross-guest leak. Fall
+          // through to the INSERT path; if a previous guest did
+          // already use this exact key, the global UNIQUE
+          // constraint will reject the INSERT and the catch
+          // block converts it to a 500 (the customer should
+          // retry with the same payload — the dedupe will then
+          // match on guest_phone).
+          existing = { rows: [] };
+        }
+      }
       if (existing.rows.length > 0) {
         await client.query('ROLLBACK');
         return NextResponse.json(

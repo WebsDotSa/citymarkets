@@ -214,10 +214,23 @@ export async function POST(
     refundRequestId = ins.rows[0]?.id ?? null;
 
     // ---- Write to order_status_logs ----
+    // PCP-143: the live table columns are (old_status, new_status,
+    // changed_by, notes) — the previous `status, created_by` shape
+    // raised 42703 and the catch ROLLBACK'd the whole request, so the
+    // customer saw 500 even though the refund_requests row was valid.
+    // Use a no-op transition (old=new=current status) so the audit
+    // trail records the request without an artificial lifecycle move.
     await client.query(
-      `INSERT INTO order_status_logs (order_id, status, notes, created_by)
-       VALUES ($1, $2, $3, $4)`,
-      [orderId, order.status, `طلب استرداد: ${reason ?? "بدون سبب"}`, userId ?? null],
+      `INSERT INTO order_status_logs
+         (order_id, old_status, new_status, changed_by, notes)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        orderId,
+        order.status,
+        order.status,
+        userId ? `customer:${userId}` : "customer:guest",
+        `طلب استرداد: ${reason ?? "بدون سبب"}`,
+      ],
     );
 
     await client.query("COMMIT");
