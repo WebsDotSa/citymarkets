@@ -3,19 +3,19 @@
 import { Shield, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageContainer } from "@/components/ui/page-container";
 import { Card } from "@/components/ui/card";
 
 export default function ProfileSecurityPage() {
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <Link
-          href="/profile"
-          className="inline-flex items-center gap-2 text-primary text-sm font-medium mb-6 hover:text-primary-dark transition-colors"
-        >
-          <ArrowRight className="w-4 h-4" />
-          العودة للملف الشخصي
-        </Link>
+    <PageContainer width="narrow" padding="normal" className="py-6">
+      <Link
+        href="/profile"
+        className="inline-flex items-center gap-2 text-primary text-sm font-medium mb-6 hover:text-primary-dark transition-colors"
+      >
+        <ArrowRight className="w-4 h-4" />
+        العودة للملف الشخصي
+      </Link>
 
         <PageHeader
           icon={<Shield className="w-6 h-6 text-primary" />}
@@ -44,7 +44,6 @@ export default function ProfileSecurityPage() {
             </ul>
           </div>
         </Card>
-      </div>
-    </main>
+    </PageContainer>
   );
 }
