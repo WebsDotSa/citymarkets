@@ -9,6 +9,7 @@ import { useCartActions } from "@/contexts/cart-context";
 import { vendorProductToCartProduct } from '@/lib/catalog';
 import { SafeImage } from "@/components/ui/safe-image";
 import { vendorTypeLabel, vendorTypeIcon } from '@/lib/catalog';
+import { useVendorColorVars } from '@/hooks/use-color-vars';
 
 interface Vendor {
   id: string;
@@ -84,6 +85,7 @@ export default function VendorPage() {
   const [onlyInStock, setOnlyInStock] = useState(false);
   const { showToast } = useToast();
   const { addItem: addToCartContext } = useCartActions();
+  const vendorColorVars = useVendorColorVars(vendor?.primaryColor);
 
   useEffect(() => {
     fetchVendorData();
@@ -226,12 +228,12 @@ export default function VendorPage() {
   const featuredProducts = filteredProducts.slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-24" style={vendorColorVars}>
       {/* ── Hero Banner ── */}
       <div
         className="relative h-56 sm:h-72 lg:h-80 overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, ${vendor.primaryColor} 0%, ${vendor.primaryColor}cc 100%)`,
+          background: 'linear-gradient(135deg, var(--vendor-primary) 0%, var(--vendor-dark) 100%)',
         }}
       >
         {vendor.banner && (
@@ -289,7 +291,7 @@ export default function VendorPage() {
         <div className="absolute bottom-4 inset-x-4 z-10">
           <span
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-2xs font-bold backdrop-blur-md mb-2"
-            style={{ background: "rgba(255,255,255,0.92)", color: vendor.primaryColor }}
+            style={{ background: "rgba(255,255,255,0.92)", color: 'var(--vendor-primary)' }}
           >
             <span>{vendorTypeIcon(vendor.type)}</span>
             <span>{vendorTypeLabel(vendor.type)}</span>
@@ -309,7 +311,7 @@ export default function VendorPage() {
           <div className="flex items-start gap-3">
             <div
               className="shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white border-4 shadow-sm flex items-center justify-center overflow-hidden -mt-12"
-              style={{ borderColor: vendor.primaryColor }}
+              style={{ borderColor: 'var(--vendor-primary)' }}
             >
               <SafeImage
                 src={vendor.logo}
@@ -379,7 +381,7 @@ export default function VendorPage() {
               {activeTab === "products" && (
                 <span
                   className="absolute inset-x-0 bottom-0 h-0.5 rounded-full"
-                  style={{ background: vendor.primaryColor }}
+                  style={{ background: 'var(--vendor-primary)' }}
                 />
               )}
             </button>
@@ -395,7 +397,7 @@ export default function VendorPage() {
               {activeTab === "info" && (
                 <span
                   className="absolute inset-x-0 bottom-0 h-0.5 rounded-full"
-                  style={{ background: vendor.primaryColor }}
+                  style={{ background: 'var(--vendor-primary)' }}
                 />
               )}
             </button>
@@ -414,7 +416,7 @@ export default function VendorPage() {
               categories={categories}
               activeId={activeCategoryId}
               onSelect={(id) => setActiveCategoryId(id)}
-              primaryColor={vendor.primaryColor}
+              primaryColor={'var(--vendor-primary)'}
             />
 
             {/* Featured products carousel */}
@@ -546,7 +548,7 @@ export default function VendorPage() {
                           {hasDiscount && (
                             <span
                               className="absolute top-2 right-2 text-tiny font-black px-2 py-0.5 rounded-full text-white shadow-sm"
-                              style={{ background: vendor.primaryColor }}
+                              style={{ background: 'var(--vendor-primary)' }}
                             >
                               خصم
                             </span>
@@ -589,7 +591,7 @@ export default function VendorPage() {
                               disabled={addingToCart === product.id}
                               aria-label={`أضف ${product.name} للسلة`}
                               className="w-9 h-9 rounded-full text-white flex items-center justify-center hover:opacity-90 transition-all active:scale-90 disabled:opacity-50 shadow-sm"
-                              style={{ background: vendor.primaryColor }}
+                              style={{ background: 'var(--vendor-primary)' }}
                             >
                               {addingToCart === product.id ? (
                                 <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
