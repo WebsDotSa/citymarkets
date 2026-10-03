@@ -5,7 +5,7 @@ import { ReactNode, FormHTMLAttributes, useState } from "react";
 export interface AdminFormField {
   key: string;
   label: string;
-  type: "text" | "email" | "tel" | "number" | "select" | "textarea";
+  type: "text" | "email" | "tel" | "number" | "select" | "textarea" | "checkbox";
   required?: boolean;
   placeholder?: string;
   options?: Array<{ value: string; label: string }>;
@@ -74,6 +74,14 @@ export function AdminForm({
                 {field.label}
                 {field.required && <span className="text-red-600 ml-1">*</span>}
               </label>
+              } else if (field.type === "checkbox") {
+                <input
+                  type="checkbox"
+                  name={field.key}
+                  checked={formData[field.key] || false}
+                  onChange={e => handleInputChange(field.key, e.target.checked)}
+                  className="w-4 h-4 border-2 border-gray-200 rounded text-primary mt-2"
+                />
               {field.type === "textarea" ? (
                 <textarea
                   name={field.key}
