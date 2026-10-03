@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { ProductCard } from "@/components/storefront/product-card";
+import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/design/empty-state";
 import { ProductCardSkeleton } from "@/components/design/skeleton";
 import { BRAND } from "@/lib/brand-theme";
@@ -483,44 +484,29 @@ function SortPill({ current, onChange }: { current: Sort; onChange: (s: Sort) =>
     { key: "newest", label: "الأحدث" },
   ];
   return (
-    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-full p-1 shadow-sm">
-      <Filter className="w-3.5 h-3.5 text-gray-400 ms-2 me-1" aria-hidden="true" />
-      {opts.map((o) => {
-        const active = o.key === current;
-        return (
-          <button
-            key={o.key}
-            type="button"
-            onClick={() => onChange(o.key)}
-            className={`px-3 py-1 rounded-full text-[11px] font-bold transition ${
-              active
-                ? "bg-primary text-white"
-                : "text-gray-600 hover:bg-gray-50"
-            }`}
-            aria-pressed={active}
-          >
-            {o.label}
-          </button>
-        );
-      })}
+    <div className="flex items-center gap-1.5">
+      {opts.map((o) => (
+        <Chip
+          key={o.key}
+          label={o.label}
+          selected={o.key === current}
+          onClick={() => onChange(o.key)}
+          size="sm"
+        />
+      ))}
     </div>
   );
 }
 
 function StockToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button
-      type="button"
+    <Chip
+      label="متوفر فقط"
+      selected={value}
       onClick={() => onChange(!value)}
-      className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition ${
-        value
-          ? "bg-primary text-white border-primary"
-          : "bg-white text-gray-700 border-gray-200 hover:border-primary hover:text-primary"
-      }`}
-      aria-pressed={value}
-    >
-      متوفر فقط
-    </button>
+      variant="outlined"
+      size="sm"
+    />
   );
 }
 
