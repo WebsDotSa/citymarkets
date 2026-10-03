@@ -101,9 +101,12 @@ export async function POST(request: NextRequest) {
     let staffResult;
     if (isEmail) {
       // Phone-or-email lookup. `LOWER(email)` is index-friendly.
+      // SECURITY (PCP-144): include token_version so the freshly
+      // minted JWT carries the live row value. The DB verify path
+      // (vendor-auth-with-db.ts) compares on every request.
       staffResult = await query(
         `SELECT id, vendor_id, email, phone, password_hash, full_name_ar, full_name_en,
-                role, permissions, is_active
+                role, permissions, is_active, COALESCE(token_version, 1)::int AS token_version
          FROM vendor_staff
          WHERE LOWER(email) = LOWER($1) AND vendor_id = $2`,
         [identifier, vendor.id]
@@ -121,10 +124,11 @@ export async function POST(request: NextRequest) {
       // Until a future migration normalizes the column we match both
       // shapes in a single SQL with `IN (E.164, local)`. Without this,
       // the 3 phone-only staff couldn't log in via the phone branch.
+      // SECURITY (PCP-144): also include token_version (see above).
       const phoneLocal = "0" + phoneE164.slice(4); // +9665XXXXXXXX → 05XXXXXXXX
       staffResult = await query(
         `SELECT id, vendor_id, email, phone, password_hash, full_name_ar, full_name_en,
-                role, permissions, is_active
+                role, permissions, is_active, COALESCE(token_version, 1)::int AS token_version
          FROM vendor_staff
          WHERE vendor_id = $1
            AND LOWER(phone) IN (LOWER($2), LOWER($3))
@@ -176,6 +180,12 @@ export async function POST(request: NextRequest) {
       fullName: staff.full_name_ar || staff.full_name_en || staff.email || staff.phone || "",
       role: staff.role as VendorRole,
       permissions: staff.permissions || [],
+      // SECURITY (PCP-144): bake the live token_version into the
+      // JWT. verifyVendorRequestWithDb compares against the DB
+      // column on every request, so a logout / password rotation
+      // is detected within one request instead of waiting on the
+      // 60s role-cache TTL.
+      tokenVersion: (staff.token_version ?? 1) as number,
     };
 
     const token = await signVendorSessionToken(session);

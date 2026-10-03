@@ -38,6 +38,7 @@ const fakeAdmin = {
   id: "00000000-0000-0000-0000-000000000001",
   email: "ops@example.com",
   role: "super_admin" as const,
+  tokenVersion: 1,
 };
 
 vi.mock("@/lib/identity/admin-api-auth-db", () => ({

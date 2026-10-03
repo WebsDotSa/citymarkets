@@ -43,7 +43,7 @@ describe("/api/admin/broadcasts", () => {
   beforeEach(() => {
     queryCalls.length = 0;
     vi.mocked(requireAdminApi).mockResolvedValue({
-      admin: { id: "admin-1", email: "x@y.z", role: "super_admin" },
+      admin: { id: "admin-1", email: "x@y.z", role: "super_admin", tokenVersion: 1 },
     });
   });
 
