@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 
-interface AdminCardProps {
+export interface AdminCardProps {
   children: ReactNode;
   title?: string;
   subtitle?: string;
