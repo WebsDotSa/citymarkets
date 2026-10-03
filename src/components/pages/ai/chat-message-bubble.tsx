@@ -52,7 +52,7 @@ function MealSuggestionCard({
         {meal.ingredients.map((ingredient, index) => (
           <span
             key={`${meal.id}-${ingredient.search_query}-${index}`}
-            className="inline-flex items-center gap-1 rounded-full border border-gray-100 bg-white/90 px-2.5 py-1 text-[11px] text-gray-700"
+            className="inline-flex items-center gap-1 rounded-full border border-gray-100 bg-white/90 px-2.5 py-1 text-2xs text-gray-700"
           >
             <span className="font-semibold">{ingredient.search_query}</span>
             <span className="text-gray-400">
@@ -138,7 +138,7 @@ export function ChatMessageBubble({
           }`}
         >
           {isUser && message.inputMode === "voice" && (
-            <span className="mb-1.5 flex w-fit items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/80">
+            <span className="mb-1.5 flex w-fit items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-tiny font-semibold text-white/80">
               <Mic className="h-3 w-3" aria-hidden="true" />
               طلب صوتي
             </span>
@@ -148,7 +148,7 @@ export function ChatMessageBubble({
 
         {message.mealSuggestions && message.mealSuggestions.length > 0 && (
           <section className="space-y-2.5" aria-label="اقتراحات الوجبات">
-            <p className="px-1 text-[11px] font-semibold text-primary-800">
+            <p className="px-1 text-2xs font-semibold text-primary-800">
               اختر وجبة وسأضيف مكوناتها المتوفرة:
             </p>
             {message.mealSuggestions.map((meal) => (
@@ -170,7 +170,7 @@ export function ChatMessageBubble({
         {!hasProductCards && message.addedToCart && message.addedToCart.length > 0 && (
           <div
             role="status"
-            className="flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-[11px] text-primary"
+            className="flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-2xs text-primary"
           >
             <ShoppingCart className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>
@@ -181,7 +181,7 @@ export function ChatMessageBubble({
         )}
 
         {message.unmatched && message.unmatched.length > 0 && (
-          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-900">
+          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-2xs leading-5 text-amber-900">
             <PackageX className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>غير متوفر حالياً: {message.unmatched.join("، ")}</span>
           </div>

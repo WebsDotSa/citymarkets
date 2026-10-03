@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Coins, Gift, History, Sparkles, ArrowLeft } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 interface Transaction {
   id: string;
@@ -118,7 +119,7 @@ export default function LoyaltyPage() {
         </section>
 
         {canRedeem ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-6">
+          <Card className="mb-6">
             <h2 className="font-semibold text-gray-900 mb-2">كيف تستفيد من نقاطك؟</h2>
             <p className="text-sm text-gray-600 mb-3">
               تقدر تستخدم نقاطك عند الدفع في الطلب الجاي. الحد الأقصى
@@ -130,12 +131,12 @@ export default function LoyaltyPage() {
             >
               ابدا تسوق
             </Link>
-          </div>
+          </Card>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-6 text-sm text-gray-600">
+          <Card className="mb-6 text-sm text-gray-600">
             تحتاج {data.min_redeem - data.balance} نقطة إضافية لتقدر تستبدل. كل
             طلب يكسبك نقاط!
-          </div>
+          </Card>
         )}
 
         <section>

@@ -42,12 +42,12 @@ export function StickyCartBar() {
       >
         <div className="flex flex-col items-end leading-tight">
           <span className="text-xs font-bold">{subtotal.toFixed(0)} ر.س</span>
-          <span className="text-[10px] text-white/70">{itemCount} منتج</span>
+          <span className="text-tiny text-white/70">{itemCount} منتج</span>
         </div>
         <div className="relative">
           <ShoppingBag className="w-5 h-5" />
           <span
-            className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+            className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-tiny font-bold flex items-center justify-center text-white"
             style={{ backgroundColor: BRAND.primary }}
           >
             {itemCount > 9 ? "9+" : itemCount}

@@ -235,7 +235,7 @@ export function ChatPanel(props: ChatPanelProps) {
                 }}
               >
                 {!mine && (m.sender_type === 'admin' || m.sender_type === 'customer') && (
-                  <div className="text-[10px] text-gray-400 mb-1">
+                  <div className="text-tiny text-gray-400 mb-1">
                     {m.sender_type === 'admin' ? m.admin_name || 'الإدارة' : 'العميل'}
                   </div>
                 )}
@@ -250,7 +250,7 @@ export function ChatPanel(props: ChatPanelProps) {
                   <div className="whitespace-pre-wrap break-words">{m.body}</div>
                 )}
                 <div
-                  className={`text-[10px] mt-1 ${mine ? 'text-white/70' : 'text-gray-400'}`}
+                  className={`text-tiny mt-1 ${mine ? 'text-white/70' : 'text-gray-400'}`}
                 >
                   {fmtTime(m.created_at)} {m.message_kind === 'audio' && `· ${fmtDuration(m.audio_duration)}`}
                 </div>

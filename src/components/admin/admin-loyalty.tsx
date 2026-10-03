@@ -389,10 +389,10 @@ function Last7DaysChart({
                 )}
               </div>
               <div className="text-center">
-                <p className="text-[10px] font-medium text-gray-700">
+                <p className="text-tiny font-medium text-gray-700">
                   {dayLabel}
                 </p>
-                <p className="text-[10px] text-gray-400">
+                <p className="text-tiny text-gray-400">
                   {e.volume > 0 ? e.volume : "—"}
                 </p>
               </div>

@@ -269,7 +269,7 @@ export default function AdminNotificationsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500">
+                    <span className="text-tiny uppercase tracking-wider font-bold text-gray-500">
                       {TYPE_LABELS[n.type] || n.type}
                     </span>
                     {!n.is_read && (

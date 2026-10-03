@@ -65,11 +65,11 @@ export function MainCatsImageStrip({
     >
       <div className="px-4 sm:px-6 max-w-6xl mx-auto py-2.5">
         <div className="flex items-center justify-between gap-2 mb-2">
-          <p className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
+          <p className="text-2xs font-black text-slate-500 uppercase tracking-wider">
             الأقسام الرئيسية
           </p>
           <span
-            className="text-[11px] text-slate-400 font-bold tabular-nums"
+            className="text-2xs text-slate-400 font-bold tabular-nums"
             dir="ltr"
           >
             {roots.length} · {totalProducts.toLocaleString("en-US")} منتج
@@ -140,15 +140,15 @@ export function MainCatsImageStrip({
                     )}
                   </div>
                   <span
-                    className={`text-[11px] font-bold leading-tight line-clamp-1 w-full px-0.5 ${
-                      isActive ? "text-[#007A38]" : "text-slate-700"
+                    className={`text-2xs font-bold leading-tight line-clamp-1 w-full px-0.5 ${
+                      isActive ? "text-primary-dark" : "text-slate-700"
                     }`}
                   >
                     {root.name_ar}
                   </span>
                   <span
                     className={`text-[9px] font-bold tabular-nums ${
-                      isActive ? "text-[#007A38]/80" : "text-slate-400"
+                      isActive ? "text-primary-dark/80" : "text-slate-400"
                     }`}
                     dir="ltr"
                   >

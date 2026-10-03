@@ -241,7 +241,7 @@ export function DeliverySchedulePicker({
           <Zap className="w-4 h-4" />
           <div className="text-right">
             <div className="text-sm font-semibold">توصيل فوري</div>
-            <div className="text-[10px] opacity-75">30-45 دقيقة</div>
+            <div className="text-tiny opacity-75">30-45 دقيقة</div>
           </div>
         </button>
         <button
@@ -258,7 +258,7 @@ export function DeliverySchedulePicker({
           <Calendar className="w-4 h-4" />
           <div className="text-right">
             <div className="text-sm font-semibold">جدولة الطلب</div>
-            <div className="text-[10px] opacity-75">اختر وقت يناسبك</div>
+            <div className="text-tiny opacity-75">اختر وقت يناسبك</div>
           </div>
         </button>
       </div>
@@ -336,7 +336,7 @@ export function DeliverySchedulePicker({
                       <div className="text-xs opacity-75 mt-0.5 tabular-nums">
                         {w.start} – {w.end}
                       </div>
-                      <div className="text-[10px] opacity-60 mt-0.5 tabular-nums">
+                      <div className="text-tiny opacity-60 mt-0.5 tabular-nums">
                         {w.available
                           ? `${w.capacity - w.booked} مقعد متبقي`
                           : "ممتلئة"}

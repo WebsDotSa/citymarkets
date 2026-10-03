@@ -275,9 +275,9 @@ export default function AdminAbandonedCartsPage() {
                             <span className="text-xs text-slate-400 mt-0.5">بدون جوال</span>
                           )}
                           {row.user_id ? (
-                            <span className="text-[10px] text-emerald-600 mt-0.5">مسجّل</span>
+                            <span className="text-tiny text-emerald-600 mt-0.5">مسجّل</span>
                           ) : (
-                            <span className="text-[10px] text-slate-400 mt-0.5">زائر</span>
+                            <span className="text-tiny text-slate-400 mt-0.5">زائر</span>
                           )}
                         </div>
                       </td>

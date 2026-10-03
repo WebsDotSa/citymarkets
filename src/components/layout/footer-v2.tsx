@@ -149,7 +149,7 @@ export function FooterV2() {
         <div className="mb-10">
           <Link
             href="/delegate"
-            className="group flex items-center justify-between gap-4 p-5 md:p-6 rounded-2xl bg-gradient-to-l from-[#009345] to-[#007A38] text-white hover:shadow-xl hover:shadow-primary/20 transition-all"
+            className="group flex items-center justify-between gap-4 p-5 md:p-6 rounded-2xl bg-gradient-to-l from-primary to-primary-dark text-white hover:shadow-xl hover:shadow-primary/20 transition-all"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
@@ -320,7 +320,7 @@ export function FooterV2() {
           <div className="py-3">
             <Link
               href="/delegate"
-              className="flex items-center justify-center gap-2 w-full p-3 rounded-xl bg-gradient-to-l from-[#009345] to-[#007A38] text-white font-bold text-sm hover:shadow-lg transition-shadow"
+              className="flex items-center justify-center gap-2 w-full p-3 rounded-xl bg-gradient-to-l from-primary to-primary-dark text-white font-bold text-sm hover:shadow-lg transition-shadow"
             >
               <Bike className="w-4 h-4" />
               <span>سجّل كمندوب توصيل</span>

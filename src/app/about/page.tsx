@@ -16,7 +16,7 @@ export default function AboutPage() {
   return (
     <main className="min-h-screen bg-gray-50" id="main-content">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-[#009345] to-[#007A38] text-white py-20 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-primary to-primary-dark text-white py-20 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 right-10 w-64 h-64 rounded-full bg-white/20" />
           <div className="absolute bottom-10 left-10 w-48 h-48 rounded-full bg-white/10" />
@@ -55,7 +55,7 @@ export default function AboutPage() {
               </div>
             </div>
             <div className="relative h-[400px] rounded-2xl overflow-hidden shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#009345] to-[#007A38] flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
                 <div className="text-center text-white p-8">
                   <div className="text-6xl mb-4">🏪</div>
                   <p className="text-2xl font-bold">منذ 2020</p>

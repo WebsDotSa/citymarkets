@@ -91,7 +91,7 @@ function ThinkingDots({ isVoiceProcessing }: { isVoiceProcessing: boolean }) {
             className="h-2 w-2 rounded-full bg-primary-400 animate-bounce"
             style={{ animationDelay: "300ms" }}
           />
-          <span className="mr-2 text-[11px] font-semibold text-primary-700">
+          <span className="mr-2 text-2xs font-semibold text-primary-700">
             {isVoiceProcessing
               ? "جاري البحث عن منتجاتك…"
               : "جاري التفكير…"}

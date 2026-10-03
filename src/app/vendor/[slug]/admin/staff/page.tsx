@@ -252,17 +252,17 @@ export default function VendorStaffPage({ params }: StaffPageProps) {
                         {s.fullNameAr || s.fullNameEn || s.email}
                       </p>
                       <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${meta.color}`}
+                        className={`text-tiny px-1.5 py-0.5 rounded-md font-medium ${meta.color}`}
                       >
                         {meta.label}
                       </span>
                       {isSelf && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">
+                        <span className="text-tiny px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">
                           أنت
                         </span>
                       )}
                       {!s.isActive && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">
+                        <span className="text-tiny px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">
                           موقوف
                         </span>
                       )}

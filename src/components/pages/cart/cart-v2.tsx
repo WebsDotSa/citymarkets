@@ -11,6 +11,7 @@ import { useDeliveryLocationState, useDeliveryLocationActions } from "@/contexts
 import { useDeliveryQuote } from "@/hooks/use-delivery-quote";
 import { Button } from "@/components/design/button";
 import { EmptyCart } from "@/components/design/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
 import { apiFetch } from '@/lib/catalog';
@@ -291,23 +292,21 @@ export function CartV2() {
           with the content, which is also why the StickyCartBar in the
           storefront chrome self-hides on /cart (see StickyCartBar). */}
       <div className="bg-white border-b border-gray-100 px-4 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
-              <ShoppingCart className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="font-bold text-gray-900">سلة التسوق</h1>
-              <p className="text-sm text-gray-500">{itemCount} منتجات</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowClearConfirm(true)}
-            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-            aria-label="إفراغ السلة"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
+        <div className="max-w-4xl mx-auto">
+          <PageHeader
+            title="سلة التسوق"
+            subtitle={`${itemCount} منتجات`}
+            icon={<ShoppingCart className="w-6 h-6 text-primary" />}
+            action={
+              <button
+                onClick={() => setShowClearConfirm(true)}
+                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                aria-label="إفراغ السلة"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            }
+          />
         </div>
       </div>
 
@@ -502,10 +501,10 @@ export function CartV2() {
               className="flex flex-col leading-tight min-w-0"
               aria-label={`إجمالي السلة ${formatPrice(total)}`}
             >
-              <span className="text-[11px] text-gray-500 flex items-center gap-1">
+              <span className="text-2xs text-gray-500 flex items-center gap-1">
                 <span>الإجمالي</span>
                 <span
-                  className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary/10 text-primary-700 text-[10px] font-bold"
+                  className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary/10 text-primary-700 text-tiny font-bold"
                   aria-label={`${itemCount} منتجات`}
                 >
                   {itemCount > 99 ? "99+" : itemCount}

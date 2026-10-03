@@ -39,7 +39,7 @@ export function vendorNameColumn(r: Vendor) {
           )}
         </div>
         {r.name_en && (
-          <div className="text-[11px] text-gray-500 truncate" dir="ltr">
+          <div className="text-2xs text-gray-500 truncate" dir="ltr">
             {r.name_en}
           </div>
         )}

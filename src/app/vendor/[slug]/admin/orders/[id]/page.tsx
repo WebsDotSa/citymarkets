@@ -239,7 +239,7 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
               {PAYMENT_METHOD_AR[order.paymentMethod] || order.paymentMethod}
             </p>
             {order.moyasarPaymentId && (
-              <p className="text-[10px] text-slate-400 mt-1 font-mono">
+              <p className="text-tiny text-slate-400 mt-1 font-mono">
                 {order.moyasarPaymentId}
               </p>
             )}
@@ -327,7 +327,7 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
             {order.address.text || "—"}
           </p>
           {order.address.lat != null && order.address.lng != null && (
-            <p className="text-[11px] text-slate-400 mt-2 font-mono" dir="ltr">
+            <p className="text-2xs text-slate-400 mt-2 font-mono" dir="ltr">
               {Number(order.address.lat).toFixed(5)}, {Number(order.address.lng).toFixed(5)}
             </p>
           )}
@@ -357,7 +357,7 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm text-slate-900 truncate">{item.name}</p>
                 {item.sku && (
-                  <p className="text-[11px] text-slate-400 font-mono" dir="ltr">
+                  <p className="text-2xs text-slate-400 font-mono" dir="ltr">
                     SKU: {item.sku}
                   </p>
                 )}

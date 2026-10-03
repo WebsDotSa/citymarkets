@@ -86,7 +86,7 @@ function DriverSidebar({ user, isOpen, onClose, onLogout }: DriverSidebarProps) 
             </div>
             <div>
               <p className="text-sm font-bold text-slate-800 leading-tight">أسواق سيتي</p>
-              <p className="text-[10px] text-slate-500 font-medium">مندوب التوصيل</p>
+              <p className="text-tiny text-slate-500 font-medium">مندوب التوصيل</p>
             </div>
           </div>
           <button
@@ -154,7 +154,7 @@ function DriverSidebar({ user, isOpen, onClose, onLogout }: DriverSidebarProps) 
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
-              <p className="text-[10px] text-slate-500">مندوب توصيل</p>
+              <p className="text-tiny text-slate-500">مندوب توصيل</p>
             </div>
           </div>
 

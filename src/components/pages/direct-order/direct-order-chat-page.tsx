@@ -184,7 +184,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
                     <div className="text-xs font-semibold truncate">
                       {it.name_ar || it.free_text}
                     </div>
-                    <div className="text-[10px] text-gray-500">
+                    <div className="text-tiny text-gray-500">
                       ×{it.quantity}
                       {it.resolved_price ? (
                         <span className="text-green-700 mr-2">
@@ -262,7 +262,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
             {/* Voice note */}
             {order.voice_note_url && (
               <div className="bg-gray-50 rounded-lg p-2">
-                <div className="text-[10px] text-gray-500 mb-1">رسالة صوتية منك</div>
+                <div className="text-tiny text-gray-500 mb-1">رسالة صوتية منك</div>
                 <audio
                   controls
                   src={order.voice_note_url}
@@ -273,7 +273,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
             )}
 
             {/* Totals */}
-            <div className="text-[10px] text-gray-500 flex justify-between bg-gray-50 p-2 rounded-lg">
+            <div className="text-tiny text-gray-500 flex justify-between bg-gray-50 p-2 rounded-lg">
               <span>رسوم الخدمة:</span>
               <span>{order.service_fee.toFixed(2)} ر.س</span>
             </div>
