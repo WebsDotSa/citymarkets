@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { XCircle } from "lucide-react";
-import { STORE_PHONE_E164 } from "@/lib/social-links";
+import { STORE_PHONE_E164, STORE_PHONE_DISPLAY } from "@/lib/social-links";
 
 // Extracted from page.tsx so the parent can render a <Suspense>
 // boundary above us (PCP-145). Reading `useSearchParams()` outside a
@@ -57,7 +57,7 @@ export default function VendorOrderFailedClient() {
           <p className="text-sm text-gray-500">
             مشكلة مستمرة؟ تواصل معنا على{" "}
             <a href={`tel:${STORE_PHONE_E164}`} className="text-primary font-medium">
-              0530444976
+              {STORE_PHONE_DISPLAY}
             </a>
           </p>
         </div>
