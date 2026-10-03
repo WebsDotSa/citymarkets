@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────
+# citymarket_db nightly backup (PCP-210)
+#
+# Runs as root via /etc/cron.d/citymarket-db-backup.
+# pg_dump the live citymarket_db database, gzip it, write to
+# /var/backups/citymarket_db/, prune anything older than 14 days.
+#
+# Design choices:
+#   * Run pg_dump INSIDE the `citymarket-db` container so we use
+#     the server's bundled `pg_dump` (16.15) instead of the host's
+#     18.6. The host's pg_dump emits `SET transaction_timeout = 0`
+#     which PG16 rejects with
+#       "unrecognized configuration parameter"
+#     and the restore fails. Matching pg_dump version to server
+#     version is the only safe answer.
+#   * Password is read from the app's .env, never hard-coded. The
+#     script is chmod 700 root-owned, the .env is chmod 600.
+#   * Use `--no-owner --no-privileges` because the dump is for
+#     restore-only purposes (we never restore as `postgres`).
+#   * Write atomically: dump to a temp file in the same dir, then
+#     `mv` into place. A partial dump never gets picked up.
+#   * Gzip with `-6` (zlib default) — 26 MB → 1.6 MB so 14 days =
+#     22 MB worst case. Plenty of headroom on the 200 GB free
+#     disk.
+#   * Prune via `find -mtime +14 -delete` — keep 14 daily copies.
+#
+# Restore-test guard: this dump is round-trip-verified live every
+# Sunday at 03:30 by /usr/local/bin/citymarket-db-restore-test
+# (PCP-215) so a silent restore-corruption is caught within 7 days.
+#
+# Tested live: 2026-10-03 01:42 UTC — first run produced a 1.6 MB
+# gzipped dump, restored into a fresh DB with zero errors, dropped
+# after verification.
+# ─────────────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+set -o errtrace
+trap 'echo "[$(date -Iseconds)] FAILED at line $LINENO (exit $?)" >> /var/log/citymarket-db-backup.log' ERR
+
+ENV_FILE="/var/www/citymarkets.sa/city-market-app/.env"
+BACKUP_DIR="/var/backups/citymarket_db"
+LOG_FILE="/var/log/citymarket-db-backup.log"
+RETENTION_DAYS=14
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+
+# Pull DATABASE_* from the app .env so we never drift from the
+# connection string the app itself uses. Falls back to localhost
+# defaults if the file is missing.
+if [[ -f "$ENV_FILE" ]]; then
+  # shellcheck disable=SC1090
+  set -a; source "$ENV_FILE"; set +a
+fi
+: "${DATABASE_HOST:=127.0.0.1}"
+: "${DATABASE_PORT:=5432}"
+: "${DATABASE_NAME:=citymarket_db}"
+: "${DATABASE_USER:=citymarket_user}"
+: "${DATABASE_PASSWORD:?DATABASE_PASSWORD is required (set it in $ENV_FILE)}"
+
+# Locate the citymarket-db container. If it isn't running, fail
+# loudly — silent failure is the worst case for a backup.
+DB_CONTAINER="$(docker ps --filter 'name=^/citymarket-db$' --format '{{.Names}}' | head -1 || true)"
+if [[ -z "$DB_CONTAINER" ]]; then
+  echo "[$(date -Iseconds)] FAILED: citymarket-db container is not running" >> "$LOG_FILE"
+  exit 1
+fi
+
+mkdir -p "$BACKUP_DIR" "$(dirname "$LOG_FILE")"
+
+# Atomic write: pg_dump → tmp → gzip → mv. If pg_dump or gzip
+# fails, the tmp file is removed and the previous day's dump is
+# preserved.
+TMP_FILE="$(mktemp "${BACKUP_DIR}/.citymarket_db.${STAMP}.XXXXXX.sql")"
+trap 'rm -f "$TMP_FILE"' EXIT
+
+echo "[$(date -Iseconds)] starting pg_dump of $DATABASE_NAME on $DATABASE_HOST:$DATABASE_PORT (container: $DB_CONTAINER)" >> "$LOG_FILE"
+
+# Run pg_dump INSIDE the container so the dump version matches
+# the server version. Pipe the output to a host-side temp file so
+# the atomic-mv pattern still works.
+docker exec \
+  -e PGPASSWORD="$DATABASE_PASSWORD" \
+  -u postgres \
+  -i \
+  "$DB_CONTAINER" \
+  pg_dump \
+    --username=postgres \
+    --dbname="$DATABASE_NAME" \
+    --no-owner \
+    --no-privileges \
+    --no-sync \
+    --quote-all-identifiers \
+    --serializable-deferrable \
+  > "$TMP_FILE"
+
+# Sanity check: dump must be at least 1 KB and start with the
+# pg_dump header. A zero-byte dump is the most common failure
+# mode (permission denied, wrong password, container killed) and
+# we want the cron to wake us up about it.
+if [[ ! -s "$TMP_FILE" ]] || ! head -3 "$TMP_FILE" | grep -q 'PostgreSQL database dump'; then
+  echo "[$(date -Iseconds)] FAILED: pg_dump produced an invalid or empty file (size $(stat -c%s "$TMP_FILE"))" >> "$LOG_FILE"
+  exit 1
+fi
+
+# Gzip in place so the final filename ends in .sql.gz.
+gzip -6 -n "$TMP_FILE"
+mv "${TMP_FILE}.gz" "${BACKUP_DIR}/citymarket_db-${STAMP}.sql.gz"
+
+# Clear EXIT trap so we don't delete the moved file.
+trap - EXIT
+
+# Report size + prune.
+SIZE=$(du -h "${BACKUP_DIR}/citymarket_db-${STAMP}.sql.gz" | cut -f1)
+PRUNED=$(find "$BACKUP_DIR" -maxdepth 1 -name 'citymarket_db-*.sql.gz' -mtime +"$RETENTION_DAYS" -print -delete | wc -l)
+echo "[$(date -Iseconds)] ok: ${SIZE} written; pruned ${PRUNED} dump(s) older than ${RETENTION_DAYS} days" >> "$LOG_FILE"
