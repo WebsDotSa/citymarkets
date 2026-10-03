@@ -98,6 +98,7 @@ export function ProductCard({
                 sizes="96px"
                 className="object-cover"
                 priority={priority}
+                loading={priority ? "eager" : "lazy"}
                 onLoad={() => setImageLoaded(true)}
               />
             ) : (
@@ -151,6 +152,7 @@ export function ProductCard({
                 sizes="(max-width: 640px) 50vw, 200px"
                 className="object-cover"
                 priority={priority}
+                loading={priority ? "eager" : "lazy"}
                 onLoad={() => setImageLoaded(true)}
               />
             ) : (
@@ -215,6 +217,7 @@ export function ProductCard({
               alt={productAlt}
               fill
               priority={priority}
+              loading={priority ? "eager" : "lazy"}
               className={`object-contain p-2 transition-opacity duration-200 ${
                 imageLoaded ? "opacity-100" : "opacity-0"
               }`}

@@ -86,6 +86,7 @@ export function VendorCard({
                 fill
                 className="object-contain p-2"
                 sizes="150px"
+                loading="lazy"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-3xl">🏪</div>
@@ -131,6 +132,7 @@ export function VendorCard({
                 width={80}
                 height={80}
                 className="w-full h-full object-contain p-1"
+                loading="lazy"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-2xl">🏪</div>
@@ -175,6 +177,7 @@ export function VendorCard({
               alt={name}
               fill
               className="object-cover"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-r from-primary/20 to-primary/5" />
