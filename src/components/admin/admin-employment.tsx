@@ -220,7 +220,7 @@ export function AdminEmployment() {
               <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
               <span
-                className={`text-[11px] px-2 py-0.5 rounded-full ${
+                className={`text-2xs px-2 py-0.5 rounded-full ${
                   isActive
                     ? "bg-white/20 text-white"
                     : "bg-slate-100 text-slate-600"
@@ -285,19 +285,19 @@ export function AdminEmployment() {
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <h3 className="font-semibold text-slate-800 truncate">{row.full_name}</h3>
                           {row.job_id === "delivery" && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                            <span className="inline-flex items-center gap-1 text-tiny font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                               <Bike className="w-3 h-3" />
                               مندوب
                             </span>
                           )}
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${meta.color}`}>
+                          <span className={`text-tiny px-2 py-0.5 rounded-full border ${meta.color}`}>
                             {meta.label}
                           </span>
                         </div>
                         <p className="text-xs text-slate-500 truncate">
                           {row.job_title} • {row.phone}
                         </p>
-                        <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                        <p className="text-2xs text-slate-400 mt-1 flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {formatDate(row.created_at)}
                         </p>
@@ -334,7 +334,7 @@ export function AdminEmployment() {
                 <div className="flex items-start justify-between gap-2">
                   <h2 className="text-lg font-bold text-slate-800">{active.full_name}</h2>
                   {active.job_id === "delivery" && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    <span className="inline-flex items-center gap-1 text-tiny font-bold px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                       <Bike className="w-3 h-3" />
                       مندوب توصيل
                     </span>

@@ -29,7 +29,7 @@ function makeReq(): Request {
 describe("/api/admin/broadcast-providers/status", () => {
   beforeEach(() => {
     vi.mocked(requireAdminApi).mockResolvedValue({
-      admin: { id: "admin-1", email: "x@y.z", role: "super_admin" },
+      admin: { id: "admin-1", email: "x@y.z", role: "super_admin", tokenVersion: 1 },
     });
   });
 

@@ -133,7 +133,7 @@ export function GuestLoginPrompt({
             )}
           </button>
 
-          <p className="text-[11px] text-gray-400 text-center leading-5">
+          <p className="text-2xs text-gray-400 text-center leading-5">
             بمتابعتك، توافق على{" "}
             <a href="/terms" className="underline hover:text-gray-600">
               الشروط

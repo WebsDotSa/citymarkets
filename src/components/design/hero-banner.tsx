@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, ArrowLeft, Percent } from "lucide-react";
+import { stripPublicPrefix, validateExternalUrl } from "@/lib/banner-link-utils";
 
 interface HeroBannerProps {
   banners: {
@@ -21,17 +22,27 @@ interface HeroBannerProps {
 
 function getBannerHref(linkType?: string, linkValue?: string | null): string {
   if (!linkValue || linkType === "none") return "/catalog";
-  if (linkType === "category") return `/categories/${encodeURIComponent(linkValue)}`;
-  if (linkType === "product") return `/products/${encodeURIComponent(linkValue)}`;
+  if (linkType === "category") {
+    // BUG FIX (PCP-143): the admin banner editor saves `link_value`
+    // either as a raw slug ("الخضروات-والفواكه") OR as the full
+    // storefront path ("/categories/الخضروات-والفواكه"). Previous
+    // behaviour happened to work because `encodeURIComponent` masked
+    // the leading slash — but the duplicate prefix then lived inside
+    // the encoded payload and hit `/categories//categories/<slug>` on
+    // the storefront, which 404s. Normalise first.
+    const slug = stripPublicPrefix(linkValue);
+    return slug ? `/categories/${encodeURIComponent(slug)}` : "/catalog";
+  }
+  if (linkType === "product") {
+    const slug = stripPublicPrefix(linkValue);
+    return slug ? `/products/${encodeURIComponent(slug)}` : "/catalog";
+  }
+  if (linkType === "vendor") {
+    const slug = stripPublicPrefix(linkValue);
+    return slug ? `/vendors/${encodeURIComponent(slug)}` : "/catalog";
+  }
   if (linkType === "external") {
-    try {
-      const url = new URL(linkValue);
-      return url.protocol === "http:" || url.protocol === "https:"
-        ? url.toString()
-        : "/catalog";
-    } catch {
-      return "/catalog";
-    }
+    return validateExternalUrl(linkValue) ?? "/catalog";
   }
   return "/catalog";
 }
@@ -122,7 +133,7 @@ export function HeroBanner({
             </p>
             <Link
               href={bannerHref}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#111827] rounded-2xl font-semibold hover:bg-primary-light transition-all shadow-lg hover:shadow-xl"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-900 rounded-2xl font-semibold hover:bg-primary-light transition-all shadow-lg hover:shadow-xl"
             >
               تسوق الآن
               <ArrowLeft className="w-4 h-4" />
@@ -139,14 +150,14 @@ export function HeroBanner({
             className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all z-10"
             aria-label="السابق"
           >
-            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-[#111827]" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-900" />
           </button>
           <button
             onClick={next}
             className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all z-10"
             aria-label="التالي"
           >
-            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-[#111827]" />
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-900" />
           </button>
         </>
       )}
@@ -161,7 +172,7 @@ export function HeroBanner({
               className={`w-2 h-2 rounded-full transition-all duration-300 ${
                 index === current
                   ? "w-8 bg-primary"
-                  : "bg-[#E5E7EB] hover:bg-[#D1D5DB]"
+                  : "bg-gray-200 hover:bg-gray-300"
               }`}
               aria-label={`الانتقال للشريحة ${index + 1}`}
             />
@@ -187,7 +198,7 @@ export function StaticHero({
   title,
   subtitle,
   backgroundImage,
-  gradient = "from-[#009345] to-[#00B359]",
+  gradient = "from-primary to-primary-500",
   ctaLabel = "تسوق الآن",
   ctaHref = "/catalog",
   className = "",
@@ -220,7 +231,7 @@ export function StaticHero({
         )}
         <Link
           href={ctaHref}
-          className="inline-flex items-center gap-2 w-fit px-6 py-3 bg-white text-[#111827] rounded-2xl font-semibold hover:bg-primary-light transition-all shadow-lg"
+          className="inline-flex items-center gap-2 w-fit px-6 py-3 bg-white text-gray-900 rounded-2xl font-semibold hover:bg-primary-light transition-all shadow-lg"
         >
           {ctaLabel}
           <ArrowLeft className="w-4 h-4" />
@@ -249,7 +260,7 @@ export function PromoStrip({ className }: PromoStripProps) {
 
   return (
     <div
-      className={`grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-3xl bg-gradient-to-l from-[#009345] to-[#00B359] ${className}`}
+      className={`grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-3xl bg-gradient-to-l from-primary to-primary-500 ${className}`}
     >
       {features.map((item, i) => (
         <div

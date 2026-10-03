@@ -4,7 +4,18 @@ import { requireVendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import crypto from "crypto";
 
-import { error as logError } from '@/lib/logger';
+import { error as logError } from "@/lib/logger";
+import { checkRateLimit } from "@/lib/rate-limit";
+
+// SECURITY (PCP-148): per-vendor cap on coupon creation. Manager+
+// scope is required, but a malicious manager (or one with a stolen
+// session) could spam coupons to fill the vendor_coupons table or
+// poison customer carts with colliding codes. 30/hour per vendor.
+const VENDOR_COUPON_CREATE_CONFIG = {
+  maxRequests: 30,
+  windowMs: 60 * 60 * 1000,
+  keyPrefix: "vendor:coupon:create",
+} as const;
 
 function generateCouponCode(): string {
   return crypto.randomBytes(4).toString("hex").toUpperCase();
@@ -58,6 +69,18 @@ export async function POST(request: NextRequest) {
 
     const unauthorized = requireVendorRole(session, "manager");
     if (unauthorized) return unauthorized;
+
+    // SECURITY (PCP-148): per-vendor rate limit on coupon POST.
+    const createLimit = await checkRateLimit(
+      `vendor:${session.vendorId}`,
+      VENDOR_COUPON_CREATE_CONFIG,
+    );
+    if (!createLimit.allowed) {
+      return NextResponse.json(
+        { error: "تجاوزت عدد العمليات، حاول لاحقاً" },
+        { status: 429 },
+      );
+    }
 
     const body = await request.json();
     const {

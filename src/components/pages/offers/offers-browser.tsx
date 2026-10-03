@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import { Sparkles, Tag } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 import { OfferCard, type OfferCardData } from "@/components/storefront/offer-card";
 
 interface OffersBrowserProps {
@@ -38,16 +39,11 @@ export function OffersBrowser({ featured, offers, totalCount }: OffersBrowserPro
   return (
     <div className="space-y-8 px-3 sm:px-4 py-6 max-w-6xl mx-auto">
       {/* Page header */}
-      <div className="text-center sm:text-right">
-        <div className="inline-flex items-center gap-2 text-primary text-sm font-medium mb-2">
-          <Sparkles className="w-4 h-4" />
-          <span>عروض حصرية</span>
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-secondary">كل العروض</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {totalCount} عرض نشط • خصومات محدّثة يومياً
-        </p>
-      </div>
+      <PageHeader
+        title="كل العروض"
+        subtitle={`${totalCount} عرض نشط • خصومات محدّثة يومياً`}
+        icon={<Sparkles className="w-6 h-6 text-primary" />}
+      />
 
       {/* Featured carousel (if any) */}
       {featured.length > 0 ? (

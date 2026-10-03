@@ -31,7 +31,7 @@ export default function AdminError({ error, reset }: AdminErrorProps) {
           <p className="font-mono">{error.message}</p>
           {error.digest && <p className="font-mono mt-1">Error ID: {error.digest}</p>}
           {process.env.NODE_ENV === 'development' && error.stack && (
-            <pre className="font-mono mt-2 text-[10px] whitespace-pre-wrap break-all max-h-48 overflow-auto" dir="ltr">
+            <pre className="font-mono mt-2 text-tiny whitespace-pre-wrap break-all max-h-48 overflow-auto" dir="ltr">
               {error.stack}
             </pre>
           )}

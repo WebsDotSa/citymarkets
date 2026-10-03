@@ -288,7 +288,7 @@ export default function VendorPage() {
         {/* Vendor name overlay on banner */}
         <div className="absolute bottom-4 inset-x-4 z-10">
           <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold backdrop-blur-md mb-2"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-2xs font-bold backdrop-blur-md mb-2"
             style={{ background: "rgba(255,255,255,0.92)", color: vendor.primaryColor }}
           >
             <span>{vendorTypeIcon(vendor.type)}</span>
@@ -339,7 +339,7 @@ export default function VendorPage() {
                   {vendor.description}
                 </p>
               )}
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-bold text-slate-500">
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-2xs font-bold text-slate-500">
                 <span className="inline-flex items-center gap-1">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
@@ -451,7 +451,7 @@ export default function VendorPage() {
                           {p.name}
                         </p>
                         <p className="mt-1 text-sm font-black text-primary tabular-nums" dir="ltr">
-                          {(p.discountPrice ?? p.price).toFixed(2)} <span className="text-[10px]">ر.س</span>
+                          {(p.discountPrice ?? p.price).toFixed(2)} <span className="text-tiny">ر.س</span>
                         </p>
                       </div>
                     </Link>
@@ -545,7 +545,7 @@ export default function VendorPage() {
                           />
                           {hasDiscount && (
                             <span
-                              className="absolute top-2 right-2 text-[10px] font-black px-2 py-0.5 rounded-full text-white shadow-sm"
+                              className="absolute top-2 right-2 text-tiny font-black px-2 py-0.5 rounded-full text-white shadow-sm"
                               style={{ background: vendor.primaryColor }}
                             >
                               خصم
@@ -571,15 +571,15 @@ export default function VendorPage() {
                             {hasDiscount ? (
                               <div className="flex flex-col">
                                 <span className="text-primary font-black text-sm tabular-nums" dir="ltr">
-                                  {product.discountPrice!.toFixed(2)} <span className="text-[10px]">ر.س</span>
+                                  {product.discountPrice!.toFixed(2)} <span className="text-tiny">ر.س</span>
                                 </span>
-                                <span className="text-[10px] text-slate-400 line-through tabular-nums" dir="ltr">
+                                <span className="text-tiny text-slate-400 line-through tabular-nums" dir="ltr">
                                   {product.price.toFixed(2)}
                                 </span>
                               </div>
                             ) : (
                               <span className="text-primary font-black text-sm tabular-nums" dir="ltr">
-                                {product.price.toFixed(2)} <span className="text-[10px]">ر.س</span>
+                                {product.price.toFixed(2)} <span className="text-tiny">ر.س</span>
                               </span>
                             )}
                           </div>
@@ -813,7 +813,7 @@ function CategoryStrip({
               <span className="line-clamp-1">{c.name_ar}</span>
               {c.is_private && (
                 <span
-                  className="text-[10px] text-amber-600 border border-amber-300 rounded-full px-1.5"
+                  className="text-tiny text-amber-600 border border-amber-300 rounded-full px-1.5"
                   title="تصنيف خاص"
                 >
                   خاص

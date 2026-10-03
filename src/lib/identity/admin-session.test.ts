@@ -72,6 +72,10 @@ describe("admin-session", () => {
         id: "admin-1",
         email: "a@example.com",
         role: "admin",
+        // SECURITY (PCP-144): the verifier always populates
+        // `tokenVersion` on the returned object (defaults to 1 for
+        // legacy tokens that do not carry the claim).
+        tokenVersion: 1,
       });
     });
 
@@ -154,6 +158,12 @@ describe("admin-session", () => {
         id: "admin-9",
         email: "nine@example.com",
         role: "editor",
+        // SECURITY (PCP-144): the signer's `tokenVersion` default is
+        // 1, so a token minted without an explicit version verifies
+        // back with `tokenVersion: 1`. The DB compare in
+        // `requireAdminApi` still works because the live row's
+        // `token_version` is also 1 until a bump happens.
+        tokenVersion: 1,
       });
     });
 

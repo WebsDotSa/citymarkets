@@ -44,7 +44,7 @@ export function RootGrid({
           >
             {root.name_ar}
           </h2>
-          <p className="text-[11px] text-slate-500 mt-0.5" dir="ltr">
+          <p className="text-2xs text-slate-500 mt-0.5" dir="ltr">
             {root.children.length}{" "}
             {root.children.length === 1 ? "قسم فرعي" : "أقسام فرعية"} ·{" "}
             {root.descendantCount.toLocaleString("en-US")} منتج
@@ -63,7 +63,7 @@ export function RootGrid({
           ) : null}
           <Link
             href={`/categories/${encodeURIComponent(root.slug)}`}
-            className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-[#009345] hover:text-[#007A38] transition-colors"
+            className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-primary hover:text-primary-dark transition-colors"
           >
             <span>عرض كل المنتجات</span>
             <ChevronLeft className="w-4 h-4" aria-hidden="true" />
@@ -167,7 +167,7 @@ function CategoryCard({
             <p className="text-sm font-bold text-slate-900 leading-tight line-clamp-2">
               {highlight(node.name_ar, query)}
             </p>
-            <p className="text-[11px] text-slate-500 mt-0.5" dir="ltr">
+            <p className="text-2xs text-slate-500 mt-0.5" dir="ltr">
               {productCount.toLocaleString("en-US")} منتج
             </p>
           </div>
@@ -185,7 +185,7 @@ function CategoryCard({
               <li key={String(g.id)}>
                 <Link
                   href={`/categories/${encodeURIComponent(g.slug)}`}
-                  className="inline-flex items-center gap-1 rounded-full bg-slate-50 hover:bg-slate-100 ring-1 ring-slate-200/60 px-2.5 py-1 text-[10px] font-bold text-slate-700 transition-colors"
+                  className="inline-flex items-center gap-1 rounded-full bg-slate-50 hover:bg-slate-100 ring-1 ring-slate-200/60 px-2.5 py-1 text-tiny font-bold text-slate-700 transition-colors"
                 >
                   <span>{g.name_ar}</span>
                   <span className="text-slate-400 tabular-nums" dir="ltr">
@@ -198,7 +198,7 @@ function CategoryCard({
               <li>
                 <Link
                   href={`/categories/${encodeURIComponent(node.slug)}`}
-                  className="inline-flex items-center gap-1 rounded-full bg-slate-50 ring-1 ring-slate-200/60 px-2.5 py-1 text-[10px] font-bold text-slate-500 hover:bg-slate-100"
+                  className="inline-flex items-center gap-1 rounded-full bg-slate-50 ring-1 ring-slate-200/60 px-2.5 py-1 text-tiny font-bold text-slate-500 hover:bg-slate-100"
                 >
                   +{node.children.length - 4}
                 </Link>

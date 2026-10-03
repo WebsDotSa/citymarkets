@@ -75,7 +75,7 @@ export function AdminBottomNav({ user, onMenuClick }: AdminBottomNavProps) {
                    <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-primary" />
                 )}
               </div>
-              <span className={`text-[10px] mt-1 font-medium ${active ? "text-primary" : ""}`}>
+              <span className={`text-tiny mt-1 font-medium ${active ? "text-primary" : ""}`}>
                 {item.label}
               </span>
             </Link>
@@ -90,7 +90,7 @@ export function AdminBottomNav({ user, onMenuClick }: AdminBottomNavProps) {
           <div className="relative flex items-center justify-center w-8 h-8 rounded-full">
             <Menu className="w-5 h-5" />
           </div>
-          <span className="text-[10px] mt-1 font-medium">
+          <span className="text-tiny mt-1 font-medium">
             المزيد
           </span>
         </button>

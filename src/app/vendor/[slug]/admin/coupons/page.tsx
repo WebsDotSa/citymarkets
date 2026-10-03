@@ -172,7 +172,7 @@ export default function VendorCouponsPage({ params }: CouponsPageProps) {
                       <span className="text-xs text-emerald-600">✓ تم النسخ</span>
                     )}
                     {!c.isActive && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">
+                      <span className="text-tiny px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">
                         معطل
                       </span>
                     )}

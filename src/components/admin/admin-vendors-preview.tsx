@@ -61,7 +61,7 @@ export function VendorPreviewCard({
               </div>
             ) : null}
             <div
-              className="inline-block text-[10px] px-1.5 py-0.5 rounded mt-1"
+              className="inline-block text-tiny px-1.5 py-0.5 rounded mt-1"
               style={{ backgroundColor: `${color}15`, color }}
             >
               {VENDOR_TYPE_LABEL[String(data.vendor_type || "food_beverage")] ||
@@ -74,7 +74,7 @@ export function VendorPreviewCard({
             {String(data.description_ar)}
           </p>
         ) : null}
-        <div className="flex flex-wrap gap-3 text-[11px] text-gray-500 pt-2 border-t border-gray-100">
+        <div className="flex flex-wrap gap-3 text-2xs text-gray-500 pt-2 border-t border-gray-100">
           {data.contact_phone ? (
             <span className="flex items-center gap-1">
               <Phone className="w-3 h-3" />

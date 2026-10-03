@@ -68,7 +68,7 @@ function FeaturedCarousel({ vendors }: { vendors: VendorWithStats[] }) {
           <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
             المتاجر المميزة
           </h2>
-          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+          <p className="text-2xs sm:text-xs text-slate-500 mt-0.5">
             أفضل المتاجر المختارة لك
           </p>
         </div>
@@ -90,7 +90,7 @@ function FeaturedCarousel({ vendors }: { vendors: VendorWithStats[] }) {
                 sizes="320px"
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <div className="absolute top-2 right-2 bg-white/95 backdrop-blur px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-600 shadow-sm">
+              <div className="absolute top-2 right-2 bg-white/95 backdrop-blur px-2 py-0.5 rounded-full text-tiny font-bold text-amber-600 shadow-sm">
                 ⭐ مميز
               </div>
             </div>
@@ -106,7 +106,7 @@ function FeaturedCarousel({ vendors }: { vendors: VendorWithStats[] }) {
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-bold text-sm text-slate-900 truncate">{v.name_ar}</h3>
-                <p className="text-[11px] text-slate-500 truncate">
+                <p className="text-2xs text-slate-500 truncate">
                   {vendorTypeIcon(v.vendor_type)} {vendorTypeLabel(v.vendor_type)} · {v.product_count} منتج
                 </p>
               </div>
@@ -144,7 +144,7 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
         <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/30 to-transparent" />
         <div className="absolute top-2 left-2 flex gap-1">
           {vendor.is_featured && (
-            <span className="bg-amber-400 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+            <span className="bg-amber-400 text-amber-900 text-tiny font-bold px-2 py-0.5 rounded-full shadow-sm">
               ⭐
             </span>
           )}
@@ -180,7 +180,7 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
 
           <div className="mt-3 flex items-center justify-between gap-2">
             <span
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-full"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-2xs font-bold rounded-full"
               style={{
                 background: `${vendor.primary_color ?? "#009345"}1a`,
                 color: vendor.primary_color ?? "#009345",
@@ -189,12 +189,12 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
               <span>{vendorTypeIcon(vendor.vendor_type)}</span>
               <span>{vendorTypeLabel(vendor.vendor_type)}</span>
             </span>
-            <span className="text-[11px] font-bold text-slate-500 tabular-nums" dir="ltr">
+            <span className="text-2xs font-bold text-slate-500 tabular-nums" dir="ltr">
               {vendor.product_count} منتج
             </span>
           </div>
 
-          <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+          <div className="mt-2.5 flex items-center gap-1.5 text-2xs text-slate-500">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             <span>مفتوح الآن</span>
           </div>
@@ -218,7 +218,7 @@ export default async function VendorsPage() {
               <h1 id="all-vendors" className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                 جميع المتاجر
               </h1>
-              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+              <p className="text-2xs sm:text-xs text-slate-500 mt-0.5">
                 {vendors.length} متجر · تصفح حسب النوع
               </p>
             </div>

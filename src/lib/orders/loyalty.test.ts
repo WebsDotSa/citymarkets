@@ -190,6 +190,48 @@ describe("resolveRedeemForOrder", () => {
     expect(out).toEqual({ debited: 0, duplicate: false });
     expect(client.query).not.toHaveBeenCalled();
   });
+
+  // PCP-145: loyalty double-spend via missing rowCount check.
+  //
+  // The original `resolveRedeemForOrder` does:
+  //   1) INSERT ... ON CONFLICT DO NOTHING → returns the new id
+  //   2) UPDATE loyalty_points SET balance = balance - $1 WHERE balance >= $1
+  // and never inspects the UPDATE's rowCount. If a concurrent order
+  // drained the user's balance between the `pending_redeem` hold and
+  // this resolve, the UPDATE silently matches 0 rows, no exception
+  // fires, and the function returns `{ debited: points, duplicate:
+  // false }`. The orphan `redeem` row stays in the ledger, the
+  // customer's `loyalty_points.balance` is not debited, and the next
+  // order can re-spend the same points — i.e. effective double-spend
+  // against the marketplace.
+  //
+  // The fix: the helper must observe the UPDATE's rowCount. When 0
+  // rows match (the balance is short), the function MUST raise so the
+  // surrounding transaction rolls back, removing the orphan `redeem`
+  // ledger row and forcing the caller to surface the failure to ops.
+  it("PCP-145: throws when UPDATE matches 0 rows (balance drained concurrently)", async () => {
+    const client = makeMockClient();
+    // Step 1: INSERT lands the redeem row (returns a new id).
+    client.query.mockResolvedValueOnce({
+      rows: [{ id: "tx-r-orphan" }],
+      rowCount: 1,
+    });
+    // Step 2: UPDATE matches 0 rows — balance is short.
+    client.query.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+    await expect(
+      resolveRedeemForOrder(client as never, {
+        orderId: "order-orphan",
+        userId: "user-orphan",
+        pointsRedeemed: 500,
+      }),
+    ).rejects.toThrow(/balance/i);
+
+    // Both queries must have run; the throw must come AFTER the UPDATE
+    // (not short-circuit on the INSERT) so the caller can rely on
+    // rollback semantics to clean up the orphan row.
+    expect(client.query).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("releaseRedeemHoldForOrder (P1-7)", () => {

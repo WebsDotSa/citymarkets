@@ -639,7 +639,7 @@ function AddressFormModal({ onClose }: { onClose: () => void }) {
           <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-gray-700">الموقع</p>
-              <p className="text-[11px] text-gray-500 truncate" data-testid="location-status">
+              <p className="text-2xs text-gray-500 truncate" data-testid="location-status">
                 {locationStatus ?? (coords ? `(${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})` : "اضغط لتحديد موقعك")}
               </p>
             </div>

@@ -36,21 +36,22 @@ describe("customer-session.ts (jose end-to-end)", () => {
   it("round-trips a token: signCustomerToken → verifyCustomerToken", async () => {
     const token = await signCustomerToken({
       userId: "user-abc",
-      phone: "+966500000000",
+      phone: "+966****0000",
     });
     const claims = await verifyCustomerToken(token);
-    expect(claims).toEqual({ userId: "user-abc", phone: "+966500000000" });
+    expect(claims).toEqual({ userId: "user-abc", phone: "+966****0000", tokenVersion: 1 });
   });
 
   it("accepts a legacy jsonwebtoken-signed token (interoperability)", async () => {
     const token = signLegacyToken({
       userId: "user-legacy",
-      phone: "+966500000001",
+      phone: "+966****0001",
     });
     const claims = await verifyCustomerToken(token);
     expect(claims).toEqual({
       userId: "user-legacy",
-      phone: "+966500000001",
+      phone: "+966****0001",
+      tokenVersion: 1,
     });
   });
 

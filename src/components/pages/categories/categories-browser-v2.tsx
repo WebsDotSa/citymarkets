@@ -207,7 +207,7 @@ export function CategoriesBrowserV2({
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-[#F2F4F7] text-slate-900 pb-24 md:pb-12 font-['IBM_Plex_Sans_Arabic','system-ui',sans-serif]"
+      className="min-h-screen bg-gray-100 text-slate-900 pb-24 md:pb-12 font-['IBM_Plex_Sans_Arabic','system-ui',sans-serif]"
     >
       <PageHero
         tree={initialTree}
@@ -295,7 +295,7 @@ function EmptyState({
       <button
         type="button"
         onClick={onClear}
-        className="inline-flex items-center gap-2 text-sm font-bold text-[#009345] hover:text-[#007A38]"
+        className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-primary-dark"
       >
         مسح البحث
       </button>

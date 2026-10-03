@@ -114,7 +114,7 @@ export function ChatComposer({
               loading={loading && !isRecording}
             />
           </div>
-          <p className="mt-1.5 px-1 text-center text-[10px] leading-4 text-gray-400">
+          <p className="mt-1.5 px-1 text-center text-tiny leading-4 text-gray-400">
             الأفكار الغذائية اقتراحات فقط. المنتجات حسب توفر أسواق سيتي.
           </p>
         </form>
@@ -202,7 +202,7 @@ function RecordingIndicator({
         <span className="h-2.5 w-2.5 animate-ping rounded-full bg-white" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between text-[11px] font-bold text-red-800">
+        <div className="flex items-center justify-between text-2xs font-bold text-red-800">
           <span>جاري الاستماع…</span>
           <span className="tabular-nums">{formatTime(recordingTime)}</span>
         </div>
@@ -249,7 +249,7 @@ function VoiceErrorBanner({
       <button
         type="button"
         onClick={onRetry}
-        className="rounded-md px-2 py-0.5 text-[11px] font-bold text-red-800 underline-offset-2 hover:underline"
+        className="rounded-md px-2 py-0.5 text-2xs font-bold text-red-800 underline-offset-2 hover:underline"
       >
         إعادة المحاولة
       </button>
@@ -264,7 +264,7 @@ function SuggestionsRail({
 }) {
   return (
     <div className="pt-1">
-      <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+      <p className="mb-1.5 px-1 text-tiny font-semibold uppercase tracking-wider text-gray-500">
         اقتراحات سريعة
       </p>
       <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">

@@ -288,7 +288,7 @@ function AdminDirectOrderDetail({ orderId }: { orderId: string }) {
                       )}
                     </div>
                     <div className="w-28">
-                      <label className="text-[10px] text-gray-500">السعر النهائي</label>
+                      <label className="text-tiny text-gray-500">السعر النهائي</label>
                       <input
                         type="number"
                         step="0.01"

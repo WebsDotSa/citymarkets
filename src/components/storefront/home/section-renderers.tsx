@@ -24,6 +24,7 @@ import { OfferCard, type OfferCardData } from "@/components/storefront/offer-car
 import { OfferCountdown } from "@/components/storefront/offer-countdown";
 import { apiFetch } from '@/lib/catalog';
 import { sanitizeHtml } from '@/lib/sanitize-html';
+import { stripPublicPrefix, validateExternalUrl } from "@/lib/banner-link-utils";
 import type {
   BannersSettings,
   CategoriesSettings,
@@ -45,19 +46,32 @@ import type {
 
 function bannerHref(item: InlineBannerItem): string | null {
   if (!item.link_type || item.link_type === "none") return null;
-  const v = item.link_value ?? null;
-  if (!v) return null;
+  const raw = item.link_value ?? null;
+  if (!raw) return null;
   switch (item.link_type) {
-    case "category":
-      return `/categories/${v}`;
-    case "product":
-      return `/products/${v}`;
-    case "vendor":
-      // Public storefront route is `/vendors/<slug>`; `/vendor/*` is the vendor-admin
-      // subtree and middleware redirects unauthenticated visitors there to login.
-      return `/vendors/${v}`;
+    case "category": {
+      const slug = stripPublicPrefix(raw);
+      // Empty after strip means the admin saved just `/categories/` —
+      // fall through to a safe store-root rather than emitting
+      // `/categories/` which 404s.
+      if (!slug) return "/catalog";
+      return `/categories/${encodeURIComponent(slug)}`;
+    }
+    case "product": {
+      const slug = stripPublicPrefix(raw);
+      if (!slug) return "/catalog";
+      return `/products/${encodeURIComponent(slug)}`;
+    }
+    case "vendor": {
+      const slug = stripPublicPrefix(raw);
+      if (!slug) return "/catalog";
+      // Public storefront route is `/vendors/<slug>`; `/vendor/*` is
+      // the vendor-admin subtree and middleware redirects
+      // unauthenticated visitors there to login.
+      return `/vendors/${encodeURIComponent(slug)}`;
+    }
     case "external":
-      return v;
+      return validateExternalUrl(raw) ?? null;
     default:
       return null;
   }

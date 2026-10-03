@@ -142,7 +142,7 @@ export function ChatProductResults({
                   <Package className="h-6 w-6 text-primary/50" aria-hidden="true" />
                 )}
                 {inCart > 0 && (
-                  <span className="absolute -bottom-1 -left-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-black text-white shadow-sm">
+                  <span className="absolute -bottom-1 -left-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-tiny font-black text-white shadow-sm">
                     {inCart}
                   </span>
                 )}
@@ -156,7 +156,7 @@ export function ChatProductResults({
                   {product.name}
                 </a>
                 {(product.unit || product.vendorName) && (
-                  <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[10px] text-gray-500">
+                  <p className="mt-0.5 flex min-w-0 items-center gap-1 text-tiny text-gray-500">
                     {product.vendorName && (
                       <Store className="h-3 w-3 shrink-0 text-primary/70" aria-hidden="true" />
                     )}
@@ -170,7 +170,7 @@ export function ChatProductResults({
                     {priceFormatter.format(product.displayPrice)} ر.س
                   </span>
                   {product.originalPrice !== null && (
-                    <span className="text-[10px] text-gray-400 line-through">
+                    <span className="text-tiny text-gray-400 line-through">
                       {priceFormatter.format(product.originalPrice)}
                     </span>
                   )}
@@ -208,7 +208,7 @@ export function ChatProductResults({
       </div>
 
       {inCartCount === totalCount && totalCount > 0 && (
-        <div className="flex items-center justify-center gap-1.5 rounded-xl bg-primary/5 px-3 py-2 text-[11px] font-semibold text-primary">
+        <div className="flex items-center justify-center gap-1.5 rounded-xl bg-primary/5 px-3 py-2 text-2xs font-semibold text-primary">
           <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
           تمت إضافة جميع المنتجات المقترحة للسلة
         </div>

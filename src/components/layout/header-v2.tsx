@@ -136,11 +136,11 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
                 }`}
                 aria-label="تحديد الموقع"
               >
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-l from-[#009345] to-[#00B359] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-l from-primary to-primary-500 flex items-center justify-center">
                   <MapPin className="w-4 h-4 text-white" />
                 </div>
                 <div className="text-right hidden lg:block">
-                  <p className="text-[10px] opacity-70">التوصيل إلى</p>
+                  <p className="text-tiny opacity-70">التوصيل إلى</p>
                   <p className="text-sm font-semibold flex items-center gap-1">
                     {shortAddressLabel(selectedAddress)}
                     <ChevronDown className="w-3 h-3 opacity-70" />
@@ -159,7 +159,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
                 className={`hidden md:flex items-center gap-2 h-11 px-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${
                   glassStyles
                     ? "bg-white/20 text-white hover:bg-white/30 backdrop-blur"
-                    : "bg-gradient-to-l from-[#009345] to-[#00B359] text-white shadow-md shadow-[#009345]/20 hover:shadow-lg hover:shadow-[#009345]/30"
+                    : "bg-gradient-to-l from-primary to-primary-500 text-white shadow-md shadow-[#009345]/20 hover:shadow-lg hover:shadow-primary/30"
                 }`}
               >
                 <ChefHat className="w-4 h-4" strokeWidth={2.2} />
@@ -246,7 +246,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
                 <div className="relative">
                   <ShoppingCart className="w-5 h-5" />
                   {itemCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-bounce-in shadow-lg shadow-orange-500/30">
+                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-orange-500 text-white text-tiny font-bold rounded-full flex items-center justify-center animate-bounce-in shadow-lg shadow-orange-500/30">
                       {itemCount > 9 ? "9+" : itemCount}
                     </span>
                   )}
@@ -287,7 +287,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
                       {/* User Info */}
                       <div className="p-4 bg-gradient-to-l from-primary-50 to-white border-b border-gray-100">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-l from-[#009345] to-[#00B359] flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-[#009345]/20">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-l from-primary to-primary-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-[#009345]/20">
                             {user.name?.charAt(0) || user.phone?.charAt(0) || "م"}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -384,7 +384,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
                     glassStyles
                       ? "bg-white/20 text-white hover:bg-white/30 backdrop-blur"
-                      : "bg-gradient-to-l from-[#009345] to-[#00B359] text-white hover:shadow-lg hover:shadow-[#009345]/25"
+                      : "bg-gradient-to-l from-primary to-primary-500 text-white hover:shadow-lg hover:shadow-primary/25"
                   }`}
                 >
                   <User className="w-4 h-4" />
@@ -462,7 +462,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Menu Header */}
-            <div className="p-6 bg-gradient-to-l from-[#009345] to-[#00B359]">
+            <div className="p-6 bg-gradient-to-l from-primary to-primary-500">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {user ? (
@@ -567,7 +567,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
               ) : (
                 <Link
                   href={loginHref}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-4 bg-gradient-to-l from-[#009345] to-[#00B359] text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-[#009345]/25 transition-all"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-4 bg-gradient-to-l from-primary to-primary-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/25 transition-all"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <User className="w-5 h-5" />

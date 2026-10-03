@@ -43,7 +43,7 @@ export function ChatHeader({ hasHistory, onStartNewChat }: ChatHeaderProps) {
                 متصل بالمتجر
               </span>
             </div>
-            <p className="truncate text-[10px] text-gray-500 sm:text-[11px]">
+            <p className="truncate text-tiny text-gray-500 sm:text-2xs">
               اطلب بصوتك أو اسأل عن وجبة ومكوناتها
             </p>
           </div>
@@ -53,7 +53,7 @@ export function ChatHeader({ hasHistory, onStartNewChat }: ChatHeaderProps) {
           <button
             type="button"
             onClick={onStartNewChat}
-            className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-[11px] font-bold text-gray-500 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+            className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-2xs font-bold text-gray-500 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
             aria-label="بدء محادثة جديدة"
           >
             <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />

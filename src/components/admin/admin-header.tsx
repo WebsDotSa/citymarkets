@@ -238,7 +238,7 @@ export function AdminHeader({
                         <p className="text-xs text-slate-500 mt-0.5">
                           {notif.message}
                         </p>
-                        <p className="text-[10px] text-slate-400 mt-1">
+                        <p className="text-tiny text-slate-400 mt-1">
                           {notif.time}
                         </p>
                       </div>

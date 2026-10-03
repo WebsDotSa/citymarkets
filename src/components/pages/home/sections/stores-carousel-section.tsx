@@ -78,7 +78,7 @@ function VendorCard({ vendor }: { vendor: HomeVendor }) {
         {/* open/closed pill */}
         <div className="absolute top-3 right-3 z-10">
           <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md ${
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-tiny font-bold backdrop-blur-md ${
               vendor.isOpen
                 ? "bg-emerald-500/95 text-white shadow-sm"
                 : "bg-slate-700/90 text-white"
@@ -120,11 +120,11 @@ function VendorCard({ vendor }: { vendor: HomeVendor }) {
             {vendor.name}
           </h3>
           {vendor.description && (
-            <p className="text-[11px] sm:text-xs text-slate-500 line-clamp-2 mt-0.5 leading-snug">
+            <p className="text-2xs sm:text-xs text-slate-500 line-clamp-2 mt-0.5 leading-snug">
               {vendor.description}
             </p>
           )}
-          <div className="mt-2 flex items-center gap-1 text-[11px] font-bold text-primary">
+          <div className="mt-2 flex items-center gap-1 text-2xs font-bold text-primary">
             تصفح المتجر
             <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
           </div>

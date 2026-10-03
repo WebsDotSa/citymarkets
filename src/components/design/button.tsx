@@ -38,29 +38,29 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: `
-        bg-gradient-to-l from-[#009345] to-[#00B359]
+        bg-gradient-to-l from-primary to-primary-500
         text-white shadow-lg shadow-[#009345]/25
-        hover:shadow-xl hover:shadow-[#009345]/30 hover:from-[#007A38] hover:to-[#009345]
-        focus-visible:ring-[#009345]
+        hover:shadow-xl hover:shadow-primary/30 hover:from-[#007A38] hover:to-[#009345]
+        focus-visible:ring-primary
         active:scale-[0.98]
       `,
       secondary: `
-        bg-[#F3F4F6] text-[#111827]
-        border border-[#E5E7EB]
+        bg-gray-100 text-gray-900
+        border border-gray-200
         hover:bg-white hover:border-primary hover:text-primary
-        focus-visible:ring-[#009345]
+        focus-visible:ring-primary
       `,
       outline: `
         bg-transparent text-primary
         border-2 border-primary
         hover:bg-primary hover:text-white
-        focus-visible:ring-[#009345]
+        focus-visible:ring-primary
         active:scale-[0.98]
       `,
       ghost: `
-        bg-transparent text-[#6B7280]
-        hover:bg-[#F3F4F6] hover:text-[#111827]
-        focus-visible:ring-[#009345]
+        bg-transparent text-gray-500
+        hover:bg-gray-100 hover:text-gray-900
+        focus-visible:ring-primary
       `,
       danger: `
         bg-[#FEE2E2] text-[#DC2626]

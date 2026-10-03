@@ -30,6 +30,9 @@ const config: Config = {
           800: "#005F2B",
           900: "#003F1C",
         },
+        // Convenience aliases for admin components using camelCase gradients
+        "primary-dark": "#007A38",
+        "primary-light": "#E6F5EC",
         secondary: "#1A1A2E",
         accent: "#F59E0B",
         "accent-2": "#10B981",
@@ -53,6 +56,11 @@ const config: Config = {
         // surfaces so the visual hierarchy doesn't rest entirely on
         // weight/size. Use `className="font-display"` on the heading.
         display: ["var(--font-tajawal)", "var(--font-ibm-plex)", "system-ui", "sans-serif"],
+      },
+      fontSize: {
+        // Custom sizes for 10px and 11px that replaced 208 inline text-[10px]/text-[11px] usages
+        tiny: ["0.625rem", { lineHeight: "0.875rem" }],   // 10px
+        "2xs": ["0.6875rem", { lineHeight: "0.875rem" }], // 11px
       },
       boxShadow: {
         "soft": "0 2px 8px -2px rgba(0, 0, 0, 0.05), 0 4px 16px -4px rgba(0, 0, 0, 0.1)",

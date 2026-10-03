@@ -102,10 +102,19 @@ async function mirrorPaymentStatus(
   args: { orderId: string; paymentDb: PaymentDbStatus },
 ): Promise<void> {
   const { orderId, paymentDb } = args;
+  // PCP-144: guard `refunded` too. The admin refund flow at
+  // src/app/api/admin/orders/[id]/refund/route.ts sets both the
+  // parent and every vendor_orders child to `refunded`. A late
+  // `payment.notification` webhook arriving afterwards must NOT
+  // be allowed to overwrite that terminal state with whatever
+  // value the gateway re-sends. The CASE must protect all three
+  // terminal values (paid / failed / refunded) ahead of the
+  // `ELSE $1` fallback.
   await client.query(
     `UPDATE orders
         SET payment_status = CASE
-          WHEN payment_status = 'paid'   THEN 'paid'
+          WHEN payment_status = 'paid'     THEN 'paid'
+          WHEN payment_status = 'refunded' THEN 'refunded'
           WHEN payment_status = 'failed' AND $1 = 'pending' THEN 'failed'
           ELSE $1
         END,
@@ -116,7 +125,8 @@ async function mirrorPaymentStatus(
   await client.query(
     `UPDATE vendor_orders
         SET payment_status = CASE
-          WHEN payment_status = 'paid'   THEN 'paid'
+          WHEN payment_status = 'paid'     THEN 'paid'
+          WHEN payment_status = 'refunded' THEN 'refunded'
           WHEN payment_status = 'failed' AND $1 = 'pending' THEN 'failed'
           ELSE $1
         END,

@@ -268,14 +268,22 @@ export async function POST(
         WHERE id = $1`,
       [refundRequestId, gatewayRefundId],
     );
+    // PCP-143: the live table columns are (old_status, new_status,
+    // changed_by, notes). The previous `(order_id, status, notes,
+    // created_by)` shape raised 42703 and rolled back the whole admin
+    // refund, so the customer's money was refunded by Moyasar but the
+    // order stayed in the "paid" state. Use the same canonical columns
+    // the customer route and the rest of the codebase use.
     await client.query(
-      `INSERT INTO order_status_logs (order_id, status, notes, created_by)
-       VALUES ($1, $2, $3, $4)`,
+      `INSERT INTO order_status_logs
+         (order_id, old_status, new_status, changed_by, notes)
+       VALUES ($1, $2, $3, $4, $5)`,
       [
         orderId,
         order.status,
+        order.status,
+        `admin:${adminUserId}`,
         `استرداد ${amountHalalas ? `جزئي (${amountHalalas / 100} ر.س)` : "كامل"} عبر ميسر${reason ? `: ${reason}` : ""}`,
-        adminUserId,
       ],
     );
     await finalizePaymentEvent(client, {

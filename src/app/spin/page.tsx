@@ -114,7 +114,7 @@ export default function SpinPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#009345] to-[#007A38] flex flex-col items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-primary to-primary-dark flex flex-col items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
         <div className="flex items-center justify-center gap-2 mb-6">
           <Sparkles className="w-6 h-6 text-primary" />

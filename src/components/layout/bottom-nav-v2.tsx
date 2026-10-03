@@ -76,7 +76,7 @@ export function BottomNavV2() {
                 {/* Wishlist badge */}
                 {item.showBadge && wishlistCount > 0 && (
                   <span
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 md:w-5 md:h-5 bg-red-500 text-white text-[9px] md:text-[10px] font-bold rounded-full flex items-center justify-center min-w-[16px]"
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 md:w-5 md:h-5 bg-red-500 text-white text-[9px] md:text-tiny font-bold rounded-full flex items-center justify-center min-w-[16px]"
                     style={{ animation: "bounce-in 0.3s ease-out" }}
                   >
                     {wishlistCount > 9 ? "9+" : wishlistCount}
@@ -84,7 +84,7 @@ export function BottomNavV2() {
                 )}
               </div>
               <span
-                className={`text-[10px] md:text-xs font-medium transition-colors truncate ${
+                className={`text-tiny md:text-xs font-medium transition-colors truncate ${
                   isActive
                     ? item.accent
                       ? "text-primary font-bold"
@@ -145,7 +145,7 @@ export function BottomNavCompact({ cartCount = 0 }: { cartCount?: number }) {
                 {/* Cart badge */}
                 {item.showBadge && cartCount > 0 && (
                   <span
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-orange-500 text-white text-tiny font-bold rounded-full flex items-center justify-center"
                     style={{ animation: "bounce-in 0.3s ease-out" }}
                   >
                     {cartCount > 9 ? "9+" : cartCount}
@@ -153,7 +153,7 @@ export function BottomNavCompact({ cartCount = 0 }: { cartCount?: number }) {
                 )}
               </div>
               <span
-                className={`text-[10px] font-medium transition-colors ${
+                className={`text-tiny font-medium transition-colors ${
                   isActive ? "text-primary" : "text-gray-400"
                 }`}
               >

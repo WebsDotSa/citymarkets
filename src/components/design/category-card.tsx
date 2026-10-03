@@ -61,7 +61,7 @@ export function CategoryCard({
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-light to-green-100 flex items-center justify-center mb-2 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
           {renderIcon()}
         </div>
-        <span className="text-xs font-medium text-[#111827] text-center line-clamp-1 leading-tight">
+        <span className="text-xs font-medium text-gray-900 text-center line-clamp-1 leading-tight">
           {name_ar}
         </span>
       </Link>
@@ -82,11 +82,11 @@ export function CategoryCard({
         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-light to-green-100 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-inner">
           {renderIcon()}
         </div>
-        <span className="text-base font-semibold text-[#111827] text-center line-clamp-2 leading-tight">
+        <span className="text-base font-semibold text-gray-900 text-center line-clamp-2 leading-tight">
           {name_ar}
         </span>
         {count !== undefined && (
-          <span className="text-sm text-[#9CA3AF] mt-1">{count} منتج</span>
+          <span className="text-sm text-gray-400 mt-1">{count} منتج</span>
         )}
       </Link>
     );
@@ -106,11 +106,11 @@ export function CategoryCard({
       <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-light to-green-100 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
         {renderIcon()}
       </div>
-      <span className="text-sm font-medium text-[#111827] text-center line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+      <span className="text-sm font-medium text-gray-900 text-center line-clamp-2 leading-tight group-hover:text-primary transition-colors">
         {name_ar}
       </span>
       {count !== undefined && (
-        <span className="text-xs text-[#9CA3AF] mt-1">{count} منتج</span>
+        <span className="text-xs text-gray-400 mt-1">{count} منتج</span>
       )}
     </Link>
   );
@@ -190,7 +190,7 @@ export function CategoryScroll({
             ${
               !selectedSlug
                 ? "bg-primary text-white shadow-lg shadow-primary/20"
-                : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
             }
           `}
         >
@@ -208,7 +208,7 @@ export function CategoryScroll({
             ${
               selectedSlug === category.slug
                 ? "bg-primary text-white shadow-lg shadow-primary/20"
-                : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
             }
           `}
         >
