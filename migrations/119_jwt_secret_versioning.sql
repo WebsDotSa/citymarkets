@@ -1,6 +1,14 @@
--- Migration 086: JWT Secret Versioning
+-- Migration 119: JWT Secret Versioning
 -- Add table to track JWT secret versions for rotation support
 -- Enables graceful secret rotation with N-day grace period
+--
+-- NOTE: The schema introduced by this migration (jwt_secrets table,
+-- jwt_secret_rotations table, jwt_secret_version columns on users /
+-- admin_users / vendor_staff) was never read by application code. The
+-- existing token_version column from migration 027 already provides the
+-- rotation invariant this migration duplicated. Migration 122
+-- (122_jwt_secret_versioning_cleanup.sql) drops all of this dead schema.
+-- This file is preserved for historical / audit traceability.
 
 CREATE TABLE jwt_secrets (
   id SERIAL PRIMARY KEY,

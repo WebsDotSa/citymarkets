@@ -49,6 +49,7 @@ import type { CouponRow } from "../pricing";
 import { reportCheckoutError } from "@/lib/errors/checkout-error-reporter";
 import { markOrderPaymentFailed } from "@/lib/payments/payment-service";
 import { getMainStoreAndDistance } from "@/lib/delivery/main-store";
+import { decryptPii } from "@/lib/security/pii-crypto";
 
 /** Caller identity resolved upstream by the route handler. */
 export interface CheckoutServiceCaller {
@@ -588,13 +589,30 @@ async function resolveGuestInfo(
       phone: string | null;
       name: string | null;
       email: string | null;
-    }>(`SELECT phone, name, email FROM users WHERE id = $1 LIMIT 1`, [userId]);
+      phone_encrypted: string | null;
+      name_encrypted: string | null;
+      email_encrypted: string | null;
+    }>(`SELECT phone, name, email,
+                phone_encrypted, name_encrypted, email_encrypted
+           FROM users WHERE id = $1 LIMIT 1`, [userId]);
     const urow = u.rows[0];
     if (urow) {
+      // P0-3 PII cutover: prefer the decrypted encrypted columns over
+      // the plaintext columns. Falls back to the plaintext column for
+      // rows that pre-date the backfill.
+      const phone = urow.phone_encrypted
+        ? decryptPii(urow.phone_encrypted) ?? urow.phone
+        : urow.phone;
+      const name = urow.name_encrypted
+        ? decryptPii(urow.name_encrypted) ?? urow.name
+        : urow.name;
+      const email = urow.email_encrypted
+        ? decryptPii(urow.email_encrypted) ?? urow.email
+        : urow.email;
       guestInfo = {
-        name: guestInfo?.name ?? urow.name ?? null,
-        phone: guestInfo?.phone ?? urow.phone ?? null,
-        email: guestInfo?.email ?? urow.email ?? null,
+        name: guestInfo?.name ?? name ?? null,
+        phone: guestInfo?.phone ?? phone ?? null,
+        email: guestInfo?.email ?? email ?? null,
         city: guestInfo?.city ?? null,
         district: guestInfo?.district ?? null,
         street: guestInfo?.street ?? null,
