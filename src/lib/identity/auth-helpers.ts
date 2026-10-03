@@ -28,6 +28,7 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { COOKIE_NAME, verifyCustomerToken } from "./customer-session";
 import { mapDbUserRow } from "./map-db-user";
+import { assertTokenVersionMatches } from "./auth/token-version";
 import type { User } from "@/lib/types";
 
 /**
@@ -81,10 +82,11 @@ export async function getServerUser(): Promise<User | null> {
     // claim) defaults to 1, which matches the row's initial value;
     // a freshly-minted JWT carries the live row value, so any
     // subsequent bump on the row (e.g. logout) makes the comparison
-    // fail on the next request.
+    // fail on the next request. The compare itself is centralised
+    // in assertTokenVersionMatches so the customer / admin / vendor
+    // verify paths cannot drift.
     const dbTokenVersion = row.rows[0].token_version as number;
-    const jwtTokenVersion = payload.tokenVersion ?? 1;
-    if (dbTokenVersion !== jwtTokenVersion) {
+    if (!assertTokenVersionMatches(payload, dbTokenVersion)) {
       return null;
     }
     return mapDbUserRow(row.rows[0]);

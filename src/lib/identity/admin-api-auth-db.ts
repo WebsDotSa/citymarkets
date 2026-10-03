@@ -5,6 +5,7 @@ import { pool } from "@/lib/db";
 import { ROLE_PERMISSIONS, type AdminRole } from "@/lib/admin-types";
 import { verifyAdminRequest, type VerifiedAdminJwt } from "./admin-session";
 import { createRoleCache, type RoleCache } from "./auth/role-cache";
+import { assertTokenVersionMatches } from "./auth/token-version";
 
 export type { VerifiedAdminJwt as AdminAuthUser };
 
@@ -118,8 +119,20 @@ export async function requireAdminApi(
   // means the JWT was issued before the most recent credential
   // rotation, logout, or demotion — reject it. We also bust the
   // cache so subsequent requests in this process get the fresh value
-  // without waiting for TTL.
-  if (fresh.tokenVersion !== admin.tokenVersion) {
+  // without waiting for TTL. The compare is centralised in
+  // assertTokenVersionMatches so the customer / admin / vendor
+  // verify paths cannot drift.
+  //
+  // The cached entry was read by verifyAdminRequest with a tokenVersion
+  // claim baked from a recent DB read; we re-SELECT here and compare
+  // against the fresh row, not the cache, so a bump that happened
+  // between cache fill and this request is still detected.
+  if (
+    !assertTokenVersionMatches(
+      { tokenVersion: admin.tokenVersion },
+      fresh.tokenVersion,
+    )
+  ) {
     clearAdminRoleCache(admin.id);
     return adminUnauthorized();
   }

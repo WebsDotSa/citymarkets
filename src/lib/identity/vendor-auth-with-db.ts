@@ -9,6 +9,7 @@ import {
   verifyVendorRequest,
 } from "./vendor-auth";
 import { createRoleCache, type RoleCache } from "./auth/role-cache";
+import { assertTokenVersionMatches } from "./auth/token-version";
 
 // Cache is shared with vendor-auth.ts so a successful DB verification
 // also satisfies the lighter `verifyVendorRequest` callers downstream.
@@ -94,13 +95,19 @@ export async function verifyVendorRequestWithDb(
   // The login + staff PUT paths both bump token_version and clear
   // the cache, so the next request is a cache miss → re-reads the
   // DB → sees the new version → fails this comparison → null.
-  const dbTokenVersion = (staff.token_version ?? 1) as number;
-  const jwtTokenVersion = session.tokenVersion ?? 1;
-  if (dbTokenVersion !== jwtTokenVersion) {
+  // The compare is centralised in assertTokenVersionMatches so the
+  // customer / admin / vendor verify paths cannot drift.
+  if (
+    !assertTokenVersionMatches(
+      { tokenVersion: session.tokenVersion },
+      staff.token_version,
+    )
+  ) {
     vendorSessionCache.clear(session.staffId);
     clearVendorSessionCache(session.staffId);
     return null;
   }
+  const dbTokenVersion = (staff.token_version ?? 1) as number;
 
   const entry: VendorSessionEntry = {
     role: staff.role as VendorRole,
