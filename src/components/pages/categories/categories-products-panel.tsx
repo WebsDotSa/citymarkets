@@ -160,7 +160,7 @@ export function ProductsPanel({
         </div>
         <Link
           href={showAllHref}
-          className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-[#009345] hover:text-[#007A38] transition-colors"
+          className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-primary hover:text-primary-dark transition-colors"
         >
           <span>عرض كل المنتجات</span>
           <ChevronLeft className="w-4 h-4" aria-hidden="true" />

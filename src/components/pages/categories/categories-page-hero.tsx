@@ -87,7 +87,7 @@ export function PageHero({
             className="inline-flex shrink min-w-0 items-center gap-1.5 max-w-full rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200/80 px-2.5 sm:px-3 py-1.5 text-tiny sm:text-xs font-bold text-slate-700 transition-colors"
             aria-label="تغيير موقع التوصيل"
           >
-            <span className="inline-flex shrink-0 items-center justify-center w-5 h-5 rounded-full bg-gradient-to-l from-[#009345] to-[#00B359] text-white">
+            <span className="inline-flex shrink-0 items-center justify-center w-5 h-5 rounded-full bg-gradient-to-l from-primary to-primary-500 text-white">
               <MapPin className="w-3 h-3" aria-hidden="true" />
             </span>
             <span className="truncate flex-1 min-w-0">{locationLabel}</span>
@@ -140,7 +140,7 @@ export function PageHero({
             className="w-full h-14 sm:h-16 pe-14 ps-14 rounded-2xl bg-white border-2 border-slate-200/80 text-sm sm:text-base font-semibold text-slate-900 placeholder-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009345]/30 focus:border-[#009345]/50 transition-all"
           />
           <span
-            className="absolute right-4 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-l from-[#009345] to-[#00B359] text-white shadow-md shadow-[#009345]/20"
+            className="absolute right-4 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-l from-primary to-primary-500 text-white shadow-md shadow-[#009345]/20"
             aria-hidden="true"
           >
             <Search className="w-5 h-5" />
@@ -270,7 +270,7 @@ function ProductMatchesCard({
       )}
       <Link
         href={`/catalog?search=${encodeURIComponent(trimmedQuery)}`}
-        className="mt-2 inline-flex items-center gap-1 text-2xs font-bold text-[#009345] hover:text-[#007A38]"
+        className="mt-2 inline-flex items-center gap-1 text-2xs font-bold text-primary hover:text-primary-dark"
       >
         عرض كل النتائج
         <ArrowRight className="w-3 h-3" aria-hidden="true" />
@@ -319,7 +319,7 @@ function ProductMatchesList({
               {p.discount_price != null ? (
                 <>
                   <p
-                    className="text-2xs font-black text-[#009345]"
+                    className="text-2xs font-black text-primary"
                     dir="ltr"
                   >
                     {p.discount_price.toFixed(2)} ر.س

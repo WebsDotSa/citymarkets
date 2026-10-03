@@ -1428,7 +1428,7 @@ export function CheckoutNew() {
               <button
                 onClick={handlePlaceOrder}
                 disabled={isProcessing}
-                className="flex-1 py-3 bg-gradient-to-l from-[#009345] to-[#00B359] text-white rounded-2xl font-semibold hover:shadow-lg hover:shadow-[#009345]/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#009345] focus-visible:ring-offset-2"
+                className="flex-1 py-3 bg-gradient-to-l from-primary to-primary-500 text-white rounded-2xl font-semibold hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 aria-label={isProcessing ? "جاري إنشاء الطلب" : "تأكيد الطلب"}
               >
                 {isProcessing ? (

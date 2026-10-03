@@ -119,7 +119,7 @@ export default function DelegatePage() {
   return (
     <main className="min-h-screen bg-gray-50" dir="rtl" id="main-content">
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-[#009345] to-[#007A38] text-white py-16 md:py-24 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-primary to-primary-dark text-white py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 right-10 w-64 h-64 rounded-full bg-white/20" />
           <div className="absolute bottom-10 left-10 w-48 h-48 rounded-full bg-white/10" />
@@ -306,7 +306,7 @@ export default function DelegatePage() {
       {/* Final CTA */}
       <section
         id="register"
-        className="py-16 md:py-24 bg-gradient-to-br from-[#009345] to-[#007A38] text-white"
+        className="py-16 md:py-24 bg-gradient-to-br from-primary to-primary-dark text-white"
       >
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-5xl font-bold mb-4">جاهز تبدأ الكسب؟</h2>
