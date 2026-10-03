@@ -713,7 +713,7 @@ function ProductsPage() {
                                 </div>
                               )}
                               {p.is_featured && (
-                                <span className="absolute top-0.5 right-0.5 text-[9px] bg-amber-400 text-white px-1 rounded">
+                                <span className="absolute top-0.5 right-0.5 text-3xs bg-amber-400 text-white px-1 rounded">
                                   ⭐
                                 </span>
                               )}

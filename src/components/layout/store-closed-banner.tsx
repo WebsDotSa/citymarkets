@@ -110,7 +110,7 @@ export function StoreClosedBanner() {
             {message}
           </p>
           {showHoursChip && (
-            <p className="mt-0.5 flex items-center gap-1.5 text-[12px] sm:text-[13px] text-white/90">
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs sm:text-sm text-white/90">
               <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden />
               <span>
                 ساعات العمل: {hours!.open_time} — {hours!.close_time}

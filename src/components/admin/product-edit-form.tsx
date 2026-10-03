@@ -371,7 +371,7 @@ export function ProductEditForm({
                         className="w-full h-full object-cover pointer-events-none"
                       />
                       {idx === 0 && (
-                        <span className="absolute top-1 right-1 text-[9px] bg-primary text-white px-1.5 py-0.5 rounded">
+                        <span className="absolute top-1 right-1 text-3xs bg-primary text-white px-1.5 py-0.5 rounded">
                           رئيسية
                         </span>
                       )}
@@ -382,7 +382,7 @@ export function ProductEditForm({
                           the "رئيسية" badge on the primary image. */}
                       <span className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-black/40 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center gap-0.5">
                         <GripVertical className="w-3 h-3" />
-                        <span className="text-[9px]">اسحب</span>
+                        <span className="text-3xs">اسحب</span>
                       </span>
                       <button
                         type="button"

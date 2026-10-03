@@ -39,8 +39,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const variants = {
       primary: `
         bg-gradient-to-l from-primary to-primary-500
-        text-white shadow-lg shadow-[#009345]/25
-        hover:shadow-xl hover:shadow-primary/30 hover:from-[#007A38] hover:to-[#009345]
+        text-white shadow-lg shadow-primary/25
+        hover:shadow-xl hover:shadow-primary/30 hover:from-primary-dark hover:to-primary
         focus-visible:ring-primary
         active:scale-[0.98]
       `,
@@ -63,15 +63,15 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         focus-visible:ring-primary
       `,
       danger: `
-        bg-[#FEE2E2] text-[#DC2626]
-        hover:bg-[#DC2626] hover:text-white
-        focus-visible:ring-[#DC2626]
+        bg-red-100 text-red-600
+        hover:bg-red-600 hover:text-white
+        focus-visible:ring-red-600
         active:scale-[0.98]
       `,
       success: `
-        bg-[#D1FAE5] text-[#059669]
-        hover:bg-[#059669] hover:text-white
-        focus-visible:ring-[#059669]
+        bg-emerald-100 text-emerald-600
+        hover:bg-emerald-600 hover:text-white
+        focus-visible:ring-emerald-600
       `,
     };
 

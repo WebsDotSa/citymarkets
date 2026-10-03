@@ -335,7 +335,7 @@ export default function VendorPage() {
                 </span>
               </div>
               {vendor.description && (
-                <p className="mt-1.5 text-[13px] text-slate-600 line-clamp-2">
+                <p className="mt-1.5 text-sm text-slate-600 line-clamp-2">
                   {vendor.description}
                 </p>
               )}
@@ -562,7 +562,7 @@ export default function VendorPage() {
                       </Link>
                       <div className="p-3">
                         <Link href={`/vendors/${slug}/products/${product.id}`}>
-                          <h3 className="font-bold text-[13px] text-slate-900 line-clamp-2 mb-1.5 min-h-[2.6em] hover:text-primary transition-colors">
+                          <h3 className="font-bold text-sm text-slate-900 line-clamp-2 mb-1.5 min-h-[2.6em] hover:text-primary transition-colors">
                             {product.name}
                           </h3>
                         </Link>

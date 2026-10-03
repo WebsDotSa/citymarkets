@@ -118,7 +118,7 @@ function CountUnit({ value, label }: { value: number; label: string }) {
       <span className="text-base font-bold tabular-nums leading-none">
         {String(value).padStart(2, "0")}
       </span>
-      <span className="text-[9px] opacity-70 mt-1">{label}</span>
+      <span className="text-3xs opacity-70 mt-1">{label}</span>
     </div>
   );
 }

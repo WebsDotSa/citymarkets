@@ -170,7 +170,7 @@ export default function LandingPage() {
       </section>
 
       {/* ===== HOW IT WORKS ===== */}
-      <section className="py-10 bg-[#f5f5f7]">
+      <section className="py-10 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-xl font-bold text-center text-gray-800 mb-6">كيفية الطلب</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

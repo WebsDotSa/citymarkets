@@ -76,7 +76,7 @@ export function BottomNavV2() {
                 {/* Wishlist badge */}
                 {item.showBadge && wishlistCount > 0 && (
                   <span
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 md:w-5 md:h-5 bg-red-500 text-white text-[9px] md:text-tiny font-bold rounded-full flex items-center justify-center min-w-[16px]"
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 md:w-5 md:h-5 bg-red-500 text-white text-3xs md:text-tiny font-bold rounded-full flex items-center justify-center min-w-[16px]"
                     style={{ animation: "bounce-in 0.3s ease-out" }}
                   >
                     {wishlistCount > 9 ? "9+" : wishlistCount}

@@ -450,7 +450,7 @@ function AdminChatHubContent() {
                           </button>
                         </div>
                         {it.resolved_at && (
-                          <div className="text-[9px] text-green-700 mt-1">✓ تم التأكيد</div>
+                          <div className="text-3xs text-green-700 mt-1">✓ تم التأكيد</div>
                         )}
                       </div>
                     ))}

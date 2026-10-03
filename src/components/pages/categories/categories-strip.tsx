@@ -147,7 +147,7 @@ export function MainCatsImageStrip({
                     {root.name_ar}
                   </span>
                   <span
-                    className={`text-[9px] font-bold tabular-nums ${
+                    className={`text-3xs font-bold tabular-nums ${
                       isActive ? "text-primary-dark/80" : "text-slate-400"
                     }`}
                     dir="ltr"
