@@ -71,12 +71,14 @@ export async function signJwt(
   subject: string,
   config: SignConfig,
 ): Promise<string> {
-  const header: Record<string, string> = { alg: "HS256" };
+  // jose's setProtectedHeader expects a JWTHeaderParameters (alg is a
+  // required literal). Use the helper directly so the optional kid is
+  // added without widening the type.
+  const builder = new SignJWT(payload).setProtectedHeader({ alg: "HS256" });
   if (config.keyId) {
-    header.kid = config.keyId;  // Key ID for secret rotation tracking
+    builder.setProtectedHeader({ alg: "HS256", kid: config.keyId });
   }
-  return new SignJWT(payload)
-    .setProtectedHeader(header)
+  return builder
     .setSubject(subject)
     .setIssuedAt()
     .setIssuer(config.issuer)
