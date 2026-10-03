@@ -16,7 +16,7 @@ export function Skeleton({
   height,
 }: SkeletonProps) {
   const baseStyles =
-    "bg-gradient-to-r from-[#F3F4F6] via-[#E5E7EB] to-[#F3F4F6] bg-[length:200%_100%] animate-shimmer";
+    "bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer";
 
   const variants = {
     text: "h-4 rounded-lg",
@@ -41,7 +41,7 @@ export function ProductCardSkeleton({ className }: { className?: string }) {
       className={`bg-white rounded-3xl overflow-hidden shadow-sm ${className}`}
     >
       {/* Image */}
-      <div className="aspect-square bg-gradient-to-r from-[#F3F4F6] via-[#E5E7EB] to-[#F3F4F6] bg-[length:200%_100%] animate-shimmer" />
+      <div className="aspect-square bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer" />
 
       {/* Content */}
       <div className="p-4 space-y-3">

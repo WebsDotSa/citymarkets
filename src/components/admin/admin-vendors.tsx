@@ -288,7 +288,7 @@ export function AdminVendors() {
           <div className="flex flex-col gap-0.5">
             {r.login_phone ? (
               <span
-                className="text-[12px] text-gray-700 dir-ltr text-right"
+                className="text-xs text-gray-700 dir-ltr text-right"
                 title={`الجوال: ${r.login_phone}`}
                 dir="ltr"
               >

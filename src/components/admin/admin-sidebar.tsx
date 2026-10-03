@@ -405,7 +405,7 @@ export function AdminSidebar({ user, isOpen, onClose, onLogout }: AdminSidebarPr
                               onClick={onClose}
                               className={`
                                 flex items-center gap-3 rounded-xl transition-all duration-200
-                                ${isSub ? "py-2 ps-8 pe-3 text-[13px]" : "px-3 py-2.5 text-sm"}
+                                ${isSub ? "py-2 ps-8 pe-3 text-sm" : "px-3 py-2.5 text-sm"}
                                 font-medium
                                 ${active
                                   ? "bg-gradient-to-l from-primary to-primaryDark text-white shadow-lg shadow-primary/20"

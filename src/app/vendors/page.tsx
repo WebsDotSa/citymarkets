@@ -173,7 +173,7 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
             <p className="text-xs text-slate-500 mb-1.5 truncate">{vendor.name_en}</p>
           )}
           {vendor.description_ar && (
-            <p className="text-[13px] text-slate-600 line-clamp-2 min-h-[2.4em]">
+            <p className="text-sm text-slate-600 line-clamp-2 min-h-[2.4em]">
               {vendor.description_ar}
             </p>
           )}

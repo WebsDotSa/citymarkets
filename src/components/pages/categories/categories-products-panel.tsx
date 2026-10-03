@@ -263,7 +263,7 @@ function ProductsErrorState({
       <button
         type="button"
         onClick={onRetry}
-        className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-[#009345] text-white text-xs font-bold hover:bg-[#007A38] transition-colors"
+        className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors"
       >
         <RefreshCcw className="w-3.5 h-3.5" aria-hidden="true" />
         إعادة المحاولة

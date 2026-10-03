@@ -143,7 +143,7 @@ export function CategoryDetailClient({
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
       {/* Sticky breadcrumb header — positioned below HeaderV2 (which is 64px/80px) */}
-      <div className="sticky top-[64px] sm:top-20 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+      <div className="sticky top-header sm:top-20 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100">
         <ol
           aria-label="مسار التنقل"
           className="px-4 pt-3 pb-2 flex items-center gap-1.5 text-2xs text-gray-500 overflow-x-auto scrollbar-hide"
@@ -248,7 +248,7 @@ export function CategoryDetailClient({
       ) : null}
 
       {/* Toolbar — positioned below breadcrumb (64+40px = 104px on mobile, 80+40px = 120px on sm+) */}
-      <div className="sticky top-[104px] sm:top-[120px] z-10 bg-gray-50/95 backdrop-blur-sm border-b border-gray-100">
+      <div className="sticky top-header-with-toolbar sm:sm:top-header-sm z-10 bg-gray-50/95 backdrop-blur-sm border-b border-gray-100">
         <div className="px-4 py-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
           <SortPill current={sort} onChange={setSort} />
           <StockToggle value={inStockOnly} onChange={setInStockOnly} />

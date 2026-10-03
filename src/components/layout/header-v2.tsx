@@ -227,7 +227,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
               >
                 <Heart className="w-5 h-5" />
                 {wishlistCount > 0 && (
-                  <span className="absolute -top-0.5 -left-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-bounce-in">
+                  <span className="absolute -top-0.5 -left-0.5 w-4 h-4 bg-red-500 text-white text-3xs font-bold rounded-full flex items-center justify-center animate-bounce-in">
                     {wishlistCount > 9 ? "9+" : wishlistCount}
                   </span>
                 )}

@@ -340,7 +340,7 @@ function ProductMatchesList({
                 </p>
               )}
               {!p.in_stock ? (
-                <p className="text-[9px] font-bold text-amber-600 mt-0.5">
+                <p className="text-3xs font-bold text-amber-600 mt-0.5">
                   نفد المخزون
                 </p>
               ) : null}

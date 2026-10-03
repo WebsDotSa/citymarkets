@@ -252,7 +252,7 @@ export function ProductCard({
           )}
           {product.stock_qty > 0 && product.stock_qty <= 5 && (
             <span
-              className="absolute bottom-2 right-2 bg-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full"
+              className="absolute bottom-2 right-2 bg-amber-500 text-white text-3xs font-bold px-2 py-0.5 rounded-full"
               aria-label={`متبقي ${product.stock_qty} فقط`}
             >
               متبقي {product.stock_qty}
