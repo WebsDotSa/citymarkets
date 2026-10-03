@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
 import { ChatPanel } from '@/components/ui/chat-panel/chat-panel';
@@ -38,6 +38,24 @@ const STATUS_OPTIONS = [
 ];
 
 export default function AdminChatHubPage() {
+  // SECURITY/PERF (PCP-180): Next.js requires useSearchParams() to be
+  // wrapped in <Suspense> in client components so the static-prerender
+  // path doesn't bail. Without this, every prerender of the parent
+  // route becomes dynamic, killing the build's static optimisation
+  // AND raising a runtime warning in dev. Wrap the body in Suspense
+  // and let the default export be the wrapper.
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center py-16">
+        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    }>
+      <AdminChatHubContent />
+    </Suspense>
+  );
+}
+
+function AdminChatHubContent() {
   const router = useRouter();
   const search = useSearchParams();
   const initialOrderId = search.get('order');
