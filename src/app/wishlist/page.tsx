@@ -13,6 +13,7 @@ import { useConfirm } from "@/components/ui/toast";
 import { Price } from "@/components/ui/price";
 import { SectionHeader } from "@/components/ui/section-header";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageContainer } from "@/components/ui/page-container";
 import { EmptyState } from "@/components/design/empty-state";
 
 export default function WishlistPage() {
@@ -37,7 +38,7 @@ export default function WishlistPage() {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-20">
+      <PageContainer width="narrow" padding="normal" className="py-20">
         <EmptyState
           icon="wishlist"
           title="قائمة أمنياتك فارغة"
@@ -45,12 +46,12 @@ export default function WishlistPage() {
           actionLabel="استكشف المنتجات"
           actionHref="/catalog"
         />
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+    <PageContainer width="wide" padding="normal" className="py-6">
       {/* Header */}
       <PageHeader
         title="قائمة أمنياتي"
@@ -203,6 +204,6 @@ export default function WishlistPage() {
         />
       </section>
       {confirm.dialog}
-    </div>
+    </PageContainer>
   );
 }
