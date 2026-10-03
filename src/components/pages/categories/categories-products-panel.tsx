@@ -130,21 +130,21 @@ export function ProductsPanel({
     <section
       aria-labelledby={`products-${root.id}`}
       aria-label="منتجات القسم"
-      className="mt-6 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5"
+      className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5"
     >
       <header className="flex items-end justify-between gap-3 mb-3 flex-wrap">
         <div>
           <h2
             id={`products-${String(root.id)}`}
-            className="text-lg sm:text-xl font-black text-slate-900 tracking-tight"
+            className="text-lg sm:text-xl font-black text-gray-900 tracking-tight"
           >
             منتجات
             {selectedChild ? (
-              <span className="text-slate-500"> · {selectedChild.name_ar}</span>
+              <span className="text-gray-500"> · {selectedChild.name_ar}</span>
             ) : null}
           </h2>
           <p
-            className="text-2xs sm:text-xs text-slate-500 mt-0.5"
+            className="text-2xs sm:text-xs text-gray-500 mt-0.5"
             aria-live="polite"
             dir="ltr"
           >
@@ -195,7 +195,7 @@ export function ProductsPanel({
                   ? `/categories/${encodeURIComponent(selectedChild.slug)}`
                   : showAllHref
               }
-              className="inline-flex items-center gap-1.5 px-5 h-10 rounded-2xl bg-white border border-slate-200 text-xs sm:text-sm font-bold text-slate-900 hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-5 h-10 rounded-2xl bg-white border border-gray-200 text-xs sm:text-sm font-bold text-gray-900 hover:bg-gray-50 transition-colors"
             >
               <span>المزيد من المنتجات</span>
               <ChevronLeft className="w-4 h-4" aria-hidden="true" />
@@ -219,7 +219,7 @@ function ProductsSkeleton() {
       className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
     >
       {Array.from({ length: 8 }).map((_, i) => (
-        <li key={i} className="rounded-2xl bg-slate-100 animate-pulse h-56" />
+        <li key={i} className="rounded-2xl bg-gray-100 animate-pulse h-56" />
       ))}
     </ul>
   );
@@ -228,11 +228,11 @@ function ProductsSkeleton() {
 function ProductsEmptyState({ mode }: { mode: "aggregate" | "direct" }) {
   return (
     <div className="text-center py-10 px-4">
-      <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-        <Package className="w-5 h-5 text-slate-400" aria-hidden="true" />
+      <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+        <Package className="w-5 h-5 text-gray-400" aria-hidden="true" />
       </div>
-      <p className="text-sm font-bold text-slate-700 mb-1">لا توجد منتجات</p>
-      <p className="text-xs text-slate-500">
+      <p className="text-sm font-bold text-gray-700 mb-1">لا توجد منتجات</p>
+      <p className="text-xs text-gray-500">
         {mode === "direct"
           ? "لا توجد منتجات في هذا القسم الفرعي حالياً."
           : "لا توجد منتجات في هذا القسم الرئيسي حالياً."}
@@ -256,10 +256,10 @@ function ProductsErrorState({
           aria-hidden="true"
         />
       </div>
-      <p className="text-sm font-bold text-slate-700 mb-1">
+      <p className="text-sm font-bold text-gray-700 mb-1">
         تعذّر تحميل المنتجات
       </p>
-      <p className="text-xs text-slate-500 mb-3 break-all">{message}</p>
+      <p className="text-xs text-gray-500 mb-3 break-all">{message}</p>
       <button
         type="button"
         onClick={onRetry}

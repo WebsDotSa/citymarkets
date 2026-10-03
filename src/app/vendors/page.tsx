@@ -65,10 +65,10 @@ function FeaturedCarousel({ vendors }: { vendors: VendorWithStats[] }) {
     <section aria-label="المتاجر المميزة" className="mb-8">
       <div className="flex items-end justify-between gap-3 mb-4 px-1">
         <div>
-          <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight">
             المتاجر المميزة
           </h2>
-          <p className="text-2xs sm:text-xs text-slate-500 mt-0.5">
+          <p className="text-2xs sm:text-xs text-gray-500 mt-0.5">
             أفضل المتاجر المختارة لك
           </p>
         </div>
@@ -79,7 +79,7 @@ function FeaturedCarousel({ vendors }: { vendors: VendorWithStats[] }) {
           <Link
             key={v.id}
             href={`/vendors/${v.slug}`}
-            className="shrink-0 w-[260px] sm:w-[320px] group relative flex flex-col rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all overflow-hidden"
+            className="shrink-0 w-[260px] sm:w-[320px] group relative flex flex-col rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all overflow-hidden"
             style={{ scrollSnapAlign: "center" }}
           >
             <div className="relative h-28 overflow-hidden">
@@ -95,7 +95,7 @@ function FeaturedCarousel({ vendors }: { vendors: VendorWithStats[] }) {
               </div>
             </div>
             <div className="p-3 flex items-center gap-3">
-              <div className="relative w-12 h-12 rounded-xl bg-white border border-slate-100 shadow-sm overflow-hidden shrink-0">
+              <div className="relative w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm overflow-hidden shrink-0">
                 <SafeImage
                   src={v.logo_url}
                   alt=""
@@ -105,8 +105,8 @@ function FeaturedCarousel({ vendors }: { vendors: VendorWithStats[] }) {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-sm text-slate-900 truncate">{v.name_ar}</h3>
-                <p className="text-2xs text-slate-500 truncate">
+                <h3 className="font-bold text-sm text-gray-900 truncate">{v.name_ar}</h3>
+                <p className="text-2xs text-gray-500 truncate">
                   {vendorTypeIcon(v.vendor_type)} {vendorTypeLabel(v.vendor_type)} · {v.product_count} منتج
                 </p>
               </div>
@@ -122,7 +122,7 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
   return (
     <Link
       href={`/vendors/${vendor.slug}`}
-      className="group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-slate-100 hover:-translate-y-0.5"
+      className="group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 hover:-translate-y-0.5"
     >
       <div
         className="relative h-32 overflow-hidden"
@@ -166,14 +166,14 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
         </div>
 
         <div className="pt-9">
-          <h3 className="font-bold text-base text-slate-900 group-hover:text-primary transition-colors truncate">
+          <h3 className="font-bold text-base text-gray-900 group-hover:text-primary transition-colors truncate">
             {vendor.name_ar}
           </h3>
           {vendor.name_en && (
-            <p className="text-xs text-slate-500 mb-1.5 truncate">{vendor.name_en}</p>
+            <p className="text-xs text-gray-500 mb-1.5 truncate">{vendor.name_en}</p>
           )}
           {vendor.description_ar && (
-            <p className="text-sm text-slate-600 line-clamp-2 min-h-[2.4em]">
+            <p className="text-sm text-gray-600 line-clamp-2 min-h-[2.4em]">
               {vendor.description_ar}
             </p>
           )}
@@ -189,12 +189,12 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
               <span>{vendorTypeIcon(vendor.vendor_type)}</span>
               <span>{vendorTypeLabel(vendor.vendor_type)}</span>
             </span>
-            <span className="text-2xs font-bold text-slate-500 tabular-nums" dir="ltr">
+            <span className="text-2xs font-bold text-gray-500 tabular-nums" dir="ltr">
               {vendor.product_count} منتج
             </span>
           </div>
 
-          <div className="mt-2.5 flex items-center gap-1.5 text-2xs text-slate-500">
+          <div className="mt-2.5 flex items-center gap-1.5 text-2xs text-gray-500">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             <span>مفتوح الآن</span>
           </div>
@@ -208,31 +208,31 @@ export default async function VendorsPage() {
   const vendors = await getVendors();
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="px-4 sm:px-6 max-w-6xl mx-auto pt-4 pb-12">
         <FeaturedCarousel vendors={vendors} />
 
         <section aria-labelledby="all-vendors">
           <header className="flex items-end justify-between gap-3 mb-4 px-1 flex-wrap">
             <div>
-              <h1 id="all-vendors" className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              <h1 id="all-vendors" className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
                 جميع المتاجر
               </h1>
-              <p className="text-2xs sm:text-xs text-slate-500 mt-0.5">
+              <p className="text-2xs sm:text-xs text-gray-500 mt-0.5">
                 {vendors.length} متجر · تصفح حسب النوع
               </p>
             </div>
           </header>
 
           {vendors.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-2xl border border-slate-100">
-              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+            <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                 🏪
               </div>
-              <h2 className="text-xl font-bold text-slate-700 mb-2">
+              <h2 className="text-xl font-bold text-gray-700 mb-2">
                 لا توجد متاجر حالياً
               </h2>
-              <p className="text-slate-500 text-sm">
+              <p className="text-gray-500 text-sm">
                 سيتم إضافة المتاجر قريباً
               </p>
             </div>

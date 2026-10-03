@@ -97,7 +97,7 @@ export function bgForCategoryName(name: string): {
   if (/(شخصية|شعر|بشرة|جسم|عناية|شامبو|بلسم|كريم|لوشن|مكياج|عطر|حلاقة|فرشاة أسنان|معجون|حفائض|واقي شمس|مرطب)/i.test(n)) {
     return { bg: "from-pink-50 to-rose-50", ring: "ring-pink-100" };
   }
-  return { bg: "from-slate-50 to-gray-50", ring: "ring-slate-100" };
+  return { bg: "from-gray-50 to-gray-50", ring: "ring-gray-100" };
 }
 
 /* ------------------------------------------------------------------------- */

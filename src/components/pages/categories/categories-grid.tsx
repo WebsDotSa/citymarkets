@@ -40,11 +40,11 @@ export function RootGrid({
         <div>
           <h2
             id={`root-${String(root.id)}`}
-            className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight"
+            className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight"
           >
             {root.name_ar}
           </h2>
-          <p className="text-2xs text-slate-500 mt-0.5" dir="ltr">
+          <p className="text-2xs text-gray-500 mt-0.5" dir="ltr">
             {root.children.length}{" "}
             {root.children.length === 1 ? "قسم فرعي" : "أقسام فرعية"} ·{" "}
             {root.descendantCount.toLocaleString("en-US")} منتج
@@ -55,7 +55,7 @@ export function RootGrid({
             <button
               type="button"
               onClick={() => onSelectChildSlug(null)}
-              className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors"
+              className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
             >
               <span>إلغاء التصفية</span>
               <X className="w-3.5 h-3.5" aria-hidden="true" />
@@ -72,7 +72,7 @@ export function RootGrid({
       </header>
 
       {root.children.length === 0 ? (
-        <p className="text-center text-sm text-slate-400 py-12 bg-white rounded-2xl">
+        <p className="text-center text-sm text-gray-400 py-12 bg-white rounded-2xl">
           لا توجد أقسام فرعية في هذا التصنيف حالياً.
         </p>
       ) : (
@@ -130,8 +130,8 @@ function CategoryCard({
     <article
       className={`relative rounded-2xl bg-white border overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 ${
         isActive
-          ? "border-[#009345] ring-2 ring-[#009345]/30 shadow-md"
-          : "border-slate-100 shadow-xs"
+          ? "border-primary ring-2 ring-primary/30 shadow-md"
+          : "border-gray-100 shadow-xs"
       }`}
     >
       <button
@@ -164,10 +164,10 @@ function CategoryCard({
             )}
           </div>
           <div className="flex-1 min-w-0 w-full">
-            <p className="text-sm font-bold text-slate-900 leading-tight line-clamp-2">
+            <p className="text-sm font-bold text-gray-900 leading-tight line-clamp-2">
               {highlight(node.name_ar, query)}
             </p>
-            <p className="text-2xs text-slate-500 mt-0.5" dir="ltr">
+            <p className="text-2xs text-gray-500 mt-0.5" dir="ltr">
               {productCount.toLocaleString("en-US")} منتج
             </p>
           </div>
@@ -175,7 +175,7 @@ function CategoryCard({
       </button>
 
       {hasGrandchildren ? (
-        <div className="px-3 pb-3 pt-0 border-t border-slate-100 mt-1">
+        <div className="px-3 pb-3 pt-0 border-t border-gray-100 mt-1">
           <ul
             role="list"
             className="flex flex-wrap gap-1.5 pt-2.5"
@@ -185,10 +185,10 @@ function CategoryCard({
               <li key={String(g.id)}>
                 <Link
                   href={`/categories/${encodeURIComponent(g.slug)}`}
-                  className="inline-flex items-center gap-1 rounded-full bg-slate-50 hover:bg-slate-100 ring-1 ring-slate-200/60 px-2.5 py-1 text-tiny font-bold text-slate-700 transition-colors"
+                  className="inline-flex items-center gap-1 rounded-full bg-gray-50 hover:bg-gray-100 ring-1 ring-gray-200/60 px-2.5 py-1 text-tiny font-bold text-gray-700 transition-colors"
                 >
                   <span>{g.name_ar}</span>
-                  <span className="text-slate-400 tabular-nums" dir="ltr">
+                  <span className="text-gray-400 tabular-nums" dir="ltr">
                     {g.product_count ?? 0}
                   </span>
                 </Link>
@@ -198,7 +198,7 @@ function CategoryCard({
               <li>
                 <Link
                   href={`/categories/${encodeURIComponent(node.slug)}`}
-                  className="inline-flex items-center gap-1 rounded-full bg-slate-50 ring-1 ring-slate-200/60 px-2.5 py-1 text-tiny font-bold text-slate-500 hover:bg-slate-100"
+                  className="inline-flex items-center gap-1 rounded-full bg-gray-50 ring-1 ring-gray-200/60 px-2.5 py-1 text-tiny font-bold text-gray-500 hover:bg-gray-100"
                 >
                   +{node.children.length - 4}
                 </Link>
@@ -223,7 +223,7 @@ function highlight(text: string, query: string) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark className="bg-amber-200/70 text-slate-900 rounded px-0.5">
+      <mark className="bg-amber-200/70 text-gray-900 rounded px-0.5">
         {text.slice(idx, idx + q.length)}
       </mark>
       {text.slice(idx + q.length)}

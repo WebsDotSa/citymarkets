@@ -243,7 +243,7 @@ export function SearchableSelect({
       {open && (
         <div
           ref={listRef}
-          className="absolute z-50 mt-1 w-full bg-white border-2 border-gray-200 rounded-xl shadow-xl shadow-slate-200/50 overflow-hidden"
+          className="absolute z-50 mt-1 w-full bg-white border-2 border-gray-200 rounded-xl shadow-xl shadow-gray-200/50 overflow-hidden"
         >
           {searchable && (
             <div className="p-2 border-b border-gray-100">

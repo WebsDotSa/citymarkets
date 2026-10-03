@@ -1,0 +1,311 @@
+{
+  "duplicate_components": [],
+  "inconsistent_styling": [],
+  "hardcoded_colors": [
+    {
+      "file": "components/design/skeleton.tsx",
+      "count": 7
+    }
+  ],
+  "hardcoded_spacing": [
+    {
+      "file": "components/admin/driver-layout.tsx",
+      "count": 1
+    },
+    {
+      "file": "components/admin/admin-layout.tsx",
+      "count": 1
+    }
+  ],
+  "hardcoded_fonts": [
+    {
+      "file": "components/layout/store-closed-banner.tsx",
+      "count": 1
+    }
+  ],
+  "unused_components": [],
+  "styling_inconsistencies_by_page": {},
+  "color_usage": {},
+  "component_variants": {
+    "PushOptIn": [
+      "components/PushOptIn.tsx"
+    ],
+    "PWAProvider": [
+      "components/PWAProvider.tsx"
+    ],
+    "WebMCPProvider": [
+      "components/WebMCPProvider.tsx"
+    ],
+    "SseProvider": [
+      "components/realtime/SseProvider.tsx"
+    ],
+    "AdminPaymentsSettings": [
+      "components/admin/admin-payments-settings.tsx"
+    ],
+    "AdminLoyalty": [
+      "components/admin/admin-loyalty.tsx"
+    ],
+    "AdminInventory": [
+      "components/admin/admin-inventory.tsx"
+    ],
+    "AdminDashboard": [
+      "components/admin/admin-dashboard.tsx"
+    ],
+    "AdminVendorApplications": [
+      "components/admin/admin-vendor-applications.tsx"
+    ],
+    "AdminVendorsAnalytics": [
+      "components/admin/admin-vendors-analytics.tsx"
+    ],
+    "BarRow": [
+      "components/admin/charts.tsx"
+    ],
+    "AdminBottomNav": [
+      "components/admin/admin-bottom-nav.tsx"
+    ],
+    "AdminForm": [
+      "components/admin/admin-form.tsx"
+    ],
+    "DataTable": [
+      "components/admin/data-table.tsx"
+    ],
+    "AdminSidebar": [
+      "components/admin/admin-sidebar.tsx"
+    ],
+    "DriverLayout": [
+      "components/admin/driver-layout.tsx"
+    ],
+    "AdminAnalytics": [
+      "components/admin/admin-analytics.tsx"
+    ],
+    "AdminInput": [
+      "components/admin/admin-input.tsx"
+    ],
+    "AdminVendors": [
+      "components/admin/admin-vendors.tsx"
+    ],
+    "AdminReviews": [
+      "components/admin/admin-reviews.tsx"
+    ],
+    "ImageUploader": [
+      "components/admin/image-uploader.tsx"
+    ],
+    "PreviewButton": [
+      "components/admin/preview-button.tsx"
+    ],
+    "AdminStoreStatusSettings": [
+      "components/admin/admin-store-status-settings.tsx"
+    ],
+    "CategoryThumb": [
+      "components/admin/category-thumb.tsx"
+    ],
+    "CategoryEditForm": [
+      "components/admin/category-edit-form.tsx"
+    ],
+    "AdminEmployment": [
+      "components/admin/admin-employment.tsx"
+    ],
+    "AdminPageHeader": [
+      "components/admin/admin-page-header.tsx"
+    ],
+    "AdminActivity": [
+      "components/admin/admin-activity.tsx"
+    ],
+    "vendorLogo": [
+      "components/admin/admin-vendors-columns.tsx"
+    ],
+    "ProductEditForm": [
+      "components/admin/product-edit-form.tsx"
+    ],
+    "AdminLoginPage": [
+      "components/admin/admin-login.tsx"
+    ],
+    "AdminCard": [
+      "components/admin/admin-card.tsx"
+    ],
+    "OfferEditForm": [
+      "components/admin/offer-edit-form.tsx"
+    ],
+    "AdminDeliverySettings": [
+      "components/admin/admin-delivery-settings.tsx"
+    ],
+    "VendorPreviewCard": [
+      "components/admin/admin-vendors-preview.tsx"
+    ],
+    "AdminPayments": [
+      "components/admin/admin-payments.tsx"
+    ],
+    "AdminStores": [
+      "components/admin/admin-stores.tsx"
+    ],
+    "AdminHeader": [
+      "components/admin/admin-header.tsx"
+    ],
+    "AdminLayout": [
+      "components/admin/admin-layout.tsx"
+    ],
+    "SearchableSelect": [
+      "components/admin/SearchableSelect.tsx",
+      "components/ui/searchable-select.tsx"
+    ],
+    "OfferCard": [
+      "components/storefront/offer-card.tsx"
+    ],
+    "StickyCartBar": [
+      "components/storefront/sticky-cart-bar.tsx"
+    ],
+    "OfferCountdown": [
+      "components/storefront/offer-countdown.tsx"
+    ],
+    "ProductReviews": [
+      "components/storefront/product-reviews.tsx"
+    ],
+    "ProductCard": [
+      "components/storefront/product-card.tsx"
+    ],
+    "CITY_MARKETS_LOGO_ASPECT": [
+      "components/brand/city-markets-logo.tsx"
+    ],
+    "CashIcon": [
+      "components/icons/payment.tsx"
+    ],
+    "MoyasarCheckoutForm": [
+      "components/checkout/moyasar-checkout-form.tsx"
+    ],
+    "BankTransferCard": [
+      "components/checkout/bank-transfer-card.tsx"
+    ],
+    "AddressMapPicker": [
+      "components/location/address-map-picker.tsx"
+    ],
+    "AddAddressFlow": [
+      "components/location/add-address-flow.tsx"
+    ],
+    "LocationOverlays": [
+      "components/location/location-overlays.tsx"
+    ],
+    "LocationSheetTrigger": [
+      "components/location/location-sheet-trigger.tsx"
+    ],
+    "DeliveryAddressSheet": [
+      "components/location/delivery-address-sheet.tsx"
+    ],
+    "Price": [
+      "components/ui/price.tsx"
+    ],
+    "SectionHeader": [
+      "components/ui/section-header.tsx"
+    ],
+    "PageContainer": [
+      "components/ui/page-container.tsx"
+    ],
+    "Card": [
+      "components/ui/card.tsx"
+    ],
+    "useToast": [
+      "components/ui/toast.tsx"
+    ],
+    "OrderItemThumb": [
+      "components/ui/order-item-thumb.tsx"
+    ],
+    "Chip": [
+      "components/ui/chip.tsx"
+    ],
+    "VendorCard": [
+      "components/ui/vendor-card.tsx"
+    ],
+    "Badge": [
+      "components/ui/badge.tsx"
+    ],
+    "PageHeader": [
+      "components/ui/page-header.tsx"
+    ],
+    "SafeImage": [
+      "components/ui/safe-image.tsx"
+    ],
+    "Pagination": [
+      "components/ui/pagination.tsx"
+    ],
+    "HomePageJsonLd": [
+      "components/seo/home-json-ld.tsx"
+    ],
+    "CategoryJsonLd": [
+      "components/seo/category-json-ld.tsx"
+    ],
+    "SiteJsonLd": [
+      "components/seo/json-ld.tsx"
+    ],
+    "OfferJsonLd": [
+      "components/seo/offer-json-ld.tsx"
+    ],
+    "ProductJsonLd": [
+      "components/seo/product-json-ld.tsx"
+    ],
+    "FaqJsonLd": [
+      "components/seo/faq-json-ld.tsx"
+    ],
+    "FooterV2": [
+      "components/layout/footer-v2.tsx"
+    ],
+    "AppInstallBanner": [
+      "components/layout/app-install-banner.tsx"
+    ],
+    "HeaderV2": [
+      "components/layout/header-v2.tsx"
+    ],
+    "StoreClosedBanner": [
+      "components/layout/store-closed-banner.tsx"
+    ],
+    "BottomNavV2": [
+      "components/layout/bottom-nav-v2.tsx"
+    ],
+    "QuickOrderFab": [
+      "components/layout/quick-order-fab.tsx"
+    ],
+    "CategoryCard": [
+      "components/design/category-card.tsx"
+    ],
+    "Skeleton": [
+      "components/design/skeleton.tsx"
+    ],
+    "EmptyState": [
+      "components/design/empty-state.tsx"
+    ],
+    "HeroBanner": [
+      "components/design/hero-banner.tsx"
+    ],
+    "InvoiceActions": [
+      "components/orders/invoice-actions.tsx"
+    ],
+    "OrderTimeline": [
+      "components/orders/order-timeline.tsx"
+    ],
+    "PageviewTracker": [
+      "components/analytics/pageview-tracker.tsx"
+    ],
+    "MetaPixel": [
+      "components/analytics/meta-pixel.tsx"
+    ],
+    "GoogleAnalytics": [
+      "components/analytics/google-analytics.tsx"
+    ],
+    "MetaPixelConsent": [
+      "components/analytics/meta-pixel-consent.tsx"
+    ],
+    "LoginPage": [
+      "components/auth/login-page.tsx"
+    ],
+    "CartV2": [
+      "components/pages/cart/cart-v2.tsx"
+    ],
+    "AvailableCoupons": [
+      "components/pages/coupons/AvailableCoupons.tsx"
+    ],
+    "ProfileCoupons": [
+      "components/pages/profile/profile-coupons.tsx"
+    ],
+    "ProfileNew": [
+      "components/pages/profile/profile-new.tsx"
+    ]
+  }
+}

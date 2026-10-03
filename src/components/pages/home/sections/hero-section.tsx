@@ -43,8 +43,8 @@ export function HeroSection() {
     <section
       className={`relative overflow-hidden transition-colors duration-500 ${
         isClosed
-          ? "bg-gradient-to-b from-amber-50 to-slate-50"
-          : "bg-gradient-to-b from-white to-slate-50"
+          ? "bg-gradient-to-b from-amber-50 to-gray-50"
+          : "bg-gradient-to-b from-white to-gray-50"
       }`}
     >
       {/* decorative blobs */}
@@ -68,22 +68,22 @@ export function HeroSection() {
           </div>
         )}
 
-        <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold tracking-tight text-slate-900 text-center leading-tight">
+        <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold tracking-tight text-gray-900 text-center leading-tight">
           سوقك في جوالك
         </h1>
-        <p className="mt-3 text-center text-slate-500 text-xs sm:text-sm max-w-md mx-auto">
+        <p className="mt-3 text-center text-gray-500 text-xs sm:text-sm max-w-md mx-auto">
           كل أسواقك المفضلة في مكان واحد. توصيل سريع لباب بيتك.
         </p>
 
         {/* search bar with location pill */}
         <form
           onSubmit={onSearch}
-          className="mt-5 max-w-2xl mx-auto bg-white rounded-3xl shadow-lg border border-slate-100 p-1.5 flex items-center gap-2"
+          className="mt-5 max-w-2xl mx-auto bg-white rounded-3xl shadow-lg border border-gray-100 p-1.5 flex items-center gap-2"
         >
           <button
             type="button"
             onClick={openSheet}
-            className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-2 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-medium transition-colors"
+            className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-2 rounded-2xl bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs sm:text-sm font-medium transition-colors"
           >
             <MapPin className="w-4 h-4 text-primary" />
             <span className="hidden sm:inline max-w-[120px] truncate">
@@ -92,13 +92,13 @@ export function HeroSection() {
           </button>
 
           <div className="flex-1 flex items-center gap-2 px-2">
-            <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="ابحث عن منتج أو متجر..."
-              className="flex-1 bg-transparent outline-none text-xs sm:text-sm text-slate-900 placeholder:text-slate-400"
+              className="flex-1 bg-transparent outline-none text-xs sm:text-sm text-gray-900 placeholder:text-gray-400"
             />
           </div>
 
@@ -113,8 +113,8 @@ export function HeroSection() {
         </form>
 
         {/* quick links below search */}
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs sm:text-sm text-slate-500">
-          <span className="font-medium text-slate-700">الأكثر بحثاً:</span>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-500">
+          <span className="font-medium text-gray-700">الأكثر بحثاً:</span>
           {["خضار وفواكه", "لحوم طازجة", "أرز وبقوليات", "حليب وأجبان"].map((term) => (
             <Link
               key={term}

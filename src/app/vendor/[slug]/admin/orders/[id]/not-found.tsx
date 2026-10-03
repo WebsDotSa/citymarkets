@@ -31,9 +31,9 @@ export default async function VendorOrderNotFound({ params }: NotFoundProps) {
       className="min-h-[60vh] flex flex-col items-center justify-center px-4 text-center"
       dir="rtl"
     >
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 max-w-md">
-        <h1 className="text-xl font-bold text-slate-900 mb-2">الطلب غير موجود</h1>
-        <p className="text-sm text-slate-500 mb-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-8 max-w-md">
+        <h1 className="text-xl font-bold text-gray-900 mb-2">الطلب غير موجود</h1>
+        <p className="text-sm text-gray-500 mb-6">
           هذا الطلب غير متاح لمتجرك. ربما تم حذفه أو تابع لمتجر آخر.
         </p>
         <Link

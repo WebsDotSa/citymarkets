@@ -64,7 +64,7 @@ export function PageHero({
   return (
     <section
       aria-label="بحث الأقسام"
-      className="relative pt-4 sm:pt-6 pb-5 sm:pb-6 bg-white border-b border-slate-100/80"
+      className="relative pt-4 sm:pt-6 pb-5 sm:pb-6 bg-white border-b border-gray-100/80"
     >
       <div className="px-4 sm:px-6 max-w-6xl mx-auto">
         {/* Top row: promo banner next to location pill, both on the start
@@ -84,7 +84,7 @@ export function PageHero({
           <button
             type="button"
             onClick={onOpenLocation}
-            className="inline-flex shrink min-w-0 items-center gap-1.5 max-w-full rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200/80 px-2.5 sm:px-3 py-1.5 text-tiny sm:text-xs font-bold text-slate-700 transition-colors"
+            className="inline-flex shrink min-w-0 items-center gap-1.5 max-w-full rounded-full bg-gray-50 hover:bg-gray-100 border border-gray-200/80 px-2.5 sm:px-3 py-1.5 text-tiny sm:text-xs font-bold text-gray-700 transition-colors"
             aria-label="تغيير موقع التوصيل"
           >
             <span className="inline-flex shrink-0 items-center justify-center w-5 h-5 rounded-full bg-gradient-to-l from-primary to-primary-500 text-white">
@@ -101,22 +101,22 @@ export function PageHero({
         {/* Headline + count chips */}
         <div className="mt-4 flex items-end justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
               تصفّح كل الأقسام
             </h1>
-            <p className="text-2xs sm:text-xs text-slate-500 mt-1">
+            <p className="text-2xs sm:text-xs text-gray-500 mt-1">
               ابحث عن المنتجات والأقسام في مكان واحد
             </p>
           </div>
-          <div className="hidden md:flex items-center gap-2 text-2xs text-slate-500 font-bold">
-            <span className="rounded-full bg-slate-50 border border-slate-200 px-3 py-1.5">
+          <div className="hidden md:flex items-center gap-2 text-2xs text-gray-500 font-bold">
+            <span className="rounded-full bg-gray-50 border border-gray-200 px-3 py-1.5">
               {totalRoots} قسم رئيسي
             </span>
-            <span className="rounded-full bg-slate-50 border border-slate-200 px-3 py-1.5">
+            <span className="rounded-full bg-gray-50 border border-gray-200 px-3 py-1.5">
               {totalChildren} قسم فرعي
             </span>
             <span
-              className="rounded-full bg-slate-50 border border-slate-200 px-3 py-1.5"
+              className="rounded-full bg-gray-50 border border-gray-200 px-3 py-1.5"
               dir="ltr"
             >
               {totalProducts.toLocaleString("en-US")} منتج
@@ -137,10 +137,10 @@ export function PageHero({
             value={query}
             onChange={(e) => onQuery(e.target.value)}
             placeholder="ابحث عن منتج أو قسم… مثل: تفاح، حليب، بهارات"
-            className="w-full h-14 sm:h-16 pe-14 ps-14 rounded-2xl bg-white border-2 border-slate-200/80 text-sm sm:text-base font-semibold text-slate-900 placeholder-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009345]/30 focus:border-[#009345]/50 transition-all"
+            className="w-full h-14 sm:h-16 pe-14 ps-14 rounded-2xl bg-white border-2 border-gray-200/80 text-sm sm:text-base font-semibold text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
           />
           <span
-            className="absolute right-4 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-l from-primary to-primary-500 text-white shadow-md shadow-[#009345]/20"
+            className="absolute right-4 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-l from-primary to-primary-500 text-white shadow-md shadow-primary/20"
             aria-hidden="true"
           >
             <Search className="w-5 h-5" />
@@ -150,13 +150,13 @@ export function PageHero({
               type="button"
               onClick={() => onQuery("")}
               aria-label="مسح البحث"
-              className="absolute left-4 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500"
+              className="absolute left-4 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500"
             >
               <X className="w-4 h-4" />
             </button>
           ) : (
             <span
-              className="absolute left-4 top-1/2 -translate-y-1/2 hidden sm:inline text-tiny font-bold text-slate-400 select-none"
+              className="absolute left-4 top-1/2 -translate-y-1/2 hidden sm:inline text-tiny font-bold text-gray-400 select-none"
               aria-hidden="true"
             >
               ⌘K
@@ -182,7 +182,7 @@ export function PageHero({
         ) : null}
 
         {query && searchHits > 0 && !showHybridPanel ? (
-          <p className="mt-2 text-xs text-slate-500" aria-live="polite">
+          <p className="mt-2 text-xs text-gray-500" aria-live="polite">
             {searchHits} نتيجة مطابقة في {totalRoots} قسم
           </p>
         ) : null}
@@ -205,13 +205,13 @@ function CategoryMatchesCard({
   searchHits: number;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white p-3">
+    <div className="rounded-2xl border border-gray-200/80 bg-white p-3">
       <div className="flex items-center justify-between gap-2 mb-2">
-        <p className="text-2xs font-black text-slate-500 uppercase tracking-wider">
+        <p className="text-2xs font-black text-gray-500 uppercase tracking-wider">
           الأقسام
         </p>
         <span
-          className="text-tiny text-slate-400 tabular-nums"
+          className="text-tiny text-gray-400 tabular-nums"
           dir="ltr"
         >
           {searchHits}
@@ -220,7 +220,7 @@ function CategoryMatchesCard({
       {searchHits > 0 ? (
         <CategoryMatchList query={trimmedQuery} tree={tree} />
       ) : (
-        <p className="text-xs text-slate-400 py-3">
+        <p className="text-xs text-gray-400 py-3">
           لا توجد أقسام مطابقة لـ «{trimmedQuery}»
         </p>
       )}
@@ -240,16 +240,16 @@ function ProductMatchesCard({
   showProductEmpty: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white p-3">
+    <div className="rounded-2xl border border-gray-200/80 bg-white p-3">
       <div className="flex items-center justify-between gap-2 mb-2">
-        <p className="text-2xs font-black text-slate-500 uppercase tracking-wider">
+        <p className="text-2xs font-black text-gray-500 uppercase tracking-wider">
           المنتجات
         </p>
         {productMatches.loading ? (
-          <span className="text-tiny text-slate-400">يبحث…</span>
+          <span className="text-tiny text-gray-400">يبحث…</span>
         ) : (
           <span
-            className="text-tiny text-slate-400 tabular-nums"
+            className="text-tiny text-gray-400 tabular-nums"
             dir="ltr"
           >
             {productMatches.items.length}
@@ -262,11 +262,11 @@ function ProductMatchesCard({
           trimmedQuery={trimmedQuery}
         />
       ) : showProductEmpty ? (
-        <p className="text-xs text-slate-400 py-3">
+        <p className="text-xs text-gray-400 py-3">
           لا توجد منتجات مطابقة لـ «{trimmedQuery}»
         </p>
       ) : (
-        <p className="text-xs text-slate-400 py-3">يبحث في المنتجات…</p>
+        <p className="text-xs text-gray-400 py-3">يبحث في المنتجات…</p>
       )}
       <Link
         href={`/catalog?search=${encodeURIComponent(trimmedQuery)}`}
@@ -292,9 +292,9 @@ function ProductMatchesList({
         <li key={p.id}>
           <Link
             href={`/products/${p.id}`}
-            className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-gray-50 transition-colors"
           >
-            <div className="relative w-10 h-10 rounded-lg bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+            <div className="relative w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
               {p.image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -304,14 +304,14 @@ function ProductMatchesList({
                   loading="lazy"
                 />
               ) : (
-                <Package className="w-4 h-4 text-slate-400" aria-hidden="true" />
+                <Package className="w-4 h-4 text-gray-400" aria-hidden="true" />
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-slate-800 truncate">
+              <p className="text-xs font-bold text-gray-800 truncate">
                 {highlightInline(p.name_ar, trimmedQuery)}
               </p>
-              <p className="text-tiny text-slate-400 truncate">
+              <p className="text-tiny text-gray-400 truncate">
                 {p.category_name ?? "—"}
               </p>
             </div>
@@ -325,7 +325,7 @@ function ProductMatchesList({
                     {p.discount_price.toFixed(2)} ر.س
                   </p>
                   <p
-                    className="text-tiny text-slate-400 line-through"
+                    className="text-tiny text-gray-400 line-through"
                     dir="ltr"
                   >
                     {p.price.toFixed(2)}
@@ -333,7 +333,7 @@ function ProductMatchesList({
                 </>
               ) : (
                 <p
-                  className="text-2xs font-black text-slate-700"
+                  className="text-2xs font-black text-gray-700"
                   dir="ltr"
                 >
                   {p.price.toFixed(2)} ر.س
@@ -373,24 +373,24 @@ function CategoryMatchList({
         <li key={`${m.kind}-${m.id}`}>
           <Link
             href={`/categories/${encodeURIComponent(m.slug)}`}
-            className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-50 transition-colors"
           >
             <span
-              className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-50 text-sm shrink-0"
+              className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gray-50 text-sm shrink-0"
               aria-hidden="true"
             >
               {m.emoji}
             </span>
             <span className="flex-1 min-w-0">
-              <span className="text-xs font-bold text-slate-800 block truncate">
+              <span className="text-xs font-bold text-gray-800 block truncate">
                 {highlightInline(m.name_ar, query)}
               </span>
-              <span className="text-tiny text-slate-400">
+              <span className="text-tiny text-gray-400">
                 {m.kind === "root" ? "قسم رئيسي" : "قسم فرعي"}
               </span>
             </span>
             <ChevronLeft
-              className="w-3.5 h-3.5 text-slate-300 shrink-0"
+              className="w-3.5 h-3.5 text-gray-300 shrink-0"
               aria-hidden="true"
             />
           </Link>
@@ -413,7 +413,7 @@ function highlightInline(text: string, query: string) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark className="bg-amber-200/70 text-slate-900 rounded px-0.5">
+      <mark className="bg-amber-200/70 text-gray-900 rounded px-0.5">
         {text.slice(idx, idx + q.length)}
       </mark>
       {text.slice(idx + q.length)}

@@ -181,20 +181,20 @@ export default function VendorPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="h-56 sm:h-72 bg-slate-200 animate-pulse" />
+      <div className="min-h-screen bg-gray-50">
+        <div className="h-56 sm:h-72 bg-gray-200 animate-pulse" />
         <div className="max-w-6xl mx-auto px-4 -mt-12 relative">
           <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white border-4 border-white shadow-lg animate-pulse" />
-          <div className="mt-4 h-6 w-40 bg-slate-200 rounded animate-pulse" />
-          <div className="mt-2 h-4 w-60 bg-slate-200 rounded animate-pulse" />
+          <div className="mt-4 h-6 w-40 bg-gray-200 rounded animate-pulse" />
+          <div className="mt-2 h-4 w-60 bg-gray-200 rounded animate-pulse" />
         </div>
         <div className="max-w-6xl mx-auto px-4 mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="bg-white rounded-2xl overflow-hidden">
-              <div className="aspect-square bg-slate-100 animate-pulse" />
+              <div className="aspect-square bg-gray-100 animate-pulse" />
               <div className="p-3 space-y-2">
-                <div className="h-3 bg-slate-100 rounded animate-pulse" />
-                <div className="h-3 w-2/3 bg-slate-100 rounded animate-pulse" />
+                <div className="h-3 bg-gray-100 rounded animate-pulse" />
+                <div className="h-3 w-2/3 bg-gray-100 rounded animate-pulse" />
               </div>
             </div>
           ))}
@@ -205,13 +205,13 @@ export default function VendorPage() {
 
   if (error || !vendor) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center max-w-md">
-          <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-5xl">
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-5xl">
             🏪
           </div>
-          <h1 className="text-2xl font-black text-slate-900 mb-2">المتجر غير موجود</h1>
-          <p className="text-slate-600 mb-6">{error}</p>
+          <h1 className="text-2xl font-black text-gray-900 mb-2">المتجر غير موجود</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
           <Link
             href="/vendors"
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-2xl hover:opacity-90 transition-opacity"
@@ -226,7 +226,7 @@ export default function VendorPage() {
   const featuredProducts = filteredProducts.slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-24">
       {/* ── Hero Banner ── */}
       <div
         className="relative h-56 sm:h-72 lg:h-80 overflow-hidden"
@@ -252,7 +252,7 @@ export default function VendorPage() {
             aria-label="رجوع"
             className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-md hover:bg-white transition-colors"
           >
-            <svg className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -275,7 +275,7 @@ export default function VendorPage() {
               <a
                 href={`tel:${vendor.contact.phone}`}
                 aria-label="اتصال"
-                className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md text-slate-700 flex items-center justify-center shadow-md hover:bg-white transition-colors"
+                className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md text-gray-700 flex items-center justify-center shadow-md hover:bg-white transition-colors"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
@@ -305,7 +305,7 @@ export default function VendorPage() {
 
       {/* ── Info Card (overlapping banner) ── */}
       <div className="max-w-6xl mx-auto px-4 -mt-14 relative z-10">
-        <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-4">
+        <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-4">
           <div className="flex items-start gap-3">
             <div
               className="shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white border-4 shadow-sm flex items-center justify-center overflow-hidden -mt-12"
@@ -328,18 +328,18 @@ export default function VendorPage() {
                     vendor.isOpen ? "bg-emerald-500 animate-pulse" : "bg-red-500"
                   }`}
                 />
-                <span className="text-xs font-bold text-slate-700">
+                <span className="text-xs font-bold text-gray-700">
                   {vendor.isOpen
                     ? "مفتوح الآن"
                     : `مغلق · يفتح ${vendor.openTime}`}
                 </span>
               </div>
               {vendor.description && (
-                <p className="mt-1.5 text-sm text-slate-600 line-clamp-2">
+                <p className="mt-1.5 text-sm text-gray-600 line-clamp-2">
                   {vendor.description}
                 </p>
               )}
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-2xs font-bold text-slate-500">
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-2xs font-bold text-gray-500">
                 <span className="inline-flex items-center gap-1">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
@@ -347,12 +347,12 @@ export default function VendorPage() {
                   {vendor.openTime} - {vendor.closeTime}
                 </span>
                 {vendor.settings.acceptsCod && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded-full">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full">
                     💵 الدفع عند الاستلام
                   </span>
                 )}
                 {vendor.settings.acceptsOnlinePayment && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded-full">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full">
                     💳 دفع إلكتروني
                   </span>
                 )}
@@ -362,18 +362,18 @@ export default function VendorPage() {
         </div>
 
         {/* ── Tabs ── */}
-        <div className="mt-5 border-b border-slate-200 sticky top-16 bg-slate-50/95 backdrop-blur-md z-20 -mx-4 px-4">
+        <div className="mt-5 border-b border-gray-200 sticky top-16 bg-gray-50/95 backdrop-blur-md z-20 -mx-4 px-4">
           <div className="flex gap-6">
             <button
               onClick={() => setActiveTab("products")}
               className={`relative pb-3 text-sm font-bold transition-colors ${
                 activeTab === "products"
-                  ? "text-slate-900"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "text-gray-900"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
               المنتجات
-              <span className="ms-1.5 text-xs text-slate-400 font-bold tabular-nums" dir="ltr">
+              <span className="ms-1.5 text-xs text-gray-400 font-bold tabular-nums" dir="ltr">
                 {products.length}
               </span>
               {activeTab === "products" && (
@@ -387,8 +387,8 @@ export default function VendorPage() {
               onClick={() => setActiveTab("info")}
               className={`relative pb-3 text-sm font-bold transition-colors ${
                 activeTab === "info"
-                  ? "text-slate-900"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "text-gray-900"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
               معلومات المتجر
@@ -422,7 +422,7 @@ export default function VendorPage() {
               <section aria-label="منتجات مميزة" className="mb-6">
                 <div className="flex items-end justify-between gap-3 mb-3 px-1">
                   <div>
-                    <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    <h2 className="text-lg font-black text-gray-900 tracking-tight">
                       ⭐ الأكثر طلباً
                     </h2>
                   </div>
@@ -433,10 +433,10 @@ export default function VendorPage() {
                     <Link
                       key={`feat-${p.id}`}
                       href={`/vendors/${slug}/products/${p.id}`}
-                      className="shrink-0 w-[160px] sm:w-[180px] bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-all"
+                      className="shrink-0 w-[160px] sm:w-[180px] bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all"
                       style={{ scrollSnapAlign: "center" }}
                     >
-                      <div className="relative aspect-square bg-slate-100">
+                      <div className="relative aspect-square bg-gray-100">
                         <SafeImage
                           src={p.images[0]}
                           alt={p.name}
@@ -447,7 +447,7 @@ export default function VendorPage() {
                         />
                       </div>
                       <div className="p-2.5">
-                        <p className="text-xs font-bold text-slate-900 line-clamp-2 min-h-[2.4em]">
+                        <p className="text-xs font-bold text-gray-900 line-clamp-2 min-h-[2.4em]">
                           {p.name}
                         </p>
                         <p className="mt-1 text-sm font-black text-primary tabular-nums" dir="ltr">
@@ -468,9 +468,9 @@ export default function VendorPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="ابحث في المنتجات..."
-                  className="w-full h-10 px-10 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full h-10 px-10 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
-                <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
+                <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.34-4.34" />
                   <circle cx="11" cy="11" r="8" />
                 </svg>
@@ -478,7 +478,7 @@ export default function VendorPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortValue)}
-                className="h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-primary"
+                className="h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:border-primary"
               >
                 {SORT_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -494,23 +494,23 @@ export default function VendorPage() {
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-colors ${
                   onlyInStock
                     ? "bg-emerald-500 text-white"
-                    : "bg-white border border-slate-200 text-slate-600 hover:border-emerald-300"
+                    : "bg-white border border-gray-200 text-gray-600 hover:border-emerald-300"
                 }`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${onlyInStock ? "bg-white" : "bg-emerald-500"}`} />
                 المتوفر فقط
               </button>
-              <span className="text-slate-500 tabular-nums" dir="ltr">
+              <span className="text-gray-500 tabular-nums" dir="ltr">
                 {filteredProducts.length} نتيجة
               </span>
             </div>
 
             {filteredProducts.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl border border-slate-100">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">
+              <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">
                   🔍
                 </div>
-                <p className="text-slate-700 font-bold mb-1">
+                <p className="text-gray-700 font-bold mb-1">
                   {searchQuery ? "لا توجد نتائج للبحث" : "لا توجد منتجات حالياً"}
                 </p>
                 {searchQuery && (
@@ -531,10 +531,10 @@ export default function VendorPage() {
                   return (
                     <div
                       key={product.id}
-                      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-all group"
+                      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all group"
                     >
                       <Link href={`/vendors/${slug}/products/${product.id}`}>
-                        <div className="relative aspect-square bg-slate-100 overflow-hidden">
+                        <div className="relative aspect-square bg-gray-100 overflow-hidden">
                           <SafeImage
                             src={product.images[0]}
                             alt={product.name}
@@ -562,7 +562,7 @@ export default function VendorPage() {
                       </Link>
                       <div className="p-3">
                         <Link href={`/vendors/${slug}/products/${product.id}`}>
-                          <h3 className="font-bold text-sm text-slate-900 line-clamp-2 mb-1.5 min-h-[2.6em] hover:text-primary transition-colors">
+                          <h3 className="font-bold text-sm text-gray-900 line-clamp-2 mb-1.5 min-h-[2.6em] hover:text-primary transition-colors">
                             {product.name}
                           </h3>
                         </Link>
@@ -573,7 +573,7 @@ export default function VendorPage() {
                                 <span className="text-primary font-black text-sm tabular-nums" dir="ltr">
                                   {product.discountPrice!.toFixed(2)} <span className="text-tiny">ر.س</span>
                                 </span>
-                                <span className="text-tiny text-slate-400 line-through tabular-nums" dir="ltr">
+                                <span className="text-tiny text-gray-400 line-through tabular-nums" dir="ltr">
                                   {product.price.toFixed(2)}
                                 </span>
                               </div>
@@ -611,54 +611,54 @@ export default function VendorPage() {
         ) : (
           <div className="mt-4 space-y-3">
             {vendor.description && (
-              <div className="bg-white rounded-2xl p-4 border border-slate-100">
-                <h3 className="font-bold text-slate-900 mb-2">عن المتجر</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">{vendor.description}</p>
+              <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                <h3 className="font-bold text-gray-900 mb-2">عن المتجر</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">{vendor.description}</p>
               </div>
             )}
             {vendor.address && (
-              <div className="bg-white rounded-2xl p-4 border border-slate-100">
-                <h3 className="font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 0 1-2.827 0l-4.244-4.243a8 8 0 1 1 11.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
                   </svg>
                   العنوان
                 </h3>
-                <p className="text-sm text-slate-600">{vendor.address}</p>
+                <p className="text-sm text-gray-600">{vendor.address}</p>
               </div>
             )}
-            <div className="bg-white rounded-2xl p-4 border border-slate-100">
-              <h3 className="font-bold text-slate-900 mb-2 flex items-center gap-2">
+            <div className="bg-white rounded-2xl p-4 border border-gray-100">
+              <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
                 </svg>
                 أوقات العمل
               </h3>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-gray-600">
                 يومياً من <span dir="ltr" className="font-bold tabular-nums">{vendor.openTime}</span> إلى{" "}
                 <span dir="ltr" className="font-bold tabular-nums">{vendor.closeTime}</span>
               </p>
             </div>
-            <div className="bg-white rounded-2xl p-4 border border-slate-100">
-              <h3 className="font-bold text-slate-900 mb-3">طرق الدفع</h3>
+            <div className="bg-white rounded-2xl p-4 border border-gray-100">
+              <h3 className="font-bold text-gray-900 mb-3">طرق الدفع</h3>
               <div className="flex flex-wrap gap-2">
                 {vendor.settings.acceptsCod && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-full text-xs font-bold text-slate-700">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-xs font-bold text-gray-700">
                     💵 الدفع عند الاستلام
                   </span>
                 )}
                 {vendor.settings.acceptsOnlinePayment && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-full text-xs font-bold text-slate-700">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-xs font-bold text-gray-700">
                     💳 بطاقة / آبل باي
                   </span>
                 )}
               </div>
             </div>
             {vendor.settings.minOrder > 0 && (
-              <div className="bg-white rounded-2xl p-4 border border-slate-100">
-                <h3 className="font-bold text-slate-900 mb-2">الحد الأدنى للطلب</h3>
-                <p className="text-sm text-slate-600 tabular-nums" dir="ltr">
+              <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                <h3 className="font-bold text-gray-900 mb-2">الحد الأدنى للطلب</h3>
+                <p className="text-sm text-gray-600 tabular-nums" dir="ltr">
                   {vendor.settings.minOrder} ر.س
                 </p>
               </div>
@@ -666,15 +666,15 @@ export default function VendorPage() {
             {vendor.contact.phone && (
               <a
                 href={`tel:${vendor.contact.phone}`}
-                className="block bg-white rounded-2xl p-4 border border-slate-100 hover:border-primary transition-colors"
+                className="block bg-white rounded-2xl p-4 border border-gray-100 hover:border-primary transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                     📞
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">اتصل بنا</p>
-                    <p className="font-bold text-slate-900 tabular-nums" dir="ltr">
+                    <p className="text-xs text-gray-500">اتصل بنا</p>
+                    <p className="font-bold text-gray-900 tabular-nums" dir="ltr">
                       {vendor.contact.phone}
                     </p>
                   </div>
@@ -734,7 +734,7 @@ function CategoryStrip({
 
   const chipBase =
     "shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-2xl border transition-all text-sm font-bold";
-  const chipInactive = "bg-white border-slate-200 text-slate-700 hover:border-slate-300";
+  const chipInactive = "bg-white border-gray-200 text-gray-700 hover:border-gray-300";
   const ringStyle = { boxShadow: `0 0 0 2px ${primaryColor} inset` } as const;
 
   return (
@@ -744,7 +744,7 @@ function CategoryStrip({
         type="button"
         onClick={() => scrollBy(-220)}
         aria-label="السابق"
-        className="hidden md:flex absolute -right-1 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center bg-white/95 border border-slate-200 shadow-md rounded-full hover:bg-white"
+        className="hidden md:flex absolute -right-1 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center bg-white/95 border border-gray-200 shadow-md rounded-full hover:bg-white"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <polyline points="9 18 15 12 9 6" />
@@ -755,7 +755,7 @@ function CategoryStrip({
         type="button"
         onClick={() => scrollBy(220)}
         aria-label="التالي"
-        className="hidden md:flex absolute -left-1 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center bg-white/95 border border-slate-200 shadow-md rounded-full hover:bg-white"
+        className="hidden md:flex absolute -left-1 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center bg-white/95 border border-gray-200 shadow-md rounded-full hover:bg-white"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <polyline points="15 18 9 12 15 6" />
@@ -784,7 +784,7 @@ function CategoryStrip({
         >
           <span className="text-base" aria-hidden>🗂️</span>
           <span>الكل</span>
-          <span className="text-xs text-slate-400 tabular-nums" dir="ltr">
+          <span className="text-xs text-gray-400 tabular-nums" dir="ltr">
             {categories.reduce((s, c) => s + c.product_count, 0)}
           </span>
         </button>
@@ -819,7 +819,7 @@ function CategoryStrip({
                   خاص
                 </span>
               )}
-              <span className="text-xs text-slate-400 tabular-nums" dir="ltr">
+              <span className="text-xs text-gray-400 tabular-nums" dir="ltr">
                 {c.product_count}
               </span>
             </button>
@@ -854,14 +854,14 @@ function CategoryIcon({
         alt=""
         width={size}
         height={size}
-        className={`${rounded} object-cover bg-slate-100 shrink-0`}
+        className={`${rounded} object-cover bg-gray-100 shrink-0`}
       />
     );
   }
   const emoji = categoryEmoji(nameAr);
   return (
     <span
-      className={`${rounded} bg-slate-100 flex items-center justify-center text-base shrink-0`}
+      className={`${rounded} bg-gray-100 flex items-center justify-center text-base shrink-0`}
       style={{ width: size, height: size }}
       aria-hidden
     >

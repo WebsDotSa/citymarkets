@@ -75,10 +75,10 @@ export function CouponsStripSection() {
           <div className="flex items-center gap-2">
             <TicketPercent className="w-6 h-6 text-amber-500" />
             <div>
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">
                 كوبونات خصم
               </h2>
-              <p className="text-sm text-slate-500 mt-1 font-normal">
+              <p className="text-sm text-gray-500 mt-1 font-normal">
                 انسخ الكود واستخدمه عند الدفع
               </p>
             </div>
@@ -91,7 +91,7 @@ export function CouponsStripSection() {
               ? [...Array(3)].map((_, i) => (
                   <div
                     key={i}
-                    className="flex-shrink-0 w-72 h-32 rounded-3xl bg-slate-100 animate-pulse"
+                    className="flex-shrink-0 w-72 h-32 rounded-3xl bg-gray-100 animate-pulse"
                   />
                 ))
               : sorted.map((c) => {
@@ -114,8 +114,8 @@ export function CouponsStripSection() {
                       </div>
 
                       <div className="mb-3">
-                        <p className="text-xs text-slate-600 mb-1">خصم</p>
-                        <p className="font-bold text-slate-900 text-sm">
+                        <p className="text-xs text-gray-600 mb-1">خصم</p>
+                        <p className="font-bold text-gray-900 text-sm">
                           {c.type === "free_delivery"
                             ? "على رسوم التوصيل"
                             : c.min_order

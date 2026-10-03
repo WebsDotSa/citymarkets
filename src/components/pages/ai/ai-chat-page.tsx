@@ -551,7 +551,7 @@ export function AIChatPage() {
     <section
       id="main-content"
       aria-label="محادثة شيف سيتي"
-      className="relative isolate flex min-h-0 w-full flex-1 flex-col bg-gradient-to-b from-[#eaf6ee] via-white to-[#f6fbf8]"
+      className="relative isolate flex min-h-0 w-full flex-1 flex-col bg-gradient-to-b from-primary/10 via-white to-primary/5"
     >
       {/* Decorative background — non-interactive, sits behind everything */}
       <div

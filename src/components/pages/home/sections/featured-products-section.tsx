@@ -11,8 +11,8 @@ function SectionHeader({ title, subtitle, link }: { title: string; subtitle?: st
   return (
     <div className="flex items-end justify-between mb-5">
       <div>
-        <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">{title}</h2>
-        {subtitle && <p className="text-sm text-slate-500 mt-1 font-normal">{subtitle}</p>}
+        <h2 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">{title}</h2>
+        {subtitle && <p className="text-sm text-gray-500 mt-1 font-normal">{subtitle}</p>}
       </div>
       {link && (
         <Link href={link} className="flex items-center gap-1 text-sm font-bold text-primary hover:text-primary-dark transition-colors">

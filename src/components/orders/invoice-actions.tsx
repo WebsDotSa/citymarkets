@@ -146,7 +146,7 @@ export function InvoiceActions(props: InvoiceActionsProps) {
         type="button"
         onClick={handlePrint}
         disabled={downloading}
-        className={`${baseBtn} bg-slate-100 text-slate-800 hover:bg-slate-200 print:hidden`}
+        className={`${baseBtn} bg-gray-100 text-gray-800 hover:bg-gray-200 print:hidden`}
         data-testid="invoice-print"
         aria-label="طباعة الفاتورة"
       >
