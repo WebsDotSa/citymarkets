@@ -131,7 +131,8 @@ export async function POST(request: NextRequest) {
   try {
     let row = await client.query(
       `SELECT id, phone, name, email, avatar_url, loyalty_points, loyalty_tier,
-              spin_count_today, last_spin_at, created_at, updated_at
+              spin_count_today, last_spin_at, created_at, updated_at,
+              COALESCE(token_version, 1)::int AS token_version
        FROM users WHERE phone = $1`,
       [phoneDb]
     );
@@ -146,7 +147,8 @@ export async function POST(request: NextRequest) {
           `INSERT INTO users (phone, name, loyalty_points, loyalty_tier, spin_count_today)
            VALUES ($1, $2, 0, 'bronze', 0)
            RETURNING id, phone, name, email, avatar_url, loyalty_points, loyalty_tier,
-                     spin_count_today, last_spin_at, created_at, updated_at`,
+                     spin_count_today, last_spin_at, created_at, updated_at,
+                     COALESCE(token_version, 1)::int AS token_version`,
           [phoneDb, APPLE_REVIEW_NAME]
         );
       } else {
@@ -154,7 +156,8 @@ export async function POST(request: NextRequest) {
           `INSERT INTO users (phone, loyalty_points, loyalty_tier, spin_count_today)
            VALUES ($1, 0, 'bronze', 0)
            RETURNING id, phone, name, email, avatar_url, loyalty_points, loyalty_tier,
-                     spin_count_today, last_spin_at, created_at, updated_at`,
+                     spin_count_today, last_spin_at, created_at, updated_at,
+                     COALESCE(token_version, 1)::int AS token_version`,
           [phoneDb]
         );
       }
@@ -170,8 +173,9 @@ export async function POST(request: NextRequest) {
         );
         row = await client.query(
           `SELECT id, phone, name, email, avatar_url, loyalty_points, loyalty_tier,
-                  spin_count_today, last_spin_at, created_at, updated_at
-           FROM users WHERE id = $1`,
+                  spin_count_today, last_spin_at, created_at, updated_at,
+                  COALESCE(token_version, 1)::int AS token_version
+             FROM users WHERE id = $1`,
           [row.rows[0].id]
         );
       }
@@ -183,6 +187,10 @@ export async function POST(request: NextRequest) {
     const token = await signCustomerToken({
       userId: user.id,
       phone: user.phone,
+      // SECURITY (PCP-144): bake the live token_version into the JWT
+      // so the verify path (auth-helpers.ts) can detect bumps on the
+      // next request after a logout / password rotation.
+      tokenVersion: (u as { token_version?: number }).token_version ?? 1,
     });
 
     const res = NextResponse.json({ success: true, user });

@@ -22,6 +22,17 @@ import { setDefaultAddress as setDefaultAddressService } from "@/lib/identity/ad
 import { error as logError } from "@/lib/logger";
 
 import { validateUuidOrError } from "@/lib/api/uuid-guard";
+import { checkRateLimit } from "@/lib/rate-limit";
+
+// SECURITY (PCP-147): the default-toggle endpoint takes a verified
+// user + a 2-step UPDATE (clear-others + set-target), which is more
+// expensive than the average write. Cap at 30/hour per user to bound
+// the cost of a single misbehaving session spamming the toggle.
+const ADDRESS_DEFAULT_CONFIG = {
+  maxRequests: 30,
+  windowMs: 60 * 60 * 1000,
+  keyPrefix: "address:default",
+} as const;
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -31,6 +42,15 @@ export async function POST(
     return NextResponse.json(
       { success: false, error: "غير مصرح" },
       { status: 401 },
+    );
+  }
+
+  // SECURITY (PCP-147): per-user cap on the default-toggle endpoint.
+  const userLimit = await checkRateLimit(`user:${userId}`, ADDRESS_DEFAULT_CONFIG);
+  if (!userLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد العمليات، حاول لاحقاً" },
+      { status: 429 },
     );
   }
 

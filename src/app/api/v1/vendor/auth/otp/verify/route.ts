@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
     const localForm = `0${e164.slice(4)}`;
     const staffResult = await query(
       `SELECT id, vendor_id, email, phone, full_name_ar, full_name_en,
-              role, permissions, is_active
+              role, permissions, is_active, COALESCE(token_version, 1)::int AS token_version
          FROM vendor_staff
         WHERE vendor_id = $1
           AND LOWER(phone) IN (LOWER($2), LOWER($3))
@@ -206,6 +206,7 @@ export async function POST(request: NextRequest) {
       role: string;
       permissions: string[] | null;
       is_active: boolean;
+      token_version: number;
     };
     if (!staff.is_active) {
       return NextResponse.json(
@@ -228,6 +229,9 @@ export async function POST(request: NextRequest) {
         staff.full_name_ar || staff.full_name_en || staff.email || staff.phone || "",
       role: staff.role as VendorRole,
       permissions: staff.permissions || [],
+      // SECURITY (PCP-144): see the matching comment in
+      // src/app/api/v1/vendor/auth/login/route.ts.
+      tokenVersion: staff.token_version ?? 1,
     };
 
     const token = await signVendorSessionToken(session);

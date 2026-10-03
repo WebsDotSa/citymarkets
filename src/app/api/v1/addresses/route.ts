@@ -9,6 +9,26 @@ import {
 
 import { error as logError } from '@/lib/logger';
 
+import { checkRateLimit } from '@/lib/rate-limit';
+import { getClientIp } from '@/lib/request-ip';
+
+// SECURITY (PCP-146): mirror the `/api/v1/delivery-addresses` write
+// caps (PCP-130). Without these, an authenticated user could spam
+// the addresses table (1 INSERT per request) and balloon row counts
+// at no cost. 30/hour per user, 60/hour per IP — generous enough
+// for legitimate address-book edits while still capping abuse.
+const LEGACY_ADDRESS_WRITE_CONFIG = {
+  maxRequests: 30,
+  windowMs: 60 * 60 * 1000,
+  keyPrefix: 'address:legacy:write',
+} as const;
+
+const LEGACY_ADDRESS_WRITE_IP_CONFIG = {
+  maxRequests: 60,
+  windowMs: 60 * 60 * 1000,
+  keyPrefix: 'address:legacy:write:ip',
+} as const;
+
 // SECURITY (C3 RBAC): strict allowlist for place_images URLs is
 // centralised in `@/lib/place-image`. The route sanitises input
 // BEFORE handing off to the address service — the service does not
@@ -71,6 +91,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { success: false, error: 'غير مصرح' },
       { status: 401, headers: deprecationHeaders() }
+    );
+  }
+
+  // SECURITY (PCP-146): rate limit writes. IP-first then per-user,
+  // matching the delivery-addresses canonical (PCP-130).
+  const clientIp = getClientIp(request);
+  const ipLimit = await checkRateLimit(clientIp, LEGACY_ADDRESS_WRITE_IP_CONFIG);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: 'تجاوزت عدد العمليات، حاول لاحقاً' },
+      { status: 429, headers: deprecationHeaders() }
+    );
+  }
+  const userLimit = await checkRateLimit(`user:${userId}`, LEGACY_ADDRESS_WRITE_CONFIG);
+  if (!userLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: 'تجاوزت عدد العمليات، حاول لاحقاً' },
+      { status: 429, headers: deprecationHeaders() }
     );
   }
 

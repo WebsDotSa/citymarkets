@@ -90,14 +90,14 @@ describe("admin-api-auth helpers", () => {
       // populate the cache via requireAdminApi
       const token = await mintToken("admin");
       mockPoolQuery.mockResolvedValueOnce({
-        rows: [{ role: "admin", is_active: true }],
+        rows: [{ role: "admin", is_active: true, token_version: 1 }],
         rowCount: 1,
       });
       await requireAdminApi(fakeRequest(token));
       clearAdminRoleCache("admin-1");
       // Next call should re-query the DB (no cache hit)
       mockPoolQuery.mockResolvedValueOnce({
-        rows: [{ role: "admin", is_active: true }],
+        rows: [{ role: "admin", is_active: true, token_version: 1 }],
         rowCount: 1,
       });
       await requireAdminApi(fakeRequest(token));
@@ -134,7 +134,7 @@ describe("admin-api-auth helpers", () => {
     it("returns {admin} when JWT is valid, role matches DB, and no permission required", async () => {
       const token = await mintToken("admin");
       mockPoolQuery.mockResolvedValueOnce({
-        rows: [{ role: "admin", is_active: true }],
+        rows: [{ role: "admin", is_active: true, token_version: 1 }],
         rowCount: 1,
       });
 
@@ -149,7 +149,7 @@ describe("admin-api-auth helpers", () => {
     it("returns 401 when DB says the admin is inactive", async () => {
       const token = await mintToken("admin");
       mockPoolQuery.mockResolvedValueOnce({
-        rows: [{ role: "admin", is_active: false }],
+        rows: [{ role: "admin", is_active: false, token_version: 1 }],
         rowCount: 1,
       });
 
@@ -188,7 +188,7 @@ describe("admin-api-auth helpers", () => {
     it("returns 403 when the DB role no longer matches the JWT role (demoted)", async () => {
       const token = await mintToken("super_admin");
       mockPoolQuery.mockResolvedValueOnce({
-        rows: [{ role: "viewer", is_active: true }], // demoted
+        rows: [{ role: "viewer", is_active: true, token_version: 1 }], // demoted
         rowCount: 1,
       });
 
@@ -203,7 +203,7 @@ describe("admin-api-auth helpers", () => {
     it("returns 403 when the admin lacks the required permission", async () => {
       const token = await mintToken("viewer");
       mockPoolQuery.mockResolvedValueOnce({
-        rows: [{ role: "viewer", is_active: true }],
+        rows: [{ role: "viewer", is_active: true, token_version: 1 }],
         rowCount: 1,
       });
 
@@ -218,7 +218,7 @@ describe("admin-api-auth helpers", () => {
     it("returns {admin} when the admin has the required permission", async () => {
       const token = await mintToken("super_admin");
       mockPoolQuery.mockResolvedValueOnce({
-        rows: [{ role: "super_admin", is_active: true }],
+        rows: [{ role: "super_admin", is_active: true, token_version: 1 }],
         rowCount: 1,
       });
 
@@ -229,7 +229,7 @@ describe("admin-api-auth helpers", () => {
     it("caches the role lookup for 60s (second call does not re-query)", async () => {
       const token = await mintToken("admin");
       mockPoolQuery.mockResolvedValueOnce({
-        rows: [{ role: "admin", is_active: true }],
+        rows: [{ role: "admin", is_active: true, token_version: 1 }],
         rowCount: 1,
       });
 
@@ -243,7 +243,7 @@ describe("admin-api-auth helpers", () => {
     it("does not return a stale cached entry after clearAdminRoleCache", async () => {
       const token = await mintToken("admin");
       mockPoolQuery.mockResolvedValue({
-        rows: [{ role: "admin", is_active: true }],
+        rows: [{ role: "admin", is_active: true, token_version: 1 }],
         rowCount: 1,
       });
       await requireAdminApi(fakeRequest(token));

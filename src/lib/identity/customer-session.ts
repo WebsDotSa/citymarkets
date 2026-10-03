@@ -74,13 +74,30 @@ const _customerVerifyCache = createJwtVerifyCache<CustomerJwtPayload>();
 export type CustomerJwtPayload = {
   userId: string;
   phone: string;
+  /**
+   * SECURITY (PCP-144): `users.token_version` at the time the JWT
+   * was minted. The DB-backed auth path (auth-helpers.ts getServerUser)
+   * re-reads the row and compares; if `token_version` has been
+   * bumped (logout, password change), the now-stale JWT is rejected.
+   * Defaults to 1 so a legacy token (no claim) still authenticates
+   * until it expires — the first login post-fix bakes the new claim
+   * in, and subsequent bumps invalidate it within one request.
+   */
+  tokenVersion?: number;
 };
 
 export async function signCustomerToken(
   payload: CustomerJwtPayload
 ): Promise<string> {
   return signJwt(
-    { userId: payload.userId, phone: payload.phone },
+    {
+      userId: payload.userId,
+      phone: payload.phone,
+      // Default 1 keeps the claim stable for callers that don't pass
+      // a tokenVersion. New callers should always pass the current
+      // row value (see the twilio-verify login flow).
+      tokenVersion: payload.tokenVersion ?? 1,
+    },
     payload.userId,
     {
       issuer: ISS,
@@ -98,15 +115,21 @@ export async function verifyCustomerToken(
   // same window skips HMAC entirely.
   const cached = _customerVerifyCache.get(token);
   if (cached !== null) return cached;
-  const payload = await verifyJwt<{ userId?: unknown; phone?: unknown }>(
-    token,
-    customerVerifyConfig(),
-  );
+  const payload = await verifyJwt<{
+    userId?: unknown;
+    phone?: unknown;
+    tokenVersion?: unknown;
+  }>(token, customerVerifyConfig());
   if (!payload) return null;
   const userId = typeof payload.userId === "string" ? payload.userId : null;
   const phone = typeof payload.phone === "string" ? payload.phone : null;
   if (!userId || !phone) return null;
-  const result: CustomerJwtPayload = { userId, phone };
+  const tokenVersion =
+    typeof payload.tokenVersion === "number" &&
+    Number.isFinite(payload.tokenVersion)
+      ? payload.tokenVersion
+      : 1;
+  const result: CustomerJwtPayload = { userId, phone, tokenVersion };
   _customerVerifyCache.set(token, result);
   return result;
 }

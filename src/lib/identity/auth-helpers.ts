@@ -57,17 +57,36 @@ export async function getServerUser(): Promise<User | null> {
     // are no longer written by the loyalty pipeline, so reading
     // them here returns stale data. LEFT JOIN the live table so the
     // JWT cookie carries the actual current balance.
+    //
+    // SECURITY (PCP-144): also SELECT `token_version` so we can
+    // detect a bumped version (logout / password rotation) and
+    // return null. Without this, a stolen customer JWT keeps
+    // full access for up to 14 days (the JWT lifetime).
     const row = await client.query(
       `SELECT u.id, u.phone, u.name, u.email, u.avatar_url,
               COALESCE(lp.balance, 0)::int AS loyalty_points,
               u.loyalty_tier,
-              u.spin_count_today, u.last_spin_at, u.created_at, u.updated_at
+              u.spin_count_today, u.last_spin_at, u.created_at, u.updated_at,
+              COALESCE(u.token_version, 1)::int AS token_version
          FROM users u
          LEFT JOIN loyalty_points lp ON lp.user_id = u.id
         WHERE u.id = $1`,
       [payload.userId]
     );
     if (!row.rows[0]) return null;
+    // SECURITY (PCP-144): token_version comparison. A bumped value
+    // means the JWT was issued before the most recent logout or
+    // credential rotation — reject by returning null. This forces
+    // the caller to re-authenticate. A legacy JWT (no tokenVersion
+    // claim) defaults to 1, which matches the row's initial value;
+    // a freshly-minted JWT carries the live row value, so any
+    // subsequent bump on the row (e.g. logout) makes the comparison
+    // fail on the next request.
+    const dbTokenVersion = row.rows[0].token_version as number;
+    const jwtTokenVersion = payload.tokenVersion ?? 1;
+    if (dbTokenVersion !== jwtTokenVersion) {
+      return null;
+    }
     return mapDbUserRow(row.rows[0]);
   } finally {
     client.release();

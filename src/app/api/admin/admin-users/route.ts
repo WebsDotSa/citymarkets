@@ -109,6 +109,12 @@ export async function PUT(request: NextRequest) {
     const passwordChanged = Boolean(data.password);
     if (passwordChanged) {
       const passwordHash = await hashPassword(data.password!);
+      // SECURITY (PCP-143): bump token_version on every password rotation
+      // so any leaked admin JWT stops authenticating immediately. Without
+      // this, an attacker with a stolen JWT keeps admin privileges for up
+      // to 7 days (the JWT lifetime). The verify path (see
+      // admin-api-auth-db.ts) compares the JWT's tv claim against the DB
+      // value on every request.
       await query(
         `UPDATE admin_users
             SET name = $1,
@@ -117,6 +123,7 @@ export async function PUT(request: NextRequest) {
                 phone = $4,
                 is_active = $5,
                 password_hash = $6,
+                token_version = COALESCE(token_version, 1) + 1,
                 updated_at = NOW()
           WHERE id = $7`,
         [

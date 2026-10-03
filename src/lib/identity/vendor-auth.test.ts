@@ -87,6 +87,11 @@ describe("signVendorSessionToken / verifyVendorRequest (JWT round-trip)", () => 
       fullName: "Owner Seven",
       role: "owner",
       permissions: ["view", "edit"],
+      // SECURITY (PCP-144): the verifier always populates
+      // `tokenVersion` on the returned object (defaults to 1 for
+      // legacy tokens that do not carry the claim). Round-trip
+      // therefore includes the field.
+      tokenVersion: 1,
     });
   });
 
