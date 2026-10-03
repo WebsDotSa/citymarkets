@@ -1,20 +1,21 @@
 'use client';
 
 import { useMemo } from 'react';
+import type { CSSProperties } from 'react';
 import {
   setCSSVars,
   setVendorColorVars,
   setStatusColorVars,
+  setSectionColorVars,
   combineColorVars,
   BRAND_COLOR_VARS,
-  type React,
 } from '@/lib/color-variables';
 
 /**
  * Hook for managing brand color variables
  * Returns a style object with CSS variables set
  */
-export function useBrandColorVars(): React.CSSProperties {
+export function useBrandColorVars(): CSSProperties {
   return useMemo(() => setCSSVars(BRAND_COLOR_VARS), []);
 }
 
@@ -24,7 +25,7 @@ export function useBrandColorVars(): React.CSSProperties {
  */
 export function useVendorColorVars(
   primaryColor?: string
-): React.CSSProperties {
+): CSSProperties {
   return useMemo(() => {
     if (!primaryColor) return {};
     return setVendorColorVars(primaryColor);
@@ -37,7 +38,7 @@ export function useVendorColorVars(
  */
 export function useStatusColorVars(
   statusColor?: string
-): React.CSSProperties {
+): CSSProperties {
   return useMemo(() => {
     if (!statusColor) return {};
     return setStatusColorVars(statusColor);
@@ -51,7 +52,7 @@ export function useStatusColorVars(
 export function useAllColorVars(
   vendorPrimaryColor?: string,
   statusColor?: string
-): React.CSSProperties {
+): CSSProperties {
   return useMemo(() => {
     return combineColorVars(
       useBrandColorVars(),
@@ -59,6 +60,20 @@ export function useAllColorVars(
       setStatusColorVars(statusColor || '#666666')
     );
   }, [vendorPrimaryColor, statusColor]);
+}
+
+/**
+ * Hook for section color variables
+ * Useful for dynamic sections with background, text, and header colors
+ */
+export function useSectionColorVars(
+  backgroundColor?: string,
+  textColor?: string,
+  headerColor?: string
+): CSSProperties {
+  return useMemo(() => {
+    return setSectionColorVars(backgroundColor, textColor, headerColor);
+  }, [backgroundColor, textColor, headerColor]);
 }
 
 /**

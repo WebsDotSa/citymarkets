@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Sparkles, Zap, Flame, Store, TicketPercent, Megaphone, FileText } from "lucide-react";
+import { useSectionColorVars } from "@/hooks/use-color-vars";
 import { HeroBanner, StaticHero, PromoStrip } from "@/components/design/hero-banner";
 import { CategoryCard } from "@/components/design/category-card";
 import { ProductCard } from "@/components/storefront/product-card";
@@ -173,6 +174,7 @@ interface CategoryRow {
 
 export function CategoriesRenderer({ settings }: { settings: CategoriesSettings }) {
   const { title, columns, max_items, root_only, background_color, show_icons } = settings;
+  const sectionColorVars = useSectionColorVars(background_color);
   const [cats, setCats] = useState<CategoryRow[] | null>(null);
 
   useEffect(() => {
@@ -206,7 +208,7 @@ export function CategoriesRenderer({ settings }: { settings: CategoriesSettings 
     }[Math.min(8, Math.max(3, columns))] ?? "grid-cols-4";
 
   return (
-    <section className="px-4 sm:px-6 mt-6" style={background_color ? { backgroundColor: background_color } : undefined}>
+    <section className="px-4 sm:px-6 mt-6" style={background_color ? { ...sectionColorVars, backgroundColor: 'var(--section-bg)' } : undefined}>
       {title && <h2 className="text-lg font-bold text-secondary mb-3">{title}</h2>}
       <div className={cn("grid gap-3", colsClass)}>
         {cats.map((c) => (
@@ -239,6 +241,7 @@ interface Product {
 export function ProductsRenderer({ settings }: { settings: ProductsSettings }) {
   const { title, subtitle, source, product_ids, category_id, limit, display, columns, background_color, cta_text, cta_link } =
     settings;
+  const sectionColorVars = useSectionColorVars(background_color);
   const [items, setItems] = useState<Product[] | null>(null);
 
   useEffect(() => {
@@ -293,7 +296,7 @@ export function ProductsRenderer({ settings }: { settings: ProductsSettings }) {
   return (
     <section
       className="mt-6"
-      style={background_color ? { backgroundColor: background_color } : undefined}
+      style={background_color ? { ...sectionColorVars, backgroundColor: 'var(--section-bg)' } : undefined}
     >
       <div className="px-4 sm:px-6 flex items-center justify-between mb-4">
         <div>
@@ -332,6 +335,7 @@ export function ProductsRenderer({ settings }: { settings: ProductsSettings }) {
 
 export function OffersGridRenderer({ settings }: { settings: OffersGridSettings }) {
   const { title, subtitle, limit, display, columns, background_color, cta_text, cta_link } = settings;
+  const sectionColorVars = useSectionColorVars(background_color);
   const [offers, setOffers] = useState<OfferCardData[] | null>(null);
 
   useEffect(() => {
@@ -366,7 +370,7 @@ export function OffersGridRenderer({ settings }: { settings: OffersGridSettings 
   return (
     <section
       className="mt-6"
-      style={background_color ? { backgroundColor: background_color } : undefined}
+      style={background_color ? { ...sectionColorVars, backgroundColor: 'var(--section-bg)' } : undefined}
     >
       <div className="px-4 sm:px-6 flex items-center justify-between mb-4">
         <div>
@@ -395,14 +399,16 @@ export function OffersGridRenderer({ settings }: { settings: OffersGridSettings 
 
 export function OffersStripRenderer({ settings }: { settings: OffersStripSettings }) {
   const { title, subtitle, banners, background_color, text_color, countdown_enabled } = settings;
+  const sectionColorVars = useSectionColorVars(background_color ?? "#7c2d12", text_color ?? "#ffffff");
   if (!banners || banners.length === 0) return null;
 
   return (
     <section
       className="mt-6 py-4"
       style={{
-        backgroundColor: background_color ?? "#7c2d12",
-        color: text_color ?? "#ffffff",
+        ...sectionColorVars,
+        backgroundColor: 'var(--section-bg)',
+        color: 'var(--section-text)',
       }}
     >
       <div className="px-4 sm:px-6 flex items-center justify-between mb-3">
@@ -471,6 +477,7 @@ export function LightningDealsRenderer({ settings }: { settings: LightningDealsS
     limit,
     show_countdown,
   } = settings;
+  const sectionColorVars = useSectionColorVars(background_color ?? "#fef3c7", undefined, header_color ?? "#92400e");
   const [items, setItems] = useState<Product[] | null>(null);
 
   useEffect(() => {
@@ -500,18 +507,19 @@ export function LightningDealsRenderer({ settings }: { settings: LightningDealsS
     <section
       className="mt-6 mx-4 sm:mx-6 rounded-2xl p-4 border-2"
       style={{
-        backgroundColor: background_color ?? "#fef3c7",
+        ...sectionColorVars,
+        backgroundColor: 'var(--section-bg)',
         borderColor: border_color ?? "#fbbf24",
       }}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Zap className="w-5 h-5" style={{ color: header_color ?? "#92400e" }} />
-          <h2 className="text-lg sm:text-xl font-bold" style={{ color: header_color ?? "#92400e" }}>
+          <Zap className="w-5 h-5" style={{ color: 'var(--section-header)' }} />
+          <h2 className="text-lg sm:text-xl font-bold" style={{ color: 'var(--section-header)' }}>
             {title}
           </h2>
           {subtitle && (
-            <span className="text-xs opacity-70" style={{ color: header_color ?? "#92400e" }}>
+            <span className="text-xs opacity-70" style={{ color: 'var(--section-header)' }}>
               {subtitle}
             </span>
           )}
@@ -530,7 +538,7 @@ export function LightningDealsRenderer({ settings }: { settings: LightningDealsS
           <Link
             href={footer_link}
             className="inline-block px-6 py-2 bg-white rounded-full text-sm font-semibold hover:bg-gray-50"
-            style={{ color: header_color ?? "#92400e" }}
+            style={{ color: 'var(--section-header)' }}
           >
             {footer_text} ←
           </Link>
@@ -544,6 +552,7 @@ export function LightningDealsRenderer({ settings }: { settings: LightningDealsS
 
 export function CategorySectionRenderer({ settings }: { settings: CategorySectionSettings }) {
   const { category_id, title_override, background_color, layout, limit } = settings;
+  const sectionColorVars = useSectionColorVars(background_color);
   const [items, setItems] = useState<Product[] | null>(null);
   const [title, setTitle] = useState<string | null>(title_override ?? null);
 
@@ -584,7 +593,7 @@ export function CategorySectionRenderer({ settings }: { settings: CategorySectio
   return (
     <section
       className="mt-6"
-      style={background_color ? { backgroundColor: background_color } : undefined}
+      style={background_color ? { ...sectionColorVars, backgroundColor: 'var(--section-bg)' } : undefined}
     >
       <div className="px-4 sm:px-6 mb-3 flex items-center justify-between">
         <h2 className="text-lg sm:text-xl font-bold text-secondary">{title ?? "المنتجات"}</h2>
@@ -764,13 +773,15 @@ export function CouponsRenderer({ settings }: { settings: CouponsSettings }) {
 
 export function HtmlBlockRenderer({ settings }: { settings: HtmlBlockSettings }) {
   const { content_html, background_color, text_color } = settings;
+  const sectionColorVars = useSectionColorVars(background_color ?? "#f1f5f9", text_color ?? "#0f172a");
   if (!content_html) return null;
   return (
     <section
       className="mt-6 px-4 sm:px-6"
       style={{
-        backgroundColor: background_color ?? "#f1f5f9",
-        color: text_color ?? "#0f172a",
+        ...sectionColorVars,
+        backgroundColor: 'var(--section-bg)',
+        color: 'var(--section-text)',
       }}
     >
       <div
@@ -790,11 +801,12 @@ export function HtmlBlockRenderer({ settings }: { settings: HtmlBlockSettings })
 export function HeroBannerRenderer({ settings }: { settings: import("@/lib/catalog").HeroBannerSettings }) {
   // Simple static hero with optional banner image — keeps parity with
   // the existing PromoStrip / StaticHero primitives.
+  const sectionColorVars = useSectionColorVars(settings.background_color);
   return (
     <section
       className="mt-4 px-4 sm:px-6"
       style={
-        settings.background_color ? { backgroundColor: settings.background_color } : undefined
+        settings.background_color ? { ...sectionColorVars, backgroundColor: 'var(--section-bg)' } : undefined
       }
     >
       <StaticHero
@@ -812,12 +824,14 @@ export function HeroBannerRenderer({ settings }: { settings: import("@/lib/catal
 
 export function CtaRenderer({ settings }: { settings: CtaSettings }) {
   const { variant, title, subtitle, cta_text, cta_href, background_color, text_color } = settings;
+  const sectionColorVars = useSectionColorVars(background_color ?? "#0f172a", text_color ?? "#ffffff");
   return (
     <section
       className="mt-6 mx-4 sm:mx-6 rounded-2xl p-6 text-center"
       style={{
-        backgroundColor: background_color ?? "#0f172a",
-        color: text_color ?? "#ffffff",
+        ...sectionColorVars,
+        backgroundColor: 'var(--section-bg)',
+        color: 'var(--section-text)',
       }}
     >
       <div className="flex items-center justify-center gap-2 mb-2">
