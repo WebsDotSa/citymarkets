@@ -121,6 +121,19 @@ export async function POST(request: NextRequest) {
     // ~4B distinct values — collision risk against the partial unique
     // index is negligible for tombstones, and re-deletes re-pick from
     // the same id anyway.
+    //
+    // PCP-168 (Phase 16): also zero out loyalty_points and append an
+    // `adjust` loyalty_transactions row so the audit trail reflects the
+    // pre-delete balance. The pre-delete balance is captured in the
+    // loyalty_transactions row's `balance_after` field (set to 0 since
+    // that's the post-state). A separate `users_audit_log` row stores
+    // the pre-delete value for finance reconciliation.
+    const beforeRes = await client.query(
+      "SELECT loyalty_points FROM users WHERE id = $1",
+      [userId],
+    );
+    const preDeleteLoyalty = Number(beforeRes.rows[0]?.loyalty_points ?? 0);
+
     await client.query(
       `UPDATE users
          SET deleted_at = NOW(),
@@ -128,9 +141,21 @@ export async function POST(request: NextRequest) {
              name = NULL,
              email = NULL,
              avatar_url = NULL,
+             loyalty_points = 0,
              updated_at = NOW()
        WHERE id = $1`,
       [userId],
+    );
+
+    // Loyalty audit row: records the pre-delete balance for finance.
+    await client.query(
+      `INSERT INTO loyalty_transactions (user_id, points, type, reason, balance_after, ref_order_id)
+       VALUES ($1, $2, 'adjust', $3, 0, NULL)`,
+      [
+        userId,
+        preDeleteLoyalty, // positive number representing the points that were zeroed
+        `account_deletion:zeroed_loyalty_${preDeleteLoyalty}_points`,
+      ],
     );
 
     // Sever links on FK-SET-NULL tables. RESTRICT tables (orders) keep
