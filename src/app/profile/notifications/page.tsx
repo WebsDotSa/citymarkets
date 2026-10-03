@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { PushOptIn } from "@/components/PushOptIn";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageContainer } from "@/components/ui/page-container";
 import { Card } from "@/components/ui/card";
 
 const PREF_KEY = "cm-notif-prefs";
@@ -42,14 +43,13 @@ export default function NotificationsPage() {
   };
 
   return (
-    <main className="min-h-[80vh] bg-gray-50">
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <PageHeader
-          icon={<Bell className="w-6 h-6 text-primary" />}
-          title="الإشعارات"
-          subtitle="تحكم كيف تبي نوصلّك التحديثات"
-          className="mb-6"
-        />
+    <PageContainer width="narrow" padding="normal" className="py-6">
+      <PageHeader
+        icon={<Bell className="w-6 h-6 text-primary" />}
+        title="الإشعارات"
+        subtitle="تحكم كيف تبي نوصلّك التحديثات"
+        className="mb-6"
+      />
 
         <section className="mb-6">
           <h2 className="text-sm font-semibold text-gray-700 mb-3">إشعارات المتصفح</h2>
@@ -84,8 +84,7 @@ export default function NotificationsPage() {
             <p className="text-xs text-primary mt-2 text-center">تم الحفظ</p>
           )}
         </section>
-      </div>
-    </main>
+    </PageContainer>
   );
 }
 
