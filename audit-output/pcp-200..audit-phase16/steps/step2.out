@@ -1,0 +1,8 @@
+ schemaname |     relname     |  total  | indexes | idx_pct 
+------------+-----------------+---------+---------+---------
+ public     | page_views      | 5088 kB | 2704 kB |    53.1
+ public     | users           | 3768 kB | 1296 kB |    34.4
+ public     | vendor_products | 2792 kB | 576 kB  |    20.6
+ public     | products        | 1464 kB | 600 kB  |    41.0
+(4 rows)
+

@@ -1,0 +1,18 @@
+ db_tables 
+-----------
+        56
+(1 row)
+
+ user_table_count 
+------------------
+               59
+(1 row)
+
+ migrations_applied 
+--------------------
+                126
+(1 row)
+
+ERROR:  column "sql_name" does not exist
+LINE 1: SELECT sql_name, count(*) AS c FROM schema_migrations GROUP ...
+               ^
