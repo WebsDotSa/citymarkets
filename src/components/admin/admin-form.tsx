@@ -5,12 +5,49 @@ import { ReactNode, FormHTMLAttributes, useState } from "react";
 export interface AdminFormField {
   key: string;
   label: string;
-  type: "text" | "email" | "tel" | "number" | "select" | "textarea" | "checkbox";
+  type:
+    | "text"
+    | "number"
+    | "textarea"
+    | "select"
+    | "select2"
+    | "multiselect"
+    | "image"
+    | "images"
+    | "checkbox"
+    | "password"
+    | "email"
+    | "tel"
+    | "color"
+    | "date"
+    | "time"
+    | "datetime"
+    | "editor"
+    | "file"
+    | "switch"
+    | "hidden";
   required?: boolean;
   placeholder?: string;
   options?: Array<{ value: string; label: string }>;
   help?: string;
+  colSpan?: 1 | 2;
+  defaultValue?: unknown;
+  disabled?: boolean;
+  readOnly?: boolean;
+  min?: number;
+  max?: number;
+  step?: number;
+  accept?: string;
+  maxLength?: number;
+  rows?: number;
+  searchable?: boolean;
+  allowClear?: boolean;
+  onChange?: (value: unknown, key: string) => void;
+  className?: string;
+  validate?: (value: unknown) => string | null;
 }
+
+export type FormField = AdminFormField;
 
 interface AdminFormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, 'onSubmit'> {
   title?: string;
@@ -22,6 +59,8 @@ interface AdminFormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, 'onSu
   onCancel?: () => void;
   loading?: boolean;
   isLoading?: boolean;
+  previewTitle?: string;
+  renderPreview?: (data: Record<string, any>) => ReactNode;
 }
 
 export function AdminForm({
@@ -34,6 +73,8 @@ export function AdminForm({
   onCancel,
   loading,
   isLoading,
+  previewTitle,
+  renderPreview,
   ...formProps
 }: AdminFormProps) {
   const [formData, setFormData] = useState(initialValues);
@@ -49,12 +90,13 @@ export function AdminForm({
   };
 
   return (
-    <form
-      {...formProps}
-      onSubmit={handleSubmit}
-      style={{ opacity: submitting ? 0.6 : 1, pointerEvents: submitting ? "none" : "auto" }}
-      className={`space-y-4 ${formProps.className || ""}`}
-    >
+    <div className={`${renderPreview ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : ''}`}>
+      <form
+        {...formProps}
+        onSubmit={handleSubmit}
+        style={{ opacity: submitting ? 0.6 : 1, pointerEvents: submitting ? "none" : "auto" }}
+        className={`space-y-4 ${formProps.className || ""}`}
+      >
       {(title || subtitle) && (
         <div className="mb-6">
           {title && <h2 className="text-lg font-semibold text-gray-900">{title}</h2>}
@@ -145,6 +187,18 @@ export function AdminForm({
           )}
         </div>
       )}
-    </form>
+      </form>
+
+      {renderPreview && (
+        <div className="sticky top-4 h-fit">
+          {previewTitle && (
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{previewTitle}</h3>
+          )}
+          <div className="bg-gray-50 rounded-xl p-4 overflow-auto max-h-[calc(100vh-200px)]">
+            {renderPreview(formData)}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
