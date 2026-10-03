@@ -2,10 +2,13 @@
 /**
  * Backfill PII encryption columns.
  *
- * P0-3 (security Phase 3, 2026-10-03): migrates existing rows from
- * plaintext PII columns to the new `*_encrypted` and `*_hmac`
- * columns added by migration 121. Idempotent: rows that already
- * have an `_encrypted` value are skipped.
+ * P0-3 (security Phase 3, 2026-10-03) added the `*_encrypted` and
+ * `*_hmac` columns (migration 121). P0-PII-KMS (security Phase 5,
+ * 2026-10-03) replaced the single-key scheme with envelope
+ * encryption. This backfill now writes envelope-format ciphertext
+ * (prefix byte 0x01) and uses the HMAC key derived from the active
+ * DEK — i.e. the new format produced by src/lib/security/pii-crypto.ts
+ * encryptPii.
  *
  * Usage:
  *   # Dry-run (default): print what would be updated, change nothing.
@@ -19,14 +22,25 @@
  *   tsx scripts/backfill-pii-encryption.ts --apply --limit=100
  *
  * Required env:
- *   PII_ENCRYPTION_KEY  base64 32-byte key, same one the app uses
- *   PII_HMAC_KEY        base64 32-byte key, same one the app uses
+ *   PII_MASTER_KEY  base64 32-byte KEK (AES-256-KW key)
+ *   PII_DATA_KEY    base64 40-byte wrapped DEK (AES-256-KW output)
+ *   PII_ENCRYPTION_KEY  base64 32-byte legacy KEK (only needed while
+ *                        any legacy rows remain; can be dropped once
+ *                        the backfill reports zero rows)
+ *   PII_HMAC_KEY    base64 32-byte legacy HMAC key (same caveat as
+ *                    PII_ENCRYPTION_KEY)
  *
- *   These MUST be the keys the running app uses. If the app's keys
- *   are rotated while a backfill is in flight, the app will fail to
- *   decrypt the new rows it reads. Run a backfill to completion
- *   before rotating keys; or run two backfills (one before, one
- *   after) with the corresponding keys.
+ *   PII_MASTER_KEY + PII_DATA_KEY MUST match what the running app
+ *   uses. If they are rotated while a backfill is in flight, the
+ *   app will fail to decrypt the new rows it reads. Run a backfill
+ *   to completion before rotating keys; or run two backfills (one
+ *   before, one after) with the corresponding keys.
+ *
+ *   The legacy env vars (PII_ENCRYPTION_KEY, PII_HMAC_KEY) are read
+ *   ONLY to recompute the legacy HMAC on rows whose hmac column is
+ *   still the legacy hash. New rows are written with the active
+ *   HMAC key (derived from the DEK). Once the legacy path stops
+ *   reading these env vars, the operator can drop them.
  *
  * What it does
  * ------------
@@ -34,11 +48,22 @@
  * script:
  *   1. SELECTs up to <batch-size> rows where the encrypted column
  *      IS NULL AND the plaintext column IS NOT NULL.
- *   2. Computes ciphertext + (where applicable) HMAC for each row.
+ *   2. Computes envelope-format ciphertext + active HMAC for each
+ *      row.
  *   3. UPDATEs the row in a single statement per row (so a single
  *      bad row doesn't poison the whole batch).
  *   4. Sleeps briefly between batches.
  *   5. Repeats until no more rows need updating.
+ *
+ * Idempotency
+ * -----------
+ * Rows that already have an encrypted value are skipped. Rows
+ * encrypted by the legacy P0-3 scheme (no version byte) are NOT
+ * re-encrypted by this script — the legacy decrypt path still
+ * works because the legacy KEK is in env. To re-encrypt legacy
+ * rows under the new envelope scheme, the operator must run a
+ * follow-up migration that flips the whereSql from
+ * `col IS NULL` to `col NOT LIKE 'e0%'` (Phase 6 work, separate).
  *
  * Output
  * ------
@@ -54,7 +79,13 @@
  */
 
 import { Client } from "pg";
-import { randomBytes } from "node:crypto";
+import {
+  randomBytes,
+  createCipheriv,
+  createDecipheriv,
+  createHmac,
+  hkdfSync,
+} from "node:crypto";
 import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -94,37 +125,102 @@ function requireEnv(name: string): string {
   return v;
 }
 
-const PII_ENCRYPTION_KEY = requireEnv("PII_ENCRYPTION_KEY");
-const PII_HMAC_KEY = requireEnv("PII_HMAC_KEY");
+const PII_MASTER_KEY = requireEnv("PII_MASTER_KEY");
+const PII_DATA_KEY = requireEnv("PII_DATA_KEY");
+const PII_ENCRYPTION_KEY = process.env.PII_ENCRYPTION_KEY; // legacy, optional
+const PII_HMAC_KEY = process.env.PII_HMAC_KEY; // legacy, optional
 
-// ── AES-256-GCM (mirrors src/lib/security/pii-crypto.ts) ──
-import { createCipheriv, createHmac, hkdfSync } from "node:crypto";
+// ── AES-256-KW (RFC 3394, mirrors src/lib/security/pii-crypto.ts) ──
+const AES_KW_DEFAULT_IV = Buffer.from("a6a6a6a6a6a6a6a6", "hex");
 
+function aesEcb(key: Buffer, block: Buffer): Buffer {
+  const c = createCipheriv("aes-256-ecb", key, Buffer.alloc(0));
+  c.setAutoPadding(false);
+  return Buffer.concat([c.update(block), c.final()]);
+}
+
+function aesKeyUnwrap(kek: Buffer, wrapped: Buffer): Buffer {
+  if (wrapped.length % 8 !== 0 || wrapped.length < 16) {
+    throw new Error(`AES-KW wrapped input invalid: length ${wrapped.length}`);
+  }
+  const n = wrapped.length / 8 - 1;
+  let A = Buffer.from(wrapped.subarray(0, 8));
+  const R: Buffer[] = [];
+  for (let i = 0; i < n; i++) {
+    R.push(Buffer.from(wrapped.subarray(8 + i * 8, 8 + (i + 1) * 8)));
+  }
+  for (let j = 5; j >= 0; j--) {
+    for (let i = n; i >= 1; i--) {
+      const counter = Buffer.alloc(8);
+      counter.writeUInt32BE(n * j + i, 4);
+      const Ainv = Buffer.alloc(8);
+      for (let k = 0; k < 8; k++) Ainv[k] = A[k] ^ counter[k];
+      const d = createDecipheriv("aes-256-ecb", kek, Buffer.alloc(0));
+      d.setAutoPadding(false);
+      const B = Buffer.concat([
+        d.update(Buffer.concat([Ainv, R[i - 1]])),
+        d.final(),
+      ]);
+      A = Buffer.from(B.subarray(0, 8));
+      R[i - 1] = B.subarray(8);
+    }
+  }
+  if (!A.equals(AES_KW_DEFAULT_IV)) {
+    throw new Error("AES-KW integrity check failed");
+  }
+  return Buffer.concat(R);
+}
+
+const KEK = Buffer.from(PII_MASTER_KEY, "base64");
+if (KEK.length !== 32) {
+  console.error(`[fatal] PII_MASTER_KEY must decode to exactly 32 bytes (got ${KEK.length}).`);
+  process.exit(2);
+}
+const DEK = aesKeyUnwrap(KEK, Buffer.from(PII_DATA_KEY, "base64"));
+if (DEK.length !== 32) {
+  console.error(`[fatal] Unwrapped DEK is not 32 bytes (got ${DEK.length}). Check PII_DATA_KEY.`);
+  process.exit(2);
+}
+
+// ── AES-256-GCM (envelope scheme, mirrors src/lib/security/pii-crypto.ts) ──
 const ALGO = "aes-256-gcm";
 const IV_BYTES = 12;
 const TAG_BYTES = 16;
 const KEY_BYTES = 32;
-const DEK_INFO = "citymarkets-pii-dek-v1";
+const VERSION_ENVELOPE = 0x01;
+const ACTIVE_DEK_VERSION = 0x01;
 const HMAC_INFO = "citymarkets-pii-hmac-v1";
+const DEK_INFO_LEGACY = "citymarkets-pii-dek-v1";
 
-const dek = Buffer.from(
-  hkdfSync(
-    "sha256",
-    Buffer.from(PII_ENCRYPTION_KEY, "base64"),
-    Buffer.alloc(0),
-    Buffer.from(DEK_INFO),
-    KEY_BYTES,
-  ),
+const ACTIVE_HMAC_KEY = Buffer.from(
+  hkdfSync("sha256", DEK, Buffer.alloc(0), Buffer.from(HMAC_INFO), KEY_BYTES),
 );
-const hmacKey = Buffer.from(
-  hkdfSync(
-    "sha256",
-    Buffer.from(PII_HMAC_KEY, "base64"),
-    Buffer.alloc(0),
-    Buffer.from(HMAC_INFO),
-    KEY_BYTES,
-  ),
-);
+
+// Legacy HMAC key, used only to read phone_hmac columns written by
+// the P0-3 backfill. Optional — absent if the operator already
+// rotated away from P0-3.
+const LEGACY_HMAC_KEY = PII_HMAC_KEY
+  ? Buffer.from(
+      hkdfSync(
+        "sha256",
+        Buffer.from(PII_HMAC_KEY, "base64"),
+        Buffer.alloc(0),
+        Buffer.from(HMAC_INFO),
+        KEY_BYTES,
+      ),
+    )
+  : null;
+const LEGACY_DEK = PII_ENCRYPTION_KEY
+  ? Buffer.from(
+      hkdfSync(
+        "sha256",
+        Buffer.from(PII_ENCRYPTION_KEY, "base64"),
+        Buffer.alloc(0),
+        Buffer.from(DEK_INFO_LEGACY),
+        KEY_BYTES,
+      ),
+    )
+  : null;
 
 function normalisePhone(phone: string): string {
   const trimmed = phone.trim();
@@ -135,17 +231,52 @@ function normalisePhone(phone: string): string {
 }
 
 function encrypt(plaintext: string): string {
+  // Envelope format: 0x01 || dek_version || iv(12) || ct || tag(16)
   const iv = randomBytes(IV_BYTES);
-  const cipher = createCipheriv(ALGO, dek, iv);
+  const cipher = createCipheriv(ALGO, DEK, iv);
+  const ct = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([
+    Buffer.from([VERSION_ENVELOPE, ACTIVE_DEK_VERSION]),
+    iv,
+    ct,
+    tag,
+  ]).toString("base64");
+}
+
+function encryptLegacy(plaintext: string): string {
+  // Legacy P0-3 format: iv(12) || ct || tag(16). Used only if a row
+  // already has a *_encrypted value in legacy format and we need to
+  // preserve it on re-write (e.g. when only the HMAC needs updating).
+  if (!LEGACY_DEK) {
+    throw new Error(
+      "PII_ENCRYPTION_KEY is not set; cannot write legacy-format ciphertext.",
+    );
+  }
+  const iv = randomBytes(IV_BYTES);
+  const cipher = createCipheriv(ALGO, LEGACY_DEK, iv);
   const ct = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
   return Buffer.concat([iv, ct, tag]).toString("base64");
 }
 
 function hmac(plaintext: string): string {
+  // Active HMAC key — derived from the DEK, used for new writes
+  // (and for any row whose hmac column was never set).
   const normalised = normalisePhone(plaintext);
   const input = normalised || plaintext.trim().toLowerCase();
-  return createHmac("sha256", hmacKey).update(input, "utf8").digest("base64");
+  return createHmac("sha256", ACTIVE_HMAC_KEY).update(input, "utf8").digest("base64");
+}
+
+function hmacLegacy(plaintext: string): string {
+  if (!LEGACY_HMAC_KEY) {
+    throw new Error(
+      "PII_HMAC_KEY is not set; cannot write legacy-format HMAC.",
+    );
+  }
+  const normalised = normalisePhone(plaintext);
+  const input = normalised || plaintext.trim().toLowerCase();
+  return createHmac("sha256", LEGACY_HMAC_KEY).update(input, "utf8").digest("base64");
 }
 
 // ── CLI args ──
