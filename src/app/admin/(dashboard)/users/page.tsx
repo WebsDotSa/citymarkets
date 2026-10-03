@@ -148,7 +148,7 @@ export default function AdminUsersPage() {
       label: "الأعضاء العاديين",
       value: users.filter((u) => u.loyalty_tier === "bronze" || !u.loyalty_tier).length,
       icon: UserCheck,
-      color: "text-slate-600 bg-slate-100",
+      color: "text-gray-600 bg-gray-100",
     },
     {
       label: "أعضاء النخبة (فضي فأعلى)",
@@ -170,9 +170,9 @@ export default function AdminUsersPage() {
         {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <div key={i} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500 mb-1">{stat.label}</p>
+                <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
                 <p className="text-2xl font-bold">{stat.value}</p>
               </div>
               <div className={`p-3 rounded-lg ${stat.color}`}>

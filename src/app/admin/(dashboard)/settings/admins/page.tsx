@@ -154,8 +154,8 @@ export default function AdminManagementPage() {
             <Bike className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <p className="font-bold text-slate-800 text-sm">طلبات المناديب الجدد</p>
-            <p className="text-xs text-slate-500">
+            <p className="font-bold text-gray-800 text-sm">طلبات المناديب الجدد</p>
+            <p className="text-xs text-gray-500">
               راجع طلبات التوظيف للمندوبين، وعند القبول أضفهم هنا بدور "مندوب".
             </p>
           </div>
