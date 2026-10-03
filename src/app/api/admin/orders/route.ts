@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool, query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
-import { parsePagination } from "@/lib/api/pagination";
+import { parsePagination } from '@/lib/api/pagination';
 import { logAdminAction } from '@/lib/admin-audit';
 import { updateOrderSchema } from '@/lib/validation';
 import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 
 import { error as logError, warn as logWarn } from '@/lib/logger';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { getClientIp } from '@/lib/request-ip';
 import { ALL_ORDER_STATES, ALL_PAYMENT_STATES, assertValidTransition, invalidTransitionMessage } from '@/lib/orders/state-machine';
+import { ADMIN_WRITE_CONFIG, ADMIN_WRITE_IP_CONFIG } from '@/lib/rate-limit';
 import {
   ORDER_BASE_COLUMNS,
   ORDER_LIST_COLUMNS,
@@ -16,6 +19,18 @@ import {
   ORDER_DETAIL_JOINS,
   ORDER_LIST_JOINS,
 } from '@/lib/orders/sql-fragments';
+
+// SECURITY (PCP-170 Phase 16): rate-limit the admin order PUT. Auth-gated
+// already, but a leaked admin JWT can still churn through orders fast.
+// 30/min/admin and 60/min/IP is generous for a working admin.
+async function adminWriteRateLimit(request: NextRequest, adminId: string) {
+  const ip = getClientIp(request);
+  const ipLimit = await checkRateLimit(ip, ADMIN_WRITE_IP_CONFIG);
+  if (!ipLimit.allowed) return { ok: false, kind: 'ip' as const };
+  const adminLimit = await checkRateLimit(`admin:${adminId}`, ADMIN_WRITE_CONFIG);
+  if (!adminLimit.allowed) return { ok: false, kind: 'admin' as const };
+  return { ok: true as const };
+}
 
 function idCheck(url: URL) {
   const id = url.searchParams.get('id');
@@ -212,6 +227,14 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const gate = await requireAdminApi(request, 'manage_orders');
   if (gate instanceof NextResponse) return gate;
+  // SECURITY (PCP-170): rate limit before any DB work
+  const rateCheck = await adminWriteRateLimit(request, gate.admin.id);
+  if (!rateCheck.ok) {
+    return NextResponse.json(
+      { success: false, error: 'تجاوزت عدد المحاولات، حاول لاحقاً' },
+      { status: 429 },
+    );
+  }
   try {
     const url = new URL(request.url);
     const idCheckResult = idCheck(url);

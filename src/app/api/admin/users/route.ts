@@ -32,11 +32,12 @@ export async function GET(request: NextRequest) {
         `SELECT id, phone, name, email, loyalty_points, loyalty_tier,
                 spin_count_today, created_at
            FROM users
+          WHERE deleted_at IS NULL
           ORDER BY created_at DESC
           LIMIT $1 OFFSET $2`,
         [limit, offset],
       ),
-      query<{ total: string }>(`SELECT COUNT(*)::int AS total FROM users`),
+      query<{ total: string }>(`SELECT COUNT(*)::int AS total FROM users WHERE deleted_at IS NULL`),
     ]);
     const total = Number(countRows.rows[0]?.total ?? 0);
     return NextResponse.json({
