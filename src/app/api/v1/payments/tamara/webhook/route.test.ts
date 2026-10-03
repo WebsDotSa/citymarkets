@@ -136,7 +136,7 @@ describe("POST /api/v1/payments/tamara/webhook — auth", () => {
   });
 
   it("rejects with 401 when Authorization header is missing", async () => {
-    vi.mocked(verifyWebhookSignature).mockReturnValueOnce(false);
+    vi.mocked(verifyWebhookSignature).mockResolvedValueOnce(false);
     const req = new Request("http://localhost/api/v1/payments/tamara/webhook", {
       method: "POST",
       headers: { "content-type": "application/json" },
