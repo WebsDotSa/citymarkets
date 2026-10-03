@@ -48,6 +48,8 @@ export interface SignConfig {
   secretBytes: Uint8Array;
   /** Expiration — passed verbatim to `setExpirationTime` (e.g. `"7d"`). */
   expirationTime: string;
+  /** Key ID (kid) — identifies which secret version signed this token (for rotation support). */
+  keyId?: string;
 }
 
 export interface VerifyConfig {
@@ -69,8 +71,12 @@ export async function signJwt(
   subject: string,
   config: SignConfig,
 ): Promise<string> {
+  const header: Record<string, string> = { alg: "HS256" };
+  if (config.keyId) {
+    header.kid = config.keyId;  // Key ID for secret rotation tracking
+  }
   return new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
+    .setProtectedHeader(header)
     .setSubject(subject)
     .setIssuedAt()
     .setIssuer(config.issuer)
