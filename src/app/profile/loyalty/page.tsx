@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Coins, Gift, History, Sparkles, ArrowLeft } from "lucide-react";
+import { PageContainer } from "@/components/ui/page-container";
 import { Card } from "@/components/ui/card";
 
 interface Transaction {
@@ -94,12 +95,11 @@ export default function LoyaltyPage() {
   const canRedeem = data.balance >= data.min_redeem;
 
   return (
-    <main className="min-h-[80vh] bg-gray-50">
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <Link href="/profile" className="text-sm text-gray-500 hover:text-gray-700 inline-flex items-center gap-1 mb-4">
-          <ArrowLeft className="w-4 h-4" />
-          حسابي
-        </Link>
+    <PageContainer width="narrow" padding="normal" className="py-6">
+      <Link href="/profile" className="text-sm text-gray-500 hover:text-gray-700 inline-flex items-center gap-1 mb-4">
+        <ArrowLeft className="w-4 h-4" />
+        حسابي
+      </Link>
 
         <section className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-6 text-white mb-6">
           <div className="flex items-center gap-2 mb-3">
@@ -181,7 +181,6 @@ export default function LoyaltyPage() {
             </ul>
           )}
         </section>
-      </div>
-    </main>
+    </PageContainer>
   );
 }
