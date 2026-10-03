@@ -708,3 +708,48 @@
 .admin-row-hover tbody tr:hover {
   background-color: rgb(248 250 252);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PHASE 4 COMPLETION: ADMIN LAYOUT UNIFICATION UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
+
+.admin-container {
+  @apply max-w-7xl mx-auto px-4 py-6;
+}
+
+.admin-page-title {
+  @apply text-2xl sm:text-3xl font-bold text-gray-900;
+}
+
+.admin-page-subtitle {
+  @apply text-sm text-gray-600 mt-1;
+}
+
+.admin-section-card {
+  @apply bg-white rounded-lg border border-gray-200 shadow-sm p-4;
+}
+
+.admin-section-title {
+  @apply font-semibold text-gray-900 text-sm;
+}
+
+.admin-text-muted {
+  @apply text-gray-500;
+}
+
+.admin-text-secondary {
+  @apply text-gray-600;
+}
+
+.admin-bg-light {
+  @apply bg-gray-50;
+}
+
+.admin-border-color {
+  @apply border-gray-200;
+}
+
+/* Utility: Hover subtle */
+.admin-hover:hover {
+  @apply bg-gray-50 transition-colors;
+}
