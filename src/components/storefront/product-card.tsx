@@ -157,7 +157,7 @@ export function ProductCard({
               <div className="flex items-center justify-center h-full text-4xl">📦</div>
             )}
             {hasDiscount && (
-              <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+              <span className="absolute top-2 right-2 bg-red-500 text-white text-tiny font-bold px-2 py-1 rounded-full">
                 خصم
               </span>
             )}
@@ -167,7 +167,7 @@ export function ProductCard({
               {product.name_ar}
             </p>
             {product.category_name && (
-              <p className="text-[10px] text-gray-400 mt-1">{product.category_name}</p>
+              <p className="text-tiny text-gray-400 mt-1">{product.category_name}</p>
             )}
             <div className="mt-2 flex items-center justify-between">
               <div>
@@ -175,7 +175,7 @@ export function ProductCard({
                   {price.toFixed(2)}ร.ส
                 </span>
                 {hasDiscount && (
-                  <span className="text-[10px] text-gray-400 line-through ml-1">
+                  <span className="text-tiny text-gray-400 line-through ml-1">
                     {original.toFixed(2)}
                   </span>
                 )}
@@ -226,7 +226,7 @@ export function ProductCard({
           )}
           {hasOffer && (
             <span
-              className="absolute top-2 right-2 inline-flex items-center gap-1 bg-gradient-to-r from-pink-500 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow"
+              className="absolute top-2 right-2 inline-flex items-center gap-1 bg-gradient-to-r from-pink-500 to-orange-500 text-white text-tiny font-bold px-2 py-1 rounded-full shadow"
               aria-label={`عرض: ${product.active_offer?.title_ar ?? "عرض خاص"}`}
             >
               <Sparkles className="w-3 h-3" />
@@ -235,7 +235,7 @@ export function ProductCard({
           )}
           {hasDiscount && !hasOffer && (
             <span
-              className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold w-7 h-7 rounded-full flex items-center justify-center"
+              className="absolute top-2 right-2 bg-red-500 text-white text-tiny font-bold w-7 h-7 rounded-full flex items-center justify-center"
               aria-label={`خصم ${Math.round((1 - price / original) * 100)}%`}
             >
               %
@@ -295,7 +295,7 @@ export function ProductCard({
         </div>
         <div className="p-2.5 pt-2">
           {product.category_name && (
-            <p className="text-[10px] text-primary-dark truncate mb-0.5" aria-label={`التصنيف: ${product.category_name}`}>{product.category_name}</p>
+            <p className="text-tiny text-primary-dark truncate mb-0.5" aria-label={`التصنيف: ${product.category_name}`}>{product.category_name}</p>
           )}
           {/* Vendor badge — sits BELOW the category label so the layout
               reads: category → vendor → price → name. Wrapped in a
@@ -318,14 +318,14 @@ export function ProductCard({
             >
               {price.toFixed(2)}
             </span>
-            <span className="text-[10px] text-gray-500" aria-hidden="true">ر.س</span>
+            <span className="text-tiny text-gray-500" aria-hidden="true">ر.س</span>
             {hasDiscount && (
-              <span className="text-[10px] text-gray-400 line-through mr-1" aria-label={`السعر الأصلي: ${original.toFixed(2)} ريال`}>
+              <span className="text-tiny text-gray-400 line-through mr-1" aria-label={`السعر الأصلي: ${original.toFixed(2)} ريال`}>
                 {original.toFixed(2)}
               </span>
             )}
           </div>
-          <p className="text-[11px] text-gray-700 line-clamp-2 leading-snug mt-1 min-h-[2.25rem]">
+          <p className="text-2xs text-gray-700 line-clamp-2 leading-snug mt-1 min-h-[2.25rem]">
             {product.name_ar}
           </p>
         </div>
@@ -350,7 +350,7 @@ function VendorBadge({
   isCityMarkets: boolean;
 }) {
   const className =
-    "inline-flex items-center gap-1 text-[10px] text-gray-500 truncate mb-0.5 max-w-full";
+    "inline-flex items-center gap-1 text-tiny text-gray-500 truncate mb-0.5 max-w-full";
   const icon = <Store className="w-3 h-3 flex-shrink-0" aria-hidden="true" />;
   if (vendorHref) {
     return (

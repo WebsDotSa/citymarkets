@@ -400,7 +400,7 @@ function OrderCard({ order, formatDate, formatTime, onSelect }: OrderCardProps) 
               </p>
               {order.payment_status ? (
                 <span
-                  className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full w-fit ${
+                  className={`inline-flex items-center gap-1 text-tiny font-semibold px-1.5 py-0.5 rounded-full w-fit ${
                     getPaymentStatusConfig(order.payment_status).color
                   }`}
                 >

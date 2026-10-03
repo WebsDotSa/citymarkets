@@ -166,7 +166,7 @@ export function ProductReviews({ productId, signedIn, userLabel }: ProductReview
                     {r.user_name || "مستخدم"}
                   </span>
                   {r.is_verified_purchase && (
-                    <span className="text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded-full">
+                    <span className="text-tiny bg-green-50 text-green-700 px-2 py-0.5 rounded-full">
                       مشتري موثوق
                     </span>
                   )}
@@ -186,7 +186,7 @@ export function ProductReviews({ productId, signedIn, userLabel }: ProductReview
               {r.comment && (
                 <p className="text-sm text-gray-700 leading-relaxed mt-1">{r.comment}</p>
               )}
-              <p className="text-[10px] text-gray-400 mt-2">
+              <p className="text-tiny text-gray-400 mt-2">
                 {new Date(r.created_at).toLocaleDateString("ar-SA")}
               </p>
             </li>

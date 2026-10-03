@@ -501,10 +501,10 @@ export function CartV2() {
               className="flex flex-col leading-tight min-w-0"
               aria-label={`إجمالي السلة ${formatPrice(total)}`}
             >
-              <span className="text-[11px] text-gray-500 flex items-center gap-1">
+              <span className="text-2xs text-gray-500 flex items-center gap-1">
                 <span>الإجمالي</span>
                 <span
-                  className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary/10 text-primary-700 text-[10px] font-bold"
+                  className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary/10 text-primary-700 text-tiny font-bold"
                   aria-label={`${itemCount} منتجات`}
                 >
                   {itemCount > 99 ? "99+" : itemCount}

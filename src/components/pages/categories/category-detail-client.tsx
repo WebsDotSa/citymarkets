@@ -146,7 +146,7 @@ export function CategoryDetailClient({
       <div className="sticky top-[64px] sm:top-20 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100">
         <ol
           aria-label="مسار التنقل"
-          className="px-4 pt-3 pb-2 flex items-center gap-1.5 text-[11px] text-gray-500 overflow-x-auto scrollbar-hide"
+          className="px-4 pt-3 pb-2 flex items-center gap-1.5 text-2xs text-gray-500 overflow-x-auto scrollbar-hide"
         >
           <li>
             <Link href="/categories" className="hover:text-primary font-bold whitespace-nowrap">
@@ -186,7 +186,7 @@ export function CategoryDetailClient({
         <div className="flex items-start gap-4">
           <CategoryIcon category={category} parent={parent} />
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+            <p className="text-2xs font-bold uppercase tracking-widest text-primary">
               {hasChildren ? "قسم رئيسي" : "قسم فرعي"}
             </p>
             <h1 className="mt-1 text-2xl font-black text-gray-900 leading-tight">
@@ -223,7 +223,7 @@ export function CategoryDetailClient({
 
         {isAdmin ? (
           <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-between gap-2">
-            <p className="text-[11px] text-amber-900 font-bold">إجراءات المسؤول</p>
+            <p className="text-2xs text-amber-900 font-bold">إجراءات المسؤول</p>
             <Link
               href={`/admin/products?new=1&category=${encodeURIComponent(category.slug)}`}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm"
@@ -252,7 +252,7 @@ export function CategoryDetailClient({
         <div className="px-4 py-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
           <SortPill current={sort} onChange={setSort} />
           <StockToggle value={inStockOnly} onChange={setInStockOnly} />
-          <span className="ms-auto text-[11px] text-gray-500 font-bold whitespace-nowrap">
+          <span className="ms-auto text-2xs text-gray-500 font-bold whitespace-nowrap">
             {total} منتج
           </span>
         </div>
@@ -369,12 +369,12 @@ function SubCategoryRail({
       className="bg-white border-b border-gray-100"
     >
       <div className="px-4 py-3 flex items-center justify-between mb-1">
-        <p className="text-[11px] font-bold text-gray-500">
+        <p className="text-2xs font-bold text-gray-500">
           الأقسام الفرعية لـ {parent.name_ar}
         </p>
         <Link
           href={`/categories/${encodeURIComponent(parent.slug)}`}
-          className="text-[11px] font-bold text-primary"
+          className="text-2xs font-bold text-primary"
         >
           عرض الكل
         </Link>
@@ -405,7 +405,7 @@ function SubCategoryRail({
                 {c.name_ar}
                 {c.product_count ? (
                   <span
-                    className={`ms-1.5 text-[10px] ${active ? "opacity-80" : "text-gray-400"}`}
+                    className={`ms-1.5 text-tiny ${active ? "opacity-80" : "text-gray-400"}`}
                     dir="ltr"
                   >
                     ({c.product_count})
@@ -435,13 +435,13 @@ function SiblingRail({
       className="bg-white border-b border-gray-100"
     >
       <div className="px-4 py-3 flex items-center justify-between mb-1">
-        <p className="text-[11px] font-bold text-gray-500">
+        <p className="text-2xs font-bold text-gray-500">
           {parent ? `أقسام أخرى في ${parent.name_ar}` : "أقسام مشابهة"}
         </p>
         {parent ? (
           <Link
             href={`/categories/${encodeURIComponent(parent.slug)}`}
-            className="text-[11px] font-bold text-primary"
+            className="text-2xs font-bold text-primary"
           >
             عرض الكل
           </Link>

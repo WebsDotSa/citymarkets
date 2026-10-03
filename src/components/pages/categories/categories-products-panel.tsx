@@ -144,7 +144,7 @@ export function ProductsPanel({
             ) : null}
           </h2>
           <p
-            className="text-[11px] sm:text-xs text-slate-500 mt-0.5"
+            className="text-2xs sm:text-xs text-slate-500 mt-0.5"
             aria-live="polite"
             dir="ltr"
           >

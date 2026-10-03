@@ -82,13 +82,13 @@ export function AppInstallBanner() {
               <Smartphone className="w-3.5 h-3.5 shrink-0 opacity-90" strokeWidth={2.5} />
               <span>تجربة أسواق سيتي أفضل عبر التطبيق</span>
             </h3>
-            <span className="text-[11px] opacity-90 truncate block mt-0.5">
+            <span className="text-2xs opacity-90 truncate block mt-0.5">
               عروض حصرية + توصيل أسرع
             </span>
           </div>
 
           {/* CTA pill — chevron points "forward" in RTL */}
-          <span className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold rounded-full bg-white text-primary-700 shadow-md shadow-black/10 group-hover:bg-primary-50 group-active:scale-95 transition-all">
+          <span className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-2xs font-bold rounded-full bg-white text-primary-700 shadow-md shadow-black/10 group-hover:bg-primary-50 group-active:scale-95 transition-all">
             افتح
             <ChevronLeft className="w-3 h-3" strokeWidth={3} />
           </span>

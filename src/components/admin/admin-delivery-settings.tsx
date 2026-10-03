@@ -698,7 +698,7 @@ export function AdminDeliverySettings() {
                       <div className="col-span-3">
                         <label
                           htmlFor={labelId}
-                          className="block text-[10px] text-gray-500 mb-1"
+                          className="block text-tiny text-gray-500 mb-1"
                         >
                           الاسم
                         </label>
@@ -718,7 +718,7 @@ export function AdminDeliverySettings() {
                       <div className="col-span-2">
                         <label
                           htmlFor={startId}
-                          className="block text-[10px] text-gray-500 mb-1"
+                          className="block text-tiny text-gray-500 mb-1"
                         >
                           من
                         </label>
@@ -738,7 +738,7 @@ export function AdminDeliverySettings() {
                       <div className="col-span-2">
                         <label
                           htmlFor={endId}
-                          className="block text-[10px] text-gray-500 mb-1"
+                          className="block text-tiny text-gray-500 mb-1"
                         >
                           إلى
                         </label>
@@ -758,7 +758,7 @@ export function AdminDeliverySettings() {
                       <div className="col-span-3">
                         <label
                           htmlFor={capacityId}
-                          className="block text-[10px] text-gray-500 mb-1"
+                          className="block text-tiny text-gray-500 mb-1"
                         >
                           السعة (طلب/فترة)
                         </label>

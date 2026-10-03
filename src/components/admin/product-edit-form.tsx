@@ -413,7 +413,7 @@ export function ProductEditForm({
                       ) : (
                         <>
                           <Upload className="w-5 h-5 text-gray-400" />
-                          <span className="text-[10px] text-gray-400 mt-0.5">رفع</span>
+                          <span className="text-tiny text-gray-400 mt-0.5">رفع</span>
                         </>
                       )}
                       <input

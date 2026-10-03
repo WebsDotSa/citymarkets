@@ -140,7 +140,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
                   <MapPin className="w-4 h-4 text-white" />
                 </div>
                 <div className="text-right hidden lg:block">
-                  <p className="text-[10px] opacity-70">التوصيل إلى</p>
+                  <p className="text-tiny opacity-70">التوصيل إلى</p>
                   <p className="text-sm font-semibold flex items-center gap-1">
                     {shortAddressLabel(selectedAddress)}
                     <ChevronDown className="w-3 h-3 opacity-70" />
@@ -246,7 +246,7 @@ export function HeaderV2({ variant = "default" }: HeaderV2Props) {
                 <div className="relative">
                   <ShoppingCart className="w-5 h-5" />
                   {itemCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-bounce-in shadow-lg shadow-orange-500/30">
+                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-orange-500 text-white text-tiny font-bold rounded-full flex items-center justify-center animate-bounce-in shadow-lg shadow-orange-500/30">
                       {itemCount > 9 ? "9+" : itemCount}
                     </span>
                   )}

@@ -323,7 +323,7 @@ export function AddAddressFlow() {
                     ) : (
                       <>
                         <Plus className="w-6 h-6" />
-                        <span className="text-[10px] mt-0.5">إضافة</span>
+                        <span className="text-tiny mt-0.5">إضافة</span>
                       </>
                     )}
                   </button>

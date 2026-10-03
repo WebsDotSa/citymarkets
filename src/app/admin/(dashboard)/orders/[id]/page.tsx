@@ -92,7 +92,7 @@ function LastStatusChangeBadge({
 }) {
   if (!change) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-400 mt-2">
+      <span className="inline-flex items-center gap-1.5 text-2xs text-gray-400 mt-2">
         <Clock className="w-3 h-3" />
         لم يتم تسجيل أي تغيير على الحالة بعد
       </span>
@@ -123,7 +123,7 @@ function LastStatusChangeBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-[11px] mt-2 px-2.5 py-1 rounded-full border ${colorClass}`}
+      className={`inline-flex items-center gap-1.5 text-2xs mt-2 px-2.5 py-1 rounded-full border ${colorClass}`}
     >
       <Icon className="w-3 h-3" />
       <span className="font-semibold">آخر تحديث:</span>
@@ -846,7 +846,7 @@ export default function AdminOrderDetailPage() {
             <h2 className="font-bold text-secondary flex items-center gap-2 mb-3">
               <StickyNote className="w-4 h-4 text-primary" />
               ملاحظات داخلية
-              <span className="text-[10px] text-gray-400 font-normal mr-1">(للفريق فقط)</span>
+              <span className="text-tiny text-gray-400 font-normal mr-1">(للفريق فقط)</span>
             </h2>
             <textarea
               value={internalNotes}

@@ -421,7 +421,7 @@ function ChannelPreview({
           <p className="font-semibold text-slate-800">{title || "(بدون عنوان)"}</p>
           <p className="text-slate-600 mt-1 whitespace-pre-wrap">{body || "(بدون محتوى)"}</p>
           {ctaLabel && (
-            <span className="inline-block mt-2 px-3 py-1 rounded-md bg-primary text-white text-[11px]">
+            <span className="inline-block mt-2 px-3 py-1 rounded-md bg-primary text-white text-2xs">
               {ctaLabel}
             </span>
           )}
@@ -435,11 +435,11 @@ function ChannelPreview({
           <p className="text-xs font-semibold text-slate-800">
             {title || "(بدون عنوان)"}
           </p>
-          <p className="text-[11px] text-slate-600 mt-1 line-clamp-3">
+          <p className="text-2xs text-slate-600 mt-1 line-clamp-3">
             {body || "(بدون محتوى)"}
           </p>
           {ctaLabel && (
-            <p className="mt-2 text-[10px] text-primary underline">{ctaLabel}</p>
+            <p className="mt-2 text-tiny text-primary underline">{ctaLabel}</p>
           )}
         </div>
       )}

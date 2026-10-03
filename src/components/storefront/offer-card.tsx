@@ -58,12 +58,12 @@ export function OfferCard({ offer, variant = "standard", priority = false }: Off
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           <div className="absolute top-3 right-3 flex flex-wrap items-center gap-2">
             {offer.is_featured ? (
-              <span className="inline-flex items-center gap-1 bg-amber-400 text-amber-900 text-[11px] font-bold px-2 py-1 rounded-full">
+              <span className="inline-flex items-center gap-1 bg-amber-400 text-amber-900 text-2xs font-bold px-2 py-1 rounded-full">
                 <Sparkles className="w-3 h-3" />
                 مميّز
               </span>
             ) : null}
-            <span className="inline-flex items-center gap-1 bg-red-500 text-white text-[11px] font-bold px-2 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1 bg-red-500 text-white text-2xs font-bold px-2 py-1 rounded-full">
               {discountLabel(offer)}
             </span>
           </div>
@@ -96,11 +96,11 @@ export function OfferCard({ offer, variant = "standard", priority = false }: Off
           />
         ) : null}
         <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-          <span className="inline-flex items-center gap-1 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+          <span className="inline-flex items-center gap-1 bg-red-500 text-white text-tiny font-bold px-2 py-1 rounded-full">
             {discountLabel(offer)}
           </span>
           {offer.is_featured ? (
-            <span className="inline-flex items-center gap-1 bg-amber-400 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 bg-amber-400 text-amber-900 text-tiny font-bold px-2 py-0.5 rounded-full">
               <Sparkles className="w-3 h-3" />
               مميّز
             </span>
@@ -114,7 +114,7 @@ export function OfferCard({ offer, variant = "standard", priority = false }: Off
         <div className="flex items-center justify-between gap-2">
           <OfferCountdown endsAt={offer.ends_at} variant="compact" />
           {typeof offer.product_count === "number" ? (
-            <span className="text-[10px] text-gray-500">
+            <span className="text-tiny text-gray-500">
               {offer.product_count} منتج
             </span>
           ) : null}

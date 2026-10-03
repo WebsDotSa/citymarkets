@@ -444,7 +444,7 @@ export function AdminSidebar({ user, isOpen, onClose, onLogout }: AdminSidebarPr
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-tiny text-slate-500">
                 {user.role === "super_admin"
                   ? "موظف عام"
                   : user.role === "admin"

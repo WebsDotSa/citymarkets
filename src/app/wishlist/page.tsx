@@ -128,7 +128,7 @@ export default function WishlistPage() {
         {items.map(({ product, addedAt }) => (
           <div key={product.id} className="relative">
             {/* Date badge */}
-            <div className="absolute top-2 left-2 z-10 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full">
+            <div className="absolute top-2 left-2 z-10 bg-black/50 text-white text-tiny px-2 py-1 rounded-full">
               {new Date(addedAt).toLocaleDateString("ar-SA", {
                 day: "numeric",
                 month: "short",

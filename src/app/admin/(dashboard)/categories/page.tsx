@@ -452,7 +452,7 @@ function CategoryRowView({
             {cat.name_ar}
           </h3>
           {!cat.is_active && (
-            <span className="inline-flex items-center gap-1 text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
+            <span className="inline-flex items-center gap-1 text-tiny bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
               <EyeOff className="w-3 h-3" />
               مخفية
             </span>

@@ -106,7 +106,7 @@ export function CouponsStripSection() {
                           {formatDiscount(c)}
                         </div>
                         {expiring && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                          <span className="inline-flex items-center gap-1 text-tiny font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
                             <Clock className="w-3 h-3" />
                             ينتهي قريباً
                           </span>
