@@ -315,8 +315,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
                 <audio
                   controls
                   src={order.voice_note_url}
-                  className="w-full"
-                  style={{ height: 28 }}
+                  className="w-full h-7"
                 />
               </div>
             )}

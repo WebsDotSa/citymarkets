@@ -326,7 +326,7 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
             <h2 className="font-bold text-gray-900 mb-2">
               {isDirect ? 'رسالة صوتية منك' : 'رسالة صوتية'}
             </h2>
-            <audio controls src={order.voice_note_url} className="w-full" style={{ height: 36 }} />
+            <audio controls src={order.voice_note_url} className="w-full h-9" />
           </div>
         )}
 

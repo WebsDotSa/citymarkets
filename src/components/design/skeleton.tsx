@@ -172,8 +172,7 @@ export function ProfileCardSkeleton({ className }: { className?: string }) {
 export function BannerSkeleton({ className }: { className?: string }) {
   return (
     <div
-      className={`rounded-3xl overflow-hidden ${className}`}
-      style={{ height: "200px" }}
+      className={`rounded-3xl overflow-hidden h-[200px] ${className}`}
     >
       <Skeleton variant="rectangular" className="w-full h-full" />
     </div>

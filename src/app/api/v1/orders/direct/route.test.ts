@@ -171,29 +171,21 @@ describe("POST /api/v1/orders/direct — payment_method enum (D1)", () => {
   });
 });
 
-describe("POST /api/v1/orders/direct — idempotency_key for guests (D2)", () => {
+describe("POST /api/v1/orders/direct — login required (no guests)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Guest: no customer user, but a guest session so we pass the
-    // F8 session gate at the top of the route.
+    // After the login-required update, direct orders no longer accept guests.
+    // All unauthenticated requests are rejected at the top of the route.
     vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue(null);
-    vi.mocked(getGuestSessionIdFromRequest).mockResolvedValue('guest-abc');
+    vi.mocked(getGuestSessionIdFromRequest).mockResolvedValue(null);
     mockDb();
   });
 
-  it("rejects a guest with no idempotency_key (F8 / D2)", async () => {
+  it("rejects a guest with 401 (login required)", async () => {
     const res = await POST(mockRequest(validBody()) as never);
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(401);
     const body = await res.json();
-    expect(body.error).toBe('مفتاح تأكيد الطلب مطلوب للضيوف');
-  });
-
-  it("rejects a guest with an empty idempotency_key", async () => {
-    const res = await POST(mockRequest(validBody({ idempotency_key: '' })) as never);
-    // Empty string fails the `.min(8)` constraint in the schema, so
-    // the route returns the schema-level 400. Either way, the
-    // guest without a valid key cannot proceed.
-    expect(res.status).toBe(400);
+    expect(body.error).toBe('يجب تسجيل الدخول لإنشاء طلب مباشر');
   });
 });
 
