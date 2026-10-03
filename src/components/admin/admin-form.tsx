@@ -12,44 +12,21 @@ interface AdminFormField {
   help?: string;
 }
 
-interface AdminFormProps extends FormHTMLAttributes<HTMLFormElement> {
+interface AdminFormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, 'onSubmit'> {
   title?: string;
   subtitle?: string;
   children?: ReactNode;
   fields?: AdminFormField[];
-  onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void | Promise<void>;
+  onSubmit?: (data?: Record<string, any>) => void | Promise<void>;
+  onCancel?: () => void;
   isLoading?: boolean;
+  loading?: boolean;
+  initialValues?: Record<string, any>;
 }
 
 /**
  * Admin form wrapper — consistent form styling across all admin forms.
  * Handles layout, spacing, and submission state.
- *
- * Features:
- * - Consistent card-based form layout
- * - Optional title and subtitle
- * - Loading state handling
- * - Support for automatic field rendering (fields prop)
- * - Or manual children rendering
- * - RTL-safe design
- *
- * Usage (manual):
- *   <AdminForm
- *     title="إنشاء منتج جديد"
- *     onSubmit={handleSubmit}
- *     isLoading={loading}
- *   >
- *     <FormField name="name" />
- *     <button type="submit">حفظ</button>
- *   </AdminForm>
- *
- * Usage (automatic):
- *   <AdminForm
- *     title="إنشاء كوبون"
- *     fields={[
- *       { key: "code", label: "الكود", type: "text", required: true }
- *     ]}
- *   />
  */
 export function AdminForm({
   title,
@@ -57,13 +34,21 @@ export function AdminForm({
   children,
   fields,
   onSubmit,
+  onCancel,
   isLoading,
+  loading,
+  initialValues,
   ...formProps
 }: AdminFormProps) {
+  const isSubmitting = isLoading || loading;
+
   return (
     <form
       {...formProps}
-      onSubmit={onSubmit}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit?.();
+      }}
       className={`space-y-4 ${formProps.className || ""}`}
     >
       {(title || subtitle) && (
@@ -92,6 +77,7 @@ export function AdminForm({
               <select
                 name={field.key}
                 required={field.required}
+                defaultValue={initialValues?.[field.key] || ""}
                 className="w-full h-11 px-4 border-2 border-gray-200 rounded-lg text-sm mt-1 focus:outline-none focus:border-primary-500"
               >
                 <option value="">اختر...</option>
@@ -107,6 +93,7 @@ export function AdminForm({
                 name={field.key}
                 placeholder={field.placeholder}
                 required={field.required}
+                defaultValue={initialValues?.[field.key] || ""}
                 className="w-full h-11 px-4 border-2 border-gray-200 rounded-lg text-sm mt-1 focus:outline-none focus:border-primary-500"
               />
             )}
@@ -117,10 +104,33 @@ export function AdminForm({
         )))}
       </div>
 
+      {(onSubmit || onCancel) && (
+        <div className="flex gap-2 justify-end pt-4">
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 bg-gray-100 text-gray-900 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              إلغاء
+            </button>
+          )}
+          {onSubmit && (
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50"
+            >
+              {isSubmitting ? "جاري..." : "حفظ"}
+            </button>
+          )}
+        </div>
+      )}
+
       <style jsx>{`
         form {
-          opacity: ${isLoading ? 0.6 : 1};
-          pointer-events: ${isLoading ? "none" : "auto"};
+          opacity: ${isSubmitting ? 0.6 : 1};
+          pointer-events: ${isSubmitting ? "none" : "auto"};
           transition: opacity 0.2s;
         }
       `}</style>
