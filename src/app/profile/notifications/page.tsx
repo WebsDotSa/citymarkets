@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Bell } from "lucide-react";
 import { PushOptIn } from "@/components/PushOptIn";
+import { PageHeader } from "@/components/ui/page-header";
+import { Card } from "@/components/ui/card";
 
 const PREF_KEY = "cm-notif-prefs";
 
@@ -41,19 +44,23 @@ export default function NotificationsPage() {
   return (
     <main className="min-h-[80vh] bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">الإشعارات</h1>
-        <p className="text-sm text-gray-500 mb-6">
-          تحكم كيف تبي نوصلّك التحديثات
-        </p>
+        <PageHeader
+          icon={<Bell className="w-6 h-6 text-primary" />}
+          title="الإشعارات"
+          subtitle="تحكم كيف تبي نوصلّك التحديثات"
+          className="mb-6"
+        />
 
         <section className="mb-6">
-          <h2 className="text-sm font-semibold text-gray-700 mb-2">إشعارات المتصفح</h2>
-          <PushOptIn />
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">إشعارات المتصفح</h2>
+          <Card>
+            <PushOptIn />
+          </Card>
         </section>
 
         <section>
-          <h2 className="text-sm font-semibold text-gray-700 mb-2">تفضيلات الإشعارات</h2>
-          <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">تفضيلات الإشعارات</h2>
+          <Card className="divide-y divide-gray-100">
             <Toggle
               label="تحديثات الطلب"
               description="تأكيد، تجهيز، توصيل"
@@ -72,7 +79,7 @@ export default function NotificationsPage() {
               checked={prefs.promos}
               onChange={(v) => update("promos", v)}
             />
-          </div>
+          </Card>
           {saved && (
             <p className="text-xs text-primary mt-2 text-center">تم الحفظ</p>
           )}
