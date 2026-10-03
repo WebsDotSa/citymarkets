@@ -18,7 +18,7 @@ export function CheckboxField({ field, value, onChange }: CheckboxFieldProps) {
         disabled={field.disabled}
         className="admin-checkbox"
       />
-      <span className="text-sm text-slate-600">{field.placeholder}</span>
+      <span className="text-sm text-gray-600">{field.placeholder}</span>
     </label>
   );
 }

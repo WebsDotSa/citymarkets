@@ -203,9 +203,9 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
           {description && (
-            <p className="text-sm text-slate-500 mt-1">{description}</p>
+            <p className="text-sm text-gray-500 mt-1">{description}</p>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -237,13 +237,13 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
         <div className="flex flex-col lg:flex-row gap-3">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full h-11 pr-10 pl-4 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:bg-white transition-all"
+              className="w-full h-11 pr-10 pl-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:bg-white transition-all"
             />
           </div>
 
@@ -272,7 +272,7 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
               setPageSize(Number(e.target.value));
               setCurrentPage(1);
             }}
-            className="h-11 px-4 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary cursor-pointer"
+            className="h-11 px-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary cursor-pointer"
           >
             <option value={10}>10 صفوف</option>
             <option value={25}>25 صف</option>
@@ -283,10 +283,10 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
 
         {/* Filter Panel */}
         {showFilters && filters.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 admin-animate-slide-up">
+          <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 admin-animate-slide-up">
             {filters.map((filter) => (
               <div key={filter.key} className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-600">
+                <label className="text-xs font-semibold text-gray-600">
                   {filter.label}
                 </label>
                 <select
@@ -326,7 +326,7 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
       {selectable && selectedRows.size > 0 && (
         <div className="admin-card p-4 bg-primary/5 border-primary/20 admin-animate-slide-up">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700">
+            <span className="text-sm font-medium text-gray-700">
               تم تحديد {selectedRows.size} عنصر
             </span>
             <div className="flex items-center gap-2">
@@ -409,8 +409,8 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
                     {columns.map((col) => (
                       <th
                         key={col.key}
-                        className={`px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider ${
-                          col.sortable ? "cursor-pointer hover:text-slate-700" : ""
+                        className={`px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                          col.sortable ? "cursor-pointer hover:text-gray-700" : ""
                         } ${col.className || ""}`}
                         style={{ width: col.width }}
                         onClick={() => col.sortable && handleSort(col.key)}
@@ -424,7 +424,7 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
                       </th>
                     ))}
                     {(onEdit || onDelete || onView) && (
-                      <th className="w-32 px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider text-center">
+                      <th className="w-32 px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">
                         الإجراءات
                       </th>
                     )}
@@ -464,7 +464,7 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
                             {onView && (
                               <button
                                 onClick={() => onView(row)}
-                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                 title="عرض"
                               >
                                 <Eye className="w-4 h-4" />
@@ -473,7 +473,7 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
                             {onEdit && (
                               <button
                                 onClick={() => onEdit(row)}
-                                className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
                                 title="تعديل"
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -482,7 +482,7 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
                             {onDelete && (
                               <button
                                 onClick={() => onDelete(row)}
-                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                 title="حذف"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -498,7 +498,7 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
             </div>
 
             {/* Mobile Cards */}
-            <div className="lg:hidden divide-y divide-slate-100">
+            <div className="lg:hidden divide-y divide-gray-100">
               {paginatedData.map((row, index) => (
                 <div key={index} className="p-4">
                   <div className="flex items-start justify-between mb-3">
@@ -513,8 +513,8 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
                     <div className="flex-1">
                       {columns.slice(0, 3).map((col) => (
                         <div key={col.key} className="flex items-center justify-between py-1.5">
-                          <span className="text-xs text-slate-400">{col.label}</span>
-                          <span className="text-sm text-slate-700 text-right">
+                          <span className="text-xs text-gray-400">{col.label}</span>
+                          <span className="text-sm text-gray-700 text-right">
                             {col.render
                               ? col.render(row, index)
                               : String(row[col.key] ?? "—")}
@@ -523,7 +523,7 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
                       ))}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
                     {onView && (
                       <button
                         onClick={() => onView(row)}
@@ -557,8 +557,8 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-slate-100 bg-slate-50/50">
-            <p className="text-sm text-slate-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+            <p className="text-sm text-gray-500">
               عرض {(currentPage - 1) * pageSize + 1} -{" "}
               {Math.min(currentPage * pageSize, filteredData.length)} من{" "}
               {filteredData.length}
@@ -568,7 +568,7 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -590,7 +590,7 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
                     className={`w-9 h-9 text-sm rounded-lg transition-colors ${
                       currentPage === page
                         ? "bg-primary text-white shadow-lg shadow-primary/20"
-                        : "text-slate-500 hover:bg-slate-100"
+                        : "text-gray-500 hover:bg-gray-100"
                     }`}
                   >
                     {page}
@@ -600,7 +600,7 @@ export function DataTable<T extends Record<string, unknown> = Record<string, unk
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -670,8 +670,8 @@ export function ConfirmDialog({
       >
         <div className="p-6 flex flex-col items-center text-center">
           {iconMap[variant]}
-          <h3 className="text-lg font-bold text-slate-800 mt-4">{title}</h3>
-          <p className="text-sm text-slate-500 mt-2">{message}</p>
+          <h3 className="text-lg font-bold text-gray-800 mt-4">{title}</h3>
+          <p className="text-sm text-gray-500 mt-2">{message}</p>
         </div>
         <div className="flex items-center justify-center gap-3 px-6 pb-6">
           <button onClick={onCancel} className="admin-btn admin-btn-outline" disabled={loading}>

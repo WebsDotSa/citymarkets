@@ -28,7 +28,7 @@ type Application = {
 
 const STATUS_META: Record<Status, { label: string; color: string; icon: typeof Inbox }> = {
   new: { label: "جديد", color: "bg-blue-50 text-blue-700 border-blue-200", icon: Inbox },
-  reviewed: { label: "تمت المراجعة", color: "bg-slate-50 text-slate-700 border-slate-200", icon: CheckCircle2 },
+  reviewed: { label: "تمت المراجعة", color: "bg-gray-50 text-gray-700 border-gray-200", icon: CheckCircle2 },
   shortlisted: { label: "مرشح للقائمة", color: "bg-amber-50 text-amber-700 border-amber-200", icon: Star },
   rejected: { label: "مرفوض", color: "bg-red-50 text-red-700 border-red-200", icon: XCircle },
   hired: { label: "تم التعيين", color: "bg-green-50 text-green-700 border-green-200", icon: CheckCircle2 },
@@ -173,22 +173,22 @@ export function AdminEmployment() {
     <div className="space-y-4" dir="rtl">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+          <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
             <Briefcase className="w-5 h-5 text-primary" />
             طلبات التوظيف
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             السير الذاتية والطلبات المرسلة من صفحة التوظيف
           </p>
         </div>
         <div className="relative w-full md:w-72">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="ابحث بالاسم، الجوال، الوظيفة..."
-            className="w-full h-10 pr-10 pl-3 bg-white border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary"
+            className="w-full h-10 pr-10 pl-3 bg-white border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary"
           />
         </div>
       </div>
@@ -213,8 +213,8 @@ export function AdminEmployment() {
                 isActive
                   ? tab.id === "delivery"
                     ? "bg-primary text-white border-primary shadow-sm"
-                    : "bg-slate-800 text-white border-slate-800 shadow-sm"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                    : "bg-gray-800 text-white border-gray-800 shadow-sm"
+                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -223,7 +223,7 @@ export function AdminEmployment() {
                 className={`text-2xs px-2 py-0.5 rounded-full ${
                   isActive
                     ? "bg-white/20 text-white"
-                    : "bg-slate-100 text-slate-600"
+                    : "bg-gray-100 text-gray-600"
                 }`}
               >
                 {badge}
@@ -234,7 +234,7 @@ export function AdminEmployment() {
       </div>
 
       {/* Status tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-1">
+      <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -242,12 +242,12 @@ export function AdminEmployment() {
             onClick={() => setStatusFilter(tab.id)}
             className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-colors ${
               statusFilter === tab.id
-                ? "bg-white border border-slate-200 border-b-white text-primary"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white border border-gray-200 border-b-white text-primary"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
             {tab.label}
-            <span className="mr-2 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+            <span className="mr-2 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
               {tab.count}
             </span>
           </button>
@@ -256,19 +256,19 @@ export function AdminEmployment() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* List */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           {loading ? (
-            <div className="p-10 text-center text-slate-400 flex flex-col items-center gap-2">
+            <div className="p-10 text-center text-gray-400 flex flex-col items-center gap-2">
               <Loader2 className="w-6 h-6 animate-spin" />
               <span className="text-sm">جاري التحميل...</span>
             </div>
           ) : rows.length === 0 ? (
-            <div className="p-10 text-center text-slate-400">
+            <div className="p-10 text-center text-gray-400">
               <Inbox className="w-10 h-10 mx-auto mb-2 opacity-50" />
               <p className="text-sm">لا توجد طلبات تطابق البحث</p>
             </div>
           ) : (
-            <ul className="divide-y divide-slate-100 max-h-[70vh] overflow-y-auto">
+            <ul className="divide-y divide-gray-100 max-h-[70vh] overflow-y-auto">
               {rows.map((row) => {
                 const meta = STATUS_META[row.status];
                 const isActive = activeId === row.id;
@@ -276,14 +276,14 @@ export function AdminEmployment() {
                   <li
                     key={row.id}
                     className={`p-4 cursor-pointer transition-colors ${
-                      isActive ? "bg-primary/5 border-r-4 border-primary" : "hover:bg-slate-50"
+                      isActive ? "bg-primary/5 border-r-4 border-primary" : "hover:bg-gray-50"
                     }`}
                     onClick={() => setActiveId(row.id)}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h3 className="font-semibold text-slate-800 truncate">{row.full_name}</h3>
+                          <h3 className="font-semibold text-gray-800 truncate">{row.full_name}</h3>
                           {row.job_id === "delivery" && (
                             <span className="inline-flex items-center gap-1 text-tiny font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                               <Bike className="w-3 h-3" />
@@ -294,10 +294,10 @@ export function AdminEmployment() {
                             {meta.label}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 truncate">
+                        <p className="text-xs text-gray-500 truncate">
                           {row.job_title} • {row.phone}
                         </p>
-                        <p className="text-2xs text-slate-400 mt-1 flex items-center gap-1">
+                        <p className="text-2xs text-gray-400 mt-1 flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {formatDate(row.created_at)}
                         </p>
@@ -322,9 +322,9 @@ export function AdminEmployment() {
         </div>
 
         {/* Detail */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:sticky lg:top-4 self-start max-h-[80vh] overflow-y-auto">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 lg:sticky lg:top-4 self-start max-h-[80vh] overflow-y-auto">
           {!active ? (
-            <div className="text-center text-slate-400 py-10">
+            <div className="text-center text-gray-400 py-10">
               <FileText className="w-10 h-10 mx-auto mb-2 opacity-50" />
               <p className="text-sm">اختر طلباً لعرض التفاصيل</p>
             </div>
@@ -332,7 +332,7 @@ export function AdminEmployment() {
             <div className="space-y-4">
               <div>
                 <div className="flex items-start justify-between gap-2">
-                  <h2 className="text-lg font-bold text-slate-800">{active.full_name}</h2>
+                  <h2 className="text-lg font-bold text-gray-800">{active.full_name}</h2>
                   {active.job_id === "delivery" && (
                     <span className="inline-flex items-center gap-1 text-tiny font-bold px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                       <Bike className="w-3 h-3" />
@@ -340,38 +340,38 @@ export function AdminEmployment() {
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-slate-500">{active.job_title}</p>
+                <p className="text-sm text-gray-500">{active.job_title}</p>
               </div>
 
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-slate-500">الجوال</span>
-                  <a href={`tel:${active.phone}`} className="font-semibold text-slate-800 hover:text-primary" dir="ltr">
+                  <span className="text-gray-500">الجوال</span>
+                  <a href={`tel:${active.phone}`} className="font-semibold text-gray-800 hover:text-primary" dir="ltr">
                     {active.phone}
                   </a>
                 </div>
                 {active.email && (
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-slate-500">البريد</span>
-                    <a href={`mailto:${active.email}`} className="font-semibold text-slate-800 hover:text-primary" dir="ltr">
+                    <span className="text-gray-500">البريد</span>
+                    <a href={`mailto:${active.email}`} className="font-semibold text-gray-800 hover:text-primary" dir="ltr">
                       {active.email}
                     </a>
                   </div>
                 )}
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-slate-500">تاريخ التقديم</span>
-                  <span className="font-semibold text-slate-800">{formatDate(active.created_at)}</span>
+                  <span className="text-gray-500">تاريخ التقديم</span>
+                  <span className="font-semibold text-gray-800">{formatDate(active.created_at)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-slate-500">حجم السيرة</span>
-                  <span className="font-semibold text-slate-800">{formatSize(active.cv_size_bytes)}</span>
+                  <span className="text-gray-500">حجم السيرة</span>
+                  <span className="font-semibold text-gray-800">{formatSize(active.cv_size_bytes)}</span>
                 </div>
               </div>
 
               {active.message && (
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                  <p className="text-xs font-semibold text-slate-500 mb-1">الرسالة</p>
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-gray-500 mb-1">الرسالة</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
                     {active.message}
                   </p>
                 </div>
@@ -389,8 +389,8 @@ export function AdminEmployment() {
 
               {/* Quick Accept / Reject for delegates */}
               {active.job_id === "delivery" && active.status !== "hired" && active.status !== "rejected" && (
-                <div className="border-t border-slate-100 pt-4 space-y-2">
-                  <p className="text-xs font-semibold text-slate-500">إجراءات سريعة للمندوب</p>
+                <div className="border-t border-gray-100 pt-4 space-y-2">
+                  <p className="text-xs font-semibold text-gray-500">إجراءات سريعة للمندوب</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -418,8 +418,8 @@ export function AdminEmployment() {
                 </div>
               )}
 
-              <div className="border-t border-slate-100 pt-4 space-y-3">
-                <p className="text-xs font-semibold text-slate-500">تغيير الحالة</p>
+              <div className="border-t border-gray-100 pt-4 space-y-3">
+                <p className="text-xs font-semibold text-gray-500">تغيير الحالة</p>
                 <div className="grid grid-cols-2 gap-2">
                   {(Object.keys(STATUS_META) as Status[]).map((s) => {
                     const meta = STATUS_META[s];
@@ -434,7 +434,7 @@ export function AdminEmployment() {
                         className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-semibold border transition-all ${
                           isCurrent
                             ? `${meta.color} border-current`
-                            : "border-slate-200 text-slate-600 hover:border-primary hover:text-primary"
+                            : "border-gray-200 text-gray-600 hover:border-primary hover:text-primary"
                         } disabled:opacity-50`}
                       >
                         {savingId === active.id ? (
@@ -449,12 +449,12 @@ export function AdminEmployment() {
                 </div>
               </div>
 
-              <div className="border-t border-slate-100 pt-4 space-y-2">
-                <label className="text-xs font-semibold text-slate-500 block">ملاحظات داخلية</label>
+              <div className="border-t border-gray-100 pt-4 space-y-2">
+                <label className="text-xs font-semibold text-gray-500 block">ملاحظات داخلية</label>
                 <textarea
                   defaultValue={active.internal_notes ?? ""}
                   rows={3}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-primary focus:bg-white resize-none"
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:bg-white resize-none"
                   placeholder="ملاحظات للفريق (لن تظهر للمتقدم)..."
                   onBlur={(e) => {
                     const value = e.target.value.trim();

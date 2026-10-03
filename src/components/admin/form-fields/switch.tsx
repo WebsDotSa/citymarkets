@@ -19,7 +19,7 @@ export function SwitchField({ field, value, onChange }: SwitchFieldProps) {
         className="admin-toggle-input"
       />
       <span className="admin-toggle-slider" />
-      <span className="text-sm text-slate-600">{field.placeholder}</span>
+      <span className="text-sm text-gray-600">{field.placeholder}</span>
     </label>
   );
 }

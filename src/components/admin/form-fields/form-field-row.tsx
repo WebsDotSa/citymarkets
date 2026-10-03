@@ -16,7 +16,7 @@ export function FormFieldRow({ field, hasError, error, children }: FormFieldRowP
       {field.type !== "hidden" && (
         <label
           htmlFor={`field-${field.key}`}
-          className="block text-sm font-semibold text-slate-700 mb-1.5"
+          className="block text-sm font-semibold text-gray-700 mb-1.5"
         >
           {field.label}
           {field.required && (
