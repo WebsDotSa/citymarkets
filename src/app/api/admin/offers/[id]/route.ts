@@ -7,6 +7,7 @@ import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { offerInputSchema } from "@/lib/validation";
 import { cache } from "@/lib/cache";
+import { logAdminAction } from "@/lib/admin-audit";
 import { error as logError } from "@/lib/logger";
 
 // Module-scoped UUID validator. P2-9 (PCP-101 audit): we used to let
@@ -171,6 +172,22 @@ export async function PUT(
 
     await client.query("COMMIT");
     cache.invalidatePattern("offers:");
+    // P1-2 (security Phase 4, 2026-10-03): offer updates can flip
+    // a discount from inactive to active or change scope mid-flight.
+    // Capture the event so a later review can see the admin who
+    // authorised the change.
+    await logAdminAction(gate.admin, "offer.update", {
+      entityType: "offer",
+      entityId: id,
+      details: {
+        title_ar: data.title_ar,
+        discount_type: data.discount_type,
+        discount_value: data.discount_value,
+        is_active: data.is_active !== false,
+        target_count: data.targets.length,
+      },
+      request,
+    });
     return NextResponse.json({ success: true, data: { id } });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
@@ -204,6 +221,12 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: "العرض غير موجود" }, { status: 404 });
     }
     cache.invalidatePattern("offers:");
+    // P1-2: capture the destructive event.
+    await logAdminAction(gate.admin, "offer.delete", {
+      entityType: "offer",
+      entityId: id,
+      request,
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     logError("Delete offer error:", error);

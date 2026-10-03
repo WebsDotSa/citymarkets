@@ -81,5 +81,49 @@ services:
     # the process dies, Docker will restart it; a healthcheck would just
     # be a tautology.
 
+  # Redis for distributed rate limiting (P1-1, security Phase 4 2026-10-03).
+  # The rate-limit helper at src/lib/rate-limit.ts falls back to in-memory
+  # when REDIS_URL is unset, but in-memory state is per-process so a
+  # multi-instance deployment cannot share rate-limit buckets. The single-
+  # instance `network_mode: host` deploy (this file's current mode) gets
+  # accurate per-IP / per-phone limiting either way; the Redis service
+  # below exists for the future multi-instance rollout and for the worker
+  # to share the same bucket.
+  #
+  # Why redis:7-alpine: small footprint, official image, persistence
+  # via AOF if a future operator needs it (off by default — rate-limit
+  # buckets are ephemeral and re-derivable on cold start).
+  #
+  # Why no `network_mode: host` here: the app and worker already use
+  # host networking, so they reach Redis on 127.0.0.1:6379 directly.
+  # Redis listens on its default port inside its own container, which
+  # host-networked services reach via the loopback address. This is the
+  # simplest topology that does not require a custom bridge.
+  citymarket-redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "no", "--save", ""]
+    # redis:7-alpine ships with a redis user (uid 999). Run as that
+    # user so the container is not running as root. The image already
+    # sets USER redis; this is documented here for clarity.
+    user: "999:999"
+    network_mode: host
+    restart: unless-stopped
+    # Read-only root fs. Redis only writes to its working dir; the
+    # default is /data which is also a tmpfs so writes are constrained
+    # to in-memory + AOF (we disabled both above, so nothing is
+    # persisted across restarts — the rate-limit buckets reset, which
+    # is the intended behaviour for a "request throttling" cache).
+    read_only: true
+    tmpfs:
+      - /data:size=50M,mode=0755,uid=999,gid=999
+    healthcheck:
+      # PING the local Redis. A successful PONG exits 0; a failed
+      # PING exits 1 and Docker restarts the container.
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
 volumes:
   nextjs_cache:

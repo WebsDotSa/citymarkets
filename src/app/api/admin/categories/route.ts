@@ -5,6 +5,7 @@ import { generateSlug } from "@/lib/slug";
 import { cache } from "@/lib/cache";
 import { CITY_MARKETS_VENDOR_ID } from "@/lib/types";
 import { deleteFromR2, r2KeyFromUrl } from "@/lib/r2";
+import { logAdminAction } from "@/lib/admin-audit";
 
 import { error as logError, warn as logWarn } from '@/lib/logger';
 import { parsePagination } from "@/lib/api/pagination";
@@ -212,9 +213,17 @@ export async function POST(request: NextRequest) {
         finalActive,
         description_ar?.trim() || null,
         description_en?.trim() || null,
-      ]
-    );
+      ]);
     cache.invalidatePattern("categories:");
+    // P1-2 (security Phase 4, 2026-10-03): audit the create so a
+    // later inspection can see which admin added a category, with
+    // the IP and the request payload recorded for incident review.
+    await logAdminAction(gate.admin, "category.create", {
+      entityType: "category",
+      entityId: result.rows[0].id,
+      details: { name_ar, name_en, slug: finalSlug, parent_id: resolvedParent },
+      request,
+    });
     return NextResponse.json({
       success: true,
       data: { id: result.rows[0].id, slug: finalSlug },
