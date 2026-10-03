@@ -1,6 +1,6 @@
 # PCP-210 — citymarket_db nightly backup + restore test
 
-**Status:** DONE. Live since 2026-10-03 01:42 UTC. First scheduled run 2026-10-03 02:00 UTC.
+**Status:** DONE. Live since 2026-10-03 01:42 UTC. First scheduled cron run at 2026-10-03 02:00:01 UTC (confirmed in journal: `CRON[2835091]: (root) CMD (/usr/local/bin/citymarket-db-backup)`).
 
 ---
 
@@ -20,16 +20,17 @@ This was the single highest ROI P0 in Phase 16 (1 hour work; closes one of four 
 
 ## Solution
 
-Three files, two scripts, one cron entry:
+Three files in `scripts/backup/` plus the system-installed copies:
 
-| Path | Purpose | Mode | Owner |
-|------|---------|------|-------|
-| `/usr/local/bin/citymarket-db-backup` | nightly `pg_dump` → gzip → `/var/backups/citymarket_db/` | 700 | root |
-| `/usr/local/bin/citymarket-db-restore-test` | weekly restore into a throwaway DB + row-count + RLS-policy assertions | 700 | root |
-| `/etc/cron.d/citymarket-db-backup` | cron schedule: 02:00 UTC daily + 03:30 UTC Sundays | 600 | root |
-| `/var/backups/citymarket_db/` | backup dir (14-day retention) | 700 | root |
-| `/var/log/citymarket-db-backup.log` | append-only run log | 644 | root |
-| `/var/log/citymarket-db-restore-test.log` | append-only restore-test log | 644 | root |
+| Repo path | Installed path | Purpose | Mode | Owner |
+|-----------|---------------|---------|------|-------|
+| `scripts/backup/citymarket-db-backup` | `/usr/local/bin/citymarket-db-backup` | nightly `pg_dump` → gzip → `/var/backups/citymarket_db/` | 700 | root |
+| `scripts/backup/citymarket-db-restore-test` | `/usr/local/bin/citymarket-db-restore-test` | weekly restore into a throwaway DB + row-count + RLS-policy assertions | 700 | root |
+| `scripts/backup/citymarket-db-backup.cron` | `/etc/cron.d/citymarket-db-backup` | cron schedule: 02:00 UTC daily + 03:30 UTC Sundays | 600 | root |
+| `scripts/backup/install.sh` | — | idempotent installer (used to deploy the above) | 700 | root |
+| — | `/var/backups/citymarket_db/` | backup dir (14-day retention) | 700 | root |
+| — | `/var/log/citymarket-db-backup.log` | append-only run log | 644 | root |
+| — | `/var/log/citymarket-db-restore-test.log` | append-only restore-test log | 644 | root |
 
 ### Schedule
 
@@ -85,9 +86,9 @@ Runs Sundays at 03:30, after the 02:00 daily backup. Failures get mailed to `roo
 
 ---
 
-## Live verification (2026-10-03 01:41-01:42 UTC)
+## Live verification (2026-10-03)
 
-### Backup run
+### First manual run (01:41 UTC)
 
 ```
 $ time /usr/local/bin/citymarket-db-backup
@@ -103,13 +104,28 @@ $ tail -2 /var/log/citymarket-db-backup.log
 [2026-10-03T01:41:21+00:00] ok: 1.6M written; pruned 0 dump(s) older than 14 days
 ```
 
+### First scheduled cron run (02:00:01 UTC)
+
+```
+$ journalctl -t CRON --since "3 minutes ago"
+Oct 03 02:00:01 srv2009643 CRON[2835089]: pam_unix(cron:session): session opened for user root(uid=0) by root(uid=0)
+Oct 03 02:00:01 srv2009643 CRON[2835091]: (root) CMD ( /usr/local/bin/citymarket-db-backup)
+Oct 03 02:00:02 srv2009643 CRON[2835089]: pam_unix(cron:session): session closed for user root
+
+$ ls -la /var/backups/citymarket_db/
+-rw------- 1 root root 1618182 Oct  3 01:41 citymarket_db-20261003T014120Z.sql.gz
+-rw------- 1 root root 1618177 Oct  3 02:00 citymarket_db-20261003T020001Z.sql.gz
+
+$ tail -2 /var/log/citymarket-db-backup.log
+[2026-10-03T02:00:01+00:00] starting pg_dump of citymarket_db on 127.0.0.1:5432 (container: citymarket-db)
+[2026-10-03T02:00:02+00:00] ok: 1.6M written; pruned 0 dump(s) older than 14 days
+```
+
 ### Restore test (manual run before cron)
 
 ```
 $ time /usr/local/bin/citymarket-db-restore-test
 real    0m2.855s
-user    0m0.304s
-sys     0m0.391s
 
 $ tail -1 /var/log/citymarket-db-restore-test.log
 [2026-10-03T01:41:49+00:00] ok: restore from /var/backups/citymarket_db/citymarket_db-20261003T014120Z.sql.gz matches live (users/orders/products/app_migrations/policies=36)
@@ -138,7 +154,7 @@ All five counts match the live DB to the row. 36 RLS policies restored.
 | Failure | Detected by | Within |
 |---------|-------------|--------|
 | `citymarket-db` container killed | backup script's `docker ps` check | next 02:00 run (≤24 h) |
-| Wrong `DATABASE_PASSWORD` in `.env` | pg_dump returns nothing | next 02:00 run (≤24 h) |
+| Wrong `DATABASE_PASSWORD` in `.env` | pg_dump returns nothing → sanity check fails | next 02:00 run (≤24 h) |
 | Disk full | `gzip` writes to /var/backups/citymarket_db/ — same filesystem | next 02:00 run (≤24 h) |
 | Silent dump corruption (e.g. wrong container, partial) | restore-test row-count assertion | ≤7 days |
 | RLS policy dropped from dump | restore-test `pg_policies` count | ≤7 days |
