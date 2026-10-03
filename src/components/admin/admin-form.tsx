@@ -24,10 +24,6 @@ interface AdminFormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, 'onSu
   isLoading?: boolean;
 }
 
-/**
- * Admin form wrapper with gray design system styling.
- * Supports both manual children and auto-rendered fields.
- */
 export function AdminForm({
   title,
   subtitle,
@@ -56,8 +52,8 @@ export function AdminForm({
     <form
       {...formProps}
       onSubmit={handleSubmit}
-      className={`space-y-4 opacity-${submitting ? "60" : "100"} ${formProps.className || ""}`}
       style={{ opacity: submitting ? 0.6 : 1, pointerEvents: submitting ? "none" : "auto" }}
+      className={`space-y-4 ${formProps.className || ""}`}
     >
       {(title || subtitle) && (
         <div className="mb-6">
@@ -70,52 +66,59 @@ export function AdminForm({
         {children ||
           (fields?.map(field => (
             <div key={field.key}>
-              <label className="text-sm font-medium text-gray-900">
-                {field.label}
-                {field.required && <span className="text-red-600 ml-1">*</span>}
-              </label>
-              } else if (field.type === "checkbox") {
-                <input
-                  type="checkbox"
-                  name={field.key}
-                  checked={formData[field.key] || false}
-                  onChange={e => handleInputChange(field.key, e.target.checked)}
-                  className="w-4 h-4 border-2 border-gray-200 rounded text-primary mt-2"
-                />
-              {field.type === "textarea" ? (
-                <textarea
-                  name={field.key}
-                  placeholder={field.placeholder}
-                  required={field.required}
-                  value={formData[field.key] || ""}
-                  onChange={e => handleInputChange(field.key, e.target.value)}
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg text-sm mt-1 focus:outline-none focus:border-primary-500"
-                />
-              ) : field.type === "select" ? (
-                <select
-                  name={field.key}
-                  required={field.required}
-                  value={formData[field.key] || ""}
-                  onChange={e => handleInputChange(field.key, e.target.value)}
-                  className="w-full h-11 px-4 border-2 border-gray-200 rounded-lg text-sm mt-1 focus:outline-none focus:border-primary-500"
-                >
-                  <option value="">اختر...</option>
-                  {field.options?.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+              {field.type === "checkbox" ? (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name={field.key}
+                    checked={formData[field.key] || false}
+                    onChange={e => handleInputChange(field.key, e.target.checked)}
+                    className="w-4 h-4 border-2 border-gray-200 rounded text-primary"
+                  />
+                  <span className="text-sm font-medium text-gray-900">{field.label}</span>
+                </label>
               ) : (
-                <input
-                  type={field.type}
-                  name={field.key}
-                  placeholder={field.placeholder}
-                  required={field.required}
-                  value={formData[field.key] || ""}
-                  onChange={e => handleInputChange(field.key, e.target.value)}
-                  className="w-full h-11 px-4 border-2 border-gray-200 rounded-lg text-sm mt-1 focus:outline-none focus:border-primary-500"
-                />
+                <>
+                  <label className="text-sm font-medium text-gray-900">
+                    {field.label}
+                    {field.required && <span className="text-red-600 ml-1">*</span>}
+                  </label>
+                  {field.type === "textarea" ? (
+                    <textarea
+                      name={field.key}
+                      placeholder={field.placeholder}
+                      required={field.required}
+                      value={formData[field.key] || ""}
+                      onChange={e => handleInputChange(field.key, e.target.value)}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg text-sm mt-1 focus:outline-none focus:border-primary-500"
+                    />
+                  ) : field.type === "select" ? (
+                    <select
+                      name={field.key}
+                      required={field.required}
+                      value={formData[field.key] || ""}
+                      onChange={e => handleInputChange(field.key, e.target.value)}
+                      className="w-full h-11 px-4 border-2 border-gray-200 rounded-lg text-sm mt-1 focus:outline-none focus:border-primary-500"
+                    >
+                      <option value="">اختر...</option>
+                      {field.options?.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={field.type}
+                      name={field.key}
+                      placeholder={field.placeholder}
+                      required={field.required}
+                      value={formData[field.key] || ""}
+                      onChange={e => handleInputChange(field.key, e.target.value)}
+                      className="w-full h-11 px-4 border-2 border-gray-200 rounded-lg text-sm mt-1 focus:outline-none focus:border-primary-500"
+                    />
+                  )}
+                  {field.help && <p className="text-xs text-gray-500 mt-1">{field.help}</p>}
+                </>
               )}
-              {field.help && <p className="text-xs text-gray-500 mt-1">{field.help}</p>}
             </div>
           )))}
       </div>
