@@ -3,14 +3,16 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, Trash2, ShoppingBag, ChevronRight, ArrowRight } from "lucide-react";
+import { Heart, Trash2, ShoppingBag, ChevronRight } from "lucide-react";
 import {
   useWishlistState,
   useWishlistActions,
 } from "@/contexts/wishlist-context";
 import { useCart } from "@/contexts/cart-context";
-import { formatPrice } from "@/lib/format";
 import { useConfirm } from "@/components/ui/toast";
+import { Price } from "@/components/ui/price";
+import { SectionHeader } from "@/components/ui/section-header";
+import { EmptyState } from "@/components/design/empty-state";
 
 export default function WishlistPage() {
   const router = useRouter();
@@ -34,23 +36,14 @@ export default function WishlistPage() {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-20 text-center">
-        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Heart className="w-12 h-12 text-gray-300" />
-        </div>
-        <h1 className="text-2xl font-bold text-secondary mb-2">
-          قائمة أمنياتك فارغة
-        </h1>
-        <p className="text-gray-500 mb-8">
-          احفظ المنتجات التي تعجبك لتتمكن من طلبها لاحقاً
-        </p>
-        <Link
-          href="/catalog"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors"
-        >
-          <span>استكشف المنتجات</span>
-          <ChevronRight className="w-5 h-5" />
-        </Link>
+      <div className="max-w-lg mx-auto px-4 py-20">
+        <EmptyState
+          icon="wishlist"
+          title="قائمة أمنياتك فارغة"
+          description="احفظ المنتجات التي تعجبك لتتمكن من طلبها لاحقاً"
+          actionLabel="استكشف المنتجات"
+          actionHref="/catalog"
+        />
       </div>
     );
   }
@@ -105,16 +98,18 @@ export default function WishlistPage() {
             </p>
             <p className="text-xs text-gray-500">
               {items.length} منتجات بقيمة{" "}
-              {formatPrice(
-                items.reduce(
+              <Price
+                price={items.reduce(
                   (sum, item) =>
                     sum +
                     Number(
                       item.product.discount_price ?? item.product.price
                     ),
                   0
-                )
-              )}
+                )}
+                size="sm"
+                className="inline-flex"
+              />
             </p>
           </div>
         </div>
@@ -178,17 +173,11 @@ export default function WishlistPage() {
                 </Link>
 
                 <div className="mt-2">
-                  <span
-                    className={`text-sm font-bold ${
-                      product.discount_price ? "text-red-600" : "text-secondary"
-                    }`}
-                  >
-                    {formatPrice(
-                      Number(
-                        product.discount_price ?? product.price
-                      )
-                    )}
-                  </span>
+                  <Price
+                    price={product.price}
+                    discount_price={product.discount_price}
+                    size="sm"
+                  />
                 </div>
 
                 <button
@@ -207,19 +196,11 @@ export default function WishlistPage() {
 
       {/* Recommendations */}
       <section className="mt-10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-secondary">قد يعجبك أيضاً</h2>
-          <Link
-            href="/catalog"
-            className="text-sm text-primary font-medium flex items-center gap-1 hover:underline"
-          >
-            <span>عرض الكل</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-        <p className="text-sm text-gray-500">
-          أضف منتجات جديدة واكتشف المزيد من المنتجات المميزة
-        </p>
+        <SectionHeader
+          title="قد يعجبك أيضاً"
+          subtitle="أضف منتجات جديدة واكتشف المزيد من المنتجات المميزة"
+          viewAllHref="/catalog"
+        />
       </section>
       {confirm.dialog}
     </div>
