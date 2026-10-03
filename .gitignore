@@ -96,3 +96,8 @@ ios-citymarkets/
 
 *storybook.log
 storybook-static
+
+# pnpm artifacts (project uses npm/package-lock.json; pnpm install
+# was tried once during security audit and created these by accident)
+pnpm-lock.yaml
+pnpm-workspace.yaml
