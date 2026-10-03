@@ -28,24 +28,33 @@
 BEGIN;
 
 -- 1. Verify citymarket_user owns enough tables (should be 50+)
+--    In CI the role is NOLOGIN and the entire DB is owned by the
+--    superuser (ci_user), so the ownership count is 0; the role was
+--    never SUPERUSER in the first place, so the demotion is a no-op.
 DO $$
 DECLARE
   owned_count INTEGER;
+  is_super BOOLEAN;
 BEGIN
   SELECT COUNT(*) INTO owned_count
   FROM pg_tables
   WHERE tableowner = 'citymarket_user' AND schemaname = 'public';
 
-  RAISE NOTICE 'citymarket_user owns % tables', owned_count;
+  SELECT rolsuper INTO is_super
+  FROM pg_roles WHERE rolname = 'citymarket_user';
 
-  IF owned_count < 50 THEN
+  RAISE NOTICE 'citymarket_user owns % tables, rolsuper=%', owned_count, is_super;
+
+  IF is_super AND owned_count < 50 THEN
     RAISE EXCEPTION 'Refusing to demote citymarket_user: owns too few tables (%), expected 50+', owned_count;
   END IF;
 END
 $$;
 
 -- 2. Remove superuser + bypassrls
---    citymarket_user keeps CREATEDB, CREATEROLE for migrations tooling
+--    citymarket_user keeps CREATEDB, CREATEROLE for migrations tooling.
+--    A no-op when the role was never SUPERUSER (CI bootstrap, fresh
+--    dev containers where the role is created NOLOGIN).
 ALTER ROLE citymarket_user NOSUPERUSER NOBYPASSRLS;
 
 -- 3. Verify role attrs after change

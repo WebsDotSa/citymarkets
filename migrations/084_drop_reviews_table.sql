@@ -1,4 +1,7 @@
 -- ════════════════════════════════════════════════════════════════════════════
+-- PCP-109 (2026-10-01): RAISE EXCEPTION message joined into one literal
+-- ('a' || 'b' is a PL/pgSQL syntax error; this file never applied on
+-- any database).
 -- P2-4 (full-system audit 2026-09-30) — drop orphaned `reviews` table
 -- ════════════════════════════════════════════════════════════════════════════
 --
@@ -36,8 +39,7 @@ BEGIN
     -- block dropping the bare `reviews` table. Only this one.
     IF EXISTS (SELECT 1 FROM reviews LIMIT 1) THEN
       RAISE EXCEPTION
-        'reviews (order-level) still holds rows (% found); refusing to drop. ' ||
-        'Either migrate to product_reviews first or run with care.',
+        'reviews (order-level) still holds rows (% found); refusing to drop. Either migrate to product_reviews first or run with care.',
         (SELECT COUNT(*) FROM reviews);
     END IF;
     DROP TABLE reviews;

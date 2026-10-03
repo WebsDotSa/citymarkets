@@ -24,13 +24,13 @@
 --     'confirmed') before re-running. Historical totals / loyalty
 --     credits are unaffected because `payment_status` carries the
 --     payment truth; `orders.status` only carries the lifecycle.
---   - `ALTER TYPE ... DROP VALUE` is available on PostgreSQL ≥ 12
---     and must run outside a transaction (PG bug: ENUM changes are
---     not transactional). We use `IF EXISTS` so the migration is
---     idempotent on databases where the value was already removed.
---   - Run in autocommit (`\set AUTOCOMMIT on`) — Next.js migration
---     runner applies migrations in autocommit mode by default, so
---   no special handling is needed here.
+--
+-- PCP-109 (2026-10-01): PostgreSQL has no `ALTER TYPE ... DROP VALUE`;
+-- the original statement was a syntax error, so this file never
+-- applied on any database. Enforce the same invariant with a CHECK
+-- instead: the enum label stays (removing it needs a full type
+-- rebuild) but no row can ever hold it. The guard above already
+-- proved zero 'paid' rows.
 
 DO $$
 BEGIN
@@ -41,4 +41,6 @@ BEGIN
   END IF;
 END $$;
 
-ALTER TYPE order_status_enum DROP VALUE IF EXISTS 'paid';
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_not_paid;
+ALTER TABLE orders
+  ADD CONSTRAINT orders_status_not_paid CHECK (status <> 'paid');

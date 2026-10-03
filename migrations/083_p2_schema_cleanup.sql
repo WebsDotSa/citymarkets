@@ -1,4 +1,9 @@
 -- ════════════════════════════════════════════════════════════════════════════
+-- PCP-109 (2026-10-01): RAISE EXCEPTION format strings joined into single
+-- literals (the `'a' || 'b'` form is a PL/pgSQL syntax error, so this
+-- file never applied on any database). EXECUTE (SELECT ...) returns NULL
+-- when no FK exists; wrap in COALESCE(..., 'SELECT 1') so it becomes a
+-- no-op instead of erroring on the NULL command string.
 -- P2 (full-system audit 2026-09-30) — schema cleanup
 -- ════════════════════════════════════════════════════════════════════════════
 --
@@ -74,12 +79,11 @@ BEGIN
       SELECT 1 FROM orders WHERE coupon_id IS NOT NULL LIMIT 1
     ) THEN
       RAISE EXCEPTION
-        'orders.coupon_id still has non-NULL rows (% found); ' ||
-        'backfill to coupon_code first or run with care.',
+        'orders.coupon_id still has non-NULL rows (% found); backfill to coupon_code first or run with care.',
         (SELECT COUNT(*) FROM orders WHERE coupon_id IS NOT NULL);
     END IF;
     -- Drop the FK constraint first (idempotent) so the column drop is clean.
-    EXECUTE (
+    EXECUTE COALESCE((
       SELECT format(
         'ALTER TABLE orders DROP CONSTRAINT IF EXISTS %I',
         c.conname
@@ -91,7 +95,7 @@ BEGIN
         AND c.contype = 'f'
         AND a.attname = 'coupon_id'
       LIMIT 1
-    );
+    ), 'SELECT 1');  -- no FK present → no-op (PCP-109, 2026-10-01)
     ALTER TABLE orders DROP COLUMN coupon_id;
     RAISE NOTICE 'P2 cleanup: dropped orders.coupon_id';
   ELSE
@@ -113,12 +117,11 @@ BEGIN
       SELECT 1 FROM loyalty_transactions WHERE order_id IS NOT NULL LIMIT 1
     ) THEN
       RAISE EXCEPTION
-        'loyalty_transactions.order_id still has non-NULL rows (% found); ' ||
-        'backfill to ref_order_id first.',
+        'loyalty_transactions.order_id still has non-NULL rows (% found); backfill to ref_order_id first.',
         (SELECT COUNT(*) FROM loyalty_transactions WHERE order_id IS NOT NULL);
     END IF;
     -- Drop any FK constraint pointing at orders(id) on this column first.
-    EXECUTE (
+    EXECUTE COALESCE((
       SELECT format(
         'ALTER TABLE loyalty_transactions DROP CONSTRAINT IF EXISTS %I',
         c.conname
@@ -130,7 +133,7 @@ BEGIN
         AND c.contype = 'f'
         AND a.attname = 'order_id'
       LIMIT 1
-    );
+    ), 'SELECT 1');  -- no FK present → no-op (PCP-109, 2026-10-01)
     -- Drop the parallel index added by 021 too.
     DROP INDEX IF EXISTS idx_loyalty_tx_order;
     ALTER TABLE loyalty_transactions DROP COLUMN order_id;

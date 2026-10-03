@@ -1,4 +1,7 @@
 -- ════════════════════════════════════════════════════════════════════════════
+-- PCP-109 (2026-10-01): RAISE EXCEPTION message joined into one literal
+-- ('a' || 'b' is a PL/pgSQL syntax error; this file never applied on
+-- any database).
 -- P2-8 (full-system audit 2026-09-30) — drop dead service_fee column
 -- ════════════════════════════════════════════════════════════════════════════
 --
@@ -43,9 +46,7 @@ BEGIN
       SELECT 1 FROM orders WHERE service_fee_acknowledged_at IS NOT NULL LIMIT 1
     ) THEN
       RAISE EXCEPTION
-        'orders.service_fee_acknowledged_at still holds % non-NULL rows; ' ||
-        'auditing required before drop (no consumer reads this column, ' ||
-        'so the values are orphaned).',
+        'orders.service_fee_acknowledged_at still holds % non-NULL rows; auditing required before drop (no consumer reads this column, so the values are orphaned).',
         (SELECT COUNT(*) FROM orders WHERE service_fee_acknowledged_at IS NOT NULL);
     END IF;
     ALTER TABLE orders DROP COLUMN service_fee_acknowledged_at;
