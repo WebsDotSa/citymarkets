@@ -353,6 +353,121 @@ describe("PUT /api/admin/vendors?id=...", () => {
     );
     expect(res.status).toBe(400);
   });
+
+  // PCP-99 — PUT must wrap vendor UPDATE + owner upsert in a transaction.
+  // If the owner upsert rejects (e.g. weak password), the vendor UPDATE
+  // must roll back too. Without the transaction the admin sees a
+  // "فشل التحديث" toast next to a row that was actually mutated.
+  it("wraps vendor UPDATE + owner upsert in BEGIN/COMMIT", async () => {
+    const txQuery = vi.fn(async (_sql: string) => ({ rows: [] }));
+    vi.mocked(pool.connect).mockImplementation(async () => ({
+      query: txQuery,
+      release: vi.fn(),
+    }));
+    const res = await PUT(
+      jsonRequest(
+        "http://localhost/api/admin/vendors?id=v-uuid-1",
+        "PUT",
+        {
+          name_ar: "اسم",
+          slug: "store-1",
+          login_phone: "500000000",
+          password: "password123",
+        },
+      ) as never,
+    );
+    expect(res.status).toBe(200);
+    // Transaction scaffolding was issued on the client.
+    const calls = txQuery.mock.calls.map((c) => (c[0] as string).trim());
+    expect(calls.some((s) => /^BEGIN$/i.test(s))).toBe(true);
+    expect(calls.some((s) => /^UPDATE vendors/i.test(s))).toBe(true);
+    // Owner SELECT runs on the tx client (not the autocommit pool).
+    expect(calls.some((s) => /SELECT id, phone, email FROM vendor_staff/i.test(s))).toBe(true);
+    expect(calls.some((s) => /^INSERT INTO vendor_staff/i.test(s))).toBe(true);
+    expect(calls.some((s) => /^COMMIT$/i.test(s))).toBe(true);
+    expect(calls.some((s) => /^ROLLBACK$/i.test(s))).toBe(false);
+  });
+
+  it("rolls back vendor UPDATE when owner password is too short (400)", async () => {
+    const txQuery = vi.fn(async (_sql: string) => ({ rows: [] }));
+    vi.mocked(pool.connect).mockImplementation(async () => ({
+      query: txQuery,
+      release: vi.fn(),
+    }));
+    const res = await PUT(
+      jsonRequest(
+        "http://localhost/api/admin/vendors?id=v-uuid-1",
+        "PUT",
+        {
+          name_ar: "اسم",
+          slug: "store-1",
+          login_phone: "500000000",
+          password: "short", // < 8 chars → owner validation fails
+        },
+      ) as never,
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toMatch(/8 أحرف/);
+    // ROLLBACK must have been issued so the UPDATE vendors row is undone.
+    const calls = txQuery.mock.calls.map((c) => (c[0] as string).trim());
+    expect(calls.some((s) => /^BEGIN$/i.test(s))).toBe(true);
+    expect(calls.some((s) => /^UPDATE vendors/i.test(s))).toBe(true);
+    expect(calls.some((s) => /^ROLLBACK$/i.test(s))).toBe(true);
+    expect(calls.some((s) => /^COMMIT$/i.test(s))).toBe(false);
+  });
+
+  it("still commits when no owner fields are sent (transactional path)", async () => {
+    const txQuery = vi.fn(async (_sql: string) => ({ rows: [] }));
+    vi.mocked(pool.connect).mockImplementation(async () => ({
+      query: txQuery,
+      release: vi.fn(),
+    }));
+    const res = await PUT(
+      jsonRequest(
+        "http://localhost/api/admin/vendors?id=v-uuid-1",
+        "PUT",
+        { name_ar: "اسم جديد", slug: "store-1" },
+      ) as never,
+    );
+    expect(res.status).toBe(200);
+    const calls = txQuery.mock.calls.map((c) => (c[0] as string).trim());
+    // The whole edit path runs through the transaction client — same
+    // shape regardless of whether owner fields are present.
+    expect(calls.some((s) => /^BEGIN$/i.test(s))).toBe(true);
+    expect(calls.some((s) => /^UPDATE vendors/i.test(s))).toBe(true);
+    expect(calls.some((s) => /^COMMIT$/i.test(s))).toBe(true);
+    expect(calls.some((s) => /^ROLLBACK$/i.test(s))).toBe(false);
+  });
+
+  it("returns 400 (not 500) on duplicate slug via unique-violation inside the transaction", async () => {
+    const txQuery = vi.fn(async (sql: string) => {
+      // UPDATE vendors raises PG 23505 (unique_violation).
+      if (/UPDATE vendors/i.test(sql)) {
+        const e: any = new Error("duplicate key value violates unique constraint");
+        e.code = "23505";
+        throw e;
+      }
+      return { rows: [] };
+    });
+    vi.mocked(pool.connect).mockImplementation(async () => ({
+      query: txQuery,
+      release: vi.fn(),
+    }));
+    const res = await PUT(
+      jsonRequest(
+        "http://localhost/api/admin/vendors?id=v-uuid-1",
+        "PUT",
+        { name_ar: "اسم", slug: "store-1" },
+      ) as never,
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toMatch(/slug مستخدم/);
+    // The catch path must ROLLBACK before re-throwing.
+    const calls = txQuery.mock.calls.map((c) => (c[0] as string).trim());
+    expect(calls.some((s) => /^ROLLBACK$/i.test(s))).toBe(true);
+  });
 });
 
 describe("DELETE /api/admin/vendors?id=...", () => {

@@ -334,116 +334,182 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const gate = await requireAdminApi(request, "manage_store_settings");
   if (gate instanceof NextResponse) return gate;
+
+  // Pre-validate body + extract id BEFORE opening a transaction so we
+  // don't hold a pool client while we run JSON.parse + Zod. Mirrors the
+  // POST handler above (PCP-99 — same audit fix as POST).
+  const url = new URL(request.url);
+  const idCheckResult = idCheck(url);
+  if (idCheckResult instanceof NextResponse) return idCheckResult;
+  const id = idCheckResult;
+
+  let body: any;
   try {
-    const url = new URL(request.url);
-    const id = idCheck(url);
-    if (id instanceof NextResponse) return id;
-    const body = await request.json();
-    const parsed = vendorUpdateSchema.safeParse(body);
-    if (!parsed.success) {
-      const first = parsed.error.issues[0];
-      return NextResponse.json(
-        { success: false, error: first?.message || "بيانات المتجر غير صالحة" },
-        { status: 400 }
-      );
-    }
-    const v = parsed.data;
-    // name_ar is required only on create; on update it can be omitted.
-    if (v.name_ar !== undefined && !String(v.name_ar).trim()) {
-      return NextResponse.json(
-        { success: false, error: "اسم المتجر بالعربية مطلوب" },
-        { status: 400 }
-      );
-    }
-    const slug = v.slug?.toString().trim() || (v.name_ar ? generateSlug(v.name_ar) : undefined);
-
-    await query(
-      // BUGFIX (audit 2026-09-29): wrap every column in COALESCE so a
-      // partial PUT (the admin only changed the description) doesn't
-      // null out unrelated fields. The toggle columns already used
-      // COALESCE; the text columns used to be plain `= $N` and a
-      // missing field in the JSON would overwrite the row with NULL.
-      `UPDATE vendors SET
-         slug = COALESCE($1, slug),
-         name_ar = COALESCE($2, name_ar),
-         name_en = COALESCE($3, name_en),
-         description_ar = COALESCE($4, description_ar),
-         description_en = COALESCE($5, description_en),
-         logo_url = COALESCE($6, logo_url),
-         banner_url = COALESCE($7, banner_url),
-         vendor_type = COALESCE($8, vendor_type),
-         category_slug = COALESCE($9, category_slug),
-         primary_color = COALESCE($10, primary_color),
-         contact_phone = COALESCE($11, contact_phone),
-         contact_email = COALESCE($12, contact_email),
-         contact_whatsapp = COALESCE($13, contact_whatsapp),
-         address_ar = COALESCE($14, address_ar),
-         pickup_lat = COALESCE($15, pickup_lat),
-         pickup_lng = COALESCE($16, pickup_lng),
-         is_active = COALESCE($17, is_active),
-         is_featured = COALESCE($18, is_featured),
-         sort_order = COALESCE($19, sort_order),
-         updated_at = NOW()
-       WHERE id = $20`,
-      [
-        slug ?? null,
-        v.name_ar ?? null,
-        v.name_en ?? null,
-        v.description_ar ?? null,
-        v.description_en ?? null,
-        v.logo_url ?? null,
-        v.banner_url ?? null,
-        v.vendor_type ?? null,
-        v.category_slug ?? null,
-        v.primary_color ?? null,
-        v.contact_phone ?? null,
-        v.contact_email ?? null,
-        v.contact_whatsapp ?? null,
-        v.address_ar ?? null,
-        v.pickup_lat ?? null,
-        v.pickup_lng ?? null,
-        v.is_active ?? null,
-        v.is_featured ?? null,
-        v.sort_order ?? null,
-        id,
-      ]
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { success: false, error: "صيغة الطلب غير صالحة" },
+      { status: 400 }
     );
+  }
 
-    // Update owner credentials if provided. Empty password is ignored
-    // so a partial form save (e.g. only the description was changed)
-    // never wipes an existing password. Empty login_email is treated
-    // as "clear it" only when explicitly sent as an empty string.
-    const ownerPhone =
-      typeof body.login_phone === "string" ? body.login_phone : null;
-    const ownerEmail =
-      typeof body.login_email === "string" ? body.login_email : null;
-    const ownerPassword =
-      typeof body.password === "string" ? body.password : null;
+  const parsed = vendorUpdateSchema.safeParse(body);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    return NextResponse.json(
+      { success: false, error: first?.message || "بيانات المتجر غير صالحة" },
+      { status: 400 }
+    );
+  }
+  const v = parsed.data;
+  // name_ar is required only on create; on update it can be omitted.
+  if (v.name_ar !== undefined && !String(v.name_ar).trim()) {
+    return NextResponse.json(
+      { success: false, error: "اسم المتجر بالعربية مطلوب" },
+      { status: 400 }
+    );
+  }
+  const slug = v.slug?.toString().trim() || (v.name_ar ? generateSlug(v.name_ar) : undefined);
 
-    if (hasOwnerCredentials(ownerPhone, ownerEmail, ownerPassword)) {
-      const ownerError = await upsertVendorOwner(
-        id,
-        ownerPhone,
-        ownerEmail,
-        ownerPassword
+  // Update owner credentials if provided. Empty password is ignored
+  // so a partial form save (e.g. only the description was changed)
+  // never wipes an existing password. Empty login_email is treated
+  // as "clear it" only when explicitly sent as an empty string.
+  const ownerPhone =
+    typeof body.login_phone === "string" ? body.login_phone : null;
+  const ownerEmail =
+    typeof body.login_email === "string" ? body.login_email : null;
+  const ownerPassword =
+    typeof body.password === "string" ? body.password : null;
+  const ownerRequested = hasOwnerCredentials(ownerPhone, ownerEmail, ownerPassword);
+
+  // Run vendor UPDATE + owner upsert in one transaction (PCP-99).
+  //
+  // Before this change, the UPDATE ran via `query()` (autocommit) and
+  // the owner upsert ran on a second autocommit call. That sequence
+  // committed the vendor row even when the owner step failed, leaving
+  // the admin staring at a "فشل التحديث" toast next to an
+  // already-mutated row — the user then had to refresh to see the
+  // half-saved edit.
+  //
+  // Wrapping both in BEGIN/COMMIT rolls them back together. A failed
+  // owner validation (invalid phone, weak password, etc.) translates
+  // to a 400 with the validator's message and never persists a
+  // partial vendor edit.
+  //
+  // We always go through `runInTransaction` (even when no owner
+  // fields were sent) so the entire edit path follows the same code
+  // shape — easier to audit than a split that picks between `query()`
+  // and `pool.connect()` based on `ownerRequested`.
+  type PutTxResult =
+    | { ok: true }
+    | { ok: false; status: number; error: string };
+  const runInTransaction = async (): Promise<PutTxResult> => {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        // BUGFIX (audit 2026-09-29): wrap every column in COALESCE so a
+        // partial PUT (the admin only changed the description) doesn't
+        // null out unrelated fields. The toggle columns already used
+        // COALESCE; the text columns used to be plain `= $N` and a
+        // missing field in the JSON would overwrite the row with NULL.
+        `UPDATE vendors SET
+           slug = COALESCE($1, slug),
+           name_ar = COALESCE($2, name_ar),
+           name_en = COALESCE($3, name_en),
+           description_ar = COALESCE($4, description_ar),
+           description_en = COALESCE($5, description_en),
+           logo_url = COALESCE($6, logo_url),
+           banner_url = COALESCE($7, banner_url),
+           vendor_type = COALESCE($8, vendor_type),
+           category_slug = COALESCE($9, category_slug),
+           primary_color = COALESCE($10, primary_color),
+           contact_phone = COALESCE($11, contact_phone),
+           contact_email = COALESCE($12, contact_email),
+           contact_whatsapp = COALESCE($13, contact_whatsapp),
+           address_ar = COALESCE($14, address_ar),
+           pickup_lat = COALESCE($15, pickup_lat),
+           pickup_lng = COALESCE($16, pickup_lng),
+           is_active = COALESCE($17, is_active),
+           is_featured = COALESCE($18, is_featured),
+           sort_order = COALESCE($19, sort_order),
+           updated_at = NOW()
+         WHERE id = $20`,
+        [
+          slug ?? null,
+          v.name_ar ?? null,
+          v.name_en ?? null,
+          v.description_ar ?? null,
+          v.description_en ?? null,
+          v.logo_url ?? null,
+          v.banner_url ?? null,
+          v.vendor_type ?? null,
+          v.category_slug ?? null,
+          v.primary_color ?? null,
+          v.contact_phone ?? null,
+          v.contact_email ?? null,
+          v.contact_whatsapp ?? null,
+          v.address_ar ?? null,
+          v.pickup_lat ?? null,
+          v.pickup_lng ?? null,
+          v.is_active ?? null,
+          v.is_featured ?? null,
+          v.sort_order ?? null,
+          id,
+        ]
       );
-      if (ownerError) {
-        return NextResponse.json({ success: false, error: ownerError }, { status: 400 });
-      }
-    }
 
-    await logAdminAction(gate.admin, "vendor.update", {
-      entityType: "vendor",
-      entityId: id,
-      details: { name_ar: v.name_ar, slug, vendor_type: v.vendor_type },
-      request,
-    });
-    return NextResponse.json({ success: true });
+      if (ownerRequested) {
+        const ownerError = await upsertVendorOwner(
+          id,
+          ownerPhone,
+          ownerEmail,
+          ownerPassword,
+          { query: (sql, params) => client.query(sql, params) as any }
+        );
+        if (ownerError) {
+          // Validation error — translate to 400, then roll back so the
+          // vendor row keeps its previous state (no half-saved edit).
+          await client.query("ROLLBACK");
+          return { ok: false, status: 400, error: ownerError };
+        }
+      }
+
+      await client.query("COMMIT");
+      return { ok: true };
+    } catch (error: any) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
+  };
+
+  let result: PutTxResult;
+  try {
+    result = await runInTransaction();
   } catch (error: any) {
     logError("admin vendors PUT:", error);
-    const msg = error?.code === "23505" ? "الـ slug مستخدم من قبل متجر آخر" : "فشل التحديث";
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    const msg =
+      error?.code === "23505"
+        ? "الـ slug مستخدم من قبل متجر آخر — اختر slug فريد"
+        : "فشل التحديث";
+    const status = error?.code === "23505" ? 400 : 500;
+    return NextResponse.json({ success: false, error: msg }, { status });
   }
+
+  if (!result.ok) {
+    return NextResponse.json({ success: false, error: result.error }, { status: result.status });
+  }
+
+  await logAdminAction(gate.admin, "vendor.update", {
+    entityType: "vendor",
+    entityId: id,
+    details: { name_ar: v.name_ar, slug, vendor_type: v.vendor_type },
+    request,
+  });
+  return NextResponse.json({ success: true });
 }
 
 export async function DELETE(request: NextRequest) {
