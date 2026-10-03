@@ -253,7 +253,7 @@ export async function GET(request: NextRequest) {
     let orderSQL = 'p.sort_order DESC, p.name_ar ASC';
     if (sort === 'price-asc') orderSQL = 'COALESCE(p.discount_price, p.price) ASC';
     else if (sort === 'price-desc') orderSQL = 'COALESCE(p.discount_price, p.price) DESC';
-    else if (sort === 'newest') orderSQL = 'p.sort_order DESC, p.name_ar ASC';
+    else if (sort === 'newest') orderSQL = 'p.created_at DESC, p.name_ar ASC';
     else if (sort === 'discount') orderSQL = 'p.active_offer_id IS NULL, (CAST(p.price AS DECIMAL) - COALESCE(CAST(p.discount_price AS DECIMAL), CAST(p.price AS DECIMAL))) DESC';
 
     // When a search query is active and the user didn't pick a sort, rank

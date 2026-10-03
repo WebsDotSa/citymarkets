@@ -90,9 +90,11 @@ const config: Config = {
       },
       spacing: {
         // Header and sticky positioning tokens
-        "header": "64px",        // Header V2 height
-        "header-sm": "80px",     // Header V2 height on sm breakpoint
-        "header-with-toolbar": "104px", // Header + toolbar height
+        "header": "64px",        // Header V2 height (mobile)
+        "header-sm": "80px",     // Header V2 height on sm+ breakpoint
+        "breadcrumb": "40px",    // Breadcrumb bar height
+        "header-breadcrumb": "104px", // Header + breadcrumb (64 + 40)
+        "header-sm-breadcrumb": "120px", // Header + breadcrumb on sm+ (80 + 40)
         // Container sizes
         "container-sm": "24rem",    // 384px (small modals, sidebars)
         "container-md": "32rem",    // 512px (medium modals)
