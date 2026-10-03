@@ -123,13 +123,14 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
     <Link
       href={`/vendors/${vendor.slug}`}
       className="group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 hover:-translate-y-0.5"
+      style={{ '--vendor-color': vendor.primary_color ?? "#009345" } as React.CSSProperties}
     >
       <div
         className="relative h-32 overflow-hidden"
         style={{
           background: vendor.banner_url
             ? undefined
-            : `linear-gradient(135deg, ${vendor.primary_color ?? "#009345"} 0%, ${vendor.primary_color ?? "#009345"}cc 100%)`,
+            : 'linear-gradient(135deg, var(--vendor-color) 0%, var(--vendor-color) 100%)',
         }}
       >
         {vendor.banner_url && (
@@ -154,7 +155,7 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
       <div className="pt-0 px-4 pb-4 relative">
         <div className="absolute -top-7 right-4">
           <div className="w-14 h-14 rounded-2xl bg-white border-4 border-white shadow-md flex items-center justify-center overflow-hidden"
-               style={{ borderColor: vendor.primary_color ?? "#009345" }}>
+               style={{ borderColor: 'var(--vendor-color)' }}>
             <SafeImage
               src={vendor.logo_url}
               alt=""
@@ -182,8 +183,8 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
             <span
               className="inline-flex items-center gap-1 px-2.5 py-1 text-2xs font-bold rounded-full"
               style={{
-                background: `${vendor.primary_color ?? "#009345"}1a`,
-                color: vendor.primary_color ?? "#009345",
+                background: 'color-mix(in srgb, var(--vendor-color) 10%, transparent)',
+                color: 'var(--vendor-color)',
               }}
             >
               <span>{vendorTypeIcon(vendor.vendor_type)}</span>
