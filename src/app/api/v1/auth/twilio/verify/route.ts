@@ -6,8 +6,8 @@ import {
   COOKIE_NAME,
   signCustomerToken,
   customerSessionCookieOptions,
-} from '@/lib/identity';
-import { mapDbUserRow } from '@/lib/identity';
+} from "@/lib/identity";
+import { mapDbUserRow } from "@/lib/identity";
 import { checkRateLimit, OTP_VERIFY_CONFIG, OTP_VERIFY_IP_CONFIG, createRateLimitHeaders } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 import {
@@ -15,6 +15,7 @@ import {
   APPLE_REVIEW_OTP,
   APPLE_REVIEW_NAME,
 } from "@/lib/apple-review";
+import { encryptPii, piiHmac } from "@/lib/security/pii-crypto";
 
 import { error as logError, info as logInfo } from '@/lib/logger';
 
@@ -138,38 +139,56 @@ export async function POST(request: NextRequest) {
     );
 
     if (row.rows.length === 0) {
+      // P0-3 (security Phase 3, 2026-10-03): also write the
+      // encrypted + hmac columns so the new PII-at-rest path
+      // (login lookup by phone_hmac) finds this row. The plaintext
+      // columns are still written for the legacy read sites that
+      // have not been migrated yet — they will be removed in a
+      // follow-up once every site reads the encrypted columns.
+      const phoneHmac = piiHmac(phoneDb);
+      const phoneEnc = encryptPii(phoneDb);
+
       // For the Apple review account, seed the row with the reviewer
       // name so the iOS client renders a logged-in user (no "continue
       // as guest" prompt) and the rest of the API can recognize the
       // account via isAppleReviewUser() guards.
       if (appleReview) {
+        const reviewNameEnc = encryptPii(APPLE_REVIEW_NAME);
         row = await client.query(
-          `INSERT INTO users (phone, name, loyalty_points, loyalty_tier, spin_count_today)
-           VALUES ($1, $2, 0, 'bronze', 0)
+          `INSERT INTO users (
+             phone, name, loyalty_points, loyalty_tier, spin_count_today,
+             phone_encrypted, phone_hmac, name_encrypted
+           )
+           VALUES ($1, $2, 0, 'bronze', 0, $3, $4, $5)
            RETURNING id, phone, name, email, avatar_url, loyalty_points, loyalty_tier,
                      spin_count_today, last_spin_at, created_at, updated_at,
                      COALESCE(token_version, 1)::int AS token_version`,
-          [phoneDb, APPLE_REVIEW_NAME]
+          [phoneDb, APPLE_REVIEW_NAME, phoneEnc, phoneHmac, reviewNameEnc]
         );
       } else {
         row = await client.query(
-          `INSERT INTO users (phone, loyalty_points, loyalty_tier, spin_count_today)
-           VALUES ($1, 0, 'bronze', 0)
+          `INSERT INTO users (
+             phone, loyalty_points, loyalty_tier, spin_count_today,
+             phone_encrypted, phone_hmac
+           )
+           VALUES ($1, 0, 'bronze', 0, $2, $3)
            RETURNING id, phone, name, email, avatar_url, loyalty_points, loyalty_tier,
                      spin_count_today, last_spin_at, created_at, updated_at,
                      COALESCE(token_version, 1)::int AS token_version`,
-          [phoneDb]
+          [phoneDb, phoneEnc, phoneHmac]
         );
       }
     } else if (appleReview) {
       // If the row exists but the name is missing or different (e.g.
       // a stale test row), backfill the reviewer name so subsequent
-      // /api/v1/auth/me returns the canonical sentinel.
+      // /api/v1/auth/me returns the canonical sentinel. P0-3 also
+      // updates the encrypted name column if it was never set.
       const existingName = row.rows[0].name;
       if (existingName !== APPLE_REVIEW_NAME) {
+        const reviewNameEnc = encryptPii(APPLE_REVIEW_NAME);
         await client.query(
-          `UPDATE users SET name = $1, updated_at = now() WHERE id = $2`,
-          [APPLE_REVIEW_NAME, row.rows[0].id]
+          `UPDATE users SET name = $1, name_encrypted = $2, updated_at = now() WHERE id = $3`,
+          [APPLE_REVIEW_NAME, reviewNameEnc, row.rows[0].id]
         );
         row = await client.query(
           `SELECT id, phone, name, email, avatar_url, loyalty_points, loyalty_tier,
