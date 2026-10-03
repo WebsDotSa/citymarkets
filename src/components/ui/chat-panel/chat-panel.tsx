@@ -206,8 +206,7 @@ export function ChatPanel(props: ChatPanelProps) {
       {/* Messages */}
       <div
         ref={scrollerRef}
-        className="flex-1 overflow-y-auto px-3 py-3 space-y-2"
-        style={{ backgroundColor: '#f8fafc', minHeight: 320, maxHeight: 480 }}
+        className="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-gray-50 min-h-80 max-h-96"
       >
         {messages.length === 0 && (
           <div className="text-center text-gray-400 text-sm py-12">لا توجد رسائل بعد</div>
@@ -243,8 +242,7 @@ export function ChatPanel(props: ChatPanelProps) {
                   <audio
                     controls
                     src={m.audio_url}
-                    className="w-full"
-                    style={{ height: 32 }}
+                    className="w-full h-8"
                   />
                 ) : (
                   <div className="whitespace-pre-wrap break-words">{m.body}</div>

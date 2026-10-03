@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
 import { getOrderStatusConfig } from '@/lib/orders';
+import { getOrderPaymentAction } from '@/lib/orders/order-payment-action';
 import { ChatPanel } from '@/components/ui/chat-panel/chat-panel';
 import {
   ChevronLeft,
@@ -16,6 +17,7 @@ import {
   ChevronDown,
   ChevronUp,
   MessageCircle,
+  CreditCard,
 } from 'lucide-react';
 import {
   useOrderPolling,
@@ -118,6 +120,11 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
   }
 
   const isLocked = ['delivered', 'cancelled'].includes(order.status);
+  const paymentAction = getOrderPaymentAction({
+    status: order.status,
+    paymentStatus: order.payment_status,
+    paymentMethod: order.payment_method,
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col" dir="rtl">
@@ -140,6 +147,48 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
           {getOrderStatusConfig(order.status).label}
         </span>
       </div>
+
+      {/* Payment status banner */}
+      {paymentAction !== 'none' && (
+        <div className={`px-4 py-3 flex items-center gap-2 ${
+          paymentAction === 'pay'
+            ? 'bg-amber-50 border-b border-amber-200'
+            : 'bg-red-50 border-b border-red-200'
+        }`}>
+          <CreditCard className={`w-5 h-5 ${
+            paymentAction === 'pay' ? 'text-amber-600' : 'text-red-600'
+          }`} />
+          <div className="flex-1">
+            <div className={`text-sm font-semibold ${
+              paymentAction === 'pay' ? 'text-amber-900' : 'text-red-900'
+            }`}>
+              {paymentAction === 'pay' ? 'الدفع المعلق' : 'فشل الدفع'}
+            </div>
+            <div className={`text-xs ${
+              paymentAction === 'pay' ? 'text-amber-800' : 'text-red-800'
+            }`}>
+              {paymentAction === 'pay'
+                ? 'يرجى إكمال الدفع لتأكيد الطلب'
+                : 'فشلت محاولة الدفع. يرجى إعادة المحاولة'}
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams({
+                order_id: order.id,
+                total: order.total.toFixed(2),
+                method: order.payment_method || 'mada',
+                next: `/orders/direct/chat/${order.id}`,
+              });
+              router.push(`/checkout/pay?${params.toString()}`);
+            }}
+            className="text-xs font-bold px-3 py-1.5 rounded-lg text-white"
+            style={{ backgroundColor: BRAND.brandGreen }}
+          >
+            {paymentAction === 'pay' ? 'ادفع الآن' : 'أعد المحاولة'}
+          </button>
+        </div>
+      )}
 
       {/* Order details collapsible */}
       <div className="bg-white border-b border-gray-200">

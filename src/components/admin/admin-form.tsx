@@ -94,8 +94,7 @@ export function AdminForm({
       <form
         {...formProps}
         onSubmit={handleSubmit}
-        style={{ opacity: submitting ? 0.6 : 1, pointerEvents: submitting ? "none" : "auto" }}
-        className={`space-y-4 ${formProps.className || ""}`}
+        className={`space-y-4 ${formProps.className || ""} ${submitting ? 'opacity-60 pointer-events-none' : ''}`}
       >
       {(title || subtitle) && (
         <div className="mb-6">
