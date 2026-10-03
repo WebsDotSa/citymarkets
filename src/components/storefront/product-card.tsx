@@ -11,13 +11,23 @@ import type { Product } from "@/lib/types";
 
 interface ProductCardProps {
   product: Product;
+  /** Visual variant */
+  variant?: "card" | "grid" | "list";
   /** Horizontal scroll card (order again) */
   compact?: boolean;
   /** Priority loading for above-the-fold images (LCP optimization) */
   priority?: boolean;
+  /** Callback when add to cart is clicked (for catalog list/grid) */
+  onAdd?: () => void;
 }
 
-export function ProductCard({ product, compact, priority = false }: ProductCardProps) {
+export function ProductCard({
+  product,
+  variant = "card",
+  compact,
+  priority = false,
+  onAdd,
+}: ProductCardProps) {
   const { addItem } = useCart();
   const { isInWishlist, toggleItem } = useWishlistActions();
   const [added, setAdded] = useState(false);
@@ -42,10 +52,13 @@ export function ProductCard({ product, compact, priority = false }: ProductCardP
   const hasDiscount = price < original;
   const hasOffer = !!product.active_offer;
 
-  const handleAdd = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleAdd = (e: React.MouseEvent = {} as React.MouseEvent) => {
+    if (e.preventDefault) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     addItem(product);
+    if (onAdd) onAdd();
     setAdded(true);
     setTimeout(() => setAdded(false), 1200);
   };
@@ -71,12 +84,126 @@ export function ProductCard({ product, compact, priority = false }: ProductCardP
       ? `/vendors/${product.vendor_slug}`
       : null;
 
+  // Render variant: list (horizontal)
+  if (variant === "list") {
+    return (
+      <Link href={`/products/${product.id}`} className="block">
+        <div className="bg-white rounded-2xl shadow-sm p-3 flex gap-3 hover:shadow-md transition-shadow">
+          <div className="relative w-24 h-24 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden">
+            {product.image_url ? (
+              <Image
+                src={product.image_url}
+                alt={product.name_ar}
+                fill
+                sizes="96px"
+                className="object-cover"
+                priority={priority}
+                onLoad={() => setImageLoaded(true)}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-3xl">📦</div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-gray-800 line-clamp-2">{product.name_ar}</p>
+            {product.category_name && (
+              <p className="text-xs text-gray-400 mt-1">{product.category_name}</p>
+            )}
+            <div className="mt-2 flex items-center justify-between">
+              <div>
+                <span className="text-base font-bold text-primary">
+                  {price.toFixed(2)}ر.س
+                </span>
+                {hasDiscount && (
+                  <span className="text-xs text-gray-400 line-through ml-1">
+                    {original.toFixed(2)}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={handleAdd}
+                className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  added
+                    ? "bg-green-500 text-white"
+                    : "bg-primary text-white hover:bg-primary-dark"
+                }`}
+              >
+                {added ? "✓" : "+"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // Render variant: grid (compact catalog)
+  if (variant === "grid") {
+    return (
+      <Link href={`/products/${product.id}`} className="block">
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+          <div className="h-36 bg-gray-100 relative">
+            {product.image_url ? (
+              <Image
+                src={product.image_url}
+                alt={product.name_ar}
+                fill
+                sizes="(max-width: 640px) 50vw, 200px"
+                className="object-cover"
+                priority={priority}
+                onLoad={() => setImageLoaded(true)}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-4xl">📦</div>
+            )}
+            {hasDiscount && (
+              <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                خصم
+              </span>
+            )}
+          </div>
+          <div className="p-3">
+            <p className="text-xs text-gray-800 line-clamp-2 leading-tight min-h-[2.5rem]">
+              {product.name_ar}
+            </p>
+            {product.category_name && (
+              <p className="text-[10px] text-gray-400 mt-1">{product.category_name}</p>
+            )}
+            <div className="mt-2 flex items-center justify-between">
+              <div>
+                <span className="text-sm font-bold text-primary">
+                  {price.toFixed(2)}ร.ส
+                </span>
+                {hasDiscount && (
+                  <span className="text-[10px] text-gray-400 line-through ml-1">
+                    {original.toFixed(2)}
+                  </span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={handleAdd}
+              className={`w-full mt-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                added
+                  ? "bg-green-500 text-white"
+                  : "bg-primary text-white hover:bg-primary-dark"
+              }`}
+            >
+              {added ? "✓ أضيف" : "إضافة للسلة"}
+            </button>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // Render variant: card (default — marketplace style)
   return (
     <Link
       href={`/products/${product.id}`}
       className={`block ${compact ? "flex-shrink-0 w-[140px]" : ""}`}
     >
-      <div className="relative bg-white rounded-2xl overflow-hidden shadow-sm">
+      <div className="relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
         <div
           className={`relative bg-gradient-to-b from-violet-50/40 via-gray-50 to-white flex items-center justify-center ${
             compact ? "h-[120px]" : "aspect-square"
