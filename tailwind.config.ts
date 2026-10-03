@@ -57,6 +57,11 @@ const config: Config = {
         // weight/size. Use `className="font-display"` on the heading.
         display: ["var(--font-tajawal)", "var(--font-ibm-plex)", "system-ui", "sans-serif"],
       },
+      fontSize: {
+        // Custom sizes for 10px and 11px that replaced 208 inline text-[10px]/text-[11px] usages
+        tiny: ["0.625rem", { lineHeight: "0.875rem" }],   // 10px
+        "2xs": ["0.6875rem", { lineHeight: "0.875rem" }], // 11px
+      },
       boxShadow: {
         "soft": "0 2px 8px -2px rgba(0, 0, 0, 0.05), 0 4px 16px -4px rgba(0, 0, 0, 0.1)",
         "soft-lg": "0 4px 12px -4px rgba(0, 0, 0, 0.05), 0 8px 24px -8px rgba(0, 0, 0, 0.1)",
