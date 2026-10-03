@@ -1,4 +1,5 @@
 "use client";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 
 import { useState, useEffect, useMemo } from "react";
 import type { ReactNode } from "react";
