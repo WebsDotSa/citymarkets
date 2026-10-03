@@ -29,6 +29,7 @@ import { pool } from "@/lib/db";
 import { COOKIE_NAME, verifyCustomerToken } from "./customer-session";
 import { mapDbUserRow } from "./map-db-user";
 import { assertTokenVersionMatches } from "./auth/token-version";
+import { decryptPii } from "@/lib/security/pii-crypto";
 import type { User } from "@/lib/types";
 
 /**
@@ -63,8 +64,9 @@ export async function getServerUser(): Promise<User | null> {
     // detect a bumped version (logout / password rotation) and
     // return null. Without this, a stolen customer JWT keeps
     // full access for up to 14 days (the JWT lifetime).
-    const row = await client.query(
+    const row = await client.query<Record<string, unknown>>(
       `SELECT u.id, u.phone, u.name, u.email, u.avatar_url,
+              u.phone_encrypted, u.name_encrypted, u.email_encrypted,
               COALESCE(lp.balance, 0)::int AS loyalty_points,
               u.loyalty_tier,
               u.spin_count_today, u.last_spin_at, u.created_at, u.updated_at,
@@ -85,11 +87,35 @@ export async function getServerUser(): Promise<User | null> {
     // fail on the next request. The compare itself is centralised
     // in assertTokenVersionMatches so the customer / admin / vendor
     // verify paths cannot drift.
-    const dbTokenVersion = row.rows[0].token_version as number;
+    const rawRow = row.rows[0] as Record<string, unknown> & {
+      token_version: number;
+      phone_encrypted?: string | null;
+      name_encrypted?: string | null;
+      email_encrypted?: string | null;
+    };
+    const dbTokenVersion = rawRow.token_version as number;
     if (!assertTokenVersionMatches(payload, dbTokenVersion)) {
       return null;
     }
-    return mapDbUserRow(row.rows[0]);
+    // P0-3 PII cutover: prefer the encrypted columns (decrypted) over the
+    // plaintext columns. Falls back to the plaintext column for rows that
+    // pre-date the backfill. See user-repo.ts loadDecryptedUser for the
+    // canonical pattern; we re-implement inline because the hot path also
+    // LEFT JOINs loyalty_points and the type is widened for that.
+    const merged: Record<string, unknown> = { ...rawRow };
+    if (rawRow.phone_encrypted) {
+      const d = decryptPii(rawRow.phone_encrypted);
+      if (d != null) merged.phone = d;
+    }
+    if (rawRow.name_encrypted) {
+      const d = decryptPii(rawRow.name_encrypted);
+      if (d != null) merged.name = d;
+    }
+    if (rawRow.email_encrypted) {
+      const d = decryptPii(rawRow.email_encrypted);
+      if (d != null) merged.email = d;
+    }
+    return mapDbUserRow(merged);
   } finally {
     client.release();
   }
