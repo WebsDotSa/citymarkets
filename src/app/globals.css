@@ -1687,12 +1687,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Selection color */
-::selection {
-  background: rgba(232, 82, 42, 0.2);
-  color: #1a1a2e;
-}
-
 /* Remove number input spinners */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
