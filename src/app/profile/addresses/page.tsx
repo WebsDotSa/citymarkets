@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { PageContainer } from "@/components/ui/page-container";
 import {
   useDeliveryLocationState,
   useDeliveryLocationActions,
@@ -50,8 +51,9 @@ export default function AddressesPage() {
   const colorVars = useBrandColorVars();
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6" style={colorVars}>
-      <h1 className="text-xl font-bold text-gray-900 mb-4">عناويني</h1>
+    <div style={colorVars}>
+      <PageContainer width="narrow" padding="normal" className="py-6">
+        <h1 className="text-xl font-bold text-gray-900 mb-4">عناويني</h1>
 
       {loading && (
         <p className="text-sm text-gray-500 text-center py-8">جاري التحميل…</p>
@@ -201,6 +203,7 @@ export default function AddressesPage() {
 
       {/* Hidden: hand off to the existing add-flow modal mounted elsewhere */}
       <AddFlowMount />
+      </PageContainer>
     </div>
   );
 }
