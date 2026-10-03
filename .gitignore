@@ -93,3 +93,6 @@ ios/fastlane/.snapfile_diff.json
 .worktrees/
 ios-citymarkets/
 .env
+
+*storybook.log
+storybook-static

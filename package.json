@@ -21,7 +21,9 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:migrate:dry-run": "tsx scripts/migrate.ts --dry-run",
     "db:drift-report": "tsx scripts/migration-drift-report.ts",
-    "migration:diagnostics": "tsx scripts/migration-diagnostics.ts"
+    "migration:diagnostics": "tsx scripts/migration-diagnostics.ts",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",
@@ -71,7 +73,12 @@
     "tailwindcss": "^3.4.1",
     "tsx": "^4.23.1",
     "typescript": "^5",
-    "vitest": "^2.1.9"
+    "vitest": "^2.1.9",
+    "@storybook/nextjs-vite": "^10.6.1",
+    "@storybook/addon-a11y": "^10.6.1",
+    "@storybook/addon-docs": "^10.6.1",
+    "@storybook/addon-mcp": "^10.6.1",
+    "vite": "latest"
   },
   "overrides": {
     "sharp": "^0.35.0",
