@@ -157,7 +157,7 @@ function makeBody(token: string): Record<string, unknown> {
   return {
     items: [],
     vendor_groups: [],
-    paymentMethod: token,
+    payment_method: token,
     idempotency_key: "test-idem-key-12345",
   };
 }

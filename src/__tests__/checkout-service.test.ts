@@ -202,7 +202,7 @@ describe("CheckoutService — scheduled delivery", () => {
         scheduled: true,
         scheduled_for: "2026-10-01T10:00:00Z",
         slot_id: "slot-abc",
-        deliveryType: "pickup",
+        delivery_type: "pickup",
         idempotency_key: "k-idem-1234567890",
       },
     });

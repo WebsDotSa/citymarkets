@@ -273,7 +273,7 @@ export async function runCheckout(
     }
     scheduledFor = new Date(v.scheduled_for);
     slotId = v.slot_id;
-    if ((v.deliveryType ?? v.delivery_type ?? "delivery") === "pickup") {
+    if ((v.delivery_type ?? "delivery") === "pickup") {
       return {
         kind: "validation_error",
         status: 400,
@@ -315,7 +315,7 @@ export async function runCheckout(
       txOpen = true;
     }
 
-    const deliveryMode = (v.deliveryType ?? v.delivery_type ?? "delivery") as
+    const deliveryMode = (v.delivery_type ?? "delivery") as
       | "delivery"
       | "pickup";
     // PC P-135: canonicalise legacy payment-method tokens at the
@@ -330,9 +330,9 @@ export async function runCheckout(
     // unknown tokens, surfacing the bug at the boundary instead of
     // letting garbage reach the DB.
     const paymentMethod = resolvePaymentMethod(
-      (v.paymentMethod ?? v.payment_method ?? "mada") as string | null | undefined,
+      (v.payment_method ?? "mada") as string | null | undefined,
     );
-    const addressId = (v.addressId ?? v.address_id) as string | undefined;
+    const addressId = (v.address_id) as string | undefined;
     const couponCode = v.coupon_code ?? null;
     const pointsRequested = v.points_redeemed ?? 0;
 
@@ -518,11 +518,8 @@ interface ValidatedCheckoutBody {
     vendor_id?: string;
     items: Array<{ product_id: string; quantity: number }>;
   }>;
-  addressId?: string | null;
   address_id?: string | null;
-  paymentMethod?: string;
   payment_method?: string;
-  deliveryType?: "delivery" | "pickup";
   delivery_type?: "delivery" | "pickup";
   coupon_code?: string | null;
   points_redeemed?: number;
@@ -531,7 +528,7 @@ interface ValidatedCheckoutBody {
   scheduled?: boolean;
   scheduled_for?: string;
   slot_id?: string;
-  guestInfo?: {
+  guest_info?: {
     name?: string;
     phone?: string;
     city?: string;
@@ -560,17 +557,17 @@ async function resolveGuestInfo(
     email: string | null;
     lat: number | null;
     lng: number | null;
-  } | null = v.guestInfo
+  } | null = v.guest_info
     ? {
-        name: v.guestInfo.name ?? v.name ?? null,
-        phone: v.guestInfo.phone ?? v.phone ?? null,
-        city: v.guestInfo.city ?? null,
-        district: v.guestInfo.district ?? null,
-        street: v.guestInfo.street ?? null,
-        building_number: v.guestInfo.building_number ?? null,
-        email: v.guestInfo.email ?? null,
-        lat: v.guestInfo.lat != null ? Number(v.guestInfo.lat) : null,
-        lng: v.guestInfo.lng != null ? Number(v.guestInfo.lng) : null,
+        name: v.guest_info.name ?? v.name ?? null,
+        phone: v.guest_info.phone ?? v.phone ?? null,
+        city: v.guest_info.city ?? null,
+        district: v.guest_info.district ?? null,
+        street: v.guest_info.street ?? null,
+        building_number: v.guest_info.building_number ?? null,
+        email: v.guest_info.email ?? null,
+        lat: v.guest_info.lat != null ? Number(v.guest_info.lat) : null,
+        lng: v.guest_info.lng != null ? Number(v.guest_info.lng) : null,
       }
     : v.name || v.phone
       ? {
