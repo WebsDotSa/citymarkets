@@ -459,13 +459,23 @@ export function CatalogPage() {
           viewMode === "grid" ? (
             <div className="grid grid-cols-3 gap-2">
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  variant="grid"
+                  onAdd={() => addItem(product)}
+                />
               ))}
             </div>
           ) : (
             <div className="space-y-3">
               {products.map((product) => (
-                <ProductCardList key={product.id} product={product} onAdd={() => addItem(product)} />
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  variant="list"
+                  onAdd={() => addItem(product)}
+                />
               ))}
             </div>
           )
@@ -539,115 +549,3 @@ export function CatalogPage() {
   );
 }
 
-function ProductCardGrid({ product, onAdd }: { product: Product; onAdd: () => void }) {
-  const [added, setAdded] = useState(false);
-
-  const handleAdd = () => {
-    onAdd();
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
-  };
-
-  return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-      <div className="h-36 bg-gray-100 relative">
-        {product.image_url ? (
-          <Image
-            src={product.image_url}
-            alt={product.name_ar}
-            fill
-            sizes="(max-width: 640px) 50vw, 200px"
-            className="object-cover"
-            unoptimized
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full text-4xl">📦</div>
-        )}
-        {product.discount_price && (
-          <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
-            خصم
-          </span>
-        )}
-      </div>
-      <div className="p-3">
-        <p className="text-xs text-gray-800 line-clamp-2 leading-tight min-h-[2.5rem]">
-          {product.name_ar}
-        </p>
-        {product.category_name && (
-          <p className="text-[10px] text-gray-400 mt-1">{product.category_name}</p>
-        )}
-        <div className="mt-2 flex items-center justify-between">
-          <div>
-            <span className="text-sm font-bold text-primary">
-              {product.discount_price || product.price}ر.س
-            </span>
-            {product.discount_price && (
-              <span className="text-[10px] text-gray-400 line-through mr-1">{product.price}</span>
-            )}
-          </div>
-        </div>
-        <button
-          onClick={handleAdd}
-          className={`w-full mt-2 py-2 rounded-lg text-xs font-medium transition-all ${
-            added ? "bg-green-500 text-white" : "bg-primary text-white"
-          }`}
-        >
-          {added ? "✓ أضيف" : "إضافة للسلة"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ProductCardList({ product, onAdd }: { product: Product; onAdd: () => void }) {
-  const [added, setAdded] = useState(false);
-
-  const handleAdd = () => {
-    onAdd();
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
-  };
-
-  return (
-    <div className="bg-white rounded-2xl shadow-sm p-3 flex gap-3">
-      <div className="relative w-24 h-24 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden">
-        {product.image_url ? (
-          <Image
-            src={product.image_url}
-            alt={product.name_ar}
-            fill
-            sizes="96px"
-            className="object-cover"
-            unoptimized
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full text-3xl">📦</div>
-        )}
-      </div>
-      <div className="flex-1">
-        <p className="text-sm text-gray-800 line-clamp-2">{product.name_ar}</p>
-        {product.category_name && (
-          <p className="text-xs text-gray-400 mt-1">{product.category_name}</p>
-        )}
-        <div className="mt-2 flex items-center justify-between">
-          <div>
-            <span className="text-base font-bold text-primary">
-              {product.discount_price || product.price}ر.س
-            </span>
-            {product.discount_price && (
-              <span className="text-xs text-gray-400 line-through mr-1">{product.price}</span>
-            )}
-          </div>
-          <button
-            onClick={handleAdd}
-            className={`px-4 py-2 rounded-lg text-xs font-medium ${
-              added ? "bg-green-500 text-white" : "bg-primary text-white"
-            }`}
-          >
-            {added ? "✓" : "+"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
