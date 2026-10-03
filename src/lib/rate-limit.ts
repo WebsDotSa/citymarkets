@@ -677,6 +677,26 @@ export const PAYMENT_METHOD_PATCH_IP_CONFIG: RateLimitConfig = {
 };
 
 /**
+ * Generic admin write endpoint rate limit (PCP-170 Phase 16).
+ *
+ * Used for admin write endpoints that mutate shared/admin-visible
+ * state (orders, vendors, coupons, reviews, etc.). Auth-gated so the
+ * blast radius is small, but a leaked admin JWT can still do damage
+ * — a 5/min/IP ceiling stops the leak from being a firehose.
+ */
+export const ADMIN_WRITE_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,  // 1 minute
+  maxRequests: 30,
+  keyPrefix: 'admin:write',
+};
+
+export const ADMIN_WRITE_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,  // 1 minute
+  maxRequests: 60,
+  keyPrefix: 'admin:write:ip',
+};
+
+/**
  * Create rate limit response headers
  */
 export function createRateLimitHeaders(result: RateLimitResult): Record<string, string> {
