@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { Sparkles, Tag } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageContainer } from "@/components/ui/page-container";
 import { OfferCard, type OfferCardData } from "@/components/storefront/offer-card";
 
 interface OffersBrowserProps {
@@ -18,32 +19,35 @@ interface OffersBrowserProps {
 export function OffersBrowser({ featured, offers, totalCount }: OffersBrowserProps) {
   if (totalCount === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 py-16">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-100 to-orange-100 flex items-center justify-center mb-4">
-          <Tag className="w-10 h-10 text-pink-500" />
+      <PageContainer width="narrow" padding="normal">
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center py-16">
+          <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+            <Tag className="w-10 h-10 text-gray-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-secondary mb-2">لا توجد عروض حالياً</h1>
+          <p className="text-sm text-gray-500 max-w-sm">
+            عذراً، لا توجد عروض نشطة في الوقت الحالي. تابعنا للاطلاع على أحدث التخفيضات فور إطلاقها.
+          </p>
+          <Link
+            href="/catalog"
+            className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-dark transition-colors"
+          >
+            تصفّح المنتجات
+          </Link>
         </div>
-        <h1 className="text-2xl font-bold text-secondary mb-2">لا توجد عروض حالياً</h1>
-        <p className="text-sm text-gray-500 max-w-sm">
-          عذراً، لا توجد عروض نشطة في الوقت الحالي. تابعنا للاطلاع على أحدث التخفيضات فور إطلاقها.
-        </p>
-        <Link
-          href="/catalog"
-          className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-dark transition-colors"
-        >
-          تصفّح المنتجات
-        </Link>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="space-y-8 px-3 sm:px-4 py-6 max-w-6xl mx-auto">
-      {/* Page header */}
-      <PageHeader
-        title="كل العروض"
-        subtitle={`${totalCount} عرض نشط • خصومات محدّثة يومياً`}
-        icon={<Sparkles className="w-6 h-6 text-primary" />}
-      />
+    <PageContainer width="wide" padding="normal">
+      <div className="space-y-8 py-6">
+        {/* Page header */}
+        <PageHeader
+          title="كل العروض"
+          subtitle={`${totalCount} عرض نشط • خصومات محدّثة يومياً`}
+          icon={<Sparkles className="w-6 h-6 text-primary" />}
+        />
 
       {/* Featured carousel (if any) */}
       {featured.length > 0 ? (
@@ -69,6 +73,7 @@ export function OffersBrowser({ featured, offers, totalCount }: OffersBrowserPro
           ))}
         </div>
       </section>
-    </div>
+      </div>
+    </PageContainer>
   );
 }
