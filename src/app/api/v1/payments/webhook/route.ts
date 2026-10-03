@@ -1,45 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { pool } from '@/lib/db';
 import { fetchPayment, mapMoyasarStatusToDb, isSarCurrency } from '@/lib/payments/moyasar';
 import { finalizePaymentEvent } from '@/lib/payments/event-ledger';
 import { reconcilePayment } from '@/lib/payments/reconcile-payment';
+import { verifyWebhookToken } from '@/lib/payments/webhook-secrets';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
 /**
- * Constant-time string comparison to prevent timing attacks.
- * Refuses to compare if either input is empty or lengths differ.
+ * Verify the Moyasar webhook auth header.
+ *
+ * P0-2 (security Phase 1, 2026-10-03): delegated to
+ * `verifyWebhookToken('moyasar', token)` which consults the
+ * `webhook_secrets` registry and falls back to the env-var name
+ * when no DB rows are present. See webhook-secrets.ts for the
+ * rotation runbook.
+ *
+ * SECURITY (Pay-C4): never accept webhooks without a configured
+ * secret. The dev-only escape hatch `ALLOW_INSECURE_WEBHOOK=1`
+ * still works.
  */
-function safeEqual(a: string, b: string): boolean {
-  if (!a || !b || a.length !== b.length) return false;
-  try {
-    return crypto.timingSafeEqual(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
-  } catch {
-    return false;
-  }
-}
-
-function verifyWebhookAuth(request: NextRequest): boolean {
-  const secret = process.env.MOYASAR_WEBHOOK_SECRET?.trim();
-
-  // SECURITY (Pay-C4): never accept webhooks without a configured secret.
-  // Previously we returned `NODE_ENV !== 'production'` here, but that meant
-  // any staging/dev deployment exposed to the public internet could be
-  // hit with forged "Paid" payloads — turning into free loyalty credit.
-  // Refuse explicitly unless the dev-only escape hatch
-  // ALLOW_INSECURE_WEBHOOK=1 is set (for local ngrok testing only).
-  if (!secret) {
-    return process.env.ALLOW_INSECURE_WEBHOOK === '1';
-  }
-
+async function verifyWebhookAuth(request: NextRequest): Promise<boolean> {
   const auth = request.headers.get('authorization');
   const token = auth?.startsWith('Bearer ')
     ? auth.slice(7).trim()
     : request.headers.get('x-webhook-secret');
 
-  if (!token) return false;
-  return safeEqual(token, secret);
+  if (!token) {
+    // If no token is supplied AND the dev escape hatch is set,
+    // allow through. (Same behaviour as the pre-fix code path.)
+    if (!process.env.MOYASAR_WEBHOOK_SECRET && process.env.ALLOW_INSECURE_WEBHOOK === '1') {
+      return true;
+    }
+    return false;
+  }
+
+  const result = await verifyWebhookToken('moyasar', token);
+  return result.ok;
 }
 
 // FIX (P1-4): mapPaymentDbStatus moved to @/lib/payments/moyasar as
@@ -48,7 +45,7 @@ function verifyWebhookAuth(request: NextRequest): boolean {
 // 'refunded' as 'pending', which stranded the row after a refund event.
 
 export async function POST(request: NextRequest) {
-  if (!verifyWebhookAuth(request)) {
+  if (!(await verifyWebhookAuth(request))) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
