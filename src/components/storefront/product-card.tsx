@@ -205,7 +205,7 @@ export function ProductCard({
     >
       <div className="relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
         <div
-          className={`relative bg-gradient-to-b from-violet-50/40 via-gray-50 to-white flex items-center justify-center ${
+          className={`relative bg-gray-50 flex items-center justify-center ${
             compact ? "h-[120px]" : "aspect-square"
           }`}
         >
@@ -226,7 +226,7 @@ export function ProductCard({
           )}
           {hasOffer && (
             <span
-              className="absolute top-2 right-2 inline-flex items-center gap-1 bg-gradient-to-r from-pink-500 to-orange-500 text-white text-tiny font-bold px-2 py-1 rounded-full shadow"
+              className="absolute top-2 right-2 inline-flex items-center gap-1 bg-amber-500 text-white text-tiny font-bold px-2 py-1 rounded-full shadow"
               aria-label={`عرض: ${product.active_offer?.title_ar ?? "عرض خاص"}`}
             >
               <Sparkles className="w-3 h-3" />

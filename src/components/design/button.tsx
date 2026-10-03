@@ -38,9 +38,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: `
-        bg-gradient-to-l from-primary to-primary-500
-        text-white shadow-lg shadow-primary/25
-        hover:shadow-xl hover:shadow-primary/30 hover:from-primary-dark hover:to-primary
+        bg-primary text-white
+        shadow-lg shadow-primary/25
+        hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/30
         focus-visible:ring-primary
         active:scale-[0.98]
       `,
