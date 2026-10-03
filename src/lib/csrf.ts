@@ -1,8 +1,51 @@
 /**
- * CSRF Protection using Double-Submit Cookie Pattern
+ * CSRF Protection — Synchronizer Token Pattern with HTTPOnly cookie.
  *
- * This provides protection against Cross-Site Request Forgery attacks
- * by requiring a matching token in both a cookie and the request header/body.
+ * Security model (P2-2 / 2026-10-03):
+ *   The cookie `csrf_token` is now `httpOnly: true` so JavaScript in the
+ *   page can no longer read it. The browser still auto-attaches the
+ *   cookie on same-site requests (because `sameSite: "strict"`), which
+ *   is what allows the server to do a constant-time comparison against
+ *   the `x-csrf-token` header the client echoes.
+ *
+ *   The header is a defense-in-depth echo. The PRIMARY defenses are:
+ *     1. `httpOnly: true` — prevents XSS payloads from stealing the
+ *        secret cookie value out of `document.cookie`. The token is
+ *        material only to the server and the application's own JS
+ *        (which obtains it via `GET /api/v1/auth/csrf`, a same-origin
+ *        response that the server itself reads the cookie from).
+ *     2. `sameSite: "strict"` — prevents the cookie from being
+ *        auto-attached to cross-site requests. This is the actual
+ *        CSRF gate: a third-party form post can not include the
+ *        cookie, so the server comparison can never succeed.
+ *
+ *   An XSS that can read the header from the DOM can already do
+ *   anything the application can do — the point of HTTPOnly is to
+ *   prevent the cookie from being exfiltrated for use in a separate
+ *   non-DOM context (e.g. CSRF from a server-side script or a
+ *   sibling-origin XSS).
+ *
+ *   The previously-documented Double-Submit Cookie Pattern (where the
+ *   JS read it from `document.cookie` and echoed it) was removed
+ *   because that cookie visibility was the load-bearing vulnerability:
+ *   any XSS could read the token and forge the header.
+ *
+ * Compatibility (single-instance only):
+ *   The token lives only in the HTTPOnly cookie. The new endpoint
+ *   `/api/v1/auth/csrf` returns the current value to the client so it
+ *   can echo it as a header. There is no separate server-side store.
+ *   If we ever scale to multiple Node instances behind a load
+ *   balancer, the cookie still works (same value on every node) but
+ *   `getOrIssueCsrfToken` and rotation logic would need to move into
+ *   Redis. The TODO is captured below — the single-instance design is
+ *   correct for the current production topology (one app container).
+ *
+ *   TODO(security/p5-csrf-httponly): when the app moves to a
+ *   horizontally-scaled deployment, move the per-session token into
+ *   Redis keyed by `session_id` so a token issued by one instance can
+ *   be validated by another. The current cookie-as-state approach is
+ *   correct only because every request lands on the same Node
+ *   process that minted the cookie.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -31,27 +74,67 @@ export function generateCsrfToken(): string {
 }
 
 /**
- * Get or create CSRF token for the current session
+ * Get or create CSRF token for the current request.
+ *
+ * Reads the HTTPOnly cookie. If missing, generates a fresh token and
+ * sets the cookie on the supplied response. Returns the token so the
+ * caller can include it in a JSON body — this is the channel the
+ * client uses to obtain the token for header echoing.
+ *
+ * Most callers should NOT use this helper; it is reserved for the
+ * `/api/v1/auth/csrf` endpoint and any future server-rendered form
+ * integration. Per-route validation goes through `validateCsrfToken`.
+ */
+export async function getOrIssueCsrfToken(
+  request: NextRequest,
+  response: NextResponse,
+): Promise<string> {
+  const existingToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;
+  if (existingToken) return existingToken;
+  const fresh = generateCsrfToken();
+  response.cookies.set(CSRF_COOKIE_NAME, fresh, {
+    httpOnly: true,
+    secure: isCookieSecure(),
+    sameSite: "strict",
+    maxAge: CSRF_COOKIE_MAX_AGE,
+    path: "/",
+  });
+  return fresh;
+}
+
+/**
+ * Get the existing CSRF token from the cookie store, or generate a
+ * fresh one if missing. Used by Server Components / Route Handlers
+ * that only need a token value (e.g. embedding it in a server-rendered
+ * form field). Does NOT set the cookie — callers that need to set it
+ * on a response should use `getOrIssueCsrfToken(request, response)`.
  */
 export async function getCsrfToken(): Promise<string> {
   const cookieStore = await cookies();
   const existingToken = cookieStore.get(CSRF_COOKIE_NAME)?.value;
-
-  if (existingToken) {
-    return existingToken;
-  }
-
+  if (existingToken) return existingToken;
   return generateCsrfToken();
 }
 
 /**
- * Set CSRF cookie in response
+ * Set CSRF cookie on a response. The cookie is HTTPOnly so browser JS
+ * cannot read it — see the file-level comment for the security model.
+ *
+ * Most callers should prefer `getOrIssueCsrfToken` so they can read
+ * the same token back and return it to the client; this helper is for
+ * the rare case where a Route Handler only needs to mint a cookie
+ * (e.g. a refresh path that returns no body).
  */
 export function setCsrfCookie(response: NextResponse): NextResponse {
   const token = generateCsrfToken();
 
   response.cookies.set(CSRF_COOKIE_NAME, token, {
-    httpOnly: false, // Must be readable by JavaScript for the double-submit pattern
+    // SECURITY (P2-2): HTTPOnly now. JS in the page can NOT read this
+    // cookie. The server still reads it from `request.cookies` for the
+    // header-vs-cookie comparison in `validateCsrfToken`. Cross-site
+    // requests can't include the cookie (SameSite=strict), so they
+    // can never satisfy the comparison.
+    httpOnly: true,
     secure: isCookieSecure(),
     sameSite: "strict",
     maxAge: CSRF_COOKIE_MAX_AGE,
@@ -70,16 +153,29 @@ export interface CsrfValidationResult {
 }
 
 /**
- * Validate CSRF token from request
- * Uses the double-submit cookie pattern:
- * 1. Token in cookie (set automatically by browser)
- * 2. Token in header (must be sent by client)
+ * Validate CSRF token from request.
+ *
+ * Synchronizer Token Pattern: the client sends the cookie's value as
+ * the `x-csrf-token` header. The server reads the HTTPOnly cookie
+ * (which the browser auto-attached for a same-site request) and
+ * compares it to the header with constant-time equality. Cross-site
+ * requests can NOT include the cookie (SameSite=strict), so the
+ * comparison never succeeds for them.
+ *
+ * The header is itself defense-in-depth — an XSS that can read the
+ * header from the DOM can already do anything the application can do,
+ * but at least the cookie value is not exfiltratable from JS for use
+ * in a separate non-DOM context (server-side CSRF scripts, sibling
+ * origins, etc).
  */
 export function validateCsrfToken(request: NextRequest): CsrfValidationResult {
-  // Get the cookie token
+  // Get the cookie token — auto-attached by the browser for same-site
+  // requests because the cookie is SameSite=strict. Cross-site requests
+  // do NOT include it, which is the primary CSRF defense.
   const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;
 
-  // Get the header token
+  // Get the header token — set by trusted application JS via
+  // `csrfFetch` after fetching it from `GET /api/v1/auth/csrf`.
   const headerToken = request.headers.get(CSRF_HEADER_NAME);
 
   // Both tokens must be present
