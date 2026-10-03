@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { couponInputSchema } from '@/lib/validation';
+import { logAdminAction } from "@/lib/admin-audit";
 
 import { error as logError } from '@/lib/logger';
 
@@ -53,6 +54,15 @@ export async function POST(request: NextRequest) {
       'INSERT INTO coupons (code, type, value, min_order, max_discount, max_uses, source, expires_at, is_active) VALUES ($1, $2::coupon_type_enum, $3, $4, $5, $6, $7::coupon_source_enum, $8, $9) RETURNING id',
       [code, type, value ?? null, min_order ?? null, max_discount ?? null, max_uses ?? null, source, expires_at || null, is_active !== false]
     );
+    // P1-2 (security Phase 4, 2026-10-03): coupon codes are a high-
+    // value abuse vector (admin-issued codes for self, or for
+    // accomplices) so the create event is audited with full payload.
+    await logAdminAction(gate.admin, "coupon.create", {
+      entityType: "coupon",
+      entityId: result.rows[0].id,
+      details: { code, type, value, min_order, max_discount, max_uses, source, expires_at, is_active: is_active !== false },
+      request,
+    });
     return NextResponse.json({ success: true, data: { id: result.rows[0].id } });
   } catch (error) {
     logError('Create coupon error:', error);
@@ -88,6 +98,15 @@ export async function PUT(request: NextRequest) {
               max_uses = $6, source = $7::coupon_source_enum, expires_at = $8, is_active = $9 WHERE id = $10`,
       [code, type, value ?? null, min_order ?? null, max_discount ?? null, max_uses ?? null, source, expires_at || null, is_active !== false, idCheckResult]
     );
+    // P1-2: audit the update so a discount change post-launch is
+    // traceable (e.g. an admin raising max_uses from 100 to 10000
+    // for an accomplice's code).
+    await logAdminAction(gate.admin, "coupon.update", {
+      entityType: "coupon",
+      entityId: idCheckResult,
+      details: { code, type, value, max_uses, is_active: is_active !== false },
+      request,
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     logError('Update coupon error:', error);
@@ -103,6 +122,15 @@ export async function DELETE(request: NextRequest) {
     const idCheckResult = idCheck(url);
     if (typeof idCheckResult !== 'string') return idCheckResult;
     await query('DELETE FROM coupons WHERE id = $1', [idCheckResult]);
+    // P1-2: delete is destructive — the coupon code is gone, so
+    // a missing audit row would be a coverage gap. Capture the
+    // delete event with the id (the code is unrecoverable after
+    // delete but the id ties the audit row to the legacy PK).
+    await logAdminAction(gate.admin, "coupon.delete", {
+      entityType: "coupon",
+      entityId: idCheckResult,
+      request,
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ success: false, error: 'فشل حذف الكوبون' }, { status: 500 });

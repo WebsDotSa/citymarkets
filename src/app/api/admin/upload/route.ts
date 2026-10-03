@@ -4,6 +4,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { uploadToR2, deleteFromR2 } from '@/lib/r2';
+import { logAdminAction } from "@/lib/admin-audit";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
@@ -268,6 +269,27 @@ export async function POST(request: NextRequest) {
         r2: finalImageUrl !== localImageUrlAbsolute,
       },
     });
+    // P1-2 (security Phase 4, 2026-10-03): the upload endpoint is
+    // a content-control surface. Auditing lets the operator trace
+    // a malicious asset (e.g. an XSS payload in a banner SVG) back
+    // to the admin who introduced it. Fire-and-forget — the audit
+    // insert is best-effort and logs its own errors, and we do not
+    // want the upload response to wait on it.
+    void logAdminAction(
+      // The `gate` union narrows to `{ admin }` because the
+      // `if (gate instanceof NextResponse) return gate;` check at
+      // the top of this handler already excluded the response path.
+      // The cast is needed because TypeScript 5.9 does not narrow
+      // the union inside this nested scope without an explicit
+      // assignment; the runtime check is the load-bearing one.
+      (gate as { admin: import("@/lib/identity").VerifiedAdminJwt }).admin,
+      "upload.create",
+      {
+        entityType: "upload",
+        details: { folder, filename, mimetype },
+        request,
+      },
+    );
   } catch (error: unknown) {
     logError('Upload error:', error);
     // Don't expose internal error details to client

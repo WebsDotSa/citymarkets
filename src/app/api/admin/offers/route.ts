@@ -12,6 +12,7 @@ import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { offerInputSchema } from "@/lib/validation";
 import { cache } from "@/lib/cache";
+import { logAdminAction } from "@/lib/admin-audit";
 import { error as logError } from "@/lib/logger";
 import { parsePagination } from "@/lib/api/pagination";
 
@@ -191,6 +192,22 @@ export async function POST(request: NextRequest) {
 
     await client.query("COMMIT");
     cache.invalidatePattern("offers:");
+
+    // P1-2 (security Phase 4, 2026-10-03): audit the offer create.
+    // Discounts are a common abuse vector (loyalty credit, free
+    // shipping, targeted price drops) so attribution + payload
+    // capture matters.
+    await logAdminAction(gate.admin, "offer.create", {
+      entityType: "offer",
+      entityId: offerId,
+      details: {
+        title_ar: parsed.data.title_ar,
+        discount_type: parsed.data.discount_type,
+        discount_value: parsed.data.discount_value,
+        target_count: parsed.data.targets.length,
+      },
+      request,
+    });
 
     return NextResponse.json({ success: true, data: { id: offerId } });
   } catch (error) {
