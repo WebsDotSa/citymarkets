@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
 import { getOrderStatusConfig } from '@/lib/orders';
 import { getOrderPaymentAction } from '@/lib/orders/order-payment-action';
+import { useBrandColorVars } from '@/hooks/use-color-vars';
 import { ChatPanel } from '@/components/ui/chat-panel/chat-panel';
 import {
   ChevronLeft,
@@ -47,6 +48,7 @@ import {
  */
 export function DirectOrderChatPage({ orderId }: { orderId: string }) {
   const router = useRouter();
+  const colorVars = useBrandColorVars();
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [addingItem, setAddingItem] = useState(false);
   const [newItemText, setNewItemText] = useState('');
@@ -95,22 +97,22 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND.brandGreen }} />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl" style={colorVars}>
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--brand-green)' }} />
       </div>
     );
   }
 
   if (error || !order) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir="rtl">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir="rtl" style={colorVars}>
         <div className="text-center">
           <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-3" />
           <p className="text-red-600">{error || 'الطلب غير موجود'}</p>
           <button
             onClick={() => router.push('/orders')}
             className="mt-4 px-6 py-2 rounded-xl text-white"
-            style={{ backgroundColor: BRAND.brandGreen }}
+            style={{ backgroundColor: 'var(--brand-green)' }}
           >
             طلباتي
           </button>
@@ -127,11 +129,11 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-gray-50 flex flex-col" dir="rtl" style={colorVars}>
       {/* Header */}
       <div
         className="text-white px-4 py-3 flex items-center gap-3 flex-shrink-0 shadow-md"
-        style={{ backgroundColor: BRAND.brandGreen }}
+        style={{ backgroundColor: 'var(--brand-green)' }}
       >
         <button onClick={() => router.push('/orders')} className="p-1" aria-label="طلباتي">
           <ChevronLeft className="w-6 h-6" />
@@ -183,7 +185,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
               router.push(`/checkout/pay?${params.toString()}`);
             }}
             className="text-xs font-bold px-3 py-1.5 rounded-lg text-white"
-            style={{ backgroundColor: BRAND.brandGreen }}
+            style={{ backgroundColor: 'var(--brand-green)' }}
           >
             {paymentAction === 'pay' ? 'ادفع الآن' : 'أعد المحاولة'}
           </button>
@@ -197,7 +199,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
           className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-bold"
         >
           <span className="flex items-center gap-2">
-            <Package className="w-4 h-4" style={{ color: BRAND.brandGreen }} />
+            <Package className="w-4 h-4" style={{ color: 'var(--brand-green)' }} />
             تفاصيل الطلب
             <span className="text-xs font-normal text-gray-500">
               ({items.length} عناصر · {order.total.toFixed(2)} ر.س)
@@ -284,7 +286,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
                         onClick={addItem}
                         disabled={adding}
                         className="flex-1 text-white text-xs py-1.5 rounded flex items-center justify-center gap-1 disabled:opacity-50"
-                        style={{ backgroundColor: BRAND.brandGreen }}
+                        style={{ backgroundColor: 'var(--brand-green)' }}
                       >
                         {adding ? <Loader2 className="w-3 h-3 animate-spin" /> : 'تأكيد'}
                       </button>
@@ -300,7 +302,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
                   <button
                     onClick={() => setAddingItem(true)}
                     className="w-full text-xs py-2 rounded-lg border border-dashed flex items-center justify-center gap-1"
-                    style={{ borderColor: BRAND.brandGreen, color: BRAND.brandGreen }}
+                    style={{ borderColor: 'var(--brand-green)', color: 'var(--brand-green)' }}
                   >
                     <Plus className="w-3 h-3" /> أضف منتجاً
                   </button>
