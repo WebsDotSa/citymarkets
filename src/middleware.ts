@@ -226,8 +226,21 @@ function csrfErrorResponse(): NextResponse {
 }
 
 /**
- * Auto-issue CSRF cookie on first visit so the client can read it and
- * echo it in the `x-csrf-token` header on subsequent mutating requests.
+ * Auto-issue CSRF cookie on first visit so the server-side gate has a
+ * token to compare against the `x-csrf-token` header.
+ *
+ * SECURITY (P2-2 / 2026-10-03): the cookie is now `httpOnly: true` so
+ * JavaScript in the page can NOT read it. The token reaches the
+ * application JS via the `GET /api/v1/auth/csrf` endpoint, which reads
+ * the cookie on the server side and returns the value as JSON.
+ *
+ * Cookie attributes:
+ *   - httpOnly: true  → XSS cannot read the cookie.
+ *   - secure: <env>   → cookie only travels over HTTPS in production.
+ *   - sameSite: strict → cross-site requests do not include it; that
+ *                       is the actual CSRF gate.
+ *   - maxAge: 24h     → long enough for a session, short enough that
+ *                       abandoned tabs do not retain a usable token.
  */
 function ensureCsrfCookie(
   request: NextRequest,
@@ -237,7 +250,7 @@ function ensureCsrfCookie(
   if (!token) {
     token = generateCsrfToken();
     response.cookies.set(CSRF_COOKIE_NAME, token, {
-      httpOnly: false,
+      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",

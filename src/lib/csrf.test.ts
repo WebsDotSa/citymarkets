@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import {
   generateCsrfToken,
   getCsrfToken,
+  getOrIssueCsrfToken,
   setCsrfCookie,
   requiresCsrfProtection,
   validateCsrfRequest,
@@ -235,10 +236,71 @@ describe("setCsrfCookie", () => {
     const [name, value, opts] = set.mock.calls[0];
     expect(name).toBe(CSRF_COOKIE_NAME);
     expect(value).toMatch(/^[0-9a-f]{64}$/);
-    expect(opts.httpOnly).toBe(false);
+    // SECURITY (P2-2): the cookie is now HTTPOnly. JS in the page can
+    // NOT read it — the load-bearing defence against an XSS exfiltrating
+    // the CSRF token.
+    expect(opts.httpOnly).toBe(true);
     expect(opts.sameSite).toBe("strict");
     expect(opts.path).toBe("/");
     expect(opts.maxAge).toBe(60 * 60 * 24);
+  });
+});
+
+describe("getOrIssueCsrfToken", () => {
+  /**
+   * Minimal NextRequest stub for `getOrIssueCsrfToken` — we only need
+   * `cookies.get` and the response has to expose `cookies.set`.
+   */
+  function makeReqResp(opts: {
+    cookieValue?: string;
+  }): {
+    req: NextRequest;
+    res: { cookies: { set: ReturnType<typeof vi.fn> } };
+  } {
+    const req = {
+      cookies: {
+        get: (name: string) =>
+          name === CSRF_COOKIE_NAME && opts.cookieValue
+            ? { name, value: opts.cookieValue }
+            : undefined,
+      },
+    } as unknown as NextRequest;
+    const res = { cookies: { set: vi.fn() } };
+    return { req, res };
+  }
+
+  it("returns the existing cookie value without issuing a new one", async () => {
+    const { req, res } = makeReqResp({ cookieValue: "existing-token" });
+    const token = await getOrIssueCsrfToken(req, res as never);
+    expect(token).toBe("existing-token");
+    expect(res.cookies.set).not.toHaveBeenCalled();
+  });
+
+  it("mints and sets a fresh HTTPOnly cookie when none exists", async () => {
+    const { req, res } = makeReqResp({});
+    const token = await getOrIssueCsrfToken(req, res as never);
+    expect(token).toMatch(/^[0-9a-f]{64}$/);
+    expect(res.cookies.set).toHaveBeenCalledTimes(1);
+    const [name, value, opts] = res.cookies.set.mock.calls[0];
+    expect(name).toBe(CSRF_COOKIE_NAME);
+    expect(value).toBe(token);
+    // The cookie must be HTTPOnly so JS can't read it.
+    expect(opts.httpOnly).toBe(true);
+    expect(opts.sameSite).toBe("strict");
+    expect(opts.path).toBe("/");
+    expect(opts.maxAge).toBe(60 * 60 * 24);
+  });
+
+  it("issues a different token each time when called repeatedly with no cookie", async () => {
+    const a = await getOrIssueCsrfToken(
+      { cookies: { get: () => undefined } } as unknown as NextRequest,
+      { cookies: { set: vi.fn() } } as never,
+    );
+    const b = await getOrIssueCsrfToken(
+      { cookies: { get: () => undefined } } as unknown as NextRequest,
+      { cookies: { set: vi.fn() } } as never,
+    );
+    expect(a).not.toBe(b);
   });
 });
 
