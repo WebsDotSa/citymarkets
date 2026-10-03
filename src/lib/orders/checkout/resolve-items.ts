@@ -16,6 +16,105 @@
 
 import { CITY_MARKETS_VENDOR_ID } from "@/lib/types";
 import { queryMany, queryOne, type Queryable } from "@/lib/db/typed";
+import {
+  computeOfferEffectivePrice,
+  isOfferLive,
+  type ProductForOffer,
+} from "@/lib/catalog/offers";
+import type { OfferDiscountType } from "@/lib/types";
+
+interface OfferLike {
+  id: string;
+  discount_type: OfferDiscountType;
+  discount_value: number;
+  max_discount: number | null;
+  min_order: number | null;
+  starts_at: Date | string;
+  ends_at: Date | string;
+  is_active: boolean;
+}
+
+/**
+ * Decide the unit price for a product row at checkout, applying
+ * `active_offer_*` from `products_unified_with_offers` on top of
+ * `discount_price`. Mirrors `cart/pricing.priceCartRow` so the cart
+ * UI and the order total agree. SECURITY: without this, a customer
+ * would see a discounted cart total but the order row would record
+ * the pre-offer price (or vice versa), creating either a revenue
+ * leak (we charge less than the cart showed) or a trust gap (we
+ * charge more than the cart showed).
+ */
+function pickCheckoutUnitPrice(args: {
+  list: number;
+  discountPrice: number | null;
+  activeOfferId: string | null;
+  activeOfferType: OfferDiscountType | null;
+  activeOfferValue: number | null;
+  activeOfferMaxDiscount: number | null;
+  activeOfferMinOrder: number | null;
+  activeOfferStartsAt: string | Date | null;
+  activeOfferEndsAt: string | Date | null;
+}): number {
+  const list = Math.max(0, Number(args.list) || 0);
+  const discount =
+    args.discountPrice != null && Number(args.discountPrice) < list
+      ? Number(args.discountPrice)
+      : null;
+  let offerId: string | null = null;
+  if (
+    args.activeOfferId &&
+    args.activeOfferType != null &&
+    args.activeOfferValue != null &&
+    args.activeOfferStartsAt != null &&
+    args.activeOfferEndsAt != null
+  ) {
+    const offer: OfferLike = {
+      id: args.activeOfferId,
+      discount_type: args.activeOfferType,
+      discount_value: Number(args.activeOfferValue),
+      max_discount:
+        args.activeOfferMaxDiscount != null
+          ? Number(args.activeOfferMaxDiscount)
+          : null,
+      min_order:
+        args.activeOfferMinOrder != null
+          ? Number(args.activeOfferMinOrder)
+          : null,
+      starts_at: args.activeOfferStartsAt,
+      ends_at: args.activeOfferEndsAt,
+      is_active: true,
+    };
+    if (isOfferLive(offer, new Date())) offerId = offer.id;
+  }
+  let offerPrice: number | null = null;
+  if (offerId) {
+    const syntheticProduct: ProductForOffer = {
+      price: list,
+      discount_price: discount,
+    };
+    offerPrice = computeOfferEffectivePrice(syntheticProduct, {
+      id: offerId,
+      discount_type: args.activeOfferType!,
+      discount_value: Number(args.activeOfferValue!),
+      max_discount:
+        args.activeOfferMaxDiscount != null
+          ? Number(args.activeOfferMaxDiscount)
+          : null,
+      min_order:
+        args.activeOfferMinOrder != null
+          ? Number(args.activeOfferMinOrder)
+          : null,
+      starts_at: args.activeOfferStartsAt!,
+      ends_at: args.activeOfferEndsAt!,
+      is_active: true,
+    }).effectivePrice;
+  }
+  // Cheapest wins. Offer beats discount when both apply.
+  let best = list;
+  if (discount != null && discount < best) best = discount;
+  if (offerPrice != null && offerPrice < best) best = offerPrice;
+  return best;
+}
 
 export interface ResolvedCatalogItem {
   product_id: string;
@@ -111,20 +210,28 @@ export async function resolveItems(
       track_stock: boolean | null;
       image_url: string | null;
       vendor_id: string | null;
+      active_offer_id: string | null;
+      active_offer_type: string | null;
+      active_offer_value: string | number | null;
+      active_offer_max_discount: string | number | null;
+      active_offer_min_order: string | number | null;
+      active_offer_starts_at: string | null;
+      active_offer_ends_at: string | null;
     }
     const catalogRowList = await queryMany<CatalogProductRow>(
       client as Queryable,
-      // Read from the unified view WITHOUT FOR UPDATE — the view is a
-      // UNION ALL of vendor_products + products, which makes it
-      // non-updatable, so `FOR UPDATE` here would error with
-      // "permission denied for view products_unified". The actual row
-      // lock is acquired later when the stock UPDATE runs on the
-      // underlying vendor_products table (within the same
-      // transaction). This still serializes concurrent buyers because
-      // the UPDATE on the base row blocks until COMMIT/ROLLBACK.
+      // SECURITY (PCP-195): read from the with-offers view so checkout
+      // applies active offers the same way the cart UI does. The view
+      // is a UNION ALL (non-updatable), so FOR UPDATE is intentionally
+      // omitted here — the row lock is taken on the underlying
+      // `vendor_products` row in the stock UPDATE later in the same
+      // transaction.
       `SELECT id, name_ar, price, discount_price, stock_qty, track_stock,
-              image_url, vendor_id::text AS vendor_id
-         FROM products_unified
+              image_url, vendor_id::text AS vendor_id,
+              active_offer_id, active_offer_type, active_offer_value,
+              active_offer_max_discount, active_offer_min_order,
+              active_offer_starts_at, active_offer_ends_at
+         FROM products_unified_with_offers
         WHERE id = ANY($1::uuid[])`,
       [catalogIds],
     );
@@ -160,7 +267,28 @@ export async function resolveItems(
             };
           }
         }
-        const unit = Number(row.discount_price ?? row.price) || 0;
+        const unit = pickCheckoutUnitPrice({
+          list: Number(row.price) || 0,
+          discountPrice:
+            row.discount_price != null ? Number(row.discount_price) : null,
+          activeOfferId: row.active_offer_id,
+          activeOfferType:
+            (row.active_offer_type as OfferDiscountType | null) ?? null,
+          activeOfferValue:
+            row.active_offer_value != null
+              ? Number(row.active_offer_value)
+              : null,
+          activeOfferMaxDiscount:
+            row.active_offer_max_discount != null
+              ? Number(row.active_offer_max_discount)
+              : null,
+          activeOfferMinOrder:
+            row.active_offer_min_order != null
+              ? Number(row.active_offer_min_order)
+              : null,
+          activeOfferStartsAt: row.active_offer_starts_at,
+          activeOfferEndsAt: row.active_offer_ends_at,
+        });
         resolvedCatalog.push({
           product_id: row.id,
           quantity: it.quantity,
