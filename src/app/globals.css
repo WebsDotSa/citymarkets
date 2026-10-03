@@ -199,31 +199,8 @@ body {
 .text-2xs { font-size: var(--text-2xs); }
 
 /* ==========================================
-   GLASS & GLASSMORPHISM
+   GLASS & GLASSMORPHISM (shared by card variants)
    ========================================== */
-
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-2xl);
-}
-
-.glass-card-dark {
-  background: rgba(26, 26, 46, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-2xl);
-}
-
-.glass-morphism {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
 
 .glass-morphism-strong {
   background: rgba(255, 255, 255, 0.9);
@@ -237,13 +214,6 @@ body {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.glass-primary {
-  background: rgba(0, 147, 69, 0.1);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 147, 69, 0.2);
 }
 
 /* ==========================================
@@ -263,27 +233,6 @@ body {
   transform: translateY(-2px);
 }
 
-.card-glass {
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-lg);
-}
-
-.card-elevated {
-  background: var(--bg-card);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-xl);
-}
-
-.card-bordered {
-  background: var(--bg-card);
-  border-radius: var(--radius-2xl);
-  border: 1px solid var(--border);
-}
-
 .card-interactive {
   cursor: pointer;
   transition: all var(--transition-base);
@@ -299,26 +248,10 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
-@keyframes skeleton-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-.skeleton-text {
-  height: 1rem;
-  border-radius: var(--radius-sm);
-}
-
 .skeleton-title {
   height: 1.5rem;
   width: 60%;
   border-radius: var(--radius-sm);
-}
-
-.skeleton-avatar {
-  width: 3rem;
-  height: 3rem;
-  border-radius: var(--radius-full);
 }
 
 .skeleton-card {
@@ -339,14 +272,6 @@ body {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 }
-
-@keyframes float-delayed {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 147, 69, 0.4); }
   50% { box-shadow: 0 0 20px 10px rgba(0, 147, 69, 0); }
 }
 
@@ -410,8 +335,6 @@ body {
 
 /* Animation Classes */
 .animate-float { animation: float 4s ease-in-out infinite; }
-.animate-float-delayed { animation: float-delayed 5s ease-in-out infinite; }
-.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
 .animate-shimmer {
   background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
   background-size: 200% 100%;
