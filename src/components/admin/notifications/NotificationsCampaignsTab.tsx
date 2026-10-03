@@ -27,7 +27,7 @@ interface Column<T> {
 }
 
 const VARIANT_CLASS: Record<string, string> = {
-  default: "bg-slate-100 text-slate-600",
+  default: "bg-gray-100 text-gray-600",
   info: "bg-blue-100 text-blue-700",
   warning: "bg-amber-100 text-amber-700",
   success: "bg-emerald-100 text-emerald-700",
@@ -53,7 +53,7 @@ function ChannelChips({ channels }: { channels: BroadcastChannel[] }) {
         return (
           <span
             key={c}
-            className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700"
+            className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700"
           >
             <span aria-hidden>{meta?.icon ?? "•"}</span>
             <span>{meta?.label ?? c}</span>
@@ -165,8 +165,8 @@ export function NotificationsCampaignsTab({
       sortable: true,
       render: (r) => (
         <div className="max-w-xs">
-          <p className="font-medium text-slate-800 truncate">{r.title}</p>
-          <p className="text-xs text-slate-500 truncate">{r.body}</p>
+          <p className="font-medium text-gray-800 truncate">{r.title}</p>
+          <p className="text-xs text-gray-500 truncate">{r.body}</p>
         </div>
       ),
     },
@@ -184,7 +184,7 @@ export function NotificationsCampaignsTab({
       key: "audience",
       label: "الجمهور",
       render: (r) => (
-        <span className="text-sm text-slate-600">
+        <span className="text-sm text-gray-600">
           {r.audience.type === "all"
             ? "الجميع"
             : (r.audience.segment ?? r.audience.loyalty_tier ?? r.audience.city ?? "مخصص")}
@@ -196,12 +196,12 @@ export function NotificationsCampaignsTab({
       label: "الجدولة",
       render: (r) => {
         if (r.status === "sent" && r.started_at) {
-          return <span className="text-sm text-slate-500">{formatDate(r.started_at)}</span>;
+          return <span className="text-sm text-gray-500">{formatDate(r.started_at)}</span>;
         }
         if (r.scheduled_at) {
           return <span className="text-sm text-primary">{formatDate(r.scheduled_at)}</span>;
         }
-        return <span className="text-xs text-slate-400">فوري</span>;
+        return <span className="text-xs text-gray-400">فوري</span>;
       },
     },
     {
@@ -218,7 +218,7 @@ export function NotificationsCampaignsTab({
                 type="button"
                 onClick={() => sendNow(r)}
                 disabled={busy}
-                className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-30"
+                className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-30"
                 title="إرسال الآن"
               >
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
@@ -229,7 +229,7 @@ export function NotificationsCampaignsTab({
                 type="button"
                 onClick={() => cancel(r)}
                 disabled={busy}
-                className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors disabled:opacity-30"
+                className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors disabled:opacity-30"
                 title="إلغاء"
               >
                 <X className="w-4 h-4" />
@@ -238,7 +238,7 @@ export function NotificationsCampaignsTab({
             <button
               type="button"
               onClick={() => onViewMetrics?.(r.id)}
-              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               title="المؤشرات"
             >
               <BarChart3 className="w-4 h-4" />
@@ -247,7 +247,7 @@ export function NotificationsCampaignsTab({
               type="button"
               onClick={() => remove(r)}
               disabled={busy}
-              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30"
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30"
               title="حذف"
             >
               <Trash2 className="w-4 h-4" />

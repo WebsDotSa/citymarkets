@@ -54,7 +54,7 @@ export function AdminBottomNav({ user, onMenuClick }: AdminBottomNavProps) {
   ];
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 z-40 pb-safe shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-200 z-40 pb-safe shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
       <div className="flex items-center justify-around px-2 py-2">
         {navItems.map((item) => {
           const active = isActive(item.href);
@@ -66,7 +66,7 @@ export function AdminBottomNav({ user, onMenuClick }: AdminBottomNavProps) {
               className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-all duration-300 ${
                 active
                   ? "text-primary scale-110"
-                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
               }`}
             >
               <div className={`relative flex items-center justify-center w-8 h-8 rounded-full ${active ? 'bg-primary/10' : ''}`}>
@@ -85,7 +85,7 @@ export function AdminBottomNav({ user, onMenuClick }: AdminBottomNavProps) {
         {/* Menu Button */}
         <button
           onClick={onMenuClick}
-          className="flex flex-col items-center justify-center w-16 h-12 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all duration-300"
+          className="flex flex-col items-center justify-center w-16 h-12 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all duration-300"
         >
           <div className="relative flex items-center justify-center w-8 h-8 rounded-full">
             <Menu className="w-5 h-5" />

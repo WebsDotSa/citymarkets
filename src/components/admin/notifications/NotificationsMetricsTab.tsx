@@ -145,7 +145,7 @@ export function NotificationsMetricsTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-slate-700">
+        <div className="flex items-center gap-2 text-gray-700">
           <BarChart3 className="w-5 h-5 text-primary" />
           <h2 className="font-bold">مؤشرات الأداء</h2>
         </div>
@@ -189,7 +189,7 @@ export function NotificationsMetricsTab() {
           emptyText="لا توجد حملات في هذه الفترة"
         />
         <div className="admin-card p-5">
-          <h2 className="text-lg font-bold text-slate-800 mb-3">مؤشرات بث محدد</h2>
+          <h2 className="text-lg font-bold text-gray-800 mb-3">مؤشرات بث محدد</h2>
           <div className="flex items-center gap-2 mb-4">
             <SearchableSelect
               value={selectedId ?? ""}
@@ -201,14 +201,14 @@ export function NotificationsMetricsTab() {
             <button
               type="button"
               onClick={() => selectedId && setSelectedId(selectedId)}
-              className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50"
+              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50"
               title="تحديث"
             >
-              <RefreshCcw className="w-4 h-4 text-slate-500" />
+              <RefreshCcw className="w-4 h-4 text-gray-500" />
             </button>
           </div>
           {selectedId === null ? (
-            <p className="text-sm text-slate-500">اختر بثاً لعرض المؤشرات التفصيلية.</p>
+            <p className="text-sm text-gray-500">اختر بثاً لعرض المؤشرات التفصيلية.</p>
           ) : metricsLoading ? (
             <div className="flex items-center justify-center py-6">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -216,19 +216,19 @@ export function NotificationsMetricsTab() {
           ) : metrics ? (
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="rounded-lg bg-slate-50 p-3">
-                  <p className="text-xs text-slate-500">إرسال</p>
-                  <p className="font-bold text-slate-800">{metrics.sent}</p>
+                <div className="rounded-lg bg-gray-50 p-3">
+                  <p className="text-xs text-gray-500">إرسال</p>
+                  <p className="font-bold text-gray-800">{metrics.sent}</p>
                 </div>
-                <div className="rounded-lg bg-slate-50 p-3">
-                  <p className="text-xs text-slate-500">فتح</p>
-                  <p className="font-bold text-slate-800">
+                <div className="rounded-lg bg-gray-50 p-3">
+                  <p className="text-xs text-gray-500">فتح</p>
+                  <p className="font-bold text-gray-800">
                     {metrics.opened} ({(metrics.open_rate * 100).toFixed(0)}%)
                   </p>
                 </div>
-                <div className="rounded-lg bg-slate-50 p-3">
-                  <p className="text-xs text-slate-500">نقر</p>
-                  <p className="font-bold text-slate-800">
+                <div className="rounded-lg bg-gray-50 p-3">
+                  <p className="text-xs text-gray-500">نقر</p>
+                  <p className="font-bold text-gray-800">
                     {metrics.clicked} ({(metrics.click_rate * 100).toFixed(0)}%)
                   </p>
                 </div>
@@ -255,14 +255,14 @@ export function NotificationsMetricsTab() {
                       <td>{r.label}</td>
                       <td className="text-emerald-600">{r.sent}</td>
                       <td className="text-red-600">{r.failed}</td>
-                      <td className="text-slate-500">{r.skipped}</td>
+                      <td className="text-gray-500">{r.skipped}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <p className="text-sm text-slate-500">لا توجد مؤشرات.</p>
+            <p className="text-sm text-gray-500">لا توجد مؤشرات.</p>
           )}
         </div>
       </div>

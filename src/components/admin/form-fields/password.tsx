@@ -39,7 +39,7 @@ export function PasswordField({
       <button
         type="button"
         onClick={() => onToggleVisibility(field.key)}
-        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
       >
         {showPassword ? (
           <EyeOff className="w-4 h-4" />

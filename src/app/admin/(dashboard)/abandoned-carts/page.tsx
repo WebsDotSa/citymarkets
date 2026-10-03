@@ -141,8 +141,8 @@ export default function AdminAbandonedCartsPage() {
           <ShoppingCart className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">السلات المتروكة</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-800">السلات المتروكة</h1>
+          <p className="text-sm text-gray-500 mt-1">
             عملاء وصلوا لمرحلة الدفع ثم لم يكملوا — يمكن مراسلتهم لاستعادة السلات.
           </p>
         </div>
@@ -150,46 +150,46 @@ export default function AdminAbandonedCartsPage() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">متروكة الآن</span>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">متروكة الآن</span>
             <Wallet className="w-4 h-4 text-amber-500" />
           </div>
-          <p className="text-2xl font-bold text-slate-800 mt-2">{stats.abandoned}</p>
-          <p className="text-xs text-slate-400 mt-1">{formatPrice(stats.valueAbandoned)} قيمة متروكة</p>
+          <p className="text-2xl font-bold text-gray-800 mt-2">{stats.abandoned}</p>
+          <p className="text-xs text-gray-400 mt-1">{formatPrice(stats.valueAbandoned)} قيمة متروكة</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">مستردة</span>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">مستردة</span>
             <RefreshCcw className="w-4 h-4 text-emerald-500" />
           </div>
-          <p className="text-2xl font-bold text-slate-800 mt-2">{stats.recovered}</p>
-          <p className="text-xs text-slate-400 mt-1">تم استكمالها لاحقاً</p>
+          <p className="text-2xl font-bold text-gray-800 mt-2">{stats.recovered}</p>
+          <p className="text-xs text-gray-400 mt-1">تم استكمالها لاحقاً</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">الأصناف</span>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">الأصناف</span>
             <Package className="w-4 h-4 text-sky-500" />
           </div>
-          <p className="text-2xl font-bold text-slate-800 mt-2">{stats.itemsTotal}</p>
-          <p className="text-xs text-slate-400 mt-1">إجمالي أصناف الصفحة</p>
+          <p className="text-2xl font-bold text-gray-800 mt-2">{stats.itemsTotal}</p>
+          <p className="text-xs text-gray-400 mt-1">إجمالي أصناف الصفحة</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">إجمالي</span>
-            <TrendingUp className="w-4 h-4 text-slate-400" />
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">إجمالي</span>
+            <TrendingUp className="w-4 h-4 text-gray-400" />
           </div>
-          <p className="text-2xl font-bold text-slate-800 mt-2">{pagination.total}</p>
-          <p className="text-xs text-slate-400 mt-1">سلة على الصفحة الحالية</p>
+          <p className="text-2xl font-bold text-gray-800 mt-2">{pagination.total}</p>
+          <p className="text-xs text-gray-400 mt-1">سلة على الصفحة الحالية</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+            <Filter className="w-4 h-4 text-gray-400" />
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
               {STATUS_FILTERS.map((opt) => (
                 <button
                   key={opt.value || "all"}
@@ -200,7 +200,7 @@ export default function AdminAbandonedCartsPage() {
                   className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                     statusFilter === opt.value
                       ? "bg-white text-primary shadow-sm"
-                      : "text-slate-600 hover:text-slate-800"
+                      : "text-gray-600 hover:text-gray-800"
                   }`}
                 >
                   {opt.label}
@@ -211,12 +211,12 @@ export default function AdminAbandonedCartsPage() {
 
           <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="ابحث بالاسم، الجوال، أو رقم الطلب"
-                className="w-full h-10 pr-10 pl-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:bg-white transition-all"
+                className="w-full h-10 pr-10 pl-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:bg-white transition-all"
               />
             </div>
             <button
@@ -230,20 +230,20 @@ export default function AdminAbandonedCartsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-10 text-center text-slate-400 text-sm">جاري التحميل…</div>
+          <div className="p-10 text-center text-gray-400 text-sm">جاري التحميل…</div>
         ) : error ? (
           <div className="p-10 text-center text-red-600 text-sm">{error}</div>
         ) : rows.length === 0 ? (
           <div className="p-10 text-center">
-            <ShoppingCart className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-            <p className="text-slate-500 text-sm">لا توجد سلات متروكة تطابق الفلتر</p>
+            <ShoppingCart className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+            <p className="text-gray-500 text-sm">لا توجد سلات متروكة تطابق الفلتر</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-slate-500">
+              <thead className="bg-gray-50 text-gray-500">
                 <tr>
                   <th className="px-4 py-3 text-right font-semibold">العميل</th>
                   <th className="px-4 py-3 text-right font-semibold">رقم الطلب المقصود</th>
@@ -254,30 +254,30 @@ export default function AdminAbandonedCartsPage() {
                   <th className="px-4 py-3 text-right font-semibold">إجراء</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-gray-100">
                 {rows.map((row) => {
                   const name = customerName(row);
                   const phone = customerPhone(row);
                   return (
-                    <tr key={row.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex flex-col">
-                          <span className="font-semibold text-slate-700">{name}</span>
+                          <span className="font-semibold text-gray-700">{name}</span>
                           {phone ? (
                             <a
                               href={`tel:${phone}`}
-                              className="text-xs text-slate-500 inline-flex items-center gap-1 mt-0.5 hover:text-primary"
+                              className="text-xs text-gray-500 inline-flex items-center gap-1 mt-0.5 hover:text-primary"
                             >
                               <Phone className="w-3 h-3" />
                               {phone}
                             </a>
                           ) : (
-                            <span className="text-xs text-slate-400 mt-0.5">بدون جوال</span>
+                            <span className="text-xs text-gray-400 mt-0.5">بدون جوال</span>
                           )}
                           {row.user_id ? (
                             <span className="text-tiny text-emerald-600 mt-0.5">مسجّل</span>
                           ) : (
-                            <span className="text-tiny text-slate-400 mt-0.5">زائر</span>
+                            <span className="text-tiny text-gray-400 mt-0.5">زائر</span>
                           )}
                         </div>
                       </td>
@@ -290,19 +290,19 @@ export default function AdminAbandonedCartsPage() {
                             #{formatOrderId(row.intent_order_id)}
                           </Link>
                         ) : (
-                          <span className="text-slate-400 text-xs">—</span>
+                          <span className="text-gray-400 text-xs">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1 text-slate-700">
-                          <Package className="w-3 h-3 text-slate-400" />
+                        <span className="inline-flex items-center gap-1 text-gray-700">
+                          <Package className="w-3 h-3 text-gray-400" />
                           {row.items_count}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-slate-700">
+                      <td className="px-4 py-3 font-semibold text-gray-700">
                         {formatPrice(row.subtotal)}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-500">
+                      <td className="px-4 py-3 text-xs text-gray-500">
                         {relativeTime(row.last_seen_at)}
                       </td>
                       <td className="px-4 py-3">
@@ -336,8 +336,8 @@ export default function AdminAbandonedCartsPage() {
 
         {/* Pagination */}
         {!loading && !error && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 text-sm">
-            <span className="text-slate-500">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm">
+            <span className="text-gray-500">
               صفحة {pagination.page} من {pagination.totalPages} ({pagination.total} سلة)
             </span>
             <div className="flex gap-2">
@@ -349,7 +349,7 @@ export default function AdminAbandonedCartsPage() {
                   }))
                 }
                 disabled={pagination.page <= 1}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 hover:bg-slate-50"
+                className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50"
               >
                 السابق
               </button>
@@ -361,7 +361,7 @@ export default function AdminAbandonedCartsPage() {
                   }))
                 }
                 disabled={pagination.page >= pagination.totalPages}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 hover:bg-slate-50"
+                className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50"
               >
                 التالي
               </button>

@@ -11,9 +11,9 @@ interface FileFieldProps {
 
 export function FileField({ field, value, onChange }: FileFieldProps) {
   return (
-    <label className="flex flex-col items-center justify-center w-full h-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition-colors">
-      <Upload className="w-6 h-6 text-slate-400 mb-2" />
-      <p className="text-xs text-slate-500">
+    <label className="flex flex-col items-center justify-center w-full h-24 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-colors">
+      <Upload className="w-6 h-6 text-gray-400 mb-2" />
+      <p className="text-xs text-gray-500">
         {value ? "تم اختيار ملف" : "اضغط لرفع ملف"}
       </p>
       <input

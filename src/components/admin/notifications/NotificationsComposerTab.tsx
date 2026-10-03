@@ -162,7 +162,7 @@ export function NotificationsComposerTab({
               placeholder="مثال: خصومات نهاية الأسبوع"
               className="admin-input"
             />
-            <span className="text-xs text-slate-400 mt-1 block">
+            <span className="text-xs text-gray-400 mt-1 block">
               {draft.title.length}/120
             </span>
           </Field>
@@ -177,11 +177,11 @@ export function NotificationsComposerTab({
               className={`admin-input resize-y ${overLimit ? "border-amber-400" : ""}`}
             />
             <div className="flex justify-between text-xs mt-1">
-              <span className={overLimit ? "text-amber-600" : "text-slate-400"}>
+              <span className={overLimit ? "text-amber-600" : "text-gray-400"}>
                 {charCount}/1000
                 {overLimit && " · يُفضل اختصار النص للإشعارات الفورية"}
               </span>
-              <span className="text-slate-400">المتغيرات: {VARIABLE_OPTIONS.length}</span>
+              <span className="text-gray-400">المتغيرات: {VARIABLE_OPTIONS.length}</span>
             </div>
           </Field>
 
@@ -198,7 +198,7 @@ export function NotificationsComposerTab({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="رابط الصورة" hint="اختياري">
               <div className="relative">
-                <ImageIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <ImageIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   value={draft.image_url}
                   onChange={(e) => setField("image_url", e.target.value)}
@@ -241,7 +241,7 @@ export function NotificationsComposerTab({
                   className={`px-3 py-1.5 rounded-full text-sm border transition-colors inline-flex items-center gap-2 ${
                     active
                       ? "bg-primary text-white border-primary"
-                      : "bg-white text-slate-700 border-slate-200 hover:border-primary"
+                      : "bg-white text-gray-700 border-gray-200 hover:border-primary"
                   }`}
                 >
                   <span aria-hidden>{c.icon}</span>
@@ -268,7 +268,7 @@ export function NotificationsComposerTab({
                     className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                       active
                         ? "bg-primary text-white border-primary"
-                        : "bg-white text-slate-700 border-slate-200 hover:border-primary"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-primary"
                     }`}
                   >
                     {seg.label}
@@ -281,15 +281,15 @@ export function NotificationsComposerTab({
                 className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                   draft.audience.type === "all"
                     ? "bg-primary text-white border-primary"
-                    : "bg-white text-slate-700 border-slate-200 hover:border-primary"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-primary"
                 }`}
               >
                 الكل
               </button>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-slate-500">المستهدفون:</span>
-              <span className="font-medium text-slate-800">
+              <span className="text-gray-500">المستهدفون:</span>
+              <span className="font-medium text-gray-800">
                 {audienceLoading ? (
                   <Loader2 className="w-4 h-4 inline animate-spin" />
                 ) : audienceCount === null ? (
@@ -298,7 +298,7 @@ export function NotificationsComposerTab({
                   audienceCount.toLocaleString("ar-SA")
                 )}
               </span>
-              <span className="text-slate-400">مستخدم</span>
+              <span className="text-gray-400">مستخدم</span>
             </div>
           </div>
         </Section>
@@ -317,9 +317,9 @@ export function NotificationsComposerTab({
 
       <div className="space-y-4">
         <div className="admin-card p-5 space-y-3">
-          <h3 className="font-bold text-slate-800">القنوات المختارة</h3>
+          <h3 className="font-bold text-gray-800">القنوات المختارة</h3>
           {draft.channels.length === 0 ? (
-            <p className="text-sm text-slate-500">اختر قناة واحدة على الأقل.</p>
+            <p className="text-sm text-gray-500">اختر قناة واحدة على الأقل.</p>
           ) : (
             draft.channels.map((c) => (
               <ChannelPreview
@@ -366,7 +366,7 @@ function Section({
 }) {
   return (
     <div className="admin-card p-5 space-y-4">
-      <div className="flex items-center gap-2 text-slate-800">
+      <div className="flex items-center gap-2 text-gray-800">
         <span className="text-primary">{icon}</span>
         <h3 className="font-bold">{title}</h3>
       </div>
@@ -388,12 +388,12 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-sm text-slate-600">
+      <span className="text-sm text-gray-600">
         {label}
         {required && <span className="text-red-500 ms-1">*</span>}
       </span>
       <div className="mt-1">{children}</div>
-      {hint && <span className="text-xs text-slate-400 mt-1 block">{hint}</span>}
+      {hint && <span className="text-xs text-gray-400 mt-1 block">{hint}</span>}
     </label>
   );
 }
@@ -411,15 +411,15 @@ function ChannelPreview({
 }) {
   const meta = CHANNELS.find((c) => c.value === channel);
   return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-      <div className="flex items-center gap-2 text-xs text-slate-500 mb-2">
+    <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+      <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
         <span>{meta?.icon}</span>
         <span>{meta?.label}</span>
       </div>
       {channel === "email" ? (
         <div className="bg-white rounded-md p-3 text-xs">
-          <p className="font-semibold text-slate-800">{title || "(بدون عنوان)"}</p>
-          <p className="text-slate-600 mt-1 whitespace-pre-wrap">{body || "(بدون محتوى)"}</p>
+          <p className="font-semibold text-gray-800">{title || "(بدون عنوان)"}</p>
+          <p className="text-gray-600 mt-1 whitespace-pre-wrap">{body || "(بدون محتوى)"}</p>
           {ctaLabel && (
             <span className="inline-block mt-2 px-3 py-1 rounded-md bg-primary text-white text-2xs">
               {ctaLabel}
@@ -428,14 +428,14 @@ function ChannelPreview({
         </div>
       ) : channel === "sms" ? (
         <div className="bg-white rounded-md p-3 text-xs max-w-[220px]">
-          <p className="text-slate-800 whitespace-pre-wrap">{body || "(بدون محتوى)"}</p>
+          <p className="text-gray-800 whitespace-pre-wrap">{body || "(بدون محتوى)"}</p>
         </div>
       ) : (
         <div className="bg-white rounded-md p-3 shadow-sm">
-          <p className="text-xs font-semibold text-slate-800">
+          <p className="text-xs font-semibold text-gray-800">
             {title || "(بدون عنوان)"}
           </p>
-          <p className="text-2xs text-slate-600 mt-1 line-clamp-3">
+          <p className="text-2xs text-gray-600 mt-1 line-clamp-3">
             {body || "(بدون محتوى)"}
           </p>
           {ctaLabel && (
