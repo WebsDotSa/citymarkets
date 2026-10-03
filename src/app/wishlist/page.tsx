@@ -12,6 +12,7 @@ import { useCart } from "@/contexts/cart-context";
 import { useConfirm } from "@/components/ui/toast";
 import { Price } from "@/components/ui/price";
 import { SectionHeader } from "@/components/ui/section-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/design/empty-state";
 
 export default function WishlistPage() {
@@ -51,40 +52,39 @@ export default function WishlistPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-secondary">قائمة أمنياتي</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {itemCount} {itemCount === 1 ? "منتج" : "منتجات"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => router.push("/cart")}
-            className="relative p-2 text-gray-500 hover:text-secondary transition-colors"
-            aria-label={`السلة (${cartCount} منتج)`}
-          >
-            <ShoppingBag className="w-6 h-6" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
-                {cartCount}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={async () => {
-              if (await confirm({ title: "حذف الكل", message: "هل أنت متأكد من حذف جميع المنتجات من قائمة الأمنيات؟", danger: true })) {
-                clearWishlist();
-              }
-            }}
-            className="px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            حذف الكل
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="قائمة أمنياتي"
+        subtitle={`${itemCount} ${itemCount === 1 ? "منتج" : "منتجات"}`}
+        icon={<Heart className="w-6 h-6 text-primary" />}
+        action={
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push("/cart")}
+              className="relative p-2 text-gray-500 hover:text-secondary transition-colors"
+              aria-label={`السلة (${cartCount} منتج)`}
+            >
+              <ShoppingBag className="w-6 h-6" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (await confirm({ title: "حذف الكل", message: "هل أنت متأكد من حذف جميع المنتجات من قائمة الأمنيات؟", danger: true })) {
+                  clearWishlist();
+                }
+              }}
+              className="px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              حذف الكل
+            </button>
+          </div>
+        }
+      />
 
       {/* Quick Actions */}
       <div className="bg-primary/5 rounded-2xl p-4 mb-6 flex items-center justify-between">
