@@ -8,6 +8,12 @@ import { DeliveryLocationProvider } from "@/contexts/delivery-location-context";
 import { LocationOverlays } from "@/components/location/location-overlays";
 import { ToastProvider } from "@/components/ui/toast";
 import { SseProvider } from "@/components/realtime/SseProvider";
+import { useWebVitals } from "@/hooks/use-web-vitals";
+
+function WebVitalsInitializer() {
+  useWebVitals();
+  return null;
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -17,6 +23,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <WishlistProvider>
             <ToastProvider>
               <SseProvider>
+                <WebVitalsInitializer />
                 {children}
                 <LocationOverlays />
               </SseProvider>
