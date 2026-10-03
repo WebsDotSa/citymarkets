@@ -4,6 +4,7 @@ import Image from "next/image";
 import { query } from "@/lib/db";
 import { buildPageMetadata } from "@/lib/seo/site";
 import { SafeImage } from "@/components/ui/safe-image";
+import { PageContainer } from "@/components/ui/page-container";
 import { vendorTypeLabel, vendorTypeIcon } from '@/lib/catalog';
 
 export const metadata: Metadata = buildPageMetadata({
@@ -209,9 +210,8 @@ export default async function VendorsPage() {
   const vendors = await getVendors();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="px-4 sm:px-6 max-w-6xl mx-auto pt-4 pb-12">
-        <FeaturedCarousel vendors={vendors} />
+    <PageContainer width="wide" background="gray-50" padding="normal" className="py-4 pb-12">
+      <FeaturedCarousel vendors={vendors} />
 
         <section aria-labelledby="all-vendors">
           <header className="flex items-end justify-between gap-3 mb-4 px-1 flex-wrap">
@@ -245,7 +245,6 @@ export default async function VendorsPage() {
             </div>
           )}
         </section>
-      </div>
-    </div>
+    </PageContainer>
   );
 }
