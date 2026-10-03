@@ -1,0 +1,54 @@
+ schema |          table           |  bytes  | pretty  | row_estimate 
+--------+--------------------------+---------+---------+--------------
+ public | page_views               | 5210112 | 5088 kB |         7233
+ public | users                    | 3858432 | 3768 kB |        19917
+ public | vendor_products          | 2859008 | 2792 kB |         4900
+ public | products                 | 1499136 | 1464 kB |         3454
+ public | orders                   |  278528 | 272 kB  |           75
+ public | abandoned_carts          |  212992 | 208 kB  |           50
+ public | categories               |  188416 | 184 kB  |          156
+ public | coupons                  |  163840 | 160 kB  |            1
+ public | blog_posts               |  163840 | 160 kB  |            3
+ public | admin_audit_logs         |  139264 | 136 kB  |           63
+ public | cart                     |  139264 | 136 kB  |           68
+ public | vendor_applications      |  131072 | 128 kB  |            3
+ public | addresses                |  131072 | 128 kB  |          150
+ public | vendor_orders            |  131072 | 128 kB  |            4
+ public | home_layouts             |  122880 | 120 kB  |            2
+ public | order_items              |  114688 | 112 kB  |           78
+ public | offers                   |  106496 | 104 kB  |            1
+ public | job_applications         |   98304 | 96 kB   |           19
+ public | offer_targets            |   98304 | 96 kB   |            1
+ public | vendor_staff             |   98304 | 96 kB   |            5
+ public | loyalty_transactions     |   98304 | 96 kB   |            2
+ public | order_status_logs        |   98304 | 96 kB   |           13
+ public | analytics_events         |   98304 | 96 kB   |            1
+ public | spin_results             |   98304 | 96 kB   |            1
+ public | guest_cart               |   90112 | 88 kB   |           30
+ public | product_reviews          |   81920 | 80 kB   |            3
+ public | vendors                  |   81920 | 80 kB   |            7
+ public | wishlist_items           |   73728 | 72 kB   |            7
+ public | stores                   |   73728 | 72 kB   |            1
+ public | vendor_order_items       |   65536 | 64 kB   |            4
+ public | drivers                  |   65536 | 64 kB   |            6
+ public | orders_refunds           |   65536 | 64 kB   |           -1
+ public | app_migrations           |   65536 | 64 kB   |          120
+ public | ai_sessions              |   65536 | 64 kB   |            4
+ public | admin_users              |   65536 | 64 kB   |           11
+ public | broadcast_deliveries     |   57344 | 56 kB   |           -1
+ public | delivery_settings        |   49152 | 48 kB   |            3
+ public | payment_events           |   49152 | 48 kB   |           -1
+ public | direct_order_items       |   49152 | 48 kB   |           -1
+ public | broadcasts               |   49152 | 48 kB   |           -1
+ public | refund_requests          |   49152 | 48 kB   |           -1
+ public | schema_migrations        |   49152 | 48 kB   |           18
+ public | push_subscriptions       |   40960 | 40 kB   |           -1
+ public | user_otps                |   40960 | 40 kB   |           -1
+ public | native_push_tokens       |   40960 | 40 kB   |           -1
+ public | vendor_coupons           |   40960 | 40 kB   |           -1
+ public | broadcast_templates      |   32768 | 32 kB   |           -1
+ public | vendor_settings          |   32768 | 32 kB   |            2
+ public | app_settings             |   32768 | 32 kB   |            6
+ public | admin_notification_reads |   32768 | 32 kB   |           -1
+(50 rows)
+

@@ -1,0 +1,36 @@
+ cs_len | rows 
+--------+------
+     16 |   63
+     64 |   23
+     23 |   19
+     22 |   17
+     18 |    1
+     20 |    1
+     71 |    1
+     27 |    1
+(8 rows)
+
+                     filename                      |          applied_at           
+---------------------------------------------------+-------------------------------
+ 113_pcp148_page_views_retention.sql               | 2026-10-02 23:49:49.838006+00
+ 117_pcp149_drop_banners_legacy_077.sql            | 2026-10-02 23:38:47.644193+00
+ 115_pcp146_orders_refunds_rls.sql                 | 2026-10-02 23:33:22.39724+00
+ 114_pcp144_drop_dead_indexes.sql                  | 2026-10-02 23:33:22.381764+00
+ 113_pcp147_backfill_migration_checksums.sql       | 2026-10-02 23:25:13.148225+00
+ 112_pcp136_unindexed_fks.sql                      | 2026-10-02 22:46:02.751692+00
+ 111_pcp127_add_products_created_at_index.sql      | 2026-10-02 21:10:29.041507+00
+ 110_pcp115_rename_duplicate_prefixes.sql          | 2026-10-02 21:08:57.809695+00
+ 109_harden_against_060_rollback.sql               | 2026-10-02 20:00:57.976226+00
+ 108_rls_defensive_policies_all_tables.sql         | 2026-10-01 21:01:37.480976+00
+ 107_users_rls_defensive_policies.sql              | 2026-10-01 17:18:07.323116+00
+ 106_refund_requests.sql                           | 2026-10-01 13:41:49.439178+00
+ 105_grants_rls_and_bypass_for_citymarket_user.sql | 2026-10-01 12:22:50.109397+00
+ 104_repair_user_otps_code_width.sql               | 2026-10-01 01:06:13.71923+00
+ 103_backfill_image_url.sql                        | 2026-09-30 22:53:40.383618+00
+ 099_drop_dead_rls_policies.sql                    | 2026-09-30 22:53:10.005594+00
+ 098_next_cache_host_permissions.sql               | 2026-09-30 22:53:09.768499+00
+ 006_orders_cart_production.sql                    | 2026-09-30 22:47:19.393208+00
+ 011_user_otps.sql                                 | 2026-09-30 22:47:19.393208+00
+ 013_rls_policies.sql                              | 2026-09-30 22:47:19.393208+00
+(20 rows)
+

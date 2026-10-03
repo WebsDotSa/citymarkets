@@ -1,0 +1,122 @@
+                                       Table "public.schema_migrations"
+   Column    |           Type           | Collation | Nullable |                    Default                    
+-------------+--------------------------+-----------+----------+-----------------------------------------------
+ id          | integer                  |           | not null | nextval('schema_migrations_id_seq'::regclass)
+ version     | text                     |           | not null | 
+ applied_at  | timestamp with time zone |           | not null | now()
+ description | text                     |           |          | 
+Indexes:
+    "schema_migrations_pkey" PRIMARY KEY, btree (id)
+    "schema_migrations_version_key" UNIQUE CONSTRAINT, btree (version)
+
+ version | c 
+---------+---
+(0 rows)
+
+                     filename                      | cs_len |          applied_at           
+---------------------------------------------------+--------+-------------------------------
+ 001_full_schema.sql                               |     22 | 2026-09-30 22:47:19.393208+00
+ 002_seed_data.sql                                 |     22 | 2026-09-30 22:47:19.393208+00
+ 003_admin_banners_fix.sql                         |     22 | 2026-09-30 22:47:19.393208+00
+ 004_addresses.sql                                 |     22 | 2026-09-30 22:47:19.393208+00
+ 006_orders_cart_production.sql                    |     22 | 2026-09-30 22:47:19.393208+00
+ 007_admin_extended_features.sql                   |     22 | 2026-09-30 22:47:19.393208+00
+ 008_address_place_images.sql                      |     22 | 2026-09-30 22:47:19.393208+00
+ 009_categories_active_and_descriptions.sql        |     22 | 2026-09-30 22:47:19.393208+00
+ 010_multi_vendor.sql                              |     22 | 2026-09-30 22:47:19.393208+00
+ 011_user_otps.sql                                 |     22 | 2026-09-30 22:47:19.393208+00
+ 012_performance_indexes.sql                       |     22 | 2026-09-30 22:47:19.393208+00
+ 013_rls_policies.sql                              |     22 | 2026-09-30 22:47:19.393208+00
+ 014_sync_products_to_vendor.sql                   |     22 | 2026-09-30 22:47:19.393208+00
+ 015_public_tables_open_rls.sql                    |     22 | 2026-09-30 22:47:19.393208+00
+ 016_guest_cart_unique_session_product.sql         |     16 | 2026-08-03 02:00:40.411406+00
+ 017_product_reviews.sql                           |     22 | 2026-09-30 22:47:19.393208+00
+ 018_order_tracking_code.sql                       |     16 | 2026-07-29 22:59:13.926284+00
+ 019_page_views.sql                                |     16 | 2026-07-29 22:59:13.934759+00
+ 020_push_subscriptions.sql                        |     16 | 2026-07-29 22:59:13.943599+00
+ 021_loyalty_points.sql                            |     23 | 2026-07-29 23:00:42.078853+00
+ 022_order_loyalty.sql                             |     23 | 2026-07-29 23:00:42.083865+00
+ 023_nullable_orders_user_address.sql              |     22 | 2026-09-30 22:47:19.393208+00
+ 024_performance_and_security.sql                  |     23 | 2026-07-29 23:00:42.085731+00
+ 025_blog_posts.sql                                |     23 | 2026-07-29 23:00:42.089003+00
+ 026_loyalty_idempotency.sql                       |     23 | 2026-07-29 23:00:42.090761+00
+ 027_auth_token_version.sql                        |     23 | 2026-07-29 23:00:42.092633+00
+ 028_payment_reference_unique.sql                  |     23 | 2026-07-29 23:00:42.095931+00
+ 029_pending_redeem_type.sql                       |     23 | 2026-07-29 23:00:42.097863+00
+ 030_drivers_admin_link.sql                        |     23 | 2026-07-29 23:00:42.099728+00
+ 031_coupon_usage_limits.sql                       |     23 | 2026-07-29 23:00:42.101786+00
+ 032_delivery_distance_pricing.sql                 |     23 | 2026-07-29 23:00:42.104516+00
+ 033_payment_status_enum_expansion.sql             |     16 | 2026-07-30 20:35:23.149728+00
+ 034_orders_idempotency_key.sql                    |     16 | 2026-07-30 20:35:23.211563+00
+ 035_delivery_zone_color.sql                       |     16 | 2026-08-01 16:57:39.383682+00
+ 036_products_unified_refresh.sql                  |     16 | 2026-08-03 01:42:37.585489+00
+ 037_vendor_aware_cart.sql                         |     16 | 2026-08-03 01:42:37.747831+00
+ 038_multi_vendor_checkout.sql                     |     16 | 2026-08-03 01:42:27.501001+00
+ 039b_vendor_products_legacy_columns.sql           |     16 | 2026-08-03 01:42:37.930785+00
+ 039c_products_unified_use_new_columns.sql         |     16 | 2026-08-03 01:42:38.034099+00
+ 039_legacy_products_readonly.sql                  |     16 | 2026-08-03 01:42:37.833813+00
+ 040b_products_unified_with_offers.sql             |     16 | 2026-08-03 01:42:38.255591+00
+ 040_offers.sql                                    |     16 | 2026-08-03 01:42:38.148357+00
+ 041_analytics.sql                                 |     27 | 2026-08-01 16:59:39.597699+00
+ 041a_native_push_tokens.sql                       |     16 | 2026-08-04 09:32:48.217757+00
+ 042_category_taxonomy_reorder.sql                 |     23 | 2026-08-03 01:24:27.736326+00
+ 043_category_product_images.sql                   |     23 | 2026-08-03 01:24:27.7587+00
+ 044_broadcasts.sql                                |     16 | 2026-09-20 22:12:45.29039+00
+ 045_job_applications.sql                          |     16 | 2026-09-20 22:12:45.303093+00
+ 046_loyalty_idempotency_index.sql                 |     16 | 2026-08-04 11:03:33.290394+00
+ 050b_create_order_status_logs.sql                 |     16 | 2026-09-25 18:49:24.42208+00
+ 054_vendor_order_items_product_nullable.sql       |     16 | 2026-09-19 15:05:38.90355+00
+ 055_products_category_nullable.sql                |     16 | 2026-09-19 15:14:38.977827+00
+ 057_job_applications_cv_optional.sql              |     16 | 2026-09-21 16:30:40.882388+00
+ 058_abandoned_carts.sql                           |     16 | 2026-09-24 19:30:51.960795+00
+ 059a_grant_direct_order_messages.sql              |     16 | 2026-09-25 18:49:24.425338+00
+ 059b_vendor_applications.sql                      |     16 | 2026-09-24 19:30:51.989624+00
+ 059c_vendor_applications.sql                      |     16 | 2026-09-30 12:56:25.272385+00
+ 060a_rollback.sql                                 |     16 | 2026-09-25 18:49:24.455259+00
+ 060b_vendors_cleanup_and_split.sql                |     16 | 2026-09-25 18:49:24.468639+00
+ 060_drop_delivery_zones.sql                       |     16 | 2026-09-25 18:49:24.427061+00
+ 062_home_layouts.sql                              |     16 | 2026-09-25 18:49:24.491808+00
+ 063_admin_vendor_phone_and_more_types.sql         |     16 | 2026-09-26 17:25:17.31419+00
+ 064_normalize_admin_phones_to_e164.sql            |     16 | 2026-09-26 17:42:35.21151+00
+ 065_fix_admin_phone_e164_migration_drift.sql      |     16 | 2026-09-26 17:51:01.937534+00
+ 066_admin_users_email_nullable.sql                |     23 | 2026-09-27 12:20:23.533594+00
+ 067_vendor_staff_email_nullable.sql               |     23 | 2026-09-27 12:28:42.832127+00
+ 068_more_vendor_types.sql                         |     23 | 2026-09-27 12:29:07.430218+00
+ 069_backfill_drivers_admin_link.sql               |     16 | 2026-09-28 12:18:51.631886+00
+ 070_reconcile_products_to_vendor_products.sql     |     16 | 2026-09-28 12:21:38.692601+00
+ 071_phase2_indexes.sql                            |     16 | 2026-09-28 12:57:43.089387+00
+ 072a_payment_events_reconcile.sql                 |     16 | 2026-09-30 12:56:25.305832+00
+ 072_order_items_product_fk_to_vendor_products.sql |     16 | 2026-09-28 19:35:10.448193+00
+ 073_payment_events_ledger.sql                     |     16 | 2026-09-30 12:56:25.310002+00
+ 074_seed_main_store.sql                           |     16 | 2026-09-30 12:56:25.312897+00
+ 075_admin_notification_reads.sql                  |     16 | 2026-09-30 12:56:25.314374+00
+ 076_wishlist_server_persistence.sql               |     16 | 2026-09-30 12:56:25.327615+00
+ 077_drop_banners_table.sql                        |     16 | 2026-09-30 12:56:25.337128+00
+ 078_delivery_defaults_normalize.sql               |     16 | 2026-09-30 12:56:25.346562+00
+ 079_store_opening_hours.sql                       |     16 | 2026-09-30 12:56:25.350177+00
+ 080_add_orders_tax.sql                            |     16 | 2026-09-30 12:56:25.358081+00
+ 081_vendor_private_categories.sql                 |     16 | 2026-09-30 12:56:25.36112+00
+ 082_drop_paid_order_status.sql                    |     16 | 2026-09-30 12:56:25.377196+00
+ 083_p2_schema_cleanup.sql                         |     16 | 2026-09-30 12:56:25.39484+00
+ 084_drop_reviews_table.sql                        |     16 | 2026-09-30 12:56:25.4027+00
+ 085_drop_service_fee_acknowledged_at.sql          |     16 | 2026-09-30 12:56:25.409885+00
+ 086_coupon_sources.sql                            |     16 | 2026-09-30 12:56:25.41251+00
+ 087_schema_contract_reconcile.sql                 |     16 | 2026-09-30 12:56:25.471629+00
+ 088_prod_fresh_schema_parity.sql                  |     16 | 2026-09-30 13:23:54.015595+00
+ 089_drop_payment_events_legacy.sql                |     22 | 2026-09-30 22:47:19.393208+00
+ 098_next_cache_host_permissions.sql               |     16 | 2026-09-30 22:53:09.768499+00
+ 099_drop_dead_rls_policies.sql                    |     16 | 2026-09-30 22:53:10.005594+00
+ 100_products_readonly_allow_delete.sql            |     16 | 2026-09-30 22:43:27.046029+00
+ 101_apply_missing_after_rebuild.sql               |     16 | 2026-09-30 22:43:14.916128+00
+ 102_add_missing_fk_indexes.sql                    |     16 | 2026-09-30 22:45:42.720051+00
+ 103_backfill_image_url.sql                        |     16 | 2026-09-30 22:53:40.383618+00
+ 107_users_rls_defensive_policies.sql              |     18 | 2026-10-01 17:18:07.323116+00
+ 108_rls_defensive_policies_all_tables.sql         |     20 | 2026-10-01 21:01:37.480976+00
+ 112_pcp136_unindexed_fks.sql                      |     23 | 2026-10-02 22:46:02.751692+00
+ 113_pcp147_backfill_migration_checksums.sql       |     16 | 2026-10-02 23:25:13.148225+00
+ 113_pcp148_page_views_retention.sql               |     16 | 2026-10-02 23:49:49.838006+00
+ 114_pcp144_drop_dead_indexes.sql                  |     23 | 2026-10-02 23:33:22.381764+00
+ 115_pcp146_orders_refunds_rls.sql                 |     23 | 2026-10-02 23:33:22.39724+00
+ 117_pcp149_drop_banners_legacy_077.sql            |     71 | 2026-10-02 23:38:47.644193+00
+(103 rows)
+

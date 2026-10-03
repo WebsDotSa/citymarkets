@@ -1,0 +1,19 @@
+ current_database | schemaname |      tablename      |  total  | heap_only  | index_only | n_live_tup | n_dead_tup | dead_pct | last_vacuum |        last_autovacuum        |       last_autoanalyze        
+------------------+------------+---------------------+---------+------------+------------+------------+------------+----------+-------------+-------------------------------+-------------------------------
+ citymarket_db    | public     | page_views          | 5088 kB | 2344 kB    | 2704 kB    |       7820 |          5 |      0.1 |             | 2026-09-30 21:14:56.27927+00  | 2026-09-30 21:14:56.335906+00
+ citymarket_db    | public     | users               | 3768 kB | 2432 kB    | 1296 kB    |      19925 |          3 |      0.0 |             | 2026-09-30 21:14:56.546762+00 | 2026-09-30 21:14:56.634696+00
+ citymarket_db    | public     | vendor_products     | 2792 kB | 2176 kB    | 576 kB     |       4900 |        324 |      6.6 |             | 2026-09-30 22:53:57.865857+00 | 2026-09-30 22:53:57.998649+00
+ citymarket_db    | public     | products            | 1464 kB | 824 kB     | 600 kB     |       3454 |         13 |      0.4 |             | 2026-09-30 21:14:56.344306+00 | 2026-09-30 21:14:56.40742+00
+ citymarket_db    | public     | orders              | 272 kB  | 24 kB      | 216 kB     |         76 |         37 |     48.7 |             |                               | 2026-10-01 21:02:53.16288+00
+ citymarket_db    | public     | abandoned_carts     | 208 kB  | 48 kB      | 128 kB     |         50 |         23 |     46.0 |             |                               | 
+ citymarket_db    | public     | categories          | 184 kB  | 40 kB      | 112 kB     |        156 |         15 |      9.6 |             |                               | 2026-09-30 21:14:56.269961+00
+ citymarket_db    | public     | blog_posts          | 160 kB  | 8192 bytes | 144 kB     |          3 |          0 |      0.0 |             |                               | 
+ citymarket_db    | public     | coupons             | 160 kB  | 8192 bytes | 144 kB     |          1 |          0 |      0.0 |             |                               | 
+ citymarket_db    | public     | admin_audit_logs    | 136 kB  | 24 kB      | 80 kB      |         67 |          0 |      0.0 |             |                               | 2026-09-30 21:14:56.248918+00
+ citymarket_db    | public     | cart                | 136 kB  | 16 kB      | 96 kB      |         76 |         15 |     19.7 |             |                               | 2026-09-30 21:14:56.271009+00
+ citymarket_db    | public     | addresses           | 128 kB  | 32 kB      | 64 kB      |        156 |          0 |      0.0 |             |                               | 2026-09-30 21:14:56.267356+00
+ citymarket_db    | public     | vendor_applications | 128 kB  | 8192 bytes | 112 kB     |          3 |          0 |      0.0 |             |                               | 
+ citymarket_db    | public     | vendor_orders       | 128 kB  | 8192 bytes | 112 kB     |          5 |          9 |    180.0 |             |                               | 
+ citymarket_db    | public     | home_layouts        | 120 kB  | 24 kB      | 64 kB      |          2 |          4 |    200.0 |             |                               | 
+(15 rows)
+
