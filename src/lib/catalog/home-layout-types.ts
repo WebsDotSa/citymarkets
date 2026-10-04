@@ -354,8 +354,8 @@ export const SECTION_LIBRARY: SectionLibraryEntry[] = [
     icon: "FileText",
     defaultSettings: {
       content_html: "<p>محتوى مخصص</p>",
-      background_color: "#f1f5f9",
-      text_color: "#0f172a",
+      background_color: "#F3F4F6",
+      text_color: "#111827",
     },
   },
   {
@@ -369,7 +369,7 @@ export const SECTION_LIBRARY: SectionLibraryEntry[] = [
       subtitle: "احصل على خصم 10%",
       cta_text: "سجل الآن",
       cta_href: "/auth/login",
-      background_color: "#0f172a",
+      background_color: "#111827",
       text_color: "#ffffff",
     },
   },
