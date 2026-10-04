@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { ORDER_LIST_COLUMNS } from '@/lib/orders/sql-fragments';
+import { DRIVER_VISIBLE_STATUSES } from '@/lib/orders/state-machine';
+
+// SQL fragment: derive the IN-list from the canonical set so adding a new
+// driver-visible status only needs an edit in `state-machine.ts`.
+const DRIVER_VISIBLE_STATUSES_SQL = `('${[...DRIVER_VISIBLE_STATUSES].join("','")}')`;
 
 export const dynamic = "force-dynamic";
 
@@ -52,15 +58,9 @@ export async function GET(request: NextRequest) {
     // Get orders assigned to this driver or pending assignment
     const query = `
       SELECT
-        o.id,
+        ${ORDER_LIST_COLUMNS},
         o.tracking_code as order_number,
-        o.status,
         o.driver_id,
-        o.total::float as total,
-        o.delivery_fee::float as delivery_fee,
-        o.payment_method,
-        o.payment_status,
-        o.created_at,
         o.notes as order_notes,
         u.id as user_id,
         u.name as customer_name,
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.id
       LEFT JOIN addresses da ON o.address_id = da.id
-      WHERE o.status IN ('pending', 'on_the_way', 'delivered', 'cancelled')
+      WHERE o.status IN ${DRIVER_VISIBLE_STATUSES_SQL}
         ${statusFilter}
         ${finalScope}
       ORDER BY
@@ -110,12 +110,12 @@ export async function GET(request: NextRequest) {
       driverId
         ? `SELECT status, COUNT(*)::int as count
              FROM orders
-             WHERE status IN ('pending','on_the_way','delivered','cancelled')
+             WHERE status IN ${DRIVER_VISIBLE_STATUSES_SQL}
                AND (driver_id = $1 OR driver_id IS NULL)
              GROUP BY status`
         : `SELECT status, COUNT(*)::int as count
              FROM orders
-             WHERE status IN ('pending','on_the_way','delivered','cancelled')
+             WHERE status IN ${DRIVER_VISIBLE_STATUSES_SQL}
                AND driver_id IS NULL
              GROUP BY status`,
       driverId ? [driverId] : [],
