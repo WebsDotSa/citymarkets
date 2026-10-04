@@ -24,6 +24,7 @@ import {
   type OrderDetail,
   type OrderItem,
 } from './shared';
+import { CUSTOMER_NON_EDITABLE_STATUSES } from '@/lib/orders/state-machine';
 
 // Status label + hex are sourced from `getOrderStatusConfig()` (canonical
 // state machine at `@/lib/orders/state-machine`). Inline fallback
@@ -91,7 +92,9 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
   }
 
   const isDirect = order?.type === 'direct';
-  const isLocked = Boolean(order && ['on_the_way', 'delivered', 'cancelled'].includes(order.status));
+  const isLocked = Boolean(
+    order && CUSTOMER_NON_EDITABLE_STATUSES.has(order.status as never)
+  );
   const statusConfig = order ? getOrderStatusConfig(order.status) : null;
   const statusColor = statusConfig?.hex ?? '#6B7280';
   const statusLabel = statusConfig?.label ?? '';

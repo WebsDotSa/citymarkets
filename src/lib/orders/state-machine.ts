@@ -410,3 +410,16 @@ export const ADMIN_VISIBLE_STATUSES: ReadonlySet<OrderState> = new Set([
   "delivered",
   "cancelled",
 ]);
+
+/**
+ * Order statuses where the customer MUST NOT be able to mutate the order
+ * (cancel, change address, etc.). Distinct from `TERMINAL_ORDER_STATUSES`
+ * because `on_the_way` is still active but the customer has lost
+ * editability — the order is now with the driver. Used by
+ * `direct-order/order-detail-client.tsx` for `isLocked`.
+ */
+export const CUSTOMER_NON_EDITABLE_STATUSES: ReadonlySet<OrderState> = new Set([
+  "on_the_way",
+  "delivered",
+  "cancelled",
+]);
