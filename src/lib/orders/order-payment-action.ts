@@ -16,7 +16,10 @@
  * backend status never silently exposes a broken CTA.
  */
 import { ONLINE_RETRY_METHODS } from "@/lib/payments/payment-methods";
-import { ALL_ORDER_STATES } from "./state-machine";
+import {
+  ALL_ORDER_STATES,
+  TERMINAL_PAYMENT_STATUSES,
+} from "./state-machine";
 
 export type OrderPaymentAction = "pay" | "retry" | "none";
 
@@ -29,19 +32,14 @@ export interface OrderPaymentActionInput {
 // D16-D19 cleanup (2026-09-30): the legacy `ONLINE_RETRYABLE_METHODS`
 // alias was removed. Canonical source is `ONLINE_RETRY_METHODS` in
 // `@/lib/payments/payment-methods`.
-
-const TERMINAL_PAYMENT_STATUSES = new Set(["paid", "completed", "refunded"]);
-const TERMINAL_ORDER_STATUSES = new Set(["delivered"]);
-// Backend enum (multi-vendor) — drive any UI gating off this list. Unknown
-// values (typos, brand-new statuses) must fail closed to "none" so a stale
-// client never exposes a CTA for an order that no longer maps to anything.
-// Derived from `ALL_ORDER_STATES` (audit S3) plus the legacy `paid` alias
-// that still appears in older `orders.status` rows predating the
-// fulfillment-vs-payment split.
-const KNOWN_ORDER_STATUSES: ReadonlySet<string> = new Set<string>([
-  ...ALL_ORDER_STATES,
-  "paid",
-]);
+//
+// 2026-10-04 (refactor/full-repository-consolidation): `KNOWN_ORDER_STATUSES`
+// was removed — the legacy `"paid"` alias was a stray (payment status ≠
+// order fulfillment status; see state-machine.ts:20 for the split).
+// Validation now derives directly from `ALL_ORDER_STATES` so a new
+// `OrderState` automatically lights up here. The terminal sets moved
+// into `state-machine.ts` so admin/driver/vendor routes reuse them
+// (see `DRIVER_VISIBLE_STATUSES`, `ADMIN_VISIBLE_STATUSES`).
 
 export function getOrderPaymentAction(
   input: OrderPaymentActionInput,
@@ -51,10 +49,17 @@ export function getOrderPaymentAction(
   const paymentMethod = (input.paymentMethod ?? "").toString().toLowerCase();
 
   if (!status || !paymentStatus) return "none";
-  if (!KNOWN_ORDER_STATUSES.has(status)) return "none";
+  if (!ALL_ORDER_STATES.includes(status as (typeof ALL_ORDER_STATES)[number])) {
+    return "none";
+  }
 
-  if (TERMINAL_PAYMENT_STATUSES.has(paymentStatus)) return "none";
-  if (TERMINAL_ORDER_STATUSES.has(status)) return "none";
+  if (TERMINAL_PAYMENT_STATUSES.has(paymentStatus as Parameters<typeof TERMINAL_PAYMENT_STATUSES.has>[0])) {
+    return "none";
+  }
+  // Only "delivered" is terminal-no-CTA here — "cancelled" is intentionally
+  // NOT checked because the failed-payment handler below recovers the
+  // auto-cancelled-when-gateway-throws case by surfacing a retry CTA.
+  if (status === "delivered") return "none";
 
   if (paymentStatus === "failed") {
     // cancelled+failed is the auto-cancel state created by checkout when
