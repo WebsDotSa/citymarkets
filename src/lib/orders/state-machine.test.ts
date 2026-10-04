@@ -211,3 +211,32 @@ describe("ALL_*_STATES lists", () => {
     expect(ALL_VENDOR_ORDER_STATES).toContain("refunded");
   });
 });
+
+describe("audit 2026-10-04 — paid invariant guards", () => {
+  // Regression: pre-fix `order-payment-action.ts` carried a stray
+  // `KNOWN_ORDER_STATUSES` set that unioned `ALL_ORDER_STATES` with a
+  // legacy "paid" alias. The plan called this out as a misreading of the
+  // fulfillment-vs-payment split ("paid" is a PaymentState, not an
+  // OrderState). Guard against it resurfacing in any lifecycle enum.
+
+  it("ALL_ORDER_STATES does NOT contain 'paid' (payment ≠ fulfillment)", () => {
+    expect(ALL_ORDER_STATES).not.toContain("paid");
+  });
+
+  it("ALL_VENDOR_ORDER_STATES does NOT contain 'paid' (use payment_status instead)", () => {
+    expect(ALL_VENDOR_ORDER_STATES).not.toContain("paid");
+  });
+
+  it("PaymentState enum is exactly { pending, paid, failed, refunded }", () => {
+    expect(new Set(ALL_PAYMENT_STATES)).toEqual(
+      new Set(["pending", "paid", "failed", "refunded"]),
+    );
+  });
+
+  it("OrderState type does not include 'completed' (legacy alias)", () => {
+    // "completed" used to be an OrderState alias that the legacy
+    // KNOWN_ORDER_STATUSES set implicitly accepted (via failing closed).
+    // Make sure it never leaks into the canonical enum.
+    expect(ALL_ORDER_STATES).not.toContain("completed");
+  });
+});
