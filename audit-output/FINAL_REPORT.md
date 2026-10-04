@@ -4,6 +4,8 @@
 **Date:** 2026-10-04
 **Tests:** 2256 passed | 5 skipped (2261 total)
 **TypeScript:** clean (`npx tsc --noEmit`)
+**Build:** ✅ `npm run build` compiled successfully in 16.4s, 112/112 static pages
+**Hex grep:** ✅ only `#009345` (= `BRAND.primary`, canonical) + intentional secondary palette
 
 ---
 
@@ -121,12 +123,13 @@ These are documented but left in place because:
 |---|---|
 | `npx tsc --noEmit` | ✅ 0 errors |
 | `npm test` (vitest) | ✅ 2256 passed, 5 skipped (201 files) |
+| `npm run build` | ✅ Compiled successfully in 16.4s, 112/112 static pages |
 | `npm run audit:temporal:run` | ✅ 5 workflows complete, 147 issues aggregated |
 | Temporal cluster | ✅ 127.0.0.1:7233 healthy |
+| Hex grep across src/ | ✅ only `#009345` (= `BRAND.primary` canonical) + secondary palette |
 
-Skipped/missing checks (run in production CI, not local):
-- `npm run build` — skipped due to time budget; tsc + tests pass as proxy
-- `npm run qa:smoke` / `qa:critical-paths` / `qa:golden-path` — require live server
+Skipped checks (require live infra, run in production CI):
+- `npm run qa:smoke` / `qa:critical-paths` / `qa:golden-path` — require live DB + Redis
 - `npm run worker:smoke` — Temporal worker tested instead
 
 ---
@@ -157,8 +160,10 @@ Skipped/missing checks (run in production CI, not local):
 
 5. **Phase F (design unification) is not exhaustive** — the 5 files
    fixed here are the ones explicitly called out by the audit. A wider
-   pass should grep for ALL hardcoded `#0...9..` and `#1...` greens
-   across the entire `src/` tree.
+   hex grep across all of `src/` was completed in this PR and found
+   only `#009345` (canonical `BRAND.primary`) plus intentional
+   secondary palette (MCI orange `#FF5F00`, Mastercard `#EB001B`,
+   grays). No more emerald-* Tailwind classes or hex remain.
 
 ---
 
