@@ -1712,7 +1712,7 @@ select:focus-visible {
 }
 
 .toast-success {
-  border-right: 4px solid #10B981;
+  border-right: 4px solid var(--success);
 }
 
 .toast-error {
