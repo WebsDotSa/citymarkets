@@ -58,7 +58,7 @@ export function CategoryCard({
           ${className}
         `}
       >
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-light to-green-100 flex items-center justify-center mb-2 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-light to-primary-100 flex items-center justify-center mb-2 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
           {renderIcon()}
         </div>
         <span className="text-xs font-medium text-gray-900 text-center line-clamp-1 leading-tight">
@@ -79,7 +79,7 @@ export function CategoryCard({
           ${className}
         `}
       >
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-light to-green-100 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-inner">
+        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-light to-primary-100 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-inner">
           {renderIcon()}
         </div>
         <span className="text-base font-semibold text-gray-900 text-center line-clamp-2 leading-tight">
@@ -103,7 +103,7 @@ export function CategoryCard({
         ${className}
       `}
     >
-      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-light to-green-100 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-light to-primary-100 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
         {renderIcon()}
       </div>
       <span className="text-sm font-medium text-gray-900 text-center line-clamp-2 leading-tight group-hover:text-primary transition-colors">

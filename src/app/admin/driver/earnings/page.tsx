@@ -216,7 +216,7 @@ export default function DriverEarningsPage() {
               value={totals.deliveries}
               sub={`من أصل ${totals.handled_total} طلب`}
               icon={CheckCircle}
-              color="from-emerald-500 to-emerald-600"
+              color="from-primary-500 to-primary-600"
             />
             <KpiCard
               label="إجمالي المبيعات"

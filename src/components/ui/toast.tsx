@@ -56,7 +56,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const getBorderClass = (type: ToastType) => {
     switch (type) {
       case "success":
-        return "border-r-4 border-r-green-500";
+        return "border-r-4 border-r-primary-500";
       case "error":
         return "border-r-4 border-r-red-500";
       case "warning":

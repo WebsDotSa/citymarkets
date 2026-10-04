@@ -399,7 +399,12 @@ function Row({ label, value, bold, highlight, discount }: { label: string; value
     <div
       className={`flex justify-between ${bold ? 'font-bold text-base' : ''}`}
       style={{
-        color: discount ? '#16a34a' : highlight ? BRAND.primaryDark : '#111',
+        // Audit 2026-10-04 (Phase F): discount green unified on the
+        // brand token (was Tailwind emerald-600 #16a34a — slightly
+        // off the brand ramp). Now uses BRAND.primaryDark so every
+        // "discount/savings" highlight in the customer UI matches the
+        // single brand green.
+        color: discount ? BRAND.primaryDark : highlight ? BRAND.primaryDark : '#111',
         fontWeight: highlight ? 600 : undefined,
       }}
     >

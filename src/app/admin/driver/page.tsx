@@ -234,7 +234,7 @@ export default function DriverDashboard() {
 
         <div
           className={`bg-white rounded-xl p-4 shadow cursor-pointer transition-all ${
-            filter === "delivered" ? "ring-2 ring-green-500" : ""
+            filter === "delivered" ? "ring-2 ring-primary-500" : ""
           }`}
           onClick={() => setFilter("delivered")}
         >

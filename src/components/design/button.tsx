@@ -71,7 +71,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       success: `
         bg-primary-100 text-primary-600
         hover:bg-primary-600 hover:text-white
-        focus-visible:ring-emerald-600
+        focus-visible:ring-primary-600
       `,
     };
 
