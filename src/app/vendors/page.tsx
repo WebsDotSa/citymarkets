@@ -197,7 +197,7 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
           </div>
 
           <div className="mt-2.5 flex items-center gap-1.5 text-2xs text-gray-500">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
             <span>مفتوح الآن</span>
           </div>
         </div>

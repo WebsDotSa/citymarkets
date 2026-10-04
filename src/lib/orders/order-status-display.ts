@@ -20,6 +20,7 @@ import type {
   VendorOrderState,
   PaymentState,
 } from "./state-machine";
+import { BRAND } from "@/lib/brand-theme";
 
 export interface OrderStateDisplay {
   label: string;
@@ -48,7 +49,7 @@ export const ORDER_STATE_DISPLAY: Readonly<Record<OrderState, OrderStateDisplay>
   confirmed: {
     label: "تم التأكيد",
     color: "bg-blue-100 text-blue-700",
-    hex: "#10B981",
+    hex: "#1D4ED8",
     icon: Check,
     active: true,
   },
@@ -69,7 +70,7 @@ export const ORDER_STATE_DISPLAY: Readonly<Record<OrderState, OrderStateDisplay>
   delivered: {
     label: "تم التوصيل",
     color: "bg-primary-100 text-primary-700",
-    hex: "#10B981",
+    hex: "#007A38",
     icon: Check,
     active: false,
   },
@@ -95,7 +96,7 @@ export const VENDOR_ORDER_STATE_DISPLAY: Readonly<
   confirmed: {
     label: "تم التأكيد",
     color: "bg-blue-100 text-blue-700",
-    hex: "#10B981",
+    hex: "#1D4ED8",
     icon: Check,
     active: true,
   },
@@ -123,7 +124,7 @@ export const VENDOR_ORDER_STATE_DISPLAY: Readonly<
   delivered: {
     label: "تم التوصيل",
     color: "bg-primary-100 text-primary-700",
-    hex: "#10B981",
+    hex: "#007A38",
     icon: Check,
     active: false,
   },
@@ -155,8 +156,8 @@ export const PAYMENT_STATE_DISPLAY: Readonly<
   },
   paid: {
     label: "تم الدفع",
-    color: "bg-emerald-100 text-emerald-700",
-    hex: "#10B981",
+    color: "bg-primary-100 text-primary-700",
+    hex: "#007A38",
     icon: Check,
     active: false,
   },

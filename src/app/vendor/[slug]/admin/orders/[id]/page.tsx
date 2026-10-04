@@ -276,7 +276,7 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
             )}
             {order.deliveredAt && (
               <li className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="w-2 h-2 rounded-full bg-primary-500" />
                 <span className="text-gray-500">تم التوصيل:</span>
                 <span className="font-medium">{new Date(order.deliveredAt).toLocaleString("ar-SA")}</span>
               </li>
@@ -462,7 +462,7 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
             href={`https://wa.me/${whatsappPhone}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-500 px-4 py-3 text-sm font-semibold text-white hover:bg-green-600 transition"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-500 px-4 py-3 text-sm font-semibold text-white hover:bg-primary-600 transition"
           >
             <MessageCircle className="w-4 h-4" />
             واتساب العميل

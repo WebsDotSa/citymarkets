@@ -250,7 +250,7 @@ function AdminDirectOrderDetail({ orderId }: { orderId: string }) {
                     <Phone className="w-4 h-4 text-gray-400" />
                     <a
                       href={`tel:${order.user_phone || order.guest_phone}`}
-                      className="text-green-700"
+                      className="text-primary-700"
                     >
                       {order.user_phone || order.guest_phone}
                     </a>
@@ -282,7 +282,7 @@ function AdminDirectOrderDetail({ orderId }: { orderId: string }) {
                       <div className="font-semibold text-sm">{it.name_ar || it.free_text}</div>
                       <div className="text-xs text-gray-500">الكمية: {it.quantity}</div>
                       {it.resolved_price !== null && it.resolved_price !== undefined && (
-                        <div className="text-xs text-green-700 mt-1">
+                        <div className="text-xs text-primary-700 mt-1">
                           ✓ تم التأكيد: {it.resolved_price.toFixed(2)} ر.س
                         </div>
                       )}
@@ -315,7 +315,7 @@ function AdminDirectOrderDetail({ orderId }: { orderId: string }) {
               {!['delivered', 'cancelled'].includes(order.status) && (
                 <div className="mt-3">
                   {addingItem ? (
-                    <div className="p-3 rounded-lg border border-green-300 bg-green-50">
+                    <div className="p-3 rounded-lg border border-primary-300 bg-primary-50">
                       <div className="flex gap-2">
                         <input
                           type="text"
@@ -407,12 +407,12 @@ function AdminDirectOrderDetail({ orderId }: { orderId: string }) {
                 </div>
               </div>
 
-              <div className="mt-3 p-3 rounded-lg bg-green-50 text-sm">
+              <div className="mt-3 p-3 rounded-lg bg-primary-50 text-sm">
                 <div className="flex justify-between"><span>المجموع الفرعي:</span><span>{(parseFloat(finalSubtotal) || 0).toFixed(2)} ر.س</span></div>
                 <div className="flex justify-between"><span>رسوم التوصيل:</span><span>{(parseFloat(finalDelivery) || 0).toFixed(2)} ر.س</span></div>
                 <div className="flex justify-between"><span>رسوم الخدمة:</span><span>{order.service_fee.toFixed(2)} ر.س</span></div>
                 <div className="flex justify-between"><span>الضريبة:</span><span>{order.tax.toFixed(2)} ر.س</span></div>
-                <hr className="my-2 border-green-200" />
+                <hr className="my-2 border-primary-200" />
                 <div className="flex justify-between font-bold">
                   <span>الإجمالي:</span>
                   <span>

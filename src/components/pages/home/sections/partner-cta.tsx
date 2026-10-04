@@ -15,7 +15,7 @@ export function PartnerCta() {
   return (
     <section className="py-8 sm:py-10" id="become-partner">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-emerald-700 text-white p-8 sm:p-12">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary-700 text-white p-8 sm:p-12">
           <div className="absolute top-0 left-0 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute bottom-0 right-0 w-48 h-48 rounded-full bg-amber-300/20 blur-3xl" />
 

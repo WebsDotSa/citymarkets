@@ -773,7 +773,7 @@ export function CouponsRenderer({ settings }: { settings: CouponsSettings }) {
 
 export function HtmlBlockRenderer({ settings }: { settings: HtmlBlockSettings }) {
   const { content_html, background_color, text_color } = settings;
-  const sectionColorVars = useSectionColorVars(background_color ?? "#f1f5f9", text_color ?? "#0f172a");
+  const sectionColorVars = useSectionColorVars(background_color ?? "#F3F4F6", text_color ?? "#111827");
   if (!content_html) return null;
   return (
     <section
@@ -824,7 +824,7 @@ export function HeroBannerRenderer({ settings }: { settings: import("@/lib/catal
 
 export function CtaRenderer({ settings }: { settings: CtaSettings }) {
   const { variant, title, subtitle, cta_text, cta_href, background_color, text_color } = settings;
-  const sectionColorVars = useSectionColorVars(background_color ?? "#0f172a", text_color ?? "#ffffff");
+  const sectionColorVars = useSectionColorVars(background_color ?? "#111827", text_color ?? "#ffffff");
   return (
     <section
       className="mt-6 mx-4 sm:mx-6 rounded-2xl p-6 text-center"

@@ -111,7 +111,7 @@ export function NotificationsTemplatesTab() {
         <span
           className={`text-xs px-2 py-0.5 rounded-full ${
             r.is_active
-              ? "bg-emerald-100 text-emerald-700"
+              ? "bg-primary-100 text-primary-700"
               : "bg-gray-100 text-gray-600"
           }`}
         >
@@ -303,7 +303,7 @@ function TemplateEditorModal({
                     }}
                     className={`px-2 py-0.5 rounded text-xs font-mono border ${
                       active
-                        ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                        ? "bg-primary-100 text-primary-700 border-primary-200"
                         : "bg-white text-gray-600 border-gray-200"
                     }`}
                   >

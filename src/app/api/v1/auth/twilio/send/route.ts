@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+import { pool } from "@/lib/db";
 import { normalizeSaudiToE164 } from "@/lib/phone-format";
 import { isTwilioVerifyConfigured, twilioSendVerification } from "@/lib/twilio-verify";
+import {
+  isTwilioMessagingConfigured,
+  twilioSendSms,
+} from "@/lib/twilio-messaging";
 import {
   checkRateLimit,
   OTP_SEND_CONFIG,
@@ -13,6 +19,11 @@ import {
   APPLE_REVIEW_OTP,
   APPLE_REVIEW_NAME,
 } from "@/lib/apple-review";
+import {
+  encryptPii,
+  piiHmac,
+} from "@/lib/security/pii-crypto";
+import { warn as logWarn, info as logInfo } from "@/lib/logger";
 
 // Apple App Store review account — see src/lib/apple-review.ts for full
 // rationale. When the reviewer hits /send on their device, we short-
@@ -171,13 +182,17 @@ export async function POST(request: NextRequest) {
       //        (Geo Permissions / fraud / regulatory block — same
       //        resolution path: tell the operator to enable the country
       //        in Twilio Console → Verify → Services → Geo Permissions)
-      return NextResponse.json(
-        {
-          error:
-            "رقم الجوال غير مُفعَّل في حساب Twilio. جرّب رقماً مُحققاً في لوحة Twilio أو تحقّق من إعدادات Geo Permissions",
-        },
-        { status: 400 }
+      //
+      // FALLBACK (2026-10-03): Twilio Verify is blocked for Saudi
+      // numbers on this account until Geo Permissions is enabled. To
+      // keep customer login alive in production, we fall through to a
+      // locally-generated OTP sent via Twilio Messaging Service. The
+      // verify route (/api/v1/auth/twilio/verify) has the matching
+      // fallback that consults `user_otps` when Twilio Verify rejects.
+      logWarn(
+        `[twilio/send] Verify API blocked (${msg}); falling back to local OTP + Messaging`
       );
+      return await sendLegacyOtp(e164);
     }
     if (msg.includes(":60203")) {
       // 60203: max sends per service exceeded — this is a Twilio-side
@@ -226,4 +241,102 @@ export async function POST(request: NextRequest) {
       { status: 502 }
     );
   }
+}
+
+/**
+ * FALLBACK (2026-10-03): Twilio Verify is blocked for this account for
+ * certain geo / fraud reasons (60238, 21608, 60200). We generate a
+ * 4-digit OTP locally, hash + store it in `user_otps`, then send it
+ * via Twilio Messaging Service. The matching verify path lives in
+ * /api/v1/auth/twilio/verify (see `verifyLegacyOtp`) — it consults
+ * `user_otps` when Twilio Verify is blocked.
+ */
+async function sendLegacyOtp(e164: string): Promise<NextResponse> {
+  if (!isTwilioMessagingConfigured()) {
+    return NextResponse.json(
+      { error: "خدمة الرسائل غير مهيأة على الخادم" },
+      { status: 503 }
+    );
+  }
+
+  const code = generateSecureOtp();
+  const codeHash = hashOtp(code);
+
+  // احصل على المستخدم (أو أنشئه) لتخزين الـ OTP. نمشي نفس خطوات
+  // مسار /api/v1/auth/login كي لا نُسرّب التعداد.
+  const phoneDb = e164;
+  const client = await pool.connect();
+  let userId: string;
+  try {
+    await client.query(
+      `INSERT INTO users (phone, phone_encrypted, phone_hmac)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (phone) WHERE deleted_at IS NULL DO NOTHING`,
+      [phoneDb, encryptPii(phoneDb), piiHmac(phoneDb)]
+    );
+    const u = await client.query(
+      `SELECT id FROM users WHERE phone = $1 AND deleted_at IS NULL`,
+      [phoneDb]
+    );
+    userId = u.rows[0]?.id;
+    if (!userId) {
+      return NextResponse.json(
+        { error: "تعذر إنشاء الحساب" },
+        { status: 500 }
+      );
+    }
+
+    await client.query(
+      `INSERT INTO user_otps (user_id, code, expires_at)
+       VALUES ($1, $2, NOW() + INTERVAL '5 minutes')
+       ON CONFLICT (user_id) DO UPDATE SET
+         code = EXCLUDED.code,
+         expires_at = NOW() + INTERVAL '5 minutes'`,
+      [userId, codeHash]
+    );
+  } finally {
+    client.release();
+  }
+
+  const body = `أسواق سيتي: رمز التحقق الخاص بك هو ${code}. ينتهي خلال 5 دقائق.`;
+  const result = await twilioSendSms(e164, body);
+  if (!result.ok) {
+    logWarn(`[twilio/send] legacy SMS failed: ${result.error}`, {
+      code: result.code,
+    });
+    return NextResponse.json(
+      {
+        error:
+          "تعذر إرسال رمز التحقق عبر الرسائل القصيرة. حاول مرة أخرى لاحقاً",
+      },
+      { status: 502 }
+    );
+  }
+
+  logInfo(`[twilio/send] legacy OTP sent (sid=${result.sid})`);
+
+  return NextResponse.json({
+    success: true,
+    legacy: true,
+    twilio: {
+      sid: result.sid,
+      to: e164,
+      channel: "sms",
+      status: "pending",
+      valid: true,
+      sendCodeAttempts: [{ channel: "sms", attempt_sid: result.sid }],
+    },
+  });
+}
+
+function generateSecureOtp(length: number = 4): string {
+  const randomBytes = crypto.randomBytes(4);
+  const randomNumber = randomBytes.readUInt32BE(0);
+  const max = Math.pow(10, length);
+  const otp = randomNumber % max;
+  return otp.toString().padStart(length, "0");
+}
+
+function hashOtp(otp: string): string {
+  return crypto.createHash("sha256").update(otp).digest("hex");
 }

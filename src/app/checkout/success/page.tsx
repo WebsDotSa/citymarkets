@@ -141,8 +141,8 @@ function SuccessContent() {
 
       {status === "ok" && (
         <>
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-12 h-12 text-green-600" />
+          <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-12 h-12 text-primary-600" />
           </div>
           <h1 className="text-2xl font-bold text-secondary mb-2">
             تم الدفع بنجاح
@@ -151,7 +151,7 @@ function SuccessContent() {
             شكراً لك! تم استلام طلبك وسنتواصل معك قريباً.
           </p>
           {methodLabel ? (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full text-emerald-700 text-sm font-medium mb-2">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 border border-primary-200 rounded-full text-primary-700 text-sm font-medium mb-2">
               <CreditCard className="w-4 h-4" />
               <span>تم الدفع عبر {methodLabel}</span>
             </div>

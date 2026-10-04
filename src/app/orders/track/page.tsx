@@ -148,7 +148,7 @@ export default function TrackOrderPage() {
               <span
                 className={`px-3 py-1.5 rounded-full text-xs font-bold ${
                   order.status === "delivered" || order.status === "completed"
-                    ? "bg-green-50 text-green-700"
+                    ? "bg-primary-50 text-primary-700"
                     : order.status === "cancelled"
                     ? "bg-red-50 text-red-700"
                     : "bg-amber-50 text-amber-700"

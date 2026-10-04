@@ -26,6 +26,10 @@ out
 dist
 build
 
+# node_modules — populated by the deps stage; host tree's symlinks break COPY . .
+node_modules
+.pnpm
+
 # IDE and editor
 .idea
 .vscode

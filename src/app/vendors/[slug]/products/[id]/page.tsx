@@ -226,8 +226,8 @@ export default function VendorProductPage({
         <div className="mt-2 flex items-center gap-2">
           {product.inStock ? (
             <>
-              <span className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-sm text-green-600">متوفر</span>
+              <span className="w-2 h-2 rounded-full bg-primary-500" />
+              <span className="text-sm text-primary-600">متوفر</span>
               {product.stock != null && product.stock <= 5 && (
                 <span className="text-xs text-orange-500">
                   (باقي فقط {product.stock})

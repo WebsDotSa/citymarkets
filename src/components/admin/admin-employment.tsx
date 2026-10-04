@@ -31,7 +31,7 @@ const STATUS_META: Record<Status, { label: string; color: string; icon: typeof I
   reviewed: { label: "تمت المراجعة", color: "bg-gray-50 text-gray-700 border-gray-200", icon: CheckCircle2 },
   shortlisted: { label: "مرشح للقائمة", color: "bg-amber-50 text-amber-700 border-amber-200", icon: Star },
   rejected: { label: "مرفوض", color: "bg-red-50 text-red-700 border-red-200", icon: XCircle },
-  hired: { label: "تم التعيين", color: "bg-green-50 text-green-700 border-green-200", icon: CheckCircle2 },
+  hired: { label: "تم التعيين", color: "bg-primary-50 text-primary-700 border-primary-200", icon: CheckCircle2 },
 };
 
 const adminCred: RequestInit = { credentials: "include" };
@@ -396,7 +396,7 @@ export function AdminEmployment() {
                       type="button"
                       disabled={savingId === active.id}
                       onClick={() => acceptDelegate(active.id)}
-                      className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-bold bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+                      className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-bold bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50"
                     >
                       {savingId === active.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />

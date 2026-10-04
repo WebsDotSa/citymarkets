@@ -239,7 +239,7 @@ export default function DirectOrderCreatePage() {
                 <label
                   key={a.id}
                   className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer ${
-                    selectedAddressId === a.id ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                    selectedAddressId === a.id ? 'border-primary-500 bg-primary-50' : 'border-gray-200'
                   }`}
                 >
                   <input
@@ -283,7 +283,7 @@ export default function DirectOrderCreatePage() {
                   placeholder="مثال: 5 كيلو طماطم، 2 علبة حليب..."
                   value={it.free_text}
                   onChange={(e) => updateItem(idx, { free_text: e.target.value })}
-                  className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary-500"
                 />
                 <input
                   type="number"
@@ -291,7 +291,7 @@ export default function DirectOrderCreatePage() {
                   max={99}
                   value={it.quantity}
                   onChange={(e) => updateItem(idx, { quantity: parseInt(e.target.value, 10) || 1 })}
-                  className="w-16 border border-gray-200 rounded-xl px-2 py-2 text-center text-sm focus:outline-none focus:border-green-500"
+                  className="w-16 border border-gray-200 rounded-xl px-2 py-2 text-center text-sm focus:outline-none focus:border-primary-500"
                 />
                 {items.length > 1 && (
                   <button
@@ -319,7 +319,7 @@ export default function DirectOrderCreatePage() {
                   key={opt.value}
                   onClick={() => setPayment(opt.value)}
                   className={`flex items-center gap-2 p-3 rounded-xl border ${
-                    active ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                    active ? 'border-primary-500 bg-primary-50' : 'border-gray-200'
                   }`}
                 >
                   <Icon className="w-5 h-5" style={{ color: active ? BRAND.brandGreen : '#666' }} />
@@ -344,7 +344,7 @@ export default function DirectOrderCreatePage() {
             onChange={(e) => setNotes(e.target.value.slice(0, 700))}
             placeholder="أي تفاصيل إضافية تساعد السائق..."
             rows={3}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary-500"
           />
           <p className="text-xs text-gray-500 mt-2">الحد الأدنى للطلب 0.00 ر.س</p>
         </section>

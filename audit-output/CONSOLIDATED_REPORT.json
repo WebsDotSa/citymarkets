@@ -1,0 +1,2005 @@
+{
+  "generatedAt": "2026-10-04T15:35:03.759Z",
+  "reports": [
+    {
+      "workflow": "customerJourneyAudit",
+      "startedAt": "2026-10-04T15:12:53.020Z",
+      "finishedAt": "2026-10-04T15:14:08.203Z",
+      "total_pages_scanned": 142,
+      "issues_found": [
+        {
+          "severity": "low",
+          "category": "404",
+          "file": "src/app/blog/[slug]/page.tsx",
+          "message": "Page uses notFound() — verify catch-all route exists"
+        },
+        {
+          "severity": "low",
+          "category": "form",
+          "file": "src/app/catalog/page.tsx",
+          "message": "Empty-state check without loading indicator",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "severity": "low",
+          "category": "404",
+          "file": "src/app/categories/[slug]/page.tsx",
+          "message": "Page uses notFound() — verify catch-all route exists"
+        },
+        {
+          "severity": "low",
+          "category": "form",
+          "file": "src/app/offers/[id]/page.tsx",
+          "message": "Empty-state check without loading indicator",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "severity": "low",
+          "category": "404",
+          "file": "src/app/offers/[id]/page.tsx",
+          "message": "Page uses notFound() — verify catch-all route exists"
+        },
+        {
+          "severity": "low",
+          "category": "form",
+          "file": "src/app/page.tsx",
+          "message": "Empty-state check without loading indicator",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "severity": "low",
+          "category": "404",
+          "file": "src/app/products/[id]/page.tsx",
+          "message": "Page uses notFound() — verify catch-all route exists"
+        },
+        {
+          "severity": "low",
+          "category": "form",
+          "file": "src/app/vendors/page.tsx",
+          "message": "Empty-state check without loading indicator",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "severity": "low",
+          "category": "form",
+          "file": "src/app/wishlist/page.tsx",
+          "message": "Empty-state check without loading indicator",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "severity": "low",
+          "category": "404",
+          "file": "src/app/categories/[slug]/page.tsx",
+          "message": "Page uses notFound() — verify catch-all route exists"
+        },
+        {
+          "severity": "low",
+          "category": "404",
+          "file": "src/app/products/[id]/page.tsx",
+          "message": "Page uses notFound() — verify catch-all route exists"
+        },
+        {
+          "severity": "low",
+          "category": "form",
+          "file": "src/app/vendors/page.tsx",
+          "message": "Empty-state check without loading indicator",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "severity": "low",
+          "category": "form",
+          "file": "src/app/wishlist/page.tsx",
+          "message": "Empty-state check without loading indicator",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "severity": "low",
+          "category": "404",
+          "file": "src/app/blog/[slug]/page.tsx",
+          "message": "Page uses notFound() — verify catch-all route exists"
+        }
+      ],
+      "dead_code_candidates": [],
+      "duplicate_components": [],
+      "design_inconsistencies": [],
+      "missing_features": [],
+      "security_vulnerabilities": [],
+      "performance_issues": [],
+      "suggested_fixes": [
+        {
+          "id": 1,
+          "issue": "Page uses notFound() — verify catch-all route exists",
+          "file": "src/app/blog/[slug]/page.tsx",
+          "fix": "(needs triage)"
+        },
+        {
+          "id": 2,
+          "issue": "Empty-state check without loading indicator",
+          "file": "src/app/catalog/page.tsx",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "id": 3,
+          "issue": "Page uses notFound() — verify catch-all route exists",
+          "file": "src/app/categories/[slug]/page.tsx",
+          "fix": "(needs triage)"
+        },
+        {
+          "id": 4,
+          "issue": "Empty-state check without loading indicator",
+          "file": "src/app/offers/[id]/page.tsx",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "id": 5,
+          "issue": "Page uses notFound() — verify catch-all route exists",
+          "file": "src/app/offers/[id]/page.tsx",
+          "fix": "(needs triage)"
+        },
+        {
+          "id": 6,
+          "issue": "Empty-state check without loading indicator",
+          "file": "src/app/page.tsx",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "id": 7,
+          "issue": "Page uses notFound() — verify catch-all route exists",
+          "file": "src/app/products/[id]/page.tsx",
+          "fix": "(needs triage)"
+        },
+        {
+          "id": 8,
+          "issue": "Empty-state check without loading indicator",
+          "file": "src/app/vendors/page.tsx",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "id": 9,
+          "issue": "Empty-state check without loading indicator",
+          "file": "src/app/wishlist/page.tsx",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "id": 10,
+          "issue": "Page uses notFound() — verify catch-all route exists",
+          "file": "src/app/categories/[slug]/page.tsx",
+          "fix": "(needs triage)"
+        },
+        {
+          "id": 11,
+          "issue": "Page uses notFound() — verify catch-all route exists",
+          "file": "src/app/products/[id]/page.tsx",
+          "fix": "(needs triage)"
+        },
+        {
+          "id": 12,
+          "issue": "Empty-state check without loading indicator",
+          "file": "src/app/vendors/page.tsx",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "id": 13,
+          "issue": "Empty-state check without loading indicator",
+          "file": "src/app/wishlist/page.tsx",
+          "fix": "Add Skeleton/Spinner fallback during data fetch"
+        },
+        {
+          "id": 14,
+          "issue": "Page uses notFound() — verify catch-all route exists",
+          "file": "src/app/blog/[slug]/page.tsx",
+          "fix": "(needs triage)"
+        }
+      ]
+    },
+    {
+      "workflow": "adminPanelAudit",
+      "startedAt": "2026-10-04T15:13:46.141Z",
+      "finishedAt": "2026-10-04T15:14:08.179Z",
+      "total_pages_scanned": 42,
+      "issues_found": [],
+      "dead_code_candidates": [],
+      "duplicate_components": [],
+      "design_inconsistencies": [],
+      "missing_features": [],
+      "security_vulnerabilities": [],
+      "performance_issues": [],
+      "suggested_fixes": []
+    },
+    {
+      "workflow": "vendorDashboardAudit",
+      "startedAt": "2026-10-04T15:12:53.016Z",
+      "finishedAt": "2026-10-04T15:14:08.233Z",
+      "total_pages_scanned": 29,
+      "issues_found": [
+        {
+          "severity": "critical",
+          "category": "authz",
+          "file": "src/app/api/v1/vendor/auth/login/route.ts",
+          "message": "Vendor route handler missing vendor auth guard",
+          "fix": "Add requireVendorRole() / verifyVendorRequest() guard"
+        },
+        {
+          "severity": "critical",
+          "category": "authz",
+          "file": "src/app/api/v1/vendor/auth/otp/send/route.ts",
+          "message": "Vendor route handler missing vendor auth guard",
+          "fix": "Add requireVendorRole() / verifyVendorRequest() guard"
+        },
+        {
+          "severity": "critical",
+          "category": "authz",
+          "file": "src/app/api/v1/vendor/auth/otp/verify/route.ts",
+          "message": "Vendor route handler missing vendor auth guard",
+          "fix": "Add requireVendorRole() / verifyVendorRequest() guard"
+        },
+        {
+          "severity": "high",
+          "category": "validation",
+          "file": "src/app/api/v1/vendor/auth/logout/route.ts",
+          "message": "Mutation route handler without Zod parse",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "severity": "high",
+          "category": "validation",
+          "file": "src/app/api/v1/vendor/auth/otp/send/route.ts",
+          "message": "Mutation route handler without Zod parse",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "severity": "high",
+          "category": "validation",
+          "file": "src/app/api/v1/vendor/auth/otp/verify/route.ts",
+          "message": "Mutation route handler without Zod parse",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "severity": "high",
+          "category": "validation",
+          "file": "src/app/api/v1/vendor/categories/[id]/route.ts",
+          "message": "Mutation route handler without Zod parse",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "severity": "high",
+          "category": "validation",
+          "file": "src/app/api/v1/vendor/categories/route.ts",
+          "message": "Mutation route handler without Zod parse",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "severity": "high",
+          "category": "validation",
+          "file": "src/app/api/v1/vendor/coupons/[id]/route.ts",
+          "message": "Mutation route handler without Zod parse",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "severity": "high",
+          "category": "validation",
+          "file": "src/app/api/v1/vendor/coupons/route.ts",
+          "message": "Mutation route handler without Zod parse",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "severity": "high",
+          "category": "validation",
+          "file": "src/app/api/v1/vendor/orders/[id]/route.ts",
+          "message": "Mutation route handler without Zod parse",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "severity": "high",
+          "category": "validation",
+          "file": "src/app/api/v1/vendor/products/[id]/route.ts",
+          "message": "Mutation route handler without Zod parse",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "severity": "high",
+          "category": "validation",
+          "file": "src/app/api/v1/vendor/settings/route.ts",
+          "message": "Mutation route handler without Zod parse",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "severity": "high",
+          "category": "validation",
+          "file": "src/app/api/v1/vendor/staff/[id]/route.ts",
+          "message": "Mutation route handler without Zod parse",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "severity": "high",
+          "category": "validation",
+          "file": "src/app/api/v1/vendor/staff/route.ts",
+          "message": "Mutation route handler without Zod parse",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        }
+      ],
+      "dead_code_candidates": [],
+      "duplicate_components": [],
+      "design_inconsistencies": [],
+      "missing_features": [],
+      "security_vulnerabilities": [
+        {
+          "severity": "critical",
+          "category": "authz",
+          "file": "src/app/api/v1/vendor/auth/login/route.ts",
+          "message": "Vendor route handler missing vendor auth guard",
+          "fix": "Add requireVendorRole() / verifyVendorRequest() guard"
+        },
+        {
+          "severity": "critical",
+          "category": "authz",
+          "file": "src/app/api/v1/vendor/auth/otp/send/route.ts",
+          "message": "Vendor route handler missing vendor auth guard",
+          "fix": "Add requireVendorRole() / verifyVendorRequest() guard"
+        },
+        {
+          "severity": "critical",
+          "category": "authz",
+          "file": "src/app/api/v1/vendor/auth/otp/verify/route.ts",
+          "message": "Vendor route handler missing vendor auth guard",
+          "fix": "Add requireVendorRole() / verifyVendorRequest() guard"
+        }
+      ],
+      "performance_issues": [],
+      "suggested_fixes": [
+        {
+          "id": 1,
+          "issue": "Vendor route handler missing vendor auth guard",
+          "file": "src/app/api/v1/vendor/auth/login/route.ts",
+          "fix": "Add requireVendorRole() / verifyVendorRequest() guard"
+        },
+        {
+          "id": 2,
+          "issue": "Vendor route handler missing vendor auth guard",
+          "file": "src/app/api/v1/vendor/auth/otp/send/route.ts",
+          "fix": "Add requireVendorRole() / verifyVendorRequest() guard"
+        },
+        {
+          "id": 3,
+          "issue": "Vendor route handler missing vendor auth guard",
+          "file": "src/app/api/v1/vendor/auth/otp/verify/route.ts",
+          "fix": "Add requireVendorRole() / verifyVendorRequest() guard"
+        },
+        {
+          "id": 4,
+          "issue": "Mutation route handler without Zod parse",
+          "file": "src/app/api/v1/vendor/auth/logout/route.ts",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "id": 5,
+          "issue": "Mutation route handler without Zod parse",
+          "file": "src/app/api/v1/vendor/auth/otp/send/route.ts",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "id": 6,
+          "issue": "Mutation route handler without Zod parse",
+          "file": "src/app/api/v1/vendor/auth/otp/verify/route.ts",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "id": 7,
+          "issue": "Mutation route handler without Zod parse",
+          "file": "src/app/api/v1/vendor/categories/[id]/route.ts",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "id": 8,
+          "issue": "Mutation route handler without Zod parse",
+          "file": "src/app/api/v1/vendor/categories/route.ts",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "id": 9,
+          "issue": "Mutation route handler without Zod parse",
+          "file": "src/app/api/v1/vendor/coupons/[id]/route.ts",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "id": 10,
+          "issue": "Mutation route handler without Zod parse",
+          "file": "src/app/api/v1/vendor/coupons/route.ts",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "id": 11,
+          "issue": "Mutation route handler without Zod parse",
+          "file": "src/app/api/v1/vendor/orders/[id]/route.ts",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "id": 12,
+          "issue": "Mutation route handler without Zod parse",
+          "file": "src/app/api/v1/vendor/products/[id]/route.ts",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "id": 13,
+          "issue": "Mutation route handler without Zod parse",
+          "file": "src/app/api/v1/vendor/settings/route.ts",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "id": 14,
+          "issue": "Mutation route handler without Zod parse",
+          "file": "src/app/api/v1/vendor/staff/[id]/route.ts",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        },
+        {
+          "id": 15,
+          "issue": "Mutation route handler without Zod parse",
+          "file": "src/app/api/v1/vendor/staff/route.ts",
+          "fix": "Add schema.parse() / safeParse() before mutation"
+        }
+      ]
+    },
+    {
+      "workflow": "iosWebParityAudit",
+      "startedAt": "2026-10-04T15:12:53.163Z",
+      "finishedAt": "2026-10-04T15:14:07.797Z",
+      "total_pages_scanned": 157,
+      "issues_found": [
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "",
+          "message": "Web endpoint  has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/addresses",
+          "message": "Web endpoint /addresses has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/addresses/[id]",
+          "message": "Web endpoint /addresses/[id] has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/addresses/[id]/default",
+          "message": "Web endpoint /addresses/[id]/default has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/ai-chat",
+          "message": "Web endpoint /ai-chat has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/ai-chat/history",
+          "message": "Web endpoint /ai-chat/history has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/analytics/event",
+          "message": "Web endpoint /analytics/event has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/analytics/pageview",
+          "message": "Web endpoint /analytics/pageview has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/api/admin/orders",
+          "message": "Web endpoint /api/admin/orders has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/api/admin/orders/[id]",
+          "message": "Web endpoint /api/admin/orders/[id] has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/api/admin/orders/[id]/items",
+          "message": "Web endpoint /api/admin/orders/[id]/items has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/api/admin/orders/[id]/messages",
+          "message": "Web endpoint /api/admin/orders/[id]/messages has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/api/admin/orders/[id]/refund",
+          "message": "Web endpoint /api/admin/orders/[id]/refund has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/api/admin/orders/direct",
+          "message": "Web endpoint /api/admin/orders/direct has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/auth/config",
+          "message": "Web endpoint /auth/config has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/auth/csrf",
+          "message": "Web endpoint /auth/csrf has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/auth/login",
+          "message": "Web endpoint /auth/login has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/auth/logout",
+          "message": "Web endpoint /auth/logout has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/auth/me",
+          "message": "Web endpoint /auth/me has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "severity": "medium",
+          "category": "endpoint",
+          "file": "/auth/twilio/send",
+          "message": "Web endpoint /auth/twilio/send has no iOS counterpart",
+          "fix": "Either add iOS call site or remove web route"
+        }
+      ],
+      "dead_code_candidates": [],
+      "duplicate_components": [],
+      "design_inconsistencies": [],
+      "missing_features": [
+        "",
+        "/addresses",
+        "/addresses/[id]",
+        "/addresses/[id]/default",
+        "/ai-chat",
+        "/ai-chat/history",
+        "/analytics/event",
+        "/analytics/pageview",
+        "/api/admin/orders",
+        "/api/admin/orders/[id]",
+        "/api/admin/orders/[id]/items",
+        "/api/admin/orders/[id]/messages",
+        "/api/admin/orders/[id]/refund",
+        "/api/admin/orders/direct",
+        "/auth/config",
+        "/auth/csrf",
+        "/auth/login",
+        "/auth/logout",
+        "/auth/me",
+        "/auth/twilio/send",
+        "/auth/twilio/verify",
+        "/blog",
+        "/blog/[slug]",
+        "/cart",
+        "/categories",
+        "/categories/[id]",
+        "/checkout",
+        "/contact",
+        "/coupons",
+        "/coupons/validate"
+      ],
+      "security_vulnerabilities": [],
+      "performance_issues": [],
+      "suggested_fixes": [
+        {
+          "id": 1,
+          "issue": "Web endpoint  has no iOS counterpart",
+          "file": "",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 2,
+          "issue": "Web endpoint /addresses has no iOS counterpart",
+          "file": "/addresses",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 3,
+          "issue": "Web endpoint /addresses/[id] has no iOS counterpart",
+          "file": "/addresses/[id]",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 4,
+          "issue": "Web endpoint /addresses/[id]/default has no iOS counterpart",
+          "file": "/addresses/[id]/default",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 5,
+          "issue": "Web endpoint /ai-chat has no iOS counterpart",
+          "file": "/ai-chat",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 6,
+          "issue": "Web endpoint /ai-chat/history has no iOS counterpart",
+          "file": "/ai-chat/history",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 7,
+          "issue": "Web endpoint /analytics/event has no iOS counterpart",
+          "file": "/analytics/event",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 8,
+          "issue": "Web endpoint /analytics/pageview has no iOS counterpart",
+          "file": "/analytics/pageview",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 9,
+          "issue": "Web endpoint /api/admin/orders has no iOS counterpart",
+          "file": "/api/admin/orders",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 10,
+          "issue": "Web endpoint /api/admin/orders/[id] has no iOS counterpart",
+          "file": "/api/admin/orders/[id]",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 11,
+          "issue": "Web endpoint /api/admin/orders/[id]/items has no iOS counterpart",
+          "file": "/api/admin/orders/[id]/items",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 12,
+          "issue": "Web endpoint /api/admin/orders/[id]/messages has no iOS counterpart",
+          "file": "/api/admin/orders/[id]/messages",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 13,
+          "issue": "Web endpoint /api/admin/orders/[id]/refund has no iOS counterpart",
+          "file": "/api/admin/orders/[id]/refund",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 14,
+          "issue": "Web endpoint /api/admin/orders/direct has no iOS counterpart",
+          "file": "/api/admin/orders/direct",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 15,
+          "issue": "Web endpoint /auth/config has no iOS counterpart",
+          "file": "/auth/config",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 16,
+          "issue": "Web endpoint /auth/csrf has no iOS counterpart",
+          "file": "/auth/csrf",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 17,
+          "issue": "Web endpoint /auth/login has no iOS counterpart",
+          "file": "/auth/login",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 18,
+          "issue": "Web endpoint /auth/logout has no iOS counterpart",
+          "file": "/auth/logout",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 19,
+          "issue": "Web endpoint /auth/me has no iOS counterpart",
+          "file": "/auth/me",
+          "fix": "Either add iOS call site or remove web route"
+        },
+        {
+          "id": 20,
+          "issue": "Web endpoint /auth/twilio/send has no iOS counterpart",
+          "file": "/auth/twilio/send",
+          "fix": "Either add iOS call site or remove web route"
+        }
+      ]
+    },
+    {
+      "workflow": "crossCuttingAudit",
+      "startedAt": "2026-10-04T15:13:46.187Z",
+      "finishedAt": "2026-10-04T15:14:07.838Z",
+      "total_pages_scanned": 0,
+      "issues_found": [
+        {
+          "severity": "medium",
+          "category": "design",
+          "file": "src/components/pages/categories/categories-helpers.ts",
+          "line": 77,
+          "message": "Tailwind emerald-* class — should be primary-* token",
+          "fix": "Replace with primary-{NNN} from tailwind.config.ts brand ramp"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/security/pii-crypto.ts",
+          "line": 87,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/security/pii-crypto.ts",
+          "line": 238,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/security/pii-crypto.ts",
+          "line": 245,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/safe-fetch.ts",
+          "line": 5,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/payments/event-ledger.ts",
+          "line": 71,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/queue/redis.ts",
+          "line": 39,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/analytics.ts",
+          "line": 282,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/analytics.ts",
+          "line": 289,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/logger.ts",
+          "line": 46,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/logger.ts",
+          "line": 55,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/logger.ts",
+          "line": 67,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/logger.ts",
+          "line": 88,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/errors/checkout-error-reporter.ts",
+          "line": 32,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 73,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 109,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 128,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 147,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/coupons/page.tsx",
+          "line": 47,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/home-design/page.tsx",
+          "line": 92,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/categories/page.tsx",
+          "line": 78,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/categories/[id]/edit/page.tsx",
+          "line": 74,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/categories/[id]/edit/page.tsx",
+          "line": 97,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/categories/new/page.tsx",
+          "line": 51,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/categories/new/page.tsx",
+          "line": 73,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/users/page.tsx",
+          "line": 46,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/offers/page.tsx",
+          "line": 54,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/offers/[id]/edit/page.tsx",
+          "line": 61,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/products/page.tsx",
+          "line": 220,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/products/[id]/edit/EditProductClient.tsx",
+          "line": 103,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/products/[id]/edit/EditProductClient.tsx",
+          "line": 148,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/products/new/NewProductClient.tsx",
+          "line": 79,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/products/new/NewProductClient.tsx",
+          "line": 123,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/notifications/page.tsx",
+          "line": 93,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/(dashboard)/settings/admins/page.tsx",
+          "line": 46,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/error.tsx",
+          "line": 13,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/driver/page.tsx",
+          "line": 88,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/driver/page.tsx",
+          "line": 91,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/admin/driver/page.tsx",
+          "line": 131,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/vendor/[slug]/admin/layout.tsx",
+          "line": 118,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/vendor/[slug]/admin/page.tsx",
+          "line": 63,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/vendor/[slug]/admin/orders/page.tsx",
+          "line": 84,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/vendor/[slug]/admin/orders/page.tsx",
+          "line": 103,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/vendor/[slug]/admin/products/page.tsx",
+          "line": 60,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/vendor/[slug]/admin/products/page.tsx",
+          "line": 79,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/vendor/[slug]/admin/products/page.tsx",
+          "line": 93,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/vendor/[slug]/admin/settings/page.tsx",
+          "line": 104,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "low",
+          "category": "logging",
+          "file": "src/app/vendor/[slug]/admin/settings/page.tsx",
+          "line": 149,
+          "message": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-loyalty.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-dashboard.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-vendor-applications.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-vendors-analytics.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/home-design/section-editor.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/data-table.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-sidebar.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/driver-layout.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-analytics.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-vendors.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/category-edit-form.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-employment.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-activity.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/product-edit-form.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-login.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/offer-edit-form.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-delivery-settings.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/notifications/NotificationsTemplatesTab.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/notifications/NotificationsComposerTab.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/notifications/NotificationsProvidersTab.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/components/admin/product-edit-form.tsx",
+          "line": 793,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/components/PushOptIn.tsx",
+          "line": 80,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/db/typed.ts",
+          "line": 14,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/style-utils.ts",
+          "line": 86,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 56,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 94,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 95,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 117,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 123,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 136,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 142,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 176,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 183,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/performance/web-vitals.ts",
+          "line": 184,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/color-variables.ts",
+          "line": 40,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/color-variables.ts",
+          "line": 87,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/color-variables.ts",
+          "line": 99,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/color-variables.ts",
+          "line": 115,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/lib/color-variables.ts",
+          "line": 155,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/app/api/admin/vendors/route.ts",
+          "line": 287,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/app/api/admin/vendor-applications/route.ts",
+          "line": 32,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/app/api/v1/vendor/coupons/[id]/route.ts",
+          "line": 13,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/app/api/v1/vendor/coupons/[id]/route.ts",
+          "line": 105,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/app/api/v1/vendor/coupons/route.ts",
+          "line": 26,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/app/api/v1/vendor/coupons/route.ts",
+          "line": 65,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/app/api/v1/vendor/categories/[id]/route.ts",
+          "line": 39,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/app/api/v1/vendor/categories/[id]/route.ts",
+          "line": 132,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/app/api/v1/vendor/categories/route.ts",
+          "line": 73,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/app/api/v1/vendor/categories/route.ts",
+          "line": 119,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        },
+        {
+          "severity": "medium",
+          "category": "type",
+          "file": "src/app/api/v1/vendor/dashboard/stats/route.ts",
+          "line": 8,
+          "message": "TypeScript escape hatch (as any / @ts-ignore)",
+          "fix": "Add proper type or narrow via discriminated union"
+        }
+      ],
+      "dead_code_candidates": [
+        "src/lib/analytics/page-views-retention",
+        "src/lib/api/with-api-guards",
+        "src/lib/images/blur-placeholder",
+        "src/lib/images/image-utils",
+        "src/lib/performance/code-split-guide",
+        "src/components/admin/admin-button.stories",
+        "src/components/admin/admin-card.stories",
+        "src/components/admin/admin-input.stories",
+        "src/components/admin/admin-page-header.stories",
+        "src/components/admin/form-fields/color-field",
+        "src/components/admin/form-fields/date-time-field",
+        "src/components/admin/form-fields/default-field",
+        "src/components/admin/form-fields/file-field",
+        "src/components/admin/form-fields/form-field-row",
+        "src/components/admin/form-fields/form-layout",
+        "src/components/admin/form-fields/form-section",
+        "src/components/admin/form-fields/image-field",
+        "src/components/admin/form-fields/images-field",
+        "src/components/pages/home/sections/partner-cta",
+        "src/components/pages/home/stores-showcase",
+        "src/components/ui/card.stories",
+        "src/components/ui/chip.stories",
+        "src/components/ui/page-header.stories",
+        "src/components/ui/vendor-card.stories",
+        "src/components/ui/vendor-card"
+      ],
+      "duplicate_components": [],
+      "design_inconsistencies": [
+        "src/components/pages/categories/categories-helpers.ts:77 Tailwind emerald-* class — should be primary-* token"
+      ],
+      "missing_features": [],
+      "security_vulnerabilities": [],
+      "performance_issues": [
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-loyalty.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-dashboard.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-vendor-applications.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-vendors-analytics.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/home-design/section-editor.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/data-table.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-sidebar.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/driver-layout.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-analytics.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-vendors.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/category-edit-form.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-employment.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-activity.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/product-edit-form.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-login.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/offer-edit-form.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/admin-delivery-settings.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/notifications/NotificationsTemplatesTab.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/notifications/NotificationsComposerTab.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "severity": "medium",
+          "category": "perf",
+          "file": "src/components/admin/notifications/NotificationsProvidersTab.tsx",
+          "message": "Large client component not lazy-loaded",
+          "fix": "Use next/dynamic for heavy client-only components"
+        }
+      ],
+      "suggested_fixes": [
+        {
+          "id": 1,
+          "issue": "Tailwind emerald-* class — should be primary-* token",
+          "file": "src/components/pages/categories/categories-helpers.ts",
+          "fix": "Replace with primary-{NNN} from tailwind.config.ts brand ramp"
+        },
+        {
+          "id": 2,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/security/pii-crypto.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 3,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/security/pii-crypto.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 4,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/security/pii-crypto.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 5,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/safe-fetch.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 6,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/payments/event-ledger.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 7,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/queue/redis.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 8,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/analytics.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 9,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/analytics.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 10,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/logger.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 11,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/logger.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 12,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/logger.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 13,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/logger.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 14,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/errors/checkout-error-reporter.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 15,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/performance/web-vitals.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 16,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/performance/web-vitals.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 17,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/performance/web-vitals.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 18,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/lib/performance/web-vitals.ts",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 19,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/coupons/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 20,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/home-design/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 21,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/categories/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 22,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/categories/[id]/edit/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 23,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/categories/[id]/edit/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 24,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/categories/new/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 25,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/categories/new/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 26,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/users/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 27,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/offers/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 28,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/offers/[id]/edit/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 29,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/products/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 30,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/products/[id]/edit/EditProductClient.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 31,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/products/[id]/edit/EditProductClient.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 32,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/products/new/NewProductClient.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 33,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/products/new/NewProductClient.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 34,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/notifications/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 35,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/(dashboard)/settings/admins/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 36,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/error.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 37,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/driver/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 38,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/driver/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 39,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/admin/driver/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 40,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/vendor/[slug]/admin/layout.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 41,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/vendor/[slug]/admin/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 42,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/vendor/[slug]/admin/orders/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 43,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/vendor/[slug]/admin/orders/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 44,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/vendor/[slug]/admin/products/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 45,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/vendor/[slug]/admin/products/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 46,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/vendor/[slug]/admin/products/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 47,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/vendor/[slug]/admin/settings/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 48,
+          "issue": "console.* outside structured logger bypasses LOG_LEVEL gate",
+          "file": "src/app/vendor/[slug]/admin/settings/page.tsx",
+          "fix": "Replace with logger.ts/info/warn/error"
+        },
+        {
+          "id": 49,
+          "issue": "Large client component not lazy-loaded",
+          "file": "src/components/admin/admin-loyalty.tsx",
+          "fix": "Use next/dynamic for heavy client-only components"
+        },
+        {
+          "id": 50,
+          "issue": "Large client component not lazy-loaded",
+          "file": "src/components/admin/admin-dashboard.tsx",
+          "fix": "Use next/dynamic for heavy client-only components"
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "critical": 3,
+    "high": 12,
+    "medium": 71,
+    "low": 61
+  }
+}

@@ -234,19 +234,19 @@ export default function DriverDashboard() {
 
         <div
           className={`bg-white rounded-xl p-4 shadow cursor-pointer transition-all ${
-            filter === "delivered" ? "ring-2 ring-green-500" : ""
+            filter === "delivered" ? "ring-2 ring-primary-500" : ""
           }`}
           onClick={() => setFilter("delivered")}
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">تم التوصيل</p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-2xl font-bold text-primary-600">
                 {counts.delivered}
               </p>
             </div>
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-green-600" />
+            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-primary-600" />
             </div>
           </div>
         </div>
@@ -401,7 +401,7 @@ export default function DriverDashboard() {
                           setShowSuccessModal(true);
                         }}
                         disabled={updatingOrder === order.id}
-                        className="flex-1 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="flex-1 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <CheckCircle className="w-4 h-4" />
                         تم التوصيل
@@ -440,8 +440,8 @@ export default function DriverDashboard() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6">
             <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-primary-600" />
               </div>
               <h3 className="text-xl font-bold">تأكيد التوصيل</h3>
               <p className="text-gray-600 mt-2">
@@ -463,7 +463,7 @@ export default function DriverDashboard() {
                   updateOrderStatus(selectedOrder.id, "delivered")
                 }
                 disabled={updatingOrder === selectedOrder.id}
-                className="flex-1 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
+                className="flex-1 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
               >
                 {updatingOrder === selectedOrder.id ? (
                   <RefreshCw className="w-4 h-4 animate-spin mx-auto" />

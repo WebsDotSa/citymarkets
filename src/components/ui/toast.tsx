@@ -43,7 +43,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const getIcon = (type: ToastType) => {
     switch (type) {
       case "success":
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="w-5 h-5 text-primary-500" />;
       case "error":
         return <AlertCircle className="w-5 h-5 text-red-500" />;
       case "warning":
@@ -56,7 +56,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const getBorderClass = (type: ToastType) => {
     switch (type) {
       case "success":
-        return "border-r-4 border-r-green-500";
+        return "border-r-4 border-r-primary-500";
       case "error":
         return "border-r-4 border-r-red-500";
       case "warning":

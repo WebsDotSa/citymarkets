@@ -65,7 +65,7 @@ export default function AdminProfilePage() {
           </div>
 
           {message && (
-            <div className="mb-4 p-3 bg-green-50 text-green-600 text-sm rounded-xl border border-green-100">
+            <div className="mb-4 p-3 bg-primary-50 text-primary-600 text-sm rounded-xl border border-primary-100">
               {message}
             </div>
           )}

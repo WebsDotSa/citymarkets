@@ -162,7 +162,7 @@ export default function AdminAbandonedCartsPage() {
         <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">مستردة</span>
-            <RefreshCcw className="w-4 h-4 text-emerald-500" />
+            <RefreshCcw className="w-4 h-4 text-primary-500" />
           </div>
           <p className="text-2xl font-bold text-gray-800 mt-2">{stats.recovered}</p>
           <p className="text-xs text-gray-400 mt-1">تم استكمالها لاحقاً</p>
@@ -276,7 +276,7 @@ export default function AdminAbandonedCartsPage() {
                             <span className="text-xs text-gray-400 mt-0.5">بدون جوال</span>
                           )}
                           {row.user_id ? (
-                            <span className="text-tiny text-emerald-600 mt-0.5">مسجّل</span>
+                            <span className="text-tiny text-primary-600 mt-0.5">مسجّل</span>
                           ) : (
                             <span className="text-tiny text-gray-400 mt-0.5">زائر</span>
                           )}
@@ -308,7 +308,7 @@ export default function AdminAbandonedCartsPage() {
                       </td>
                       <td className="px-4 py-3">
                         {row.status === "recovered" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-semibold">
                             <RefreshCcw className="w-3 h-3" /> مستردة
                           </span>
                         ) : (

@@ -168,7 +168,7 @@ function AdminOffersContent() {
     const s = getStatus(o);
     if (s === "live") {
       return (
-        <span className="text-xs px-2 py-1 rounded-lg bg-green-100 text-green-700">
+        <span className="text-xs px-2 py-1 rounded-lg bg-primary-100 text-primary-700">
           نشط الآن
         </span>
       );
@@ -291,7 +291,7 @@ function AdminOffersContent() {
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4">
           <p className="text-xs text-gray-500">نشطة الآن</p>
-          <p className="text-2xl font-bold text-green-700 mt-1">{stats.live}</p>
+          <p className="text-2xl font-bold text-primary-700 mt-1">{stats.live}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4">
           <p className="text-xs text-gray-500">مجدولة</p>

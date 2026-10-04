@@ -426,7 +426,7 @@ export default function AdminOrdersPage() {
               </span>
             )}
             {paymentFilter && (
-              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full font-medium">
+              <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded-full font-medium">
                 {PAYMENT_STATUS_AR[paymentFilter] || paymentFilter}
               </span>
             )}
@@ -567,7 +567,7 @@ function StatCard({
     primary: "bg-primary/10 text-primary",
     blue: "bg-blue-50 text-blue-600",
     amber: "bg-amber-50 text-amber-600",
-    emerald: "bg-emerald-50 text-emerald-600",
+    emerald: "bg-primary-50 text-primary-600",
   };
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3 hover:shadow-sm transition-shadow">

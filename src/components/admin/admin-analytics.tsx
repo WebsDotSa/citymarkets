@@ -311,7 +311,7 @@ function OverviewTab({
       value: formatPercent(overview.conversionRate),
       sub: `من ${overview.visitorsUnique} زائر`,
       icon: TrendingUp,
-      color: "from-emerald-500 to-emerald-600",
+      color: "from-primary-500 to-primary-600",
     },
     {
       label: METRIC_LABELS.cancelled,
@@ -466,7 +466,7 @@ function VisitorsTab({
       value: topCountries[0] ? getCountryAr(topCountries[0].country) : "—",
       sub: topCountries[0] ? `${topCountries[0].views} زيارة` : "—",
       icon: Globe,
-      color: "from-emerald-500 to-emerald-600",
+      color: "from-primary-500 to-primary-600",
     },
     {
       label: METRIC_LABELS.pagesPerSession,
@@ -594,7 +594,7 @@ function OrdersTab({
         .reduce((sum, s) => sum + s.count, 0),
       sub: "تم التوصيل",
       icon: TrendingUp,
-      color: "from-emerald-500 to-emerald-600",
+      color: "from-primary-500 to-primary-600",
     },
     {
       label: METRIC_LABELS.cancelled,

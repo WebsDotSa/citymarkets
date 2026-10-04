@@ -272,7 +272,7 @@ export function ProductEditForm({
             onClick={() => setIsActive(!isActive)}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
               isActive
-                ? "bg-green-50 text-green-700 border border-green-200"
+                ? "bg-primary-50 text-primary-700 border border-primary-200"
                 : "bg-gray-100 text-gray-500 border border-gray-200"
             }`}
             aria-pressed={isActive}
@@ -649,7 +649,7 @@ export function ProductEditForm({
                   </div>
                 )}
                 {!hasNoStock && !hasLowStock && (
-                  <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">
+                  <div className="flex items-center gap-2 p-3 bg-primary-50 border border-primary-200 rounded-xl text-sm text-primary-700">
                     <Info className="w-4 h-4 flex-shrink-0" />
                     <span>المخزون بحالة جيدة</span>
                   </div>

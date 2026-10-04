@@ -8,7 +8,7 @@
     --admin-primary-dark: #007A38;
     --admin-primary-light: #E6F5EC;
     --admin-secondary: #1A1A2E;
-    --admin-success: #10B981;
+    --admin-success: var(--admin-primary);
     --admin-warning: #F59E0B;
     --admin-danger: #EF4444;
     --admin-info: #3B82F6;

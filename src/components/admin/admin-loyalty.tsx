@@ -108,7 +108,7 @@ export function AdminLoyalty() {
           className={
             "rounded-xl p-3 text-sm " +
             (message.kind === "ok"
-              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+              ? "bg-primary-50 text-primary-700 border border-primary-200"
               : "bg-red-50 text-red-700 border border-red-200")
           }
         >
@@ -130,7 +130,7 @@ export function AdminLoyalty() {
               value={stats.total_balance.toLocaleString("ar-SA")}
             />
             <StatCard
-              icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
+              icon={<TrendingUp className="w-5 h-5 text-primary-600" />}
               label="نقاط مكتسبة (تراكمي)"
               value={stats.total_earned.toLocaleString("ar-SA")}
             />
@@ -381,7 +381,7 @@ function Last7DaysChart({
               <div className="relative w-full flex items-end justify-center h-24">
                 {e.volume > 0 ? (
                   <div
-                    className="w-full bg-emerald-100 rounded-t-md group-hover:bg-emerald-200 transition-colors"
+                    className="w-full bg-primary-100 rounded-t-md group-hover:bg-primary-200 transition-colors"
                     style={{ height: `${pct}%` }}
                   />
                 ) : (

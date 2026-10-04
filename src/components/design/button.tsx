@@ -69,9 +69,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         active:scale-[0.98]
       `,
       success: `
-        bg-emerald-100 text-emerald-600
-        hover:bg-emerald-600 hover:text-white
-        focus-visible:ring-emerald-600
+        bg-primary-100 text-primary-600
+        hover:bg-primary-600 hover:text-white
+        focus-visible:ring-primary-600
       `,
     };
 

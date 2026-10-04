@@ -250,7 +250,7 @@ export default function AdminCategoriesPage() {
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4">
             <p className="text-xs text-gray-500">مفعّلة / مخفية</p>
-            <p className="text-lg font-bold text-green-700 mt-1">
+            <p className="text-lg font-bold text-primary-700 mt-1">
               {stats.active} <span className="text-gray-400 mx-1">/</span>{" "}
               <span className="text-gray-500">{stats.inactive}</span>
             </p>
@@ -488,7 +488,7 @@ function CategoryRowView({
           title={cat.is_active ? "إخفاء الفئة" : "إظهار الفئة"}
           className={`p-2 rounded-lg transition-colors ${
             cat.is_active
-              ? "text-green-600 hover:bg-green-50"
+              ? "text-primary-600 hover:bg-primary-50"
               : "text-gray-400 hover:bg-gray-100"
           }`}
         >

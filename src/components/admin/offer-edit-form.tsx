@@ -294,7 +294,7 @@ export function OfferEditForm({
             onClick={() => setIsActive(!isActive)}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
               isActive
-                ? "bg-green-50 text-green-700 border border-green-200"
+                ? "bg-primary-50 text-primary-700 border border-primary-200"
                 : "bg-gray-100 text-gray-500 border border-gray-200"
             }`}
             aria-pressed={isActive}
@@ -564,7 +564,7 @@ export function OfferEditForm({
               </div>
             )}
             {scopeType === "all" && (
-              <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+              <p className="text-sm text-primary-700 bg-primary-50 border border-primary-100 rounded-xl px-4 py-3">
                 سيُطبَّق هذا العرض على كل المنتجات في المتجر.
               </p>
             )}

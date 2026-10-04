@@ -304,7 +304,7 @@ export function AdminVendors() {
                 ✉ {r.login_email}
               </span>
             ) : null}
-            <span className="text-tiny text-emerald-600 font-medium">✓ حساب مالك جاهز</span>
+            <span className="text-tiny text-primary-600 font-medium">✓ حساب مالك جاهز</span>
           </div>
         );
       },
@@ -319,7 +319,7 @@ export function AdminVendors() {
             onClick={() => toggleField(r, "is_active")}
             className={`text-2xs px-2 py-0.5 rounded-md font-medium transition-colors ${
               r.is_active
-                ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                ? "bg-primary-50 text-primary-700 hover:bg-primary-100"
                 : "bg-gray-100 text-gray-500 hover:bg-gray-200"
             }`}
             title="اضغط لتغيير الحالة"

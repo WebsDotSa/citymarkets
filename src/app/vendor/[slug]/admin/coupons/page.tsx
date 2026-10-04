@@ -169,7 +169,7 @@ export default function VendorCouponsPage({ params }: CouponsPageProps) {
                       <Copy className="w-3.5 h-3.5 opacity-60" />
                     </button>
                     {copiedId === c.id && (
-                      <span className="text-xs text-emerald-600">✓ تم النسخ</span>
+                      <span className="text-xs text-primary-600">✓ تم النسخ</span>
                     )}
                     {!c.isActive && (
                       <span className="text-tiny px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">
@@ -210,7 +210,7 @@ export default function VendorCouponsPage({ params }: CouponsPageProps) {
                     title={canManage ? (c.isActive ? "إيقاف" : "تفعيل") : "ليس لديك صلاحية"}
                   >
                     {c.isActive ? (
-                      <ToggleRight className="w-5 h-5 text-emerald-600" />
+                      <ToggleRight className="w-5 h-5 text-primary-600" />
                     ) : (
                       <ToggleLeft className="w-5 h-5 text-gray-400" />
                     )}

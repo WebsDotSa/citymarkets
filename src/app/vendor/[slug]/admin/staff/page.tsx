@@ -46,7 +46,7 @@ type ModalState =
   | { kind: "edit"; staff: StaffMember };
 
 const ROLE_LABELS: Record<StaffMember["role"], { label: string; icon: any; color: string }> = {
-  owner: { label: "مالك", icon: ShieldCheck, color: "text-emerald-600 bg-emerald-50" },
+  owner: { label: "مالك", icon: ShieldCheck, color: "text-primary-600 bg-primary-50" },
   manager: { label: "مدير", icon: ShieldCheck, color: "text-blue-600 bg-blue-50" },
   staff: { label: "موظف", icon: UserCog, color: "text-amber-600 bg-amber-50" },
   viewer: { label: "مشاهد", icon: Eye, color: "text-gray-600 bg-gray-50" },
@@ -296,7 +296,7 @@ export default function VendorStaffPage({ params }: StaffPageProps) {
                           {s.isActive ? (
                             <PowerOff className="w-4 h-4 text-amber-600" />
                           ) : (
-                            <Power className="w-4 h-4 text-emerald-600" />
+                            <Power className="w-4 h-4 text-primary-600" />
                           )}
                         </button>
                         <button

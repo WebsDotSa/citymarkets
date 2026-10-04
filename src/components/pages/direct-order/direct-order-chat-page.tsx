@@ -238,7 +238,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
                     <div className="text-tiny text-gray-500">
                       ×{it.quantity}
                       {it.resolved_price ? (
-                        <span className="text-green-700 mr-2">
+                        <span className="text-primary-700 mr-2">
                           · {it.resolved_price.toFixed(2)} ر.س ✓
                         </span>
                       ) : (
@@ -263,7 +263,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
             {!isLocked && (
               <>
                 {addingItem ? (
-                  <div className="p-2 border border-green-300 bg-green-50 rounded-lg">
+                  <div className="p-2 border border-primary-300 bg-primary-50 rounded-lg">
                     <div className="flex gap-2">
                       <input
                         type="text"

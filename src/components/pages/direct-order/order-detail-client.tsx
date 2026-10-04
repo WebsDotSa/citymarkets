@@ -243,7 +243,7 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
                     <div className="text-xs text-gray-500 mt-1">ملاحظة: {it.notes}</div>
                   )}
                   {it.resolved_price ? (
-                    <div className="text-xs text-green-700 mt-1">
+                    <div className="text-xs text-primary-700 mt-1">
                       ✓ تم التأكيد: {it.resolved_price.toFixed(2)} ر.س
                     </div>
                   ) : (
@@ -268,7 +268,7 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
 
           {/* Add item inline */}
           {addingItem && (
-            <div className="mt-3 p-3 rounded-xl border border-green-300 bg-green-50">
+            <div className="mt-3 p-3 rounded-xl border border-primary-300 bg-primary-50">
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -399,7 +399,12 @@ function Row({ label, value, bold, highlight, discount }: { label: string; value
     <div
       className={`flex justify-between ${bold ? 'font-bold text-base' : ''}`}
       style={{
-        color: discount ? '#16a34a' : highlight ? BRAND.primaryDark : '#111',
+        // Audit 2026-10-04 (Phase F): discount green unified on the
+        // brand token (was Tailwind emerald-600 #16a34a — slightly
+        // off the brand ramp). Now uses BRAND.primaryDark so every
+        // "discount/savings" highlight in the customer UI matches the
+        // single brand green.
+        color: discount ? BRAND.primaryDark : highlight ? BRAND.primaryDark : '#111',
         fontWeight: highlight ? 600 : undefined,
       }}
     >

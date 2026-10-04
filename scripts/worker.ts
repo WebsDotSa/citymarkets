@@ -88,10 +88,22 @@ async function cleanupExpiredOtps(): Promise<void> {
 }
 
 async function cleanupOldNotifications(): Promise<void> {
+  // The `notifications` table was dropped in migration 093 (orphan
+  // cleanup) but this function still references it. Guard with a
+  // information_schema check so the worker doesn't spam errors
+  // every cycle; remove this function entirely if notifications
+  // are confirmed gone for good.
   console.log('[Worker] Cleaning up old notifications...');
   try {
+    const exists = await pool.query(
+      "SELECT 1 FROM information_schema.tables WHERE table_name = 'notifications' LIMIT 1"
+    );
+    if (exists.rowCount === 0) {
+      console.log('[Worker] notifications table gone (migration 093) — skipping');
+      return;
+    }
     const result = await pool.query(
-      'DELETE FROM notifications WHERE created_at < NOW() - INTERVAL \'30 days\' AND is_read = TRUE'
+      "DELETE FROM notifications WHERE created_at < NOW() - INTERVAL '30 days' AND is_read = TRUE"
     );
     console.log(`[Worker] Deleted ${result.rowCount} old notifications`);
   } catch (error) {

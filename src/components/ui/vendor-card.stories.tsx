@@ -50,7 +50,7 @@ export const List: Story = {
   args: {
     ...vendorProps,
     variant: 'list',
-    badge: <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">توصيل مجاني</span>,
+    badge: <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded">توصيل مجاني</span>,
   },
 };
 

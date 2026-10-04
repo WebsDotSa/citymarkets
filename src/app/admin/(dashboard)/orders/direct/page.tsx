@@ -73,7 +73,7 @@ export default function AdminDirectOrdersPage() {
             placeholder="بحث برقم الطلب أو الاسم..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 min-w-[200px] border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            className="flex-1 min-w-[200px] border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500"
           />
           <select
             value={filter}
@@ -102,7 +102,7 @@ export default function AdminDirectOrdersPage() {
               <button
                 key={o.id}
                 onClick={() => router.push(`/admin/orders/direct/${o.id}`)}
-                className="w-full bg-white rounded-xl p-4 border border-gray-200 hover:border-green-500 transition text-right"
+                className="w-full bg-white rounded-xl p-4 border border-gray-200 hover:border-primary-500 transition text-right"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">

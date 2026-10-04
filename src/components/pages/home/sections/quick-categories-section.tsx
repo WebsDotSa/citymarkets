@@ -85,7 +85,7 @@ export function QuickCategoriesSection() {
                 href={`/categories/${encodeURIComponent(cat.slug)}`}
                 className="group flex flex-col items-center p-3 sm:p-4 bg-white rounded-3xl shadow-sm hover:shadow-md border border-gray-100 hover:-translate-y-0.5 transition-all duration-300"
               >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-primary-light to-green-100 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-primary-light to-primary-100 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
                   {cat.icon_url ? (
                     <Image
                       src={cat.icon_url}
