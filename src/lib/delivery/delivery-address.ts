@@ -42,10 +42,17 @@ export function getOrCreateGuestKey(): string {
   if (typeof window === "undefined") return "";
   let key = localStorage.getItem(GUEST_KEY_STORAGE);
   if (!key) {
-    key =
-      typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `guest_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+      key = crypto.randomUUID();
+    } else {
+      // Crypto-required fallback (2026-10-04 consolidation): use
+      // getRandomValues instead of Math.random (which is not a CSPRNG).
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      key = `guest_${Date.now()}_${Array.from(bytes, (b) =>
+        b.toString(16).padStart(2, "0"),
+      ).join("")}`;
+    }
     localStorage.setItem(GUEST_KEY_STORAGE, key);
   }
   return key;
