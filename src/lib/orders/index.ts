@@ -43,6 +43,7 @@ export {
   PAYMENT_METHOD_AR,
   PAYMENT_STATUS_AR,
   PAYMENT_STATUSES_CONFIG,
+  STATUS_COLORS,
 } from "./order-status";
 export type { OrderStatusConfig, PaymentStatusConfig } from "./order-status";
 

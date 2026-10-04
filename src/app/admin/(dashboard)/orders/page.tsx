@@ -26,15 +26,12 @@ import {
   PAYMENT_METHOD_AR,
   PAYMENT_STATUS_AR,
   PAYMENT_STATUSES_CONFIG,
+  STATUS_COLORS,
   getOrderStatusConfig,
 } from '@/lib/orders';
 import type { AdminPagination } from "@/lib/admin-types";
 
 const STATUS_OPTIONS = ORDER_STATUS_DISPLAY;
-
-const STATUS_COLORS: Record<string, string> = Object.fromEntries(
-  Object.entries(ORDER_STATUSES).map(([k, v]) => [k, v.color]),
-);
 
 type PaginationInfo = AdminPagination;
 

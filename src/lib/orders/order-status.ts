@@ -97,6 +97,15 @@ export const ORDER_STATUS_DISPLAY: Array<{ value: string; label: string }> = (
 ).map(([value, { label }]) => ({ value, label }));
 
 /**
+ * Map of canonical parent-order status → Tailwind class for the status
+ * pill on the admin orders list. Derived from `ORDER_STATE_DISPLAY` so a
+ * new status in `state-machine.ts` automatically lights up here.
+ */
+export const STATUS_COLORS: Record<string, string> = Object.fromEntries(
+  Object.entries(ORDER_STATE_DISPLAY).map(([k, v]) => [k, v.color]),
+);
+
+/**
  * Progress steps for the customer-facing order timeline. Includes
  * "تم التأكيد" so the timeline is contiguous from order receipt to
  * delivery, and uses the canonical backend status values.
