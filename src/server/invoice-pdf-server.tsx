@@ -318,11 +318,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   trackingCard: {
-    backgroundColor: "#f0fdf4",
+    backgroundColor: "#E6F5EC",
     borderRadius: 6,
     padding: 10,
     borderWidth: 1,
-    borderColor: "#bbf7d0",
+    borderColor: "#C7E8D2",
     marginBottom: 10,
   },
   trackingRow: {
@@ -542,7 +542,7 @@ function InvoicePdfServer(props: ServerInvoiceProps) {
                 ) : null}
               </View>
               {trackingSteps && trackingSteps.length > 0 ? (
-                <View style={{ marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: "#bbf7d0" }}>
+                <View style={{ marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: "#C7E8D2" }}>
                   {trackingSteps.map((s) => (
                     <View key={s.key} style={styles.stepRow}>
                       <View
