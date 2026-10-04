@@ -1,3 +1,11 @@
+/**
+ * @deprecated 2026-10-04 — kept for iOS APIClient.swift backward
+ * compatibility. New client-side flows should POST to
+ * `/api/v1/checkout` (see `@/lib/orders/checkout/checkout-service`)
+ * which owns the unified parent-order + vendor-order creation flow,
+ * idempotency, and the address-priority invariant. Removal tracked
+ * under docs/09-IMPLEMENTATION-BACKLOG.md "iOS APIClient migration".
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import {
