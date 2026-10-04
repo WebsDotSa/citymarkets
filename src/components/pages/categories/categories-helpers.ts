@@ -74,7 +74,9 @@ export function bgForCategoryName(name: string): {
     return { bg: "from-amber-50 to-yellow-50", ring: "ring-amber-100" };
   }
   if (/(تفاح|برتقال|موز|عنب|بطيخ|شمام|خوخ|مانجو|تمر|رمان|تين|ليمون|فراولة|كرز|خضار|خس|جرجير|نعناع|بقدونس|كزبرة|سبانخ|ملوخية|بامية|كوسة|باذنجان|فلفل|جزر|طماطم|خيار|بصل|ثوم|بطاطس)/i.test(n)) {
-    return { bg: "from-lime-50 to-emerald-50", ring: "ring-lime-100" };
+    // Audit 2026-10-04 (Phase F): unified on brand primary-50/100
+    // ramp — was lime-50/emerald-50/lime-100 (Tailwind emerald palette).
+    return { bg: "from-primary-50 to-primary-100", ring: "ring-primary-100" };
   }
   if (/(قهوة|شاي|كاكاو|نسكافيه|كابتشينو|إسبريسو|لاتيه|كرك|زنجبيل|هيل|قرفة|يانسون|بابونج)/i.test(n)) {
     return { bg: "from-orange-50 to-amber-50", ring: "ring-orange-100" };

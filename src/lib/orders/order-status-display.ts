@@ -20,6 +20,7 @@ import type {
   VendorOrderState,
   PaymentState,
 } from "./state-machine";
+import { BRAND } from "@/lib/brand-theme";
 
 export interface OrderStateDisplay {
   label: string;
