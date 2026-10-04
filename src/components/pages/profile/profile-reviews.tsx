@@ -182,7 +182,7 @@ export function ProfileReviews() {
                     </span>
                     <div className="flex items-center gap-3">
                       {r.is_verified_purchase && (
-                        <span className="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-xs text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">
                           <CheckCircle2 className="w-3 h-3" />
                           مشترى موثّق
                         </span>

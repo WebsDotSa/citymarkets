@@ -226,7 +226,7 @@ export function NotificationsProvidersTab() {
               key={c.value}
               className={`rounded-2xl border p-4 flex flex-col gap-2 transition-colors ${
                 configured
-                  ? "border-emerald-200 bg-emerald-50/40"
+                  ? "border-primary-200 bg-primary-50/40"
                   : "border-gray-200 bg-white"
               }`}
             >
@@ -234,14 +234,14 @@ export function NotificationsProvidersTab() {
                 <div
                   className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                     configured
-                      ? "bg-emerald-100 text-emerald-700"
+                      ? "bg-primary-100 text-primary-700"
                       : "bg-gray-100 text-gray-500"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
                 {configured ? (
-                  <span className="inline-flex items-center gap-1 text-2xs font-semibold text-emerald-700">
+                  <span className="inline-flex items-center gap-1 text-2xs font-semibold text-primary-700">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     يعمل
                   </span>
@@ -294,7 +294,7 @@ export function NotificationsProvidersTab() {
                     </div>
                   </div>
                   {configured ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-emerald-700 font-semibold flex-shrink-0">
+                    <span className="inline-flex items-center gap-1 text-xs text-primary-700 font-semibold flex-shrink-0">
                       <CheckCircle2 className="w-4 h-4" />
                       مفعّل
                     </span>
@@ -331,7 +331,7 @@ export function NotificationsProvidersTab() {
       <div className="admin-card p-5">
         <div className="flex items-center justify-between gap-3 mb-1">
           <div className="flex items-center gap-2">
-            <span className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+            <span className="w-9 h-9 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center">
               <MessageCircle className="w-5 h-5" />
             </span>
             <div>
@@ -346,7 +346,7 @@ export function NotificationsProvidersTab() {
           <span
             className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${
               legacy.whatsapp_admin_phone
-                ? "bg-emerald-100 text-emerald-700"
+                ? "bg-primary-100 text-primary-700"
                 : "bg-amber-100 text-amber-700"
             }`}
           >

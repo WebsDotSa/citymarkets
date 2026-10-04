@@ -170,8 +170,8 @@ export interface PaymentStatusConfig {
 export const PAYMENT_STATUSES_CONFIG: Record<string, PaymentStatusConfig> = {
   paid: {
     label: PAYMENT_STATUS_AR.paid,
-    color: "bg-emerald-100 text-emerald-700",
-    dotColor: "bg-emerald-500",
+    color: "bg-primary-100 text-primary-700",
+    dotColor: "bg-primary-500",
   },
   pending: {
     label: PAYMENT_STATUS_AR.pending,

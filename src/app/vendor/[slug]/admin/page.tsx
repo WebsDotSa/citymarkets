@@ -98,7 +98,7 @@ export default function VendorDashboardPage({ params }: DashboardPageProps) {
           icon="💰"
           label="إيرادات اليوم"
           value={`${((stats?.today.revenue || 0)).toFixed(0)} ر.س`}
-          color="bg-green-50 text-green-600"
+          color="bg-primary-50 text-primary-600"
         />
         <StatCard
           icon="📊"
@@ -125,7 +125,7 @@ export default function VendorDashboardPage({ params }: DashboardPageProps) {
           <p className="text-sm text-gray-500">إجمالي المنتجات</p>
         </Link>
         <div className="bg-white rounded-2xl p-4 text-center">
-          <p className="text-2xl font-bold text-green-600">{stats?.products.active || 0}</p>
+          <p className="text-2xl font-bold text-primary-600">{stats?.products.active || 0}</p>
           <p className="text-sm text-gray-500">منتجات نشطة</p>
         </div>
         <div className="bg-white rounded-2xl p-4 text-center">

@@ -70,8 +70,8 @@ const JOBS = [
       "القدرة على العمل تحت الضغط",
       "ساعات مرنة متاحة",
     ],
-    color: "bg-green-50 border-green-200",
-    accent: "text-green-600",
+    color: "bg-primary-50 border-primary-200",
+    accent: "text-primary-600",
   },
   {
     id: "marketing",
@@ -268,7 +268,7 @@ export default function EmploymentPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {BENEFITS.map((b, i) => (
             <div key={i} className="text-center p-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2 text-primary">
+              <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-2 text-primary">
                 {b.icon}
               </div>
               <h3 className="font-semibold text-gray-800 text-sm">{b.title}</h3>
@@ -375,9 +375,9 @@ export default function EmploymentPage() {
                       </label>
 
                       {cv ? (
-                        <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
-                          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <FileText className="w-5 h-5 text-green-600" />
+                        <div className="flex items-center gap-3 p-3 bg-primary-50 border border-primary-200 rounded-xl">
+                          <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-5 h-5 text-primary-600" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-800 truncate" dir="ltr">
@@ -454,8 +454,8 @@ export default function EmploymentPage() {
       {submitted && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-primary-600" />
             </div>
             <h3 className="text-lg font-bold text-gray-800 mb-2">تم استلام طلبك بنجاح!</h3>
             <p className="text-gray-600 text-sm mb-4">

@@ -69,6 +69,11 @@ vi.mock("@/lib/logger", () => ({
   info: vi.fn(),
 }));
 
+vi.mock("@/lib/twilio-messaging", () => ({
+  isTwilioMessagingConfigured: () => true,
+  twilioSendSms: vi.fn(async () => ({ ok: true, sid: "SM-test-sid" })),
+}));
+
 import { pool } from "@/lib/db";
 import { POST } from "./route";
 

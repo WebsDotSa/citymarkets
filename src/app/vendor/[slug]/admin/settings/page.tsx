@@ -500,7 +500,7 @@ export default function VendorSettingsPage({ params }: SettingsPageProps) {
 
         {/* Success/Error messages */}
         {success && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-sm">
+          <div className="p-3 bg-primary-50 border border-primary-200 rounded-xl text-primary-600 text-sm">
             ✓ تم حفظ الإعدادات بنجاح
           </div>
         )}

@@ -29,7 +29,7 @@ export function BarRow({
     emphasis === "neutral"
       ? "bg-gray-500"
       : emphasis === "success"
-      ? "bg-emerald-500"
+      ? "bg-primary-500"
       : emphasis === "warning"
       ? "bg-amber-500"
       : emphasis === "danger"

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { pool } from "@/lib/db";
 import { normalizeSaudiToE164, phoneForDb } from "@/lib/phone-format";
 import { isTwilioVerifyConfigured, twilioCheckVerification } from "@/lib/twilio-verify";
@@ -17,7 +18,7 @@ import {
 } from "@/lib/apple-review";
 import { encryptPii, piiHmac } from "@/lib/security/pii-crypto";
 
-import { error as logError, info as logInfo } from '@/lib/logger';
+import { error as logError, info as logInfo, warn as logWarn } from '@/lib/logger';
 
 // Apple App Store review account — see src/lib/apple-review.ts.
 // Accepts the configured OTP without calling Twilio (so we don't burn
@@ -108,11 +109,31 @@ export async function POST(request: NextRequest) {
     let approved = false;
     try {
       approved = await twilioCheckVerification(e164, code);
-    } catch {
-      return NextResponse.json(
-        { error: "تعذر التحقق من الرمز" },
-        { status: 502 }
+    } catch (e) {
+      // FALLBACK (2026-10-03): Twilio Verify API may be blocked
+      // (geo permissions / trial-account) and throw — try the local
+      // user_otps table before giving up. The /twilio/send route's
+      // catch block writes the OTP locally when Twilio Verify is
+      // blocked, so a successful legacy OTP can still be verified
+      // here.
+      const msg = (e as Error).message;
+      logWarn(
+        `[auth/twilio/verify] Verify API error (${msg}); trying user_otps fallback`
       );
+      approved = false;
+    }
+
+    // FALLBACK (2026-10-03): if Twilio Verify rejected the code, try
+    // the local user_otps table. This is the path used when /send
+    // fell back to legacy OTP (because Twilio Verify is blocked).
+    if (!approved) {
+      const localMatch = await checkLocalOtp(e164, code);
+      if (localMatch) {
+        logInfo(
+          `[auth/twilio/verify] local OTP match (userId=${localMatch})`
+        );
+        approved = true;
+      }
     }
 
     if (!approved) {
@@ -218,6 +239,45 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     logError("twilio verify user error:", err);
     return NextResponse.json({ error: "حدث خطأ أثناء تسجيل الدخول" }, { status: 500 });
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * FALLBACK (2026-10-03): checks the locally-stored OTP in
+ * `user_otps` when Twilio Verify rejects the code (because Twilio
+ * Verify is blocked for this account's geo / fraud settings). Returns
+ * the userId on a match, or null otherwise. Mirrors the hashing used
+ * by /twilio/send (sha256).
+ *
+ * Side-effect: deletes the matching row so it can't be reused
+ * (matches the typical one-shot OTP semantic).
+ */
+async function checkLocalOtp(
+  e164: string,
+  code: string
+): Promise<string | null> {
+  const codeHash = crypto.createHash("sha256").update(code).digest("hex");
+  const phoneDb = phoneForDb(e164);
+  const client = await pool.connect();
+  try {
+    const r = await client.query(
+      `SELECT u.id::text AS id
+         FROM user_otps o
+         JOIN users u ON u.id = o.user_id
+        WHERE u.phone = $1
+          AND o.code = $2
+          AND o.expires_at > NOW()
+          AND u.deleted_at IS NULL
+        LIMIT 1`,
+      [phoneDb, codeHash]
+    );
+    const userId = r.rows[0]?.id ?? null;
+    if (userId) {
+      await client.query(`DELETE FROM user_otps WHERE user_id = $1`, [userId]);
+    }
+    return userId;
   } finally {
     client.release();
   }

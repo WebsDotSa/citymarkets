@@ -293,7 +293,7 @@ export function ChatPanel(props: ChatPanelProps) {
               }}
               placeholder={recording ? `جاري التسجيل ${fmtDuration(Math.round(recordingMs / 1000))}` : 'اكتب رسالة...'}
               disabled={sending || recording}
-              className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-green-500 max-h-24"
+              className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-primary-500 max-h-24"
               rows={1}
             />
             <button

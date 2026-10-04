@@ -265,7 +265,7 @@ export default function VendorPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="تواصل عبر واتساب"
-                className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md hover:bg-emerald-600 transition-colors"
+                className="w-10 h-10 rounded-full bg-primary-500 text-white flex items-center justify-center shadow-md hover:bg-primary-600 transition-colors"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-1.7-.9-2.9-1.5-4-3.5-.3-.5.3-.5.9-1.6.1-.2.1-.4 0-.5-.1-.1-.7-1.5-.9-2.1-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/>
@@ -327,7 +327,7 @@ export default function VendorPage() {
               <div className="flex items-center gap-2">
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    vendor.isOpen ? "bg-emerald-500 animate-pulse" : "bg-red-500"
+                    vendor.isOpen ? "bg-primary-500 animate-pulse" : "bg-red-500"
                   }`}
                 />
                 <span className="text-xs font-bold text-gray-700">
@@ -495,11 +495,11 @@ export default function VendorPage() {
                 onClick={() => setOnlyInStock(!onlyInStock)}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-colors ${
                   onlyInStock
-                    ? "bg-emerald-500 text-white"
-                    : "bg-white border border-gray-200 text-gray-600 hover:border-emerald-300"
+                    ? "bg-primary-500 text-white"
+                    : "bg-white border border-gray-200 text-gray-600 hover:border-primary-300"
                 }`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${onlyInStock ? "bg-white" : "bg-emerald-500"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${onlyInStock ? "bg-white" : "bg-primary-500"}`} />
                 المتوفر فقط
               </button>
               <span className="text-gray-500 tabular-nums" dir="ltr">

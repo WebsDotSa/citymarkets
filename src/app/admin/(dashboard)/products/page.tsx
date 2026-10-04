@@ -368,7 +368,7 @@ function ProductsPage() {
       );
     }
     return (
-      <span className="text-xs px-2 py-1 rounded-lg bg-green-100 text-green-700">
+      <span className="text-xs px-2 py-1 rounded-lg bg-primary-100 text-primary-700">
         {qty}
       </span>
     );
@@ -408,7 +408,7 @@ function ProductsPage() {
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-4 admin-hover-lift admin-press">
           <p className="text-xs text-gray-500">نشطة</p>
-          <p className="text-2xl font-bold text-green-600 mt-1">
+          <p className="text-2xl font-bold text-primary-600 mt-1">
             {stats.active}
           </p>
         </div>
@@ -507,7 +507,7 @@ function ProductsPage() {
             <button
               onClick={() => handleBulkAction("update_status", "active")}
               disabled={bulkActionLoading}
-              className="px-3 py-1.5 text-xs font-medium bg-white text-green-700 border border-green-200 rounded-lg hover:bg-green-50 disabled:opacity-50"
+              className="px-3 py-1.5 text-xs font-medium bg-white text-primary-700 border border-primary-200 rounded-lg hover:bg-primary-50 disabled:opacity-50"
             >
               تفعيل
             </button>
@@ -746,7 +746,7 @@ function ProductsPage() {
                         <td className="px-4 py-3">{stockBadge(stock)}</td>
                         <td className="px-4 py-3">
                           {p.is_active ? (
-                            <span className="text-xs px-2 py-1 rounded-lg bg-green-100 text-green-700">
+                            <span className="text-xs px-2 py-1 rounded-lg bg-primary-100 text-primary-700">
                               نشط
                             </span>
                           ) : (

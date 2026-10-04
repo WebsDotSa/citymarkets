@@ -125,7 +125,7 @@ function AdminCouponsContent() {
       label: "الحالة",
       render: (row: Coupon) =>
         row.is_active ? (
-          <span className="text-xs px-2 py-1 rounded-lg bg-green-100 text-green-700">نشط</span>
+          <span className="text-xs px-2 py-1 rounded-lg bg-primary-100 text-primary-700">نشط</span>
         ) : (
           <span className="text-xs px-2 py-1 rounded-lg bg-gray-100 text-gray-700">غير نشط</span>
         ),

@@ -243,8 +243,8 @@ export default function AdminNotificationsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-20 h-20 rounded-2xl bg-green-100 flex items-center justify-center mb-4">
-              <CheckCircle2 className="w-10 h-10 text-green-600" />
+            <div className="w-20 h-20 rounded-2xl bg-primary-100 flex items-center justify-center mb-4">
+              <CheckCircle2 className="w-10 h-10 text-primary-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-700">كل شيء على ما يرام</h3>
             <p className="text-sm text-gray-500 mt-1">

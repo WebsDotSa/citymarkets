@@ -286,17 +286,17 @@ export default function DriverEarningsPage() {
               توزيع طرق الدفع
             </h2>
             <div className="grid sm:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
+              <div className="rounded-xl border border-primary-100 bg-primary-50/40 p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Wallet className="w-4 h-4 text-emerald-700" />
-                  <span className="text-sm font-semibold text-emerald-900">
+                  <Wallet className="w-4 h-4 text-primary-700" />
+                  <span className="text-sm font-semibold text-primary-900">
                     الدفع نقداً
                   </span>
                 </div>
-                <p className="text-xl font-bold text-emerald-700 tabular-nums">
+                <p className="text-xl font-bold text-primary-700 tabular-nums">
                   {formatPrice(totals.cod_revenue)}
                 </p>
-                <p className="text-xs text-emerald-700/70 mt-1">
+                <p className="text-xs text-primary-700/70 mt-1">
                   {data?.by_payment_method.cod.count ?? 0} طلب
                 </p>
               </div>

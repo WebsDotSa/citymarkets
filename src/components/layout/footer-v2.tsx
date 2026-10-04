@@ -265,7 +265,7 @@ export function FooterV2() {
               href={WHATSAPP_CHAT_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 w-full p-4 rounded-2xl bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors mb-6 shadow-lg shadow-green-500/25"
+              className="flex items-center gap-3 w-full p-4 rounded-2xl bg-primary-500 text-white font-semibold hover:bg-primary-600 transition-colors mb-6 shadow-lg shadow-green-500/25"
             >
               <MessageCircle className="w-6 h-6" />
               <div className="text-right">

@@ -113,7 +113,7 @@ function VendorCard({ vendor }: VendorCardProps) {
           <span
             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-tiny font-bold backdrop-blur ${
               vendor.isOpen
-                ? "bg-emerald-500/95 text-white"
+                ? "bg-primary-500/95 text-white"
                 : "bg-gray-800/80 text-white"
             }`}
           >

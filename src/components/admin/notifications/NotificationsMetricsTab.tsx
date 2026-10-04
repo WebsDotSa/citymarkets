@@ -253,7 +253,7 @@ export function NotificationsMetricsTab() {
                   {channelRows.map((r) => (
                     <tr key={r.label}>
                       <td>{r.label}</td>
-                      <td className="text-emerald-600">{r.sent}</td>
+                      <td className="text-primary-600">{r.sent}</td>
                       <td className="text-red-600">{r.failed}</td>
                       <td className="text-gray-500">{r.skipped}</td>
                     </tr>

@@ -130,7 +130,7 @@ export function ProductReviews({ productId, signedIn, userLabel }: ProductReview
             className="w-full text-sm border border-gray-200 rounded-xl p-3 min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           {error && <p className="text-xs text-red-600">{error}</p>}
-          {success && <p className="text-xs text-green-600">{success}</p>}
+          {success && <p className="text-xs text-primary-600">{success}</p>}
           <button
             type="submit"
             disabled={submitting}
@@ -166,7 +166,7 @@ export function ProductReviews({ productId, signedIn, userLabel }: ProductReview
                     {r.user_name || "مستخدم"}
                   </span>
                   {r.is_verified_purchase && (
-                    <span className="text-tiny bg-green-50 text-green-700 px-2 py-0.5 rounded-full">
+                    <span className="text-tiny bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full">
                       مشتري موثوق
                     </span>
                   )}

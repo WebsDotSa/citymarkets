@@ -155,7 +155,7 @@ export const PAYMENT_STATE_DISPLAY: Readonly<
   },
   paid: {
     label: "تم الدفع",
-    color: "bg-emerald-100 text-emerald-700",
+    color: "bg-primary-100 text-primary-700",
     hex: "#10B981",
     icon: Check,
     active: false,

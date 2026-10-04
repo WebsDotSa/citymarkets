@@ -230,7 +230,7 @@ export function AdminDeliverySettings() {
         )}
 
         {success && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700">
+          <div className="mb-4 p-4 bg-primary-50 border border-primary-200 rounded-xl text-primary-700">
             ✓ تم حفظ الإعدادات بنجاح
           </div>
         )}

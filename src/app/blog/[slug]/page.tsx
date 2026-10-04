@@ -153,7 +153,7 @@ export default async function BlogPostPage({
                 href={`https://wa.me/?text=${encodeURIComponent(post.title_ar + ' ' + `https://citymarkets.sa/blog/${post.slug}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors"
+                className="w-10 h-10 bg-primary-500 text-white rounded-full flex items-center justify-center hover:bg-primary-600 transition-colors"
                 aria-label="شارك على واتساب"
               >
                 📱

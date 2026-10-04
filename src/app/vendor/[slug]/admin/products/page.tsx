@@ -193,7 +193,7 @@ export default function VendorProductsPage({ params }: ProductsPageProps) {
                     title={canManage ? "تبديل حالة النشاط" : "ليس لديك صلاحية"}
                     className={`px-3 py-1 rounded-full text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
                       product.isActive
-                        ? "bg-green-100 text-green-700"
+                        ? "bg-primary-100 text-primary-700"
                         : "bg-gray-100 text-gray-500"
                     }`}
                   >

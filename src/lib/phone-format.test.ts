@@ -24,13 +24,25 @@ describe("normalizeSaudiToE164", () => {
     expect(normalizeSaudiToE164("500000000")).toBe("+966500000000");
   });
 
-  it("converts a 10-digit 5xxxxxxxx to +9665xxxxxxxx (without dropping the leading 5)", () => {
-    // 10 digits starting with 5 are treated as already-international format minus the +
-    expect(normalizeSaudiToE164("5000000000")).toBe("+9665000000000");
+  it("rejects 10-digit input starting with 5 (over-length, ambiguous)", () => {
+    // 10 digits starting with 5 used to be accepted and produced a 13-char
+    // E.164 (+9665XXXXXXXXX) that Twilio rejects. Tightened to reject
+    // any input that's not exactly the canonical Saudi shape (9-digit
+    // local, 10-digit 0-prefixed, or 12-digit 966-prefixed).
+    expect(normalizeSaudiToE164("5000000000")).toBeNull();
   });
 
-  it("accepts a raw 966xxxxxxxxx (>=12 digits) and adds +", () => {
+  it("rejects over-long local numbers (0 + extra digits)", () => {
+    expect(normalizeSaudiToE164("0552296600123")).toBeNull();
+    expect(normalizeSaudiToE164("055229660")).toBeNull(); // too short
+  });
+
+  it("accepts a raw 966xxxxxxxxx (12 digits) and adds +", () => {
     expect(normalizeSaudiToE164("966500000000")).toBe("+966500000000");
+  });
+
+  it("rejects over-long 966-prefixed numbers", () => {
+    expect(normalizeSaudiToE164("966500000000123")).toBeNull();
   });
 
   it("returns null for numbers that don't match any Saudi pattern", () => {

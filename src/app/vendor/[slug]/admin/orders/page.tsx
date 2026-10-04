@@ -296,7 +296,7 @@ function OrderRow({
         <div className="text-left">
           <p className="font-bold text-lg text-gray-900">{order.total.toFixed(2)} ر.س</p>
           <p className={`text-xs ${
-            order.paymentStatus === "paid" ? "text-green-600" : "text-orange-600"
+            order.paymentStatus === "paid" ? "text-primary-600" : "text-orange-600"
           }`}>
             {order.paymentStatus === "paid" ? "مدفوع" : "غير مدفوع"}
           </p>

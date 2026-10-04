@@ -104,7 +104,7 @@ export function ChatProductResults({
       {inCartCount > 0 && (
         <div
           role="status"
-          className="flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800"
+          className="flex items-center gap-2 rounded-xl border border-primary-200/80 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800"
         >
           <ShoppingCart className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>

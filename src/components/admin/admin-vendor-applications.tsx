@@ -64,7 +64,7 @@ type Application = {
 
 const STATUS_META: Record<Status, { label: string; chip: string; icon: typeof Inbox }> = {
   new: { label: "جديد", chip: "bg-blue-50 text-blue-700 border-blue-200", icon: Inbox },
-  approved: { label: "تمت الموافقة", chip: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: CheckCircle2 },
+  approved: { label: "تمت الموافقة", chip: "bg-primary-50 text-primary-700 border-primary-200", icon: CheckCircle2 },
   rejected: { label: "مرفوض", chip: "bg-red-50 text-red-700 border-red-200", icon: XCircle },
 };
 
@@ -383,7 +383,7 @@ export function AdminVendorApplications() {
                     {row.approved_vendor_id && (
                       <Link
                         href="/admin/vendors"
-                        className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-700 hover:underline"
+                        className="mt-2 inline-flex items-center gap-1 text-xs text-primary-700 hover:underline"
                       >
                         تم إنشاء المتجر — عرض في إدارة المتاجر
                         <ExternalLink className="w-3 h-3" />
@@ -407,7 +407,7 @@ export function AdminVendorApplications() {
                             <button
                               onClick={() => approve(row)}
                               disabled={saving}
-                              className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+                              className="px-3 py-1.5 rounded-lg bg-primary-600 text-white text-xs font-medium hover:bg-primary-700 transition disabled:opacity-50"
                             >
                               قبول
                             </button>

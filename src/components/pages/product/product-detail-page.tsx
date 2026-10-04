@@ -443,13 +443,13 @@ export function ProductDetailPage() {
             API consumers that don't yet expose the field keep buying. */}
         <div className="flex items-center gap-2">
           {product.track_stock === false ? (
-            <span className="inline-flex items-center gap-1.5 text-sm text-green-600 bg-green-50 px-3 py-1.5 rounded-full">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 text-sm text-primary-600 bg-primary-50 px-3 py-1.5 rounded-full">
+              <span className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
               متوفر
             </span>
           ) : product.stock_qty > 0 ? (
-            <span className="inline-flex items-center gap-1.5 text-sm text-green-600 bg-green-50 px-3 py-1.5 rounded-full">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 text-sm text-primary-600 bg-primary-50 px-3 py-1.5 rounded-full">
+              <span className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
               متوفر
               {product.stock_qty <= 5 && (
                 <span className="text-xs font-medium">

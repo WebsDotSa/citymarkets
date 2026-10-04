@@ -234,7 +234,7 @@ function AdminChatHubContent() {
                 placeholder="بحث برقم الطلب أو الاسم..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pr-10 pl-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                className="w-full pr-10 pl-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary-500"
               />
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             </div>
@@ -256,7 +256,7 @@ function AdminChatHubContent() {
                     key={o.id}
                     onClick={() => setActiveId(o.id)}
                     className={`w-full text-right p-3 hover:bg-gray-50 transition ${
-                      activeId === o.id ? 'bg-green-50 border-r-4 border-green-500' : ''
+                      activeId === o.id ? 'bg-primary-50 border-r-4 border-primary-500' : ''
                     }`}
                   >
                     <div className="flex items-start gap-2">
@@ -450,7 +450,7 @@ function AdminChatHubContent() {
                           </button>
                         </div>
                         {it.resolved_at && (
-                          <div className="text-3xs text-green-700 mt-1">✓ تم التأكيد</div>
+                          <div className="text-3xs text-primary-700 mt-1">✓ تم التأكيد</div>
                         )}
                       </div>
                     ))}

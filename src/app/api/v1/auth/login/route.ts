@@ -10,6 +10,11 @@ import {
 } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 import { isAppleReviewPhone } from "@/lib/apple-review";
+import {
+  isTwilioMessagingConfigured,
+  twilioSendSms,
+} from "@/lib/twilio-messaging";
+import { normalizeSaudiToE164 } from "@/lib/phone-format";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
@@ -164,6 +169,45 @@ export async function POST(request: NextRequest) {
     } else {
       logInfo(`[auth/login] OTP issued for ${maskPhone(phone)} (userId=${userId})`);
     }
+
+    // أرسل رمز التحقق عبر Twilio Messaging Service. لا نوقف تدفق تسجيل
+    // الدخول على فشل الإرسال — إن فشل نُرجع 502 ليُعلم العميل بأن
+    // الرسالة لم تصل (بدلاً من أن يبقى ينتظر رمزاً لن يصل أبداً).
+    const e164 = normalizeSaudiToE164(phone);
+    if (!e164) {
+      logError("[auth/login] failed to normalize phone for SMS", undefined, { userId });
+      return NextResponse.json(
+        { error: "تعذر إرسال رمز التحقق — رقم الجوال غير صالح" },
+        { status: 400 }
+      );
+    }
+
+    if (!isTwilioMessagingConfigured()) {
+      logError("[auth/login] Twilio Messaging not configured");
+      return NextResponse.json(
+        { error: "خدمة الرسائل غير مهيأة على الخادم" },
+        { status: 503 }
+      );
+    }
+
+    const smsBody = `أسواق سيتي: رمز التحقق الخاص بك هو ${otpCode}. ينتهي خلال 5 دقائق.`;
+    const smsResult = await twilioSendSms(e164, smsBody);
+    if (!smsResult.ok) {
+      logError("[auth/login] Twilio SMS failed", undefined, {
+        userId,
+        code: smsResult.code,
+        error: smsResult.error,
+      });
+      return NextResponse.json(
+        {
+          error:
+            "تعذر إرسال رمز التحقق عبر الرسائل القصيرة. حاول مرة أخرى لاحقاً",
+        },
+        { status: 502 }
+      );
+    }
+
+    logWarn(`[auth/login] OTP SMS sent (sid=${smsResult.sid}) userId=${userId} phone=${maskPhone(phone)}`);
 
     const response = NextResponse.json({
       success: true,

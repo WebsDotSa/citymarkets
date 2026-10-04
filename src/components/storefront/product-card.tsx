@@ -125,7 +125,7 @@ export function ProductCard({
                 onClick={handleAdd}
                 className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
                   added
-                    ? "bg-green-500 text-white"
+                    ? "bg-primary-500 text-white"
                     : "bg-primary text-white hover:bg-primary-dark"
                 }`}
               >
@@ -187,7 +187,7 @@ export function ProductCard({
               onClick={handleAdd}
               className={`w-full mt-2 py-2 rounded-lg text-xs font-medium transition-all ${
                 added
-                  ? "bg-green-500 text-white"
+                  ? "bg-primary-500 text-white"
                   : "bg-primary text-white hover:bg-primary-dark"
               }`}
             >
@@ -285,7 +285,7 @@ export function ProductCard({
             type="button"
             onClick={handleAdd}
             className={`absolute bottom-2 left-2 w-9 h-9 rounded-full shadow-md flex items-center justify-center transition-colors ${
-              added ? "bg-green-500 text-white" : "bg-white text-gray-900"
+              added ? "bg-primary-500 text-white" : "bg-white text-gray-900"
             }`}
             aria-label={added ? `تمت إضافة ${product.name_ar} للسلة` : `إضافة ${product.name_ar} للسلة`}
           >

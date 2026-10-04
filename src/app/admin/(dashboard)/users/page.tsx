@@ -161,7 +161,7 @@ export default function AdminUsersPage() {
       label: "متوسط نقاط الولاء",
       value: users.length ? Math.round(users.reduce((acc, u) => acc + (u.loyalty_points || 0), 0) / users.length) : 0,
       icon: TrendingUp,
-      color: "text-emerald-600 bg-emerald-100",
+      color: "text-primary-600 bg-primary-100",
     }
   ];
 

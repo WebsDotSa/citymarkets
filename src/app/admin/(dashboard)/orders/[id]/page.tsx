@@ -104,7 +104,7 @@ function LastStatusChangeBadge({
   const colorClass = isDriver
     ? "bg-sky-50 text-sky-700 border-sky-200"
     : change.changed_by_admin_id
-      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+      ? "bg-primary-50 text-primary-700 border-primary-200"
       : "bg-gray-50 text-gray-600 border-gray-200";
   const roleLabel = isDriver
     ? "مندوب توصيل"
@@ -771,7 +771,7 @@ export default function AdminOrderDetailPage() {
               <div className="border-t border-gray-100 my-2" />
               <SummaryRow label="المجموع الفرعي" value={formatPrice(subtotal)} />
               {discount > 0 ? (
-                <SummaryRow label="الخصم" value={`-${formatPrice(discount)}`} valueClass="text-emerald-600" />
+                <SummaryRow label="الخصم" value={`-${formatPrice(discount)}`} valueClass="text-primary-600" />
               ) : null}
               <SummaryRow label="رسوم التوصيل" value={formatPrice(deliveryFee)} />
               <SummaryRow label="رسوم الخدمة" value={formatPrice(serviceFee)} />
