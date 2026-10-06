@@ -289,8 +289,17 @@ export function getMoyasarSiteUrl(): string {
   return SITE_URL;
 }
 
+const DEFAULT_APPLE_PAY_LABEL = 'City Markets';
+
+/**
+ * Apple Pay merchant label shown on the payment sheet. moyasar-payment-form
+ * rejects any non-printable-ASCII label ("label should be English characters
+ * only") and renders "Form configuration issue!" instead of the button, so an
+ * Arabic/invalid value falls back to the English brand name.
+ */
 export function getMoyasarApplePayLabel(): string {
-  return process.env.MOYASAR_APPLE_PAY_LABEL?.trim() || 'سيتي ماركت';
+  const label = process.env.MOYASAR_APPLE_PAY_LABEL?.trim();
+  return label && /^[\x20-\x7E]+$/.test(label) ? label : DEFAULT_APPLE_PAY_LABEL;
 }
 
 export interface MoyasarPaymentDetails {

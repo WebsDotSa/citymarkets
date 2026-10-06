@@ -112,7 +112,12 @@ describe("getMoyasarPublishableKey / getMoyasarSiteUrl / getMoyasarApplePayLabel
     vi.stubEnv("MOYASAR_APPLE_PAY_LABEL", "");
     vi.resetModules();
     const mod = await import("./moyasar");
-    expect(mod.getMoyasarApplePayLabel()).toBe("سيتي ماركت");
+    expect(mod.getMoyasarApplePayLabel()).toBe("City Markets");
+    vi.unstubAllEnvs();
+
+    // MPF rejects non-ASCII labels → must fall back to the English default.
+    vi.stubEnv("MOYASAR_APPLE_PAY_LABEL", "سيتي ماركت");
+    expect(mod.getMoyasarApplePayLabel()).toBe("City Markets");
     vi.unstubAllEnvs();
 
     vi.stubEnv("MOYASAR_APPLE_PAY_LABEL", "  City Markets  ");
