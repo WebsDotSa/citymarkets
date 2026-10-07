@@ -209,9 +209,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         effective_price: effectivePrice,
       };
 
-      // Get related products from same vendor
+      // Get related products from same vendor. BUGFIX (2026-10-07):
+      // mirror the Slice 5 primary-image COALESCE — the admin product
+      // form writes a single upload to `image_url` and leaves
+      // `image_urls[]` NULL, so reading image_urls[0] alone returned
+      // null and the storefront rendered the 📦 placeholder for every
+      // similar product.
       const related = await query(
-        `SELECT id, name_ar, price::float as price, discount_price::float as discount_price, image_urls
+        `SELECT id, name_ar, price::float as price, discount_price::float as discount_price,
+                COALESCE(NULLIF(image_urls[1], ''), NULLIF(image_url, '')) as image_url
          FROM vendor_products
          WHERE vendor_id = $1 AND id != $2 AND is_active = true
          LIMIT 4`,
@@ -223,7 +229,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         name_ar: r.name_ar,
         price: typeof r.price === 'number' ? r.price : (parseFloat(String(r.price)) || 0),
         discount_price: r.discount_price ? (typeof r.discount_price === 'number' ? r.discount_price : parseFloat(String(r.discount_price))) : null,
-        image_url: (r as any).image_urls?.[0] || null,
+        image_url: r.image_url ?? null,
       }));
 
       return NextResponse.json({

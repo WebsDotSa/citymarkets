@@ -27,7 +27,7 @@ export async function GET(
       `SELECT 
         vp.id, vp.vendor_id, vp.category_id,
         vp.name_ar, vp.name_en, vp.description_ar, vp.description_en,
-        vp.image_urls, vp.price, vp.discount_price, vp.sku,
+        vp.image_urls, vp.image_url, vp.price, vp.discount_price, vp.sku,
         vp.stock_quantity, vp.track_stock, vp.metadata,
         c.name_ar as category_name_ar
        FROM vendor_products vp
@@ -42,11 +42,18 @@ export async function GET(
 
     const p = productResult.rows[0];
 
-    // Get related products (same category, excluding current)
+    // Get related products (same category, excluding current).
+    // BUGFIX (2026-10-07): mirror the Slice 5 primary-image COALESCE —
+    // the admin product form writes a single upload to `image_url` and
+    // leaves `image_urls[]` NULL, so reading image_urls[0] alone
+    // returned null and the page rendered the 📦 placeholder for every
+    // similar product.
     let relatedProducts: any[] = [];
     if (p.category_id) {
       const relatedResult = await query(
-        `SELECT id, name_ar, image_urls, price, discount_price
+        `SELECT id, name_ar,
+                COALESCE(NULLIF(image_urls[1], ''), NULLIF(image_url, '')) as image,
+                price, discount_price
          FROM vendor_products
          WHERE vendor_id = $1 AND category_id = $2 AND id != $3 AND is_active = TRUE
          ORDER BY sort_order ASC
@@ -57,7 +64,7 @@ export async function GET(
       relatedProducts = relatedResult.rows.map((r) => ({
         id: r.id,
         name: r.name_ar,
-        image: r.image_urls?.[0] || null,
+        image: r.image ?? null,
         price: parseFloat(r.price),
         discountPrice: r.discount_price ? parseFloat(r.discount_price) : null,
       }));
@@ -72,7 +79,10 @@ export async function GET(
       nameEn: p.name_en,
       description: p.description_ar,
       descriptionEn: p.description_en,
-      images: p.image_urls || [],
+      // Same Slice 5 fallback: single-image uploads land in `image_url`
+      // with `image_urls[]` NULL — without this the main gallery was
+      // empty for those products.
+      images: p.image_urls?.length ? p.image_urls : p.image_url ? [p.image_url] : [],
       price: parseFloat(p.price),
       discountPrice: p.discount_price ? parseFloat(p.discount_price) : null,
       sku: p.sku,
