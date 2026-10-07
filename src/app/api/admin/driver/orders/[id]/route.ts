@@ -31,6 +31,16 @@ export async function GET(
   const { id } = await params;
 
   try {
+    // SECURITY (RBAC): mirror the list endpoint's scope — a driver may
+    // only open orders assigned to them or still unassigned. Without
+    // this, any driver could read any order's customer name, phone and
+    // address by id.
+    const driverRow = await pool.query(
+      `SELECT id FROM drivers WHERE admin_user_id = $1`,
+      [gate.admin.id]
+    );
+    const ownDriverId = (driverRow.rows[0]?.id as string | undefined) ?? null;
+
     const result = await pool.query(
       `SELECT
         ${ORDER_LIST_COLUMNS},
@@ -64,8 +74,9 @@ export async function GET(
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.id
       LEFT JOIN addresses da ON o.address_id = da.id
-      WHERE o.id = $1`,
-      [id]
+      WHERE o.id = $1
+        AND (o.driver_id IS NULL OR o.driver_id = $2)`,
+      [id, ownDriverId]
     );
 
     if (result.rows.length === 0) {

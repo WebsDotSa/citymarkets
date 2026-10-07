@@ -20,8 +20,12 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const status = url.searchParams.get('status') || '';
   const search = url.searchParams.get('search') || '';
-  const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 200);
-  const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10), 0);
+  // Non-numeric input (e.g. ?limit=abc) parses to NaN and used to reach
+  // SQL as `LIMIT NaN` → 500. Fall back to defaults and clamp.
+  const rawLimit = parseInt(url.searchParams.get('limit') || '', 10);
+  const rawOffset = parseInt(url.searchParams.get('offset') || '', 10);
+  const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 50;
+  const offset = Number.isFinite(rawOffset) ? Math.max(rawOffset, 0) : 0;
 
   const client = await pool.connect();
   try {

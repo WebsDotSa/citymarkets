@@ -7,7 +7,7 @@ import {
   adminSessionCookieOptions,
 } from '@/lib/identity';
 import type { AdminRole } from '@/lib/admin-types';
-import { checkRateLimit, ADMIN_LOGIN_CONFIG, ADMIN_LOGIN_IP_CONFIG, OTP_VERIFY_CONFIG, OTP_VERIFY_IP_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
+import { checkRateLimit, ADMIN_LOGIN_CONFIG, ADMIN_LOGIN_IP_CONFIG, OTP_VERIFY_CONFIG, OTP_VERIFY_IP_CONFIG, OTP_SEND_CONFIG, OTP_SEND_IP_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';
 import { normalizeSaudiToE164, phoneForDb } from '@/lib/phone-format';
 import { adminLoginInputSchema } from '@/lib/validation/admin';
@@ -142,6 +142,40 @@ export async function POST(request: NextRequest) {
           { status: 503 }
         );
       }
+
+      // SECURITY: this step is unauthenticated, so without caps anyone
+      // could make us send unlimited SMS to arbitrary numbers (cost +
+      // harassment). Cap per IP and per number, mirroring customer OTP.
+      const sendIpLimit = await checkRateLimit(clientIp, OTP_SEND_IP_CONFIG);
+      const sendPhoneLimit = sendIpLimit.allowed
+        ? await checkRateLimit(`admin:${e164}`, OTP_SEND_CONFIG)
+        : sendIpLimit;
+      if (!sendIpLimit.allowed || !sendPhoneLimit.allowed) {
+        const limit = sendIpLimit.allowed ? sendPhoneLimit : sendIpLimit;
+        const response = NextResponse.json(
+          { success: false, error: 'تجاوزت عدد محاولات إرسال الرمز. انتظر قليلاً ثم أعد المحاولة.' },
+          { status: 429 }
+        );
+        Object.entries(createRateLimitHeaders(limit)).forEach(([k, v]) => response.headers.set(k, v));
+        response.headers.set('X-RateLimit-By', sendIpLimit.allowed ? 'phone' : 'ip');
+        return response;
+      }
+
+      // Only text numbers that belong to an active staff account. The
+      // response is identical either way so the endpoint can't be used
+      // to discover which numbers are staff.
+      const staff = await query(
+        `SELECT 1 FROM admin_users WHERE LOWER(phone) = LOWER($1) AND is_active = true LIMIT 1`,
+        [phoneForDb(e164)]
+      );
+      if (staff.rows.length === 0) {
+        return NextResponse.json({
+          success: true,
+          step: 'otp_sent',
+          message: 'تم إرسال رمز التحقق إلى رقمك',
+        });
+      }
+
       try {
         await twilioSendVerification(e164);
       } catch (e) {

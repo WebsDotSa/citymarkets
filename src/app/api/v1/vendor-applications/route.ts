@@ -93,7 +93,13 @@ const applicationSchema = z.object({
     .array(
       z.object({
         kind: z.string().max(40),
-        url: z.string().url().max(500),
+        // https only: these links are rendered as <a href> in the admin
+        // dashboard, so `javascript:`/`data:` URLs must never be stored.
+        url: z
+          .string()
+          .url()
+          .max(500)
+          .refine((u) => u.toLowerCase().startsWith("https://"), "رابط المستند يجب أن يبدأ بـ https://"),
       }),
     )
     .max(10)

@@ -8,6 +8,20 @@ import { normalizeSaudiToE164 } from '@/lib/phone-format';
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
+function forbidden(error: string) {
+  return NextResponse.json({ success: false, error }, { status: 403 });
+}
+
+// SECURITY: `manage_roles` is held by both `super_admin` and `admin`, so
+// the permission alone does not protect the owner account. Only a
+// super_admin may create, edit, delete or grant the super_admin role —
+// otherwise any `admin` could reset the owner's password and take the
+// account over, or delete it to lock the owner out.
+async function loadTargetRole(id: string): Promise<string | null> {
+  const result = await query('SELECT role::text AS role FROM admin_users WHERE id = $1', [id]);
+  return result.rows[0]?.role ?? null;
+}
+
 function idCheck(url: URL) {
   const id = url.searchParams.get('id');
   if (!id) return NextResponse.json({ success: false, error: 'المعرّف مطلوب' }, { status: 400 });
@@ -48,6 +62,9 @@ export async function POST(request: NextRequest) {
       );
     }
     const data = parsed.data;
+    if (data.role === 'super_admin' && gate.admin.role !== 'super_admin') {
+      return forbidden('فقط المدير العام يمكنه إنشاء حساب مدير عام');
+    }
     const phoneE164 = normalizeSaudiToE164(data.phone);
     const passwordHash = await hashPassword(data.password);
 
@@ -104,6 +121,22 @@ export async function PUT(request: NextRequest) {
       );
     }
     const data = parsed.data;
+    const nextRole = data.role || 'admin';
+    const isSuper = gate.admin.role === 'super_admin';
+
+    const targetRole = await loadTargetRole(idCheckResult);
+    if (!targetRole) {
+      return NextResponse.json({ success: false, error: 'المستخدم غير موجود' }, { status: 404 });
+    }
+    if (!isSuper && (targetRole === 'super_admin' || nextRole === 'super_admin')) {
+      return forbidden('فقط المدير العام يمكنه تعديل حساب مدير عام أو منح هذا الدور');
+    }
+    // No self-promotion/demotion or self-deactivation (prevents
+    // escalation and accidental lockout).
+    if (idCheckResult === gate.admin.id && (nextRole !== targetRole || data.is_active === false)) {
+      return forbidden('لا يمكنك تغيير دورك أو تعطيل حسابك بنفسك');
+    }
+
     const phoneE164 = normalizeSaudiToE164(data.phone);
 
     const passwordChanged = Boolean(data.password);
@@ -122,7 +155,7 @@ export async function PUT(request: NextRequest) {
         [
           data.name,
           data.email ?? '',
-          data.role || 'admin',
+          nextRole,
           phoneE164,
           data.is_active !== false,
           passwordHash,
@@ -142,7 +175,7 @@ export async function PUT(request: NextRequest) {
         [
           data.name,
           data.email ?? '',
-          data.role || 'admin',
+          nextRole,
           phoneE164,
           data.is_active !== false,
           idCheckResult,
@@ -195,6 +228,11 @@ export async function DELETE(request: NextRequest) {
         { success: false, error: 'لا يمكنك حذف حسابك الخاص' },
         { status: 400 }
       );
+    }
+
+    const targetRole = await loadTargetRole(idCheckResult);
+    if (targetRole === 'super_admin' && gate.admin.role !== 'super_admin') {
+      return forbidden('فقط المدير العام يمكنه حذف حساب مدير عام');
     }
 
     await query('DELETE FROM admin_users WHERE id = $1', [idCheckResult]);
