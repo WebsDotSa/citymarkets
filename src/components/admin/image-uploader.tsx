@@ -7,6 +7,9 @@ import { compressImageForUpload } from "@/lib/image-compress";
 import { ALLOWED_IMAGE_MIME, MAX_IMAGE_BYTES } from "@/lib/validation/upload";
 import { error as logError } from "@/lib/logger";
 
+// Shown when a stored image URL 404s (e.g. missing CDN object).
+const PLACEHOLDER_SRC = "/placeholders/products/default.svg";
+
 interface ImageUploaderProps {
   value: string;
   onChange: (url: string) => void;
@@ -127,6 +130,10 @@ export function ImageUploader({
             loading="lazy"
             decoding="async"
             className="w-full h-full object-cover"
+            onError={(e) => {
+              const img = e.currentTarget;
+              if (!img.src.endsWith(PLACEHOLDER_SRC)) img.src = PLACEHOLDER_SRC;
+            }}
           />
 
           {/* Overlay actions */}

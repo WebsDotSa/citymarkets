@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/safe-image";
 import {
   Package,
   Plus,
@@ -696,7 +696,7 @@ function ProductsPage() {
                           <div className="flex items-center gap-3">
                             <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                               {p.image_url ? (
-                                <Image
+                                <SafeImage
                                   src={p.image_url}
                                   alt={p.name_ar}
                                   fill
@@ -795,7 +795,7 @@ function ProductsPage() {
                     <div className="flex items-start gap-3">
                       <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                         {p.image_url ? (
-                          <Image
+                          <SafeImage
                             src={p.image_url}
                             alt={p.name_ar}
                             fill

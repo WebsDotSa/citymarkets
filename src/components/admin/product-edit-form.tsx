@@ -28,6 +28,9 @@ import { csrfFetch } from "@/lib/csrf-client";
 import { compressImageForUpload } from "@/lib/image-compress";
 import { ProductCard } from "@/components/storefront/product-card";
 
+// Shown when a stored image URL 404s (e.g. missing CDN object).
+const PLACEHOLDER_SRC = "/placeholders/products/default.svg";
+
 export interface ProductFormValues {
   id?: string;
   name_ar: string;
@@ -367,6 +370,10 @@ export function ProductEditForm({
                         src={url}
                         alt=""
                         className="w-full h-full object-cover pointer-events-none"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          if (!img.src.endsWith(PLACEHOLDER_SRC)) img.src = PLACEHOLDER_SRC;
+                        }}
                       />
                       {idx === 0 && (
                         <span className="absolute top-1 right-1 text-[9px] bg-primary text-white px-1.5 py-0.5 rounded">
