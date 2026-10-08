@@ -21,6 +21,7 @@ import {
 } from '@/lib/catalog';
 import { emojiForCategoryName } from '@/lib/catalog';
 import type { Product, CategoryRow } from "@/lib/types";
+import { CategoryImage } from "./category-image";
 
 type Sort = "popular" | "price-asc" | "price-desc" | "newest";
 
@@ -353,20 +354,12 @@ function CategoryIcon({ category, parent }: { category: CategoryRow; parent: Cat
           "linear-gradient(135deg, rgba(0,147,69,0.10), rgba(0,147,69,0.04))",
       }}
     >
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={src}
-          alt=""
-          className="max-w-14 max-h-14 object-contain"
-          loading="lazy"
-          decoding="async"
-        />
-      ) : (
-        <span className="text-4xl" aria-hidden="true">
-          {fallback}
-        </span>
-      )}
+      <CategoryImage
+        src={src}
+        emoji={fallback}
+        imageClassName="max-w-14 max-h-14 object-contain"
+        fallbackClassName="text-4xl"
+      />
     </div>
   );
 }

@@ -19,6 +19,7 @@ import {
   resolveCategoryImageSrc,
 } from '@/lib/catalog';
 import { emojiForCategoryName } from '@/lib/catalog';
+import { CategoryImage } from "./category-image";
 
 interface RootGridProps {
   root: CategoryTreeNode;
@@ -145,23 +146,13 @@ function CategoryCard({
       >
         <div className="flex flex-col items-center text-center gap-2">
           <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-white overflow-hidden shrink-0 flex items-center justify-center">
-            {src ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={src}
-                alt=""
-                loading={priority ? "eager" : "lazy"}
-                decoding="async"
-                className="w-full h-full object-contain"
-              />
-            ) : (
-              <span
-                className="text-2xl drop-shadow-sm select-none"
-                aria-hidden="true"
-              >
-                {emoji}
-              </span>
-            )}
+            <CategoryImage
+              src={src}
+              emoji={emoji}
+              loading={priority ? "eager" : "lazy"}
+              imageClassName="w-full h-full object-contain"
+              fallbackClassName="text-2xl drop-shadow-sm select-none"
+            />
           </div>
           <div className="flex-1 min-w-0 w-full">
             <p className="text-sm font-bold text-slate-900 leading-tight line-clamp-2">
