@@ -207,7 +207,7 @@ export function CategoriesBrowserV2({
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-[#F2F4F7] text-slate-900 pb-24 md:pb-12 font-['IBM_Plex_Sans_Arabic','system-ui',sans-serif]"
+      className="min-h-screen bg-gray-100 text-gray-900 pb-24 md:pb-12 font-['IBM_Plex_Sans_Arabic','system-ui',sans-serif]"
     >
       <PageHero
         tree={initialTree}
@@ -285,17 +285,17 @@ function EmptyState({
 }) {
   return (
     <div className="text-center py-16 bg-white rounded-2xl mt-4">
-      <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-        <Search className="w-6 h-6 text-slate-400" aria-hidden="true" />
+      <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+        <Search className="w-6 h-6 text-gray-400" aria-hidden="true" />
       </div>
-      <h3 className="text-base font-bold text-slate-900 mb-1">لا توجد نتائج</h3>
-      <p className="text-sm text-slate-500 mb-4">
+      <h3 className="text-base font-bold text-gray-900 mb-1">لا توجد نتائج</h3>
+      <p className="text-sm text-gray-500 mb-4">
         لا توجد نتائج مطابقة لـ «{query}»
       </p>
       <button
         type="button"
         onClick={onClear}
-        className="inline-flex items-center gap-2 text-sm font-bold text-[#009345] hover:text-[#007A38]"
+        className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-primary-dark"
       >
         مسح البحث
       </button>
@@ -313,7 +313,7 @@ function FooterNote({
   totalProducts: number;
 }) {
   return (
-    <footer className="mt-12 mb-4 text-center text-xs text-slate-400">
+    <footer className="mt-12 mb-4 text-center text-xs text-gray-400">
       <p>
         {totalRoots} قسم رئيسي · {totalChildren} قسم فرعي ·{" "}
         <span dir="ltr" className="font-bold">

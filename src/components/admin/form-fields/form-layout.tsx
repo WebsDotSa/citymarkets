@@ -72,9 +72,9 @@ export function FormLayout({
         {showHeader && (
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
+              <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
               {subtitle && (
-                <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
+                <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
               )}
             </div>
           </div>
@@ -116,15 +116,15 @@ export function FormLayout({
         {showHeader && (
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
+              <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
               {subtitle && (
-                <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
+                <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
               )}
             </div>
             <button
               type="button"
               onClick={onCancel}
-              className="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
             >
               <X className="w-5 h-5" />
             </button>

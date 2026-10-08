@@ -151,7 +151,7 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
       <div className="flex items-center justify-center py-20" dir="rtl">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm text-slate-500">جاري تحميل الطلب…</p>
+          <p className="text-sm text-gray-500">جاري تحميل الطلب…</p>
         </div>
       </div>
     );
@@ -159,9 +159,9 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
 
   if (notFound || !order) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center" dir="rtl">
-        <h1 className="text-lg font-bold text-slate-900 mb-2">الطلب غير موجود</h1>
-        <p className="text-sm text-slate-500 mb-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center" dir="rtl">
+        <h1 className="text-lg font-bold text-gray-900 mb-2">الطلب غير موجود</h1>
+        <p className="text-sm text-gray-500 mb-6">
           قد يكون الطلب تابعاً لمتجر آخر أو أُلغي.
         </p>
         <Link
@@ -198,7 +198,7 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
       <div className="flex items-center justify-between gap-3">
         <Link
           href={`/vendor/${slug}/admin/orders`}
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary transition"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary transition"
         >
           <ArrowRight className="w-4 h-4 rotate-180" />
           العودة إلى القائمة
@@ -220,26 +220,26 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
       </div>
 
       {/* Order number + meta */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+      <div className="rounded-2xl border border-gray-200 bg-white p-5">
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-xl font-bold text-slate-900">{order.orderNumber}</h1>
-            <p className="text-xs text-slate-500 mt-1">
+            <h1 className="text-xl font-bold text-gray-900">{order.orderNumber}</h1>
+            <p className="text-xs text-gray-500 mt-1">
               أُنشئ في {new Date(order.createdAt).toLocaleString("ar-SA")}
             </p>
             {vendor && (
-              <p className="text-xs text-slate-500 mt-0.5">
-                المتجر: <span className="font-semibold text-slate-700">{vendor.name}</span>
+              <p className="text-xs text-gray-500 mt-0.5">
+                المتجر: <span className="font-semibold text-gray-700">{vendor.name}</span>
               </p>
             )}
           </div>
           <div className="text-left">
-            <p className="text-xs text-slate-500">طريقة الدفع</p>
-            <p className="font-semibold text-slate-900">
+            <p className="text-xs text-gray-500">طريقة الدفع</p>
+            <p className="font-semibold text-gray-900">
               {PAYMENT_METHOD_AR[order.paymentMethod] || order.paymentMethod}
             </p>
             {order.moyasarPaymentId && (
-              <p className="text-[10px] text-slate-400 mt-1 font-mono">
+              <p className="text-tiny text-gray-400 mt-1 font-mono">
                 {order.moyasarPaymentId}
               </p>
             )}
@@ -249,42 +249,42 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
 
       {/* Timeline (rendered only when at least one transition happened) */}
       {(order.confirmedAt || order.preparedAt || order.deliveredAt || order.cancelledAt) && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <Clock className="w-4 h-4 text-primary" />
             سجل الحالات
           </h2>
-          <ul className="space-y-2 text-xs text-slate-600">
+          <ul className="space-y-2 text-xs text-gray-600">
             <li className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-slate-300" />
-              <span className="text-slate-500">أُنشئ:</span>
+              <span className="w-2 h-2 rounded-full bg-gray-300" />
+              <span className="text-gray-500">أُنشئ:</span>
               <span className="font-medium">{new Date(order.createdAt).toLocaleString("ar-SA")}</span>
             </li>
             {order.confirmedAt && (
               <li className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-500" />
-                <span className="text-slate-500">تم التأكيد:</span>
+                <span className="text-gray-500">تم التأكيد:</span>
                 <span className="font-medium">{new Date(order.confirmedAt).toLocaleString("ar-SA")}</span>
               </li>
             )}
             {order.preparedAt && (
               <li className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-purple-500" />
-                <span className="text-slate-500">بدأ التحضير:</span>
+                <span className="text-gray-500">بدأ التحضير:</span>
                 <span className="font-medium">{new Date(order.preparedAt).toLocaleString("ar-SA")}</span>
               </li>
             )}
             {order.deliveredAt && (
               <li className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-slate-500">تم التوصيل:</span>
+                <span className="text-gray-500">تم التوصيل:</span>
                 <span className="font-medium">{new Date(order.deliveredAt).toLocaleString("ar-SA")}</span>
               </li>
             )}
             {order.cancelledAt && (
               <li className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-red-500" />
-                <span className="text-slate-500">أُلغي:</span>
+                <span className="text-gray-500">أُلغي:</span>
                 <span className="font-medium">{new Date(order.cancelledAt).toLocaleString("ar-SA")}</span>
               </li>
             )}
@@ -294,40 +294,40 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
 
       {/* Customer + Address */}
       <div className="grid gap-5 md:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <UserIcon className="w-4 h-4 text-primary" />
             العميل
           </h2>
           <div className="space-y-2 text-sm">
-            <p className="font-semibold text-slate-900">
+            <p className="font-semibold text-gray-900">
               {order.customer.name || order.customer.phone}
             </p>
             <a
               href={`tel:${order.customer.phone}`}
-              className="flex items-center gap-2 text-slate-700 hover:text-primary"
+              className="flex items-center gap-2 text-gray-700 hover:text-primary"
             >
-              <Phone className="w-4 h-4 text-slate-400" />
+              <Phone className="w-4 h-4 text-gray-400" />
               <span dir="ltr">{order.customer.phone}</span>
             </a>
             {order.customer.email && (
-              <p className="text-xs text-slate-500" dir="ltr">
+              <p className="text-xs text-gray-500" dir="ltr">
                 {order.customer.email}
               </p>
             )}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" />
             عنوان التوصيل
           </h2>
-          <p className="text-sm text-slate-700">
+          <p className="text-sm text-gray-700">
             {order.address.text || "—"}
           </p>
           {order.address.lat != null && order.address.lng != null && (
-            <p className="text-[11px] text-slate-400 mt-2 font-mono" dir="ltr">
+            <p className="text-2xs text-gray-400 mt-2 font-mono" dir="ltr">
               {Number(order.address.lat).toFixed(5)}, {Number(order.address.lng).toFixed(5)}
             </p>
           )}
@@ -335,14 +335,14 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
       </div>
 
       {/* Items */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-900 mb-3">
+      <div className="rounded-2xl border border-gray-200 bg-white p-5">
+        <h2 className="text-sm font-semibold text-gray-900 mb-3">
           المنتجات ({order.items.length})
         </h2>
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-gray-100">
           {order.items.map((item) => (
             <div key={item.id} className="py-3 flex items-center gap-3">
-              <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
                 {item.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -351,17 +351,17 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <Tag className="w-5 h-5 text-slate-300" />
+                  <Tag className="w-5 h-5 text-gray-300" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-slate-900 truncate">{item.name}</p>
+                <p className="font-semibold text-sm text-gray-900 truncate">{item.name}</p>
                 {item.sku && (
-                  <p className="text-[11px] text-slate-400 font-mono" dir="ltr">
+                  <p className="text-2xs text-gray-400 font-mono" dir="ltr">
                     SKU: {item.sku}
                   </p>
                 )}
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-gray-500 mt-0.5">
                   {item.unitPrice.toFixed(2)} ر.س × {item.quantity}
                 </p>
                 {item.notes && (
@@ -371,7 +371,7 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
                 )}
               </div>
               <div className="text-left shrink-0">
-                <p className="font-bold text-sm text-slate-900">
+                <p className="font-bold text-sm text-gray-900">
                   {item.lineTotal.toFixed(2)} ر.س
                 </p>
               </div>
@@ -380,20 +380,20 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
         </div>
 
         {/* Totals */}
-        <div className="border-t border-slate-200 mt-3 pt-3 space-y-1.5 text-sm">
-          <div className="flex justify-between text-slate-600">
+        <div className="border-t border-gray-200 mt-3 pt-3 space-y-1.5 text-sm">
+          <div className="flex justify-between text-gray-600">
             <span>المجموع الفرعي</span>
             <span className="font-medium" dir="ltr">
               {order.subtotal.toFixed(2)} ر.س
             </span>
           </div>
-          <div className="flex justify-between text-slate-600">
+          <div className="flex justify-between text-gray-600">
             <span>رسوم التوصيل</span>
             <span className="font-medium" dir="ltr">
               {order.deliveryFee.toFixed(2)} ر.س
             </span>
           </div>
-          <div className="flex justify-between text-base font-bold text-slate-900 pt-1.5 border-t border-slate-100">
+          <div className="flex justify-between text-base font-bold text-gray-900 pt-1.5 border-t border-gray-100">
             <span>الإجمالي</span>
             <span className="text-primary" dir="ltr">
               {order.total.toFixed(2)} ر.س
@@ -418,7 +418,7 @@ export default function VendorOrderDetailPage({ params }: OrderDetailPageProps) 
       )}
 
       {/* Actions */}
-      <div className="sticky bottom-0 -mx-4 px-4 py-3 bg-white/95 backdrop-blur border-t border-slate-200 shadow-sm">
+      <div className="sticky bottom-0 -mx-4 px-4 py-3 bg-white/95 backdrop-blur border-t border-gray-200 shadow-sm">
         {isReadOnly && (
           <div
             role="status"

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
+import { parsePagination } from "@/lib/api/pagination";
 import { productInputSchema } from '@/lib/validation';
 import { CITY_MARKETS_VENDOR_ID } from '@/lib/types';
 import { deleteFromR2, r2KeyFromUrl } from '@/lib/r2';
 import { cache } from '@/lib/cache';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError, warn as logWarn } from '@/lib/logger';
 
 const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -27,9 +28,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')?.trim() || '';
     const categoryId = searchParams.get('category_id');
     const isActive = searchParams.get('is_active');
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
-    const offset = (page - 1) * limit;
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 20 });
 
     // Build WHERE clause dynamically
     const conditions: string[] = [];

@@ -80,7 +80,7 @@ describe("GET /api/v1/addresses — auth + response shape (regression)", () => {
   });
 
   it("returns an empty data array for an authenticated user with no addresses", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("11111111-1111-4111-8111-111111111111");
     (query as any).mockRows = [];
 
     const res = await GET(mockRequest() as never);
@@ -91,7 +91,7 @@ describe("GET /api/v1/addresses — auth + response shape (regression)", () => {
   });
 
   it("returns the populated address list for an authenticated user", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("11111111-1111-4111-8111-111111111111");
     (query as any).mockRows = [
       {
         id: "addr-1",
@@ -117,7 +117,7 @@ describe("GET /api/v1/addresses — auth + response shape (regression)", () => {
 
     // The addresses query must filter on user_id.
     const filteredByUser = calls.some(
-      (c) => c.sql.toUpperCase().includes("FROM ADDRESSES") && c.params[0] === "user-1"
+      (c) => c.sql.toUpperCase().includes("FROM ADDRESSES") && c.params[0] === "11111111-1111-4111-8111-111111111111"
     );
     expect(filteredByUser).toBe(true);
   });
@@ -144,7 +144,7 @@ describe("POST /api/v1/addresses — iOS-friendly response shape", () => {
   });
 
   it("returns 400 when required fields are missing", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("11111111-1111-4111-8111-111111111111");
 
     const res = await POST(
       mockRequest("http://localhost/api/v1/addresses", { label: "Home" }) as never
@@ -155,7 +155,7 @@ describe("POST /api/v1/addresses — iOS-friendly response shape", () => {
   });
 
   it("returns the iOS-friendly address aliases on success", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("11111111-1111-4111-8111-111111111111");
     (query as any).mockRows = [
       {
         id: "addr-1",
@@ -202,7 +202,7 @@ describe("POST /api/v1/addresses — iOS-friendly response shape", () => {
   });
 
   it("uses the explicit `title` when provided", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("11111111-1111-4111-8111-111111111111");
     (query as any).mockRows = [
       {
         id: "addr-2",
@@ -235,7 +235,7 @@ describe("POST /api/v1/addresses — iOS-friendly response shape", () => {
   });
 
   it("returns 400 when neither title, description, nor label resolve", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("11111111-1111-4111-8111-111111111111");
 
     const res = await POST(
       mockRequest("http://localhost/api/v1/addresses", {

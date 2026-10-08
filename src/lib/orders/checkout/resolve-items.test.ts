@@ -363,4 +363,108 @@ describe("resolveItems", () => {
       subtotal: 5,
     });
   });
+
+  // ---- PCP-195 (Phase 16): checkout must apply active offers to
+  //  catalog items the same way the cart UI does. Without this, the
+  //  cart shows the offer-discounted total but the order row records
+  //  the pre-offer price. ----
+  it("PCP-195: applies percentage offer when offer is cheaper than discount_price", async () => {
+    const client = new FakeClient();
+    const now = new Date();
+    const starts = new Date(now.getTime() - 60_000).toISOString();
+    const ends = new Date(now.getTime() + 60 * 60_000).toISOString();
+    client.catalogResponse = [
+      {
+        id: "p1",
+        name_ar: "X",
+        price: "100.00",
+        discount_price: "80.00",  // legacy discount: 80
+        stock_qty: 5,
+        track_stock: true,
+        image_url: null,
+        vendor_id: "00000000-0000-0000-0000-000000000001",
+        // 30% percentage offer: 70 — should win over 80
+        active_offer_id: "o1",
+        active_offer_type: "percentage",
+        active_offer_value: "30",
+        active_offer_max_discount: null,
+        active_offer_min_order: null,
+        active_offer_starts_at: starts,
+        active_offer_ends_at: ends,
+      },
+    ];
+    const out = await resolveItems({
+      catalog: [{ items: [{ product_id: "p1", quantity: 1 }] }],
+      vendorGroups: [],
+      client,
+    });
+    const item = (out as { catalog: { unit_price: number }[] }).catalog[0];
+    expect(item.unit_price).toBe(70);
+  });
+
+  it("PCP-195: keeps discount_price when offer is more expensive than discount", async () => {
+    const client = new FakeClient();
+    const now = new Date();
+    const starts = new Date(now.getTime() - 60_000).toISOString();
+    const ends = new Date(now.getTime() + 60 * 60_000).toISOString();
+    client.catalogResponse = [
+      {
+        id: "p1",
+        name_ar: "X",
+        price: "100.00",
+        discount_price: "60.00",  // legacy discount: 60
+        stock_qty: 5,
+        track_stock: true,
+        image_url: null,
+        vendor_id: "00000000-0000-0000-0000-000000000001",
+        // 5% percentage offer: 95 — discount_price wins
+        active_offer_id: "o1",
+        active_offer_type: "percentage",
+        active_offer_value: "5",
+        active_offer_max_discount: null,
+        active_offer_min_order: null,
+        active_offer_starts_at: starts,
+        active_offer_ends_at: ends,
+      },
+    ];
+    const out = await resolveItems({
+      catalog: [{ items: [{ product_id: "p1", quantity: 1 }] }],
+      vendorGroups: [],
+      client,
+    });
+    const item = (out as { catalog: { unit_price: number }[] }).catalog[0];
+    expect(item.unit_price).toBe(60);
+  });
+
+  it("PCP-195: ignores offer that is not yet live", async () => {
+    const client = new FakeClient();
+    const farFuture = new Date(Date.now() + 30 * 24 * 60 * 60_000).toISOString();
+    const evenLater = new Date(Date.now() + 60 * 24 * 60 * 60_000).toISOString();
+    client.catalogResponse = [
+      {
+        id: "p1",
+        name_ar: "X",
+        price: "100.00",
+        discount_price: null,
+        stock_qty: 5,
+        track_stock: true,
+        image_url: null,
+        vendor_id: "00000000-0000-0000-0000-000000000001",
+        active_offer_id: "o1",
+        active_offer_type: "fixed",
+        active_offer_value: "20",
+        active_offer_max_discount: null,
+        active_offer_min_order: null,
+        active_offer_starts_at: farFuture,
+        active_offer_ends_at: evenLater,
+      },
+    ];
+    const out = await resolveItems({
+      catalog: [{ items: [{ product_id: "p1", quantity: 1 }] }],
+      vendorGroups: [],
+      client,
+    });
+    const item = (out as { catalog: { unit_price: number }[] }).catalog[0];
+    expect(item.unit_price).toBe(100);
+  });
 });

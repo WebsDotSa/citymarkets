@@ -5,6 +5,8 @@ import { ShoppingBag } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useCartState } from "@/contexts/cart-context";
 import { BRAND } from "@/lib/brand-theme";
+import { useBrandColorVars } from "@/hooks/use-color-vars";
+import { getBottomWithSafeArea } from "@/lib/style-utils";
 
 const HIDDEN_ON = ["/cart", "/checkout", "/auth"];
 
@@ -13,6 +15,7 @@ const VOICE_BUTTON_RESERVE = "3.75rem";
 
 export function StickyCartBar() {
   const pathname = usePathname();
+  const colorVars = useBrandColorVars();
   // Needs both itemCount and subtotal — subscribe to the read-only state slice.
   const { itemCount, subtotal } = useCartState();
 
@@ -27,7 +30,7 @@ export function StickyCartBar() {
   return (
     <div
       className="fixed left-4 right-4 z-40 md:hidden flex items-center gap-2"
-      style={{ bottom: "calc(4.25rem + env(safe-area-inset-bottom, 0px))" }}
+      style={{ ...getBottomWithSafeArea("4.25rem"), ...colorVars }}
     >
       <div
         className="flex-1 min-w-0 pointer-events-none"
@@ -38,17 +41,17 @@ export function StickyCartBar() {
       <Link
         href="/cart"
         className="h-11 shrink-0 min-w-[100px] px-3 rounded-2xl text-white flex items-center justify-between gap-2 shadow-lg"
-        style={{ backgroundColor: BRAND.cartBar }}
+        style={{ backgroundColor: 'var(--cart-bar)' }}
       >
         <div className="flex flex-col items-end leading-tight">
           <span className="text-xs font-bold">{subtotal.toFixed(0)} ر.س</span>
-          <span className="text-[10px] text-white/70">{itemCount} منتج</span>
+          <span className="text-tiny text-white/70">{itemCount} منتج</span>
         </div>
         <div className="relative">
           <ShoppingBag className="w-5 h-5" />
           <span
-            className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
-            style={{ backgroundColor: BRAND.primary }}
+            className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-tiny font-bold flex items-center justify-center text-white"
+            style={{ backgroundColor: 'var(--primary)' }}
           >
             {itemCount > 9 ? "9+" : itemCount}
           </span>

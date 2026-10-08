@@ -14,7 +14,7 @@ export default function LoyaltyLandingPage() {
   return (
     <main className="min-h-screen bg-gray-50" id="main-content">
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-[#009345] to-[#007A38] text-white py-16 md:py-24 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-primary to-primary-dark text-white py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 right-20 w-96 h-96 rounded-full bg-white/20" />
           <div className="absolute bottom-10 left-10 w-64 h-64 rounded-full bg-white/10" />

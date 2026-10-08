@@ -55,7 +55,7 @@ export function MetaPixel({
         <img
           height={1}
           width={1}
-          style={{ display: "none" }}
+          className="hidden"
           src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
           alt=""
         />

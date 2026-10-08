@@ -10,6 +10,7 @@ import {
 } from "@/lib/validation";
 import { logAdminAction } from "@/lib/admin-audit";
 import { error as logError } from "@/lib/logger";
+import { parsePagination } from "@/lib/api/pagination";
 
 export async function GET(request: NextRequest) {
   const gate = await requireAdminApi(request, "manage_broadcasts");
@@ -17,9 +18,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50")));
-    const offset = (page - 1) * limit;
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 50 });
     const status = searchParams.get("status");
 
     const params: (string | number)[] = [];

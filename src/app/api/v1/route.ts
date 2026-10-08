@@ -43,7 +43,8 @@ const apiIndex = {
     { path: "/products/{id}", method: "GET", auth: false, description: "Product details" },
     { path: "/vendors", method: "GET", auth: false, description: "List vendors/stores" },
     { path: "/offers", method: "GET", auth: false, description: "Active offers" },
-    { path: "/banners", method: "GET", auth: false, description: "Homepage banners" },
+    // Banners route intentionally retired — the homepage layout is now
+    // driven by home-design JSONB + home-layout endpoints. See P2-13.
     { path: "/cart", method: "GET", auth: "session", description: "View cart" },
     { path: "/cart", method: "POST", auth: "session", description: "Add to cart" },
     { path: "/orders", method: "GET", auth: "session", description: "List orders" },

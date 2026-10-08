@@ -91,7 +91,7 @@ export function NotificationsTemplatesTab() {
           {r.channels.map((c) => (
             <span
               key={c}
-              className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700"
+              className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700"
             >
               {CHANNELS.find((x) => x.value === c)?.label ?? c}
             </span>
@@ -112,7 +112,7 @@ export function NotificationsTemplatesTab() {
           className={`text-xs px-2 py-0.5 rounded-full ${
             r.is_active
               ? "bg-emerald-100 text-emerald-700"
-              : "bg-slate-100 text-slate-600"
+              : "bg-gray-100 text-gray-600"
           }`}
         >
           {r.is_active ? "مفعّل" : "معطّل"}
@@ -213,46 +213,55 @@ function TemplateEditorModal({
       aria-modal="true"
     >
       <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto admin-scroll">
-        <div className="flex items-center justify-between p-5 border-b border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800">
+        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <h3 className="text-lg font-bold text-gray-800">
             {draft.id ? "تعديل قالب" : "قالب جديد"}
           </h3>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 rounded-lg">
+          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-700 rounded-lg">
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <label className="block">
-              <span className="text-sm text-slate-600">الاسم</span>
+            <div>
+              <label htmlFor="tpl-name" className="block">
+                <span className="text-sm text-gray-600">الاسم</span>
+              </label>
               <input
+                id="tpl-name"
                 value={draft.name ?? ""}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                 className="mt-1 w-full border rounded-lg px-3 py-2"
               />
-            </label>
-            <label className="block">
-              <span className="text-sm text-slate-600">الفئة</span>
+            </div>
+            <div>
+              <label htmlFor="tpl-category" className="block">
+                <span className="text-sm text-gray-600">الفئة</span>
+              </label>
               <input
+                id="tpl-category"
                 value={draft.category ?? ""}
                 onChange={(e) => setDraft({ ...draft, category: e.target.value })}
                 className="mt-1 w-full border rounded-lg px-3 py-2"
                 placeholder="ترحيب، عروض، تذكير…"
               />
-            </label>
+            </div>
           </div>
-          <label className="block">
-            <span className="text-sm text-slate-600">الوصف</span>
+          <div>
+            <label htmlFor="tpl-description" className="block">
+              <span className="text-sm text-gray-600">الوصف</span>
+            </label>
             <textarea
+              id="tpl-description"
               value={draft.description ?? ""}
               onChange={(e) => setDraft({ ...draft, description: e.target.value })}
               rows={2}
               className="mt-1 w-full border rounded-lg px-3 py-2"
             />
-          </label>
+          </div>
 
           <div>
-            <p className="text-sm text-slate-600 mb-2">القنوات</p>
+            <p className="text-sm text-gray-600 mb-2">القنوات</p>
             <div className="flex flex-wrap gap-2">
               {CHANNELS.map((c) => {
                 const active = draft.channels?.includes(c.value);
@@ -264,7 +273,7 @@ function TemplateEditorModal({
                     className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                       active
                         ? "bg-primary text-white border-primary"
-                        : "bg-white text-slate-700 border-slate-200 hover:border-primary"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-primary"
                     }`}
                   >
                     {c.icon} {c.label}
@@ -275,7 +284,7 @@ function TemplateEditorModal({
           </div>
 
           <div>
-            <p className="text-sm text-slate-600 mb-2">المتغيرات</p>
+            <p className="text-sm text-gray-600 mb-2">المتغيرات</p>
             <div className="flex flex-wrap gap-2">
               {VARIABLE_OPTIONS.map((v) => {
                 const active = draft.variables?.includes(v);
@@ -295,7 +304,7 @@ function TemplateEditorModal({
                     className={`px-2 py-0.5 rounded text-xs font-mono border ${
                       active
                         ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                        : "bg-white text-slate-600 border-slate-200"
+                        : "bg-white text-gray-600 border-gray-200"
                     }`}
                   >
                     {`{${v}}`}
@@ -308,7 +317,7 @@ function TemplateEditorModal({
           {/* Per-channel editor */}
           {draft.channels && draft.channels.length > 0 && (
             <div>
-              <div className="flex gap-2 mb-3 border-b border-slate-100">
+              <div className="flex gap-2 mb-3 border-b border-gray-100">
                 {draft.channels.map((c) => (
                   <button
                     key={c}
@@ -316,7 +325,7 @@ function TemplateEditorModal({
                     className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${
                       activeChannel === c
                         ? "border-primary text-primary"
-                        : "border-transparent text-slate-500 hover:text-slate-700"
+                        : "border-transparent text-gray-500 hover:text-gray-700"
                     }`}
                   >
                     {CHANNELS.find((x) => x.value === c)?.label}
@@ -331,7 +340,7 @@ function TemplateEditorModal({
             </div>
           )}
         </div>
-        <div className="flex items-center justify-end gap-2 p-5 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-2 p-5 border-t border-gray-100">
           <button onClick={onClose} className="px-4 py-2 rounded-lg border">
             إلغاء
           </button>
@@ -364,90 +373,114 @@ function ChannelEditor({
   if (channel === "email") {
     return (
       <div className="space-y-3">
-        <label className="block">
-          <span className="text-sm text-slate-600">العنوان</span>
+        <div>
+          <label htmlFor="tpl-email-subject" className="block">
+            <span className="text-sm text-gray-600">العنوان</span>
+          </label>
           <input
+            id="tpl-email-subject"
             value={cur.subject ?? ""}
             onChange={(e) => set("subject", e.target.value)}
             className="mt-1 w-full border rounded-lg px-3 py-2"
           />
-        </label>
-        <label className="block">
-          <span className="text-sm text-slate-600">HTML</span>
+        </div>
+        <div>
+          <label htmlFor="tpl-email-html" className="block">
+            <span className="text-sm text-gray-600">HTML</span>
+          </label>
           <textarea
+            id="tpl-email-html"
             value={cur.html ?? ""}
             onChange={(e) => set("html", e.target.value)}
             rows={6}
             className="mt-1 w-full border rounded-lg px-3 py-2 font-mono text-xs"
           />
-        </label>
+        </div>
       </div>
     );
   }
   if (channel === "sms") {
     return (
-      <label className="block">
-        <span className="text-sm text-slate-600">النص</span>
+      <div>
+        <label htmlFor="tpl-sms-body" className="block">
+          <span className="text-sm text-gray-600">النص</span>
+        </label>
         <textarea
+          id="tpl-sms-body"
           value={cur.body ?? ""}
           onChange={(e) => set("body", e.target.value)}
           rows={3}
           className="mt-1 w-full border rounded-lg px-3 py-2"
         />
-      </label>
+      </div>
     );
   }
   if (channel === "in_app") {
     return (
       <div className="space-y-3">
-        <label className="block">
-          <span className="text-sm text-slate-600">العنوان</span>
+        <div>
+          <label htmlFor="tpl-inapp-title" className="block">
+            <span className="text-sm text-gray-600">العنوان</span>
+          </label>
           <input
+            id="tpl-inapp-title"
             value={cur.title ?? ""}
             onChange={(e) => set("title", e.target.value)}
             className="mt-1 w-full border rounded-lg px-3 py-2"
           />
-        </label>
-        <label className="block">
-          <span className="text-sm text-slate-600">النص</span>
+        </div>
+        <div>
+          <label htmlFor="tpl-inapp-body" className="block">
+            <span className="text-sm text-gray-600">النص</span>
+          </label>
           <textarea
+            id="tpl-inapp-body"
             value={cur.body ?? ""}
             onChange={(e) => set("body", e.target.value)}
             rows={3}
             className="mt-1 w-full border rounded-lg px-3 py-2"
           />
-        </label>
-        <label className="block">
-          <span className="text-sm text-slate-600">رابط (URL)</span>
+        </div>
+        <div>
+          <label htmlFor="tpl-inapp-url" className="block">
+            <span className="text-sm text-gray-600">رابط (URL)</span>
+          </label>
           <input
+            id="tpl-inapp-url"
             value={cur.url ?? ""}
             onChange={(e) => set("url", e.target.value)}
             className="mt-1 w-full border rounded-lg px-3 py-2"
             placeholder="https://citymarkets.sa/offers"
           />
-        </label>
+        </div>
       </div>
     );
   }
   return (
     <div className="space-y-3">
-      <label className="block">
-        <span className="text-sm text-slate-600">العنوان</span>
+      <div>
+        <label htmlFor="tpl-default-title" className="block">
+          <span className="text-sm text-gray-600">العنوان</span>
+        </label>
         <input
+          id="tpl-default-title"
           value={cur.title ?? ""}
           onChange={(e) => set("title", e.target.value)}
           className="mt-1 w-full border rounded-lg px-3 py-2"
         />
-      </label>
-      <label className="block">
-        <span className="text-sm text-slate-600">النص</span>
+      </div>
+      <div>
+        <label htmlFor="tpl-default-body" className="block">
+          <span className="text-sm text-gray-600">النص</span>
+        </label>
         <textarea
+          id="tpl-default-body"
           value={cur.body ?? ""}
           onChange={(e) => set("body", e.target.value)}
           rows={3}
           className="mt-1 w-full border rounded-lg px-3 py-2"
         />
-      </label>
+      </div>
     </div>
   );
 }

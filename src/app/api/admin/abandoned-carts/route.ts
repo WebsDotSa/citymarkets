@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
+import { parsePagination } from "@/lib/api/pagination";
 import { error as logError } from '@/lib/logger';
 import type { AdminAbandonedCart } from '@/lib/admin-types';
 
@@ -25,9 +26,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = (searchParams.get('status') ?? '').trim();
     const search = (searchParams.get('search') ?? '').trim();
-    const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') ?? '20', 10)));
-    const offset = (page - 1) * limit;
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 20 });
 
     const allowedStatuses = ['abandoned', 'recovered'];
     const safeStatus = allowedStatuses.includes(status) ? status : '';

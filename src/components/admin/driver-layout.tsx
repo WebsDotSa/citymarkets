@@ -64,7 +64,7 @@ function DriverSidebar({ user, isOpen, onClose, onLogout }: DriverSidebarProps) 
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={onClose}
         />
       )}
@@ -72,26 +72,26 @@ function DriverSidebar({ user, isOpen, onClose, onLogout }: DriverSidebarProps) 
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 right-0 h-full w-[280px] bg-white border-l border-slate-200 z-50 flex flex-col
+          fixed top-0 right-0 h-full w-[280px] bg-white border-l border-gray-200 z-50 flex flex-col
           transform transition-all duration-300 ease-out
           ${isOpen ? "translate-x-0" : "translate-x-full"}
           lg:translate-x-0 shadow-xl
         `}
       >
         {/* Logo Header */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-100 flex-shrink-0 bg-gradient-to-l from-primary/5 to-transparent">
+        <div className="h-16 flex items-center justify-between px-5 border-b border-gray-100 flex-shrink-0 bg-gradient-to-l from-primary/5 to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primaryDark flex items-center justify-center shadow-lg shadow-primary/20">
               <ShieldCheck className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-800 leading-tight">أسواق سيتي</p>
-              <p className="text-[10px] text-slate-500 font-medium">مندوب التوصيل</p>
+              <p className="text-sm font-bold text-gray-800 leading-tight">أسواق سيتي</p>
+              <p className="text-tiny text-gray-500 font-medium">مندوب التوصيل</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="lg:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+            className="lg:hidden p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="إغلاق القائمة"
           >
             <X className="w-5 h-5" />
@@ -109,7 +109,7 @@ function DriverSidebar({ user, isOpen, onClose, onLogout }: DriverSidebarProps) 
                 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
                 ${isActive("/admin") && !isActive("/admin/driver")
                   ? "bg-primary text-white shadow-lg shadow-primary/20"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }
               `}
             >
@@ -130,7 +130,7 @@ function DriverSidebar({ user, isOpen, onClose, onLogout }: DriverSidebarProps) 
                     flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
                     ${active
                       ? "bg-primary text-white shadow-lg shadow-primary/20"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     }
                   `}
                 >
@@ -146,15 +146,15 @@ function DriverSidebar({ user, isOpen, onClose, onLogout }: DriverSidebarProps) 
         </nav>
 
         {/* User Section */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50/50 flex-shrink-0">
+        <div className="p-4 border-t border-gray-200 bg-gray-50/50 flex-shrink-0">
           {/* User Info */}
           <div className="flex items-center gap-3 mb-3 p-2 bg-white rounded-xl shadow-sm">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primaryDark flex items-center justify-center text-white font-bold text-sm shadow">
               {user.name?.charAt(0) || "م"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
-              <p className="text-[10px] text-slate-500">مندوب توصيل</p>
+              <p className="text-sm font-semibold text-gray-800 truncate">{user.name}</p>
+              <p className="text-tiny text-gray-500">مندوب توصيل</p>
             </div>
           </div>
 
@@ -169,7 +169,7 @@ function DriverSidebar({ user, isOpen, onClose, onLogout }: DriverSidebarProps) 
         </div>
 
         {/* Brand Footer */}
-        <div className="p-4 border-t border-slate-100 text-center bg-gradient-to-r from-transparent via-slate-50 to-transparent flex-shrink-0">
+        <div className="p-4 border-t border-gray-100 text-center bg-gradient-to-r from-transparent via-gray-50 to-transparent flex-shrink-0">
           <CityMarketsLogo height={20} />
         </div>
       </aside>
@@ -179,11 +179,11 @@ function DriverSidebar({ user, isOpen, onClose, onLogout }: DriverSidebarProps) 
 
 function DriverHeader({ onMenuClick, user }: { onMenuClick: () => void; user: DriverUser }) {
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:pr-6">
+    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:pr-6">
       {/* Mobile menu button */}
       <button
         onClick={onMenuClick}
-        className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+        className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
         aria-label="فتح القائمة"
       >
         <Menu className="w-6 h-6" />
@@ -192,7 +192,7 @@ function DriverHeader({ onMenuClick, user }: { onMenuClick: () => void; user: Dr
       {/* Page title - shown on mobile */}
       <div className="flex items-center gap-2 lg:hidden">
         <Truck className="w-5 h-5 text-primary" />
-        <span className="font-semibold text-slate-800">طلباتي للتوصيل</span>
+        <span className="font-semibold text-gray-800">طلباتي للتوصيل</span>
       </div>
 
       {/* Spacer for desktop */}
@@ -274,10 +274,10 @@ export function DriverLayout({ children }: DriverLayoutProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-          <p className="text-sm text-slate-500">جاري التحميل...</p>
+          <p className="text-sm text-gray-500">جاري التحميل...</p>
         </div>
       </div>
     );
@@ -288,7 +288,7 @@ export function DriverLayout({ children }: DriverLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50" dir="rtl">
+    <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Sidebar */}
       <DriverSidebar
         user={user}

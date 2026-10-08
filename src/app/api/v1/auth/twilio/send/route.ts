@@ -164,9 +164,13 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
-    if (msg.includes(":21608") || msg.includes(":60200")) {
+    if (msg.includes(":21608") || msg.includes(":60200") || msg.includes(":60238")) {
       // 21608: unverified caller/recipient on trial account
       // 60200: geographic permissions / invalid "To" parameter
+      // 60238: Verification Creation Attempt blocked by Twilio
+      //        (Geo Permissions / fraud / regulatory block — same
+      //        resolution path: tell the operator to enable the country
+      //        in Twilio Console → Verify → Services → Geo Permissions)
       return NextResponse.json(
         {
           error:

@@ -422,15 +422,15 @@ describe("mapMoyasarStatusToDb (P1-2/3/4)", () => {
     expect(mapMoyasarStatusToDb("captured")).toBe("paid");
   });
 
-  it("maps 'failed', 'voided', 'refunded' to 'failed'", () => {
-    // Regression for P1-4: the previous inline-confirm map treated
-    // 'refunded' as 'pending' while the webhook treated it as 'failed'.
-    // The shared helper now classifies every terminal-negative as
-    // 'failed' so the same payment cannot end up with two different
-    // payment_status values depending on which path confirmed it.
+  it("maps 'failed', 'voided' to 'failed' and 'refunded' to 'refunded'", () => {
+    // PCP-81 — the customer's terminal state for a refund is 'refunded',
+    // not a generic failure. Previously 'refunded' mapped to 'failed'
+    // (and inline-confirm had it as 'pending' before that), which meant
+    // the admin dashboard and customer timeline could not distinguish
+    // a refund from a chargeback or a void.
     expect(mapMoyasarStatusToDb("failed")).toBe("failed");
     expect(mapMoyasarStatusToDb("voided")).toBe("failed");
-    expect(mapMoyasarStatusToDb("refunded")).toBe("failed");
+    expect(mapMoyasarStatusToDb("refunded")).toBe("refunded");
   });
 
   it("defaults unknown statuses to 'pending'", () => {

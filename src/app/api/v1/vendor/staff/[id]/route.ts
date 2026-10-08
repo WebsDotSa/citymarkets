@@ -5,6 +5,7 @@ import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { error as logError } from "@/lib/logger";
 import { logVendorAudit } from "@/lib/vendor-audit";
 import { clearVendorSessionCache } from "@/lib/identity";
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 const VALID_ROLES: VendorRole[] = ["owner", "manager", "staff", "viewer"];
 
 interface RouteContext {
@@ -29,6 +30,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (unauthorized) return unauthorized;
 
     const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف المتجر");
+  if (badId) return badId;
     const body = await request.json().catch(() => ({}));
 
     await client.query("BEGIN");
@@ -208,6 +211,8 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (unauthorized) return unauthorized;
 
     const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف المتجر");
+  if (badId) return badId;
 
     await client.query("BEGIN");
 

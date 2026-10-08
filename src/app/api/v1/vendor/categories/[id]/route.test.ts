@@ -71,10 +71,25 @@ beforeEach(() => {
 });
 
 describe("PATCH /api/v1/vendor/categories/[id]", () => {
+  it("returns 400 with the canonical envelope for a malformed UUID (PCP-112)", async () => {
+    // Before the fix, a non-UUID id reached Postgres and crashed
+    // with 22P02 → surfaced as 500. The guard short-circuits before
+    // any SQL runs.
+    const res = await PATCH(makeRequest({ nameAr: "توت" }) as unknown as never, {
+      params: Promise.resolve({ id: "not-a-uuid" }),
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error).toBe("معرّف القسم غير صالح");
+    // Guard short-circuits before the ownership SELECT.
+    expect(calls.length).toBe(0);
+  });
+
   it("returns 401 when no vendor session", async () => {
     mockSession = null;
     const res = await PATCH(makeRequest({ nameAr: "توت" }) as unknown as never, {
-      params: Promise.resolve({ id: "cat-1" }),
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     });
     expect(res.status).toBe(401);
   });
@@ -82,7 +97,7 @@ describe("PATCH /api/v1/vendor/categories/[id]", () => {
   it("returns 403 when role is below manager", async () => {
     mockRoleForbidden = NextResponse.json({ error: "ممنوع" }, { status: 403 });
     const res = await PATCH(makeRequest({ nameAr: "توت" }) as unknown as never, {
-      params: Promise.resolve({ id: "cat-1" }),
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     });
     expect(res.status).toBe(403);
   });
@@ -91,7 +106,7 @@ describe("PATCH /api/v1/vendor/categories/[id]", () => {
     // Ownership query returns no rows — the route MUST 404, not 403.
     (query as any).mockHandler = async () => ({ rows: [] });
     const res = await PATCH(makeRequest({ nameAr: "توت" }) as unknown as never, {
-      params: Promise.resolve({ id: "other-cat" }),
+      params: Promise.resolve({ id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" }),
     });
     expect(res.status).toBe(404);
     const body = await res.json();
@@ -103,7 +118,7 @@ describe("PATCH /api/v1/vendor/categories/[id]", () => {
     let updateSql = "";
     (query as any).mockHandler = async (sql: string, params: unknown[] = []) => {
       if (/SELECT id FROM categories WHERE id = \$1 AND vendor_id = \$2/.test(sql)) {
-        return { rows: [{ id: "cat-1" }] };
+        return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }] };
       }
       if (sql.startsWith("UPDATE categories")) {
         updateSql = sql;
@@ -114,18 +129,18 @@ describe("PATCH /api/v1/vendor/categories/[id]", () => {
     };
     const res = await PATCH(
       makeRequest({ nameAr: "توت طازج", nameEn: "Fresh Berries" }) as unknown as never,
-      { params: Promise.resolve({ id: "cat-1" }) },
+      { params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }) },
     );
     expect(res.status).toBe(200);
     expect(updateSql).toMatch(/SET name_ar = \$1, name_en = \$2/);
     expect(updateSql).not.toMatch(/slug/);
-    expect(updateParams).toEqual(["توت طازج", "Fresh Berries", "cat-1"]);
+    expect(updateParams).toEqual(["توت طازج", "Fresh Berries", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"]);
   });
 
   it("updates only name_ar when nameEn is omitted", async () => {
     let updateSql = "";
     (query as any).mockHandler = async (sql: string) => {
-      if (/SELECT id FROM categories/i.test(sql)) return { rows: [{ id: "cat-1" }] };
+      if (/SELECT id FROM categories/i.test(sql)) return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }] };
       if (sql.startsWith("UPDATE categories")) {
         updateSql = sql;
         return { rows: [] };
@@ -134,7 +149,7 @@ describe("PATCH /api/v1/vendor/categories/[id]", () => {
     };
     const res = await PATCH(
       makeRequest({ nameAr: "توت" }) as unknown as never,
-      { params: Promise.resolve({ id: "cat-1" }) },
+      { params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }) },
     );
     expect(res.status).toBe(200);
     expect(updateSql).toMatch(/SET name_ar = \$1/);
@@ -144,7 +159,7 @@ describe("PATCH /api/v1/vendor/categories/[id]", () => {
   it("sets name_en to NULL when caller passes empty string", async () => {
     let updateParams: unknown[] | null = null;
     (query as any).mockHandler = async (sql: string, params: unknown[] = []) => {
-      if (/SELECT id FROM categories/i.test(sql)) return { rows: [{ id: "cat-1" }] };
+      if (/SELECT id FROM categories/i.test(sql)) return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }] };
       if (sql.startsWith("UPDATE categories")) {
         updateParams = params;
         return { rows: [] };
@@ -153,7 +168,7 @@ describe("PATCH /api/v1/vendor/categories/[id]", () => {
     };
     const res = await PATCH(
       makeRequest({ nameAr: "توت", nameEn: "" }) as unknown as never,
-      { params: Promise.resolve({ id: "cat-1" }) },
+      { params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }) },
     );
     expect(res.status).toBe(200);
     // Empty string → null in DB so the storefront fallback behaves.
@@ -161,9 +176,9 @@ describe("PATCH /api/v1/vendor/categories/[id]", () => {
   });
 
   it("returns 400 when no updatable fields are provided", async () => {
-    (query as any).mockHandler = async () => ({ rows: [{ id: "cat-1" }] });
+    (query as any).mockHandler = async () => ({ rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }] });
     const res = await PATCH(makeRequest({}) as unknown as never, {
-      params: Promise.resolve({ id: "cat-1" }),
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     });
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -173,19 +188,19 @@ describe("PATCH /api/v1/vendor/categories/[id]", () => {
   it("returns 400 when nameAr is provided but blank", async () => {
     const res = await PATCH(
       makeRequest({ nameAr: "   " }) as unknown as never,
-      { params: Promise.resolve({ id: "cat-1" }) },
+      { params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }) },
     );
     expect(res.status).toBe(400);
   });
 
   it("busts the storefront cache after a successful rename", async () => {
     (query as any).mockHandler = async (sql: string) => {
-      if (/SELECT id FROM categories/i.test(sql)) return { rows: [{ id: "cat-1" }] };
+      if (/SELECT id FROM categories/i.test(sql)) return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }] };
       if (sql.startsWith("UPDATE categories")) return { rows: [] };
       return { rows: [] };
     };
     await PATCH(makeRequest({ nameAr: "توت" }) as unknown as never, {
-      params: Promise.resolve({ id: "cat-1" }),
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     });
     expect(vi.mocked(cache.invalidatePattern)).toHaveBeenCalledWith(
       "vendor-storefront:acme:categories:",
@@ -197,7 +212,7 @@ describe("DELETE /api/v1/vendor/categories/[id]", () => {
   it("returns 401 when no vendor session", async () => {
     mockSession = null;
     const res = await DELETE(makeRequest({}, "DELETE") as unknown as never, {
-      params: Promise.resolve({ id: "cat-1" }),
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     });
     expect(res.status).toBe(401);
   });
@@ -205,7 +220,7 @@ describe("DELETE /api/v1/vendor/categories/[id]", () => {
   it("returns 403 when role is below owner (manager tries to delete)", async () => {
     mockRoleForbidden = NextResponse.json({ error: "ممنوع" }, { status: 403 });
     const res = await DELETE(makeRequest({}, "DELETE") as unknown as never, {
-      params: Promise.resolve({ id: "cat-1" }),
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     });
     expect(res.status).toBe(403);
   });
@@ -214,7 +229,7 @@ describe("DELETE /api/v1/vendor/categories/[id]", () => {
     mockSession = { vendorId: "v1", vendorSlug: "acme", role: "owner", staffId: "s1" };
     (query as any).mockHandler = async () => ({ rows: [] });
     const res = await DELETE(makeRequest({}, "DELETE") as unknown as never, {
-      params: Promise.resolve({ id: "other-cat" }),
+      params: Promise.resolve({ id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" }),
     });
     expect(res.status).toBe(404);
   });
@@ -224,17 +239,17 @@ describe("DELETE /api/v1/vendor/categories/[id]", () => {
     let deleteCalled = false;
     (query as any).mockHandler = async (sql: string, params: unknown[] = []) => {
       if (/SELECT id FROM categories WHERE id = \$1 AND vendor_id = \$2/.test(sql)) {
-        return { rows: [{ id: "cat-1" }] };
+        return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }] };
       }
       if (sql === "DELETE FROM categories WHERE id = $1") {
         deleteCalled = true;
-        expect(params[0]).toBe("cat-1");
-        return { rows: [{ id: "cat-1" }] };
+        expect(params[0]).toBe("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }] };
       }
       return { rows: [] };
     };
     const res = await DELETE(makeRequest({}, "DELETE") as unknown as never, {
-      params: Promise.resolve({ id: "cat-1" }),
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     });
     expect(res.status).toBe(200);
     expect(deleteCalled).toBe(true);

@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool, query } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
+import { parsePagination } from '@/lib/api/pagination';
 import { logAdminAction } from '@/lib/admin-audit';
 import { updateOrderSchema } from '@/lib/validation';
 import { awardPointsForOrder, getLoyaltySettings, resolveRedeemForOrder } from '@/lib/orders/loyalty';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError, warn as logWarn } from '@/lib/logger';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { getClientIp } from '@/lib/request-ip';
 import { ALL_ORDER_STATES, ALL_PAYMENT_STATES, assertValidTransition, invalidTransitionMessage } from '@/lib/orders/state-machine';
+import { ADMIN_WRITE_CONFIG, ADMIN_WRITE_IP_CONFIG } from '@/lib/rate-limit';
 import {
   ORDER_BASE_COLUMNS,
   ORDER_LIST_COLUMNS,
@@ -15,6 +19,18 @@ import {
   ORDER_DETAIL_JOINS,
   ORDER_LIST_JOINS,
 } from '@/lib/orders/sql-fragments';
+
+// SECURITY (PCP-170 Phase 16): rate-limit the admin order PUT. Auth-gated
+// already, but a leaked admin JWT can still churn through orders fast.
+// 30/min/admin and 60/min/IP is generous for a working admin.
+async function adminWriteRateLimit(request: NextRequest, adminId: string) {
+  const ip = getClientIp(request);
+  const ipLimit = await checkRateLimit(ip, ADMIN_WRITE_IP_CONFIG);
+  if (!ipLimit.allowed) return { ok: false, kind: 'ip' as const };
+  const adminLimit = await checkRateLimit(`admin:${adminId}`, ADMIN_WRITE_CONFIG);
+  if (!adminLimit.allowed) return { ok: false, kind: 'admin' as const };
+  return { ok: true as const };
+}
 
 function idCheck(url: URL) {
   const id = url.searchParams.get('id');
@@ -89,9 +105,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
-    const offset = (page - 1) * limit;
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 20 });
     const statusFilter = searchParams.get('status')?.trim() || '';
     const paymentStatusFilter = searchParams.get('payment_status')?.trim() || '';
     const search = searchParams.get('search')?.trim() || '';
@@ -213,6 +227,14 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const gate = await requireAdminApi(request, 'manage_orders');
   if (gate instanceof NextResponse) return gate;
+  // SECURITY (PCP-170): rate limit before any DB work
+  const rateCheck = await adminWriteRateLimit(request, gate.admin.id);
+  if (!rateCheck.ok) {
+    return NextResponse.json(
+      { success: false, error: 'تجاوزت عدد المحاولات، حاول لاحقاً' },
+      { status: 429 },
+    );
+  }
   try {
     const url = new URL(request.url);
     const idCheckResult = idCheck(url);
@@ -287,8 +309,12 @@ export async function PUT(request: NextRequest) {
     //
     // Phase 1 / T4: also capture the old driver_id so we can write an
     // audit row + system message when the assignment changed.
+    //
+    // P2-5 (PCP-76.F6): add FOR UPDATE so a concurrent admin cannot flip
+    // status between this SELECT and the assertValidTransition guard. Without
+    // the lock the state-machine check is advisory only.
     const oldStatusRes = await query(
-      `SELECT status, driver_id FROM orders WHERE id = $1 LIMIT 1`,
+      `SELECT status, driver_id FROM orders WHERE id = $1 LIMIT 1 FOR UPDATE`,
       [idCheckResult]
     );
     const oldStatus = oldStatusRes.rows[0]?.status ?? null;

@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { requireVendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 import {
   canTransition as stateMachineCanTransition,
   invalidTransitionMessage as stateMachineInvalidMessage,
 } from '@/lib/orders/state-machine';
 import { vendorOrderStatusSchema } from '@/lib/validation/order';
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -23,6 +24,8 @@ export async function PATCH(
     if (unauthorized) return unauthorized;
 
     const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف الطلب");
+  if (badId) return badId;
     const body = await request.json();
     const { notes } = body as { notes?: string };
 

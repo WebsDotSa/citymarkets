@@ -32,7 +32,7 @@ function makeClient() {
         return {
           rows: [
             {
-              id: "order-1",
+              id: "11111111-1111-1111-1111-111111111111",
               status: "pending",
               type: "direct",
             },
@@ -104,14 +104,14 @@ describe("POST /api/admin/orders/[id]/items", () => {
       NextResponse.json({ success: false, error: "غير مصرح" }, { status: 401 }) as never
     );
     const res = await POST(makeRequest({ free_text: "x" }) as never, {
-      params: Promise.resolve({ id: "order-1" }),
+      params: Promise.resolve({ id: "11111111-1111-1111-1111-111111111111" }),
     } as never);
     expect(res.status).toBe(401);
   });
 
   it("returns 400 when body has neither product_id nor free_text", async () => {
     const res = await POST(makeRequest({ quantity: 1 }) as never, {
-      params: Promise.resolve({ id: "order-1" }),
+      params: Promise.resolve({ id: "11111111-1111-1111-1111-111111111111" }),
     } as never);
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -121,7 +121,7 @@ describe("POST /api/admin/orders/[id]/items", () => {
   it("returns 201 on happy path with free_text + unit_price", async () => {
     const res = await POST(
       makeRequest({ free_text: "كيلو سكر", quantity: 2, unit_price: 7.5 }) as never,
-      { params: Promise.resolve({ id: "order-1" }) } as never
+      { params: Promise.resolve({ id: "11111111-1111-1111-1111-111111111111" }) } as never
     );
     expect(res.status).toBe(201);
     const json = await res.json();
@@ -147,7 +147,7 @@ describe("POST /api/admin/orders/[id]/items", () => {
     expect(logAdminActionMock).toHaveBeenCalledWith(
       expect.objectContaining({ id: "admin-1" }),
       "add_direct_order_item",
-      expect.objectContaining({ entityId: "order-1" })
+      expect.objectContaining({ entityId: "11111111-1111-1111-1111-111111111111" })
     );
   });
 
@@ -161,7 +161,7 @@ describe("POST /api/admin/orders/[id]/items", () => {
           return { rows: [] };
         }
         if (upper.startsWith("SELECT ID, STATUS, TYPE FROM ORDERS")) {
-          return { rows: [{ id: "order-1", status: "delivered", type: "direct" }] };
+          return { rows: [{ id: "11111111-1111-1111-1111-111111111111", status: "delivered", type: "direct" }] };
         }
         return { rows: [] };
       }),
@@ -171,7 +171,7 @@ describe("POST /api/admin/orders/[id]/items", () => {
 
     const res = await POST(
       makeRequest({ free_text: "x", quantity: 1 }) as never,
-      { params: Promise.resolve({ id: "order-1" }) } as never
+      { params: Promise.resolve({ id: "11111111-1111-1111-1111-111111111111" }) } as never
     );
     expect(res.status).toBe(409);
     const json = await res.json();

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Send, Mic, Square, Loader2 } from 'lucide-react';
 import { BRAND } from '@/lib/brand-theme';
+import { useBrandColorVars } from '@/hooks/use-color-vars';
 
 export interface ChatMessage {
   id: string;
@@ -47,6 +48,7 @@ function fmtDuration(seconds?: number | null): string {
 }
 
 export function ChatPanel(props: ChatPanelProps) {
+  const colorVars = useBrandColorVars();
   const {
     orderId,
     perspective,
@@ -193,11 +195,11 @@ export function ChatPanel(props: ChatPanelProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-200 overflow-hidden" style={colorVars}>
       {/* Header */}
       <div
         className="px-4 py-3 text-white text-sm font-semibold flex items-center justify-between"
-        style={{ backgroundColor: BRAND.brandGreen }}
+        style={{ backgroundColor: 'var(--brand-green)' }}
       >
         <span>المحادثة</span>
         <span className="text-xs opacity-80">طلب #{orderId.slice(0, 8)}</span>
@@ -206,8 +208,7 @@ export function ChatPanel(props: ChatPanelProps) {
       {/* Messages */}
       <div
         ref={scrollerRef}
-        className="flex-1 overflow-y-auto px-3 py-3 space-y-2"
-        style={{ backgroundColor: '#f8fafc', minHeight: 320, maxHeight: 480 }}
+        className="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-gray-50 min-h-80 max-h-96"
       >
         {messages.length === 0 && (
           <div className="text-center text-gray-400 text-sm py-12">لا توجد رسائل بعد</div>
@@ -229,13 +230,13 @@ export function ChatPanel(props: ChatPanelProps) {
                   mine ? 'rounded-bl-sm' : 'rounded-br-sm'
                 }`}
                 style={{
-                  backgroundColor: mine ? BRAND.brandGreen : '#ffffff',
+                  backgroundColor: mine ? 'var(--brand-green)' : '#ffffff',
                   color: mine ? '#fff' : '#111',
                   border: mine ? 'none' : '1px solid #e5e7eb',
                 }}
               >
                 {!mine && (m.sender_type === 'admin' || m.sender_type === 'customer') && (
-                  <div className="text-[10px] text-gray-400 mb-1">
+                  <div className="text-tiny text-gray-400 mb-1">
                     {m.sender_type === 'admin' ? m.admin_name || 'الإدارة' : 'العميل'}
                   </div>
                 )}
@@ -243,14 +244,13 @@ export function ChatPanel(props: ChatPanelProps) {
                   <audio
                     controls
                     src={m.audio_url}
-                    className="w-full"
-                    style={{ height: 32 }}
+                    className="w-full h-8"
                   />
                 ) : (
                   <div className="whitespace-pre-wrap break-words">{m.body}</div>
                 )}
                 <div
-                  className={`text-[10px] mt-1 ${mine ? 'text-white/70' : 'text-gray-400'}`}
+                  className={`text-tiny mt-1 ${mine ? 'text-white/70' : 'text-gray-400'}`}
                 >
                   {fmtTime(m.created_at)} {m.message_kind === 'audio' && `· ${fmtDuration(m.audio_duration)}`}
                 </div>
@@ -301,7 +301,7 @@ export function ChatPanel(props: ChatPanelProps) {
               onClick={sendText}
               disabled={sending || !text.trim() || recording}
               className="p-2 rounded-full text-white disabled:opacity-50"
-              style={{ backgroundColor: BRAND.brandGreen }}
+              style={{ backgroundColor: 'var(--brand-green)' }}
               aria-label="إرسال"
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

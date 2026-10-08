@@ -7,7 +7,7 @@ export function JoinCta() {
   return (
     <section className="py-8 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 text-white p-8 sm:p-12">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 text-white p-8 sm:p-12">
           {/* decorative blobs */}
           <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-primary/20 blur-3xl" />
           <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-primary/10 blur-3xl" />
@@ -23,7 +23,7 @@ export function JoinCta() {
                 <br />
                 <span className="text-primary">بخصم 15%</span>
               </h2>
-              <p className="mt-3 text-slate-300 text-sm sm:text-base max-w-md">
+              <p className="mt-3 text-gray-300 text-sm sm:text-base max-w-md">
                 سجّل برقم جوالك، اجمع نقاط ولاء، واستفد من عجلة الحظ كل يوم.
               </p>
             </div>

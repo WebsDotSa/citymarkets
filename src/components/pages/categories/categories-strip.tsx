@@ -62,15 +62,15 @@ export function MainCatsImageStrip({
   return (
     <nav
       aria-label="الأقسام الرئيسية"
-      className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-100 shadow-xs"
+      className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-gray-100 shadow-xs"
     >
       <div className="px-4 sm:px-6 max-w-6xl mx-auto py-2.5">
         <div className="flex items-center justify-between gap-2 mb-2">
-          <p className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
+          <p className="text-2xs font-black text-gray-500 uppercase tracking-wider">
             الأقسام الرئيسية
           </p>
           <span
-            className="text-[11px] text-slate-400 font-bold tabular-nums"
+            className="text-2xs text-gray-400 font-bold tabular-nums"
             dir="ltr"
           >
             {roots.length} · {totalProducts.toLocaleString("en-US")} منتج
@@ -84,7 +84,7 @@ export function MainCatsImageStrip({
             type="button"
             onClick={() => scroll("right")}
             aria-label="التمرير لليمن"
-            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-200 text-slate-700 hover:bg-white hover:scale-105 active:scale-95 transition-all"
+            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white/90 shadow-md border border-gray-200 text-gray-700 hover:bg-white hover:scale-105 active:scale-95 transition-all"
           >
             <ChevronLeft className="w-4 h-4 rotate-180" aria-hidden="true" />
           </button>
@@ -116,8 +116,8 @@ export function MainCatsImageStrip({
                   aria-label={`${root.name_ar} — ${root.descendantCount} منتج`}
                   className={`shrink-0 w-[88px] sm:w-[104px] group relative flex flex-col items-center gap-1.5 p-2 sm:p-2.5 rounded-2xl border transition-all text-center ${
                     isActive
-                      ? "border-[#009345] bg-white shadow-md ring-1 ring-[#009345]/40"
-                      : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm"
+                      ? "border-primary bg-white shadow-md ring-1 ring-primary/40"
+                      : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"
                   }`}
                   style={{ scrollSnapAlign: "center" }}
                 >
@@ -131,15 +131,15 @@ export function MainCatsImageStrip({
                     />
                   </div>
                   <span
-                    className={`text-[11px] font-bold leading-tight line-clamp-1 w-full px-0.5 ${
-                      isActive ? "text-[#007A38]" : "text-slate-700"
+                    className={`text-2xs font-bold leading-tight line-clamp-1 w-full px-0.5 ${
+                      isActive ? "text-primary-dark" : "text-gray-700"
                     }`}
                   >
                     {root.name_ar}
                   </span>
                   <span
-                    className={`text-[9px] font-bold tabular-nums ${
-                      isActive ? "text-[#007A38]/80" : "text-slate-400"
+                    className={`text-3xs font-bold tabular-nums ${
+                      isActive ? "text-primary-dark/80" : "text-gray-400"
                     }`}
                     dir="ltr"
                   >
@@ -155,7 +155,7 @@ export function MainCatsImageStrip({
             type="button"
             onClick={() => scroll("left")}
             aria-label="التمرير لليسار"
-            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-200 text-slate-700 hover:bg-white hover:scale-105 active:scale-95 transition-all"
+            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white/90 shadow-md border border-gray-200 text-gray-700 hover:bg-white hover:scale-105 active:scale-95 transition-all"
           >
             <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </button>

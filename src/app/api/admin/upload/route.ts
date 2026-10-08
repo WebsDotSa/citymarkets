@@ -3,7 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
-import { uploadToR2, r2PublicUrl, r2KeyFromUrl, deleteFromR2 } from '@/lib/r2';
+import { uploadToR2, deleteFromR2 } from '@/lib/r2';
+import { logAdminAction } from "@/lib/admin-audit";
 
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 
@@ -15,6 +16,21 @@ const ALLOWED_FOLDERS = ['products', 'banners', 'categories', 'brands', 'stores'
 type AllowedFolder = typeof ALLOWED_FOLDERS[number];
 function isAllowedFolderName(value: string): value is AllowedFolder {
   return (ALLOWED_FOLDERS as readonly string[]).includes(value);
+}
+
+/**
+ * Build the absolute local-fallback image URL from the request.
+ *
+ * SECURITY (PCP-123): NEVER trust `x-forwarded-origin` / `origin` headers
+ * from the client — they can be spoofed to make the resulting `image_url`
+ * point at an attacker-controlled server. Only the URL the server itself
+ * derived from the request line is trustworthy.
+ *
+ * Strip trailing slash for consistent URL construction.
+ */
+export function buildLocalImageUrl(request: Request, localImageUrl: string): string {
+  const origin = new URL(request.url).origin;
+  return `${origin.replace(/\/$/, "")}${localImageUrl}`;
 }
 
 // Allowed image types with their magic bytes (file signatures)
@@ -198,11 +214,12 @@ export async function POST(request: NextRequest) {
     // the image_url field always passes the product Zod schema (which
     // requires `z.string().url()`). Without this, an R2 outage silently
     // turns into "Invalid url" on every product/category/banner save.
-    const origin =
-      request.headers.get("x-forwarded-origin") ??
-      request.headers.get("origin") ??
-      new URL(request.url).origin;
-    const localImageUrlAbsolute = `${origin.replace(/\/$/, "")}${localImageUrl}`;
+    // SECURITY (PCP-123): only trust the request's own URL — never
+    // x-forwarded-origin / origin headers from the client, which can
+    // be spoofed to make the localImageUrlAbsolute point at an attacker
+    // server. The image_url stored in the DB must resolve to OUR host
+    // or it leaks upload paths to an attacker-controlled origin.
+    const localImageUrlAbsolute = buildLocalImageUrl(request, localImageUrl);
 
     // R2 mirror. Only folders that the public website actually loads
     // via the `<Image>` component get mirrored; vendor placeholders and
@@ -252,6 +269,27 @@ export async function POST(request: NextRequest) {
         r2: finalImageUrl !== localImageUrlAbsolute,
       },
     });
+    // P1-2 (security Phase 4, 2026-10-03): the upload endpoint is
+    // a content-control surface. Auditing lets the operator trace
+    // a malicious asset (e.g. an XSS payload in a banner SVG) back
+    // to the admin who introduced it. Fire-and-forget — the audit
+    // insert is best-effort and logs its own errors, and we do not
+    // want the upload response to wait on it.
+    void logAdminAction(
+      // The `gate` union narrows to `{ admin }` because the
+      // `if (gate instanceof NextResponse) return gate;` check at
+      // the top of this handler already excluded the response path.
+      // The cast is needed because TypeScript 5.9 does not narrow
+      // the union inside this nested scope without an explicit
+      // assignment; the runtime check is the load-bearing one.
+      (gate as { admin: import("@/lib/identity").VerifiedAdminJwt }).admin,
+      "upload.create",
+      {
+        entityType: "upload",
+        details: { folder, filename, mimetype },
+        request,
+      },
+    );
   } catch (error: unknown) {
     logError('Upload error:', error);
     // Don't expose internal error details to client

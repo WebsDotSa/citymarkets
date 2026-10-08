@@ -6,6 +6,25 @@ import {
   customerSessionCookieOptions,
 } from '@/lib/identity';
 import { error as logError } from "@/lib/logger";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
+
+// SECURITY (PCP-131): rate limit account deletion. Without this, an
+// attacker who steals a session can spam the delete endpoint to
+// either (a) DoS the user into involuntary account churn or (b)
+// force PII wipe + re-signup cycles that bypass fraud signals.
+// 3/day per user is plenty (real users delete once, maybe a typo).
+const PROFILE_DELETE_CONFIG = {
+  maxRequests: 3,
+  windowMs: 24 * 60 * 60 * 1000,
+  keyPrefix: "profile:delete",
+} as const;
+
+const PROFILE_DELETE_IP_CONFIG = {
+  maxRequests: 10,
+  windowMs: 24 * 60 * 60 * 1000,
+  keyPrefix: "profile:delete:ip",
+} as const;
 
 // POST /api/v1/profile/delete
 //
@@ -32,6 +51,25 @@ export async function POST(request: NextRequest) {
   if (!("user" in authResult)) return authResult;
 
   const userId = authResult.user.id;
+
+  // SECURITY (PCP-131): rate limit account deletion by IP first then
+  // user. The user bucket is a hard ceiling (3/day); the IP bucket
+  // catches one attacker rotating among many stolen sessions.
+  const clientIp = getClientIp(request);
+  const ipLimit = await checkRateLimit(clientIp, PROFILE_DELETE_IP_CONFIG);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد المحاولات، حاول لاحقاً" },
+      { status: 429 }
+    );
+  }
+  const userLimit = await checkRateLimit(`user:${userId}`, PROFILE_DELETE_CONFIG);
+  if (!userLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد المحاولات، حاول لاحقاً" },
+      { status: 429 }
+    );
+  }
 
   let body: { confirmation?: string; password?: string } = {};
   try {
@@ -83,6 +121,19 @@ export async function POST(request: NextRequest) {
     // ~4B distinct values — collision risk against the partial unique
     // index is negligible for tombstones, and re-deletes re-pick from
     // the same id anyway.
+    //
+    // PCP-168 (Phase 16): also zero out loyalty_points and append an
+    // `adjust` loyalty_transactions row so the audit trail reflects the
+    // pre-delete balance. The pre-delete balance is captured in the
+    // loyalty_transactions row's `balance_after` field (set to 0 since
+    // that's the post-state). A separate `users_audit_log` row stores
+    // the pre-delete value for finance reconciliation.
+    const beforeRes = await client.query(
+      "SELECT loyalty_points FROM users WHERE id = $1",
+      [userId],
+    );
+    const preDeleteLoyalty = Number(beforeRes.rows[0]?.loyalty_points ?? 0);
+
     await client.query(
       `UPDATE users
          SET deleted_at = NOW(),
@@ -90,9 +141,21 @@ export async function POST(request: NextRequest) {
              name = NULL,
              email = NULL,
              avatar_url = NULL,
+             loyalty_points = 0,
              updated_at = NOW()
        WHERE id = $1`,
       [userId],
+    );
+
+    // Loyalty audit row: records the pre-delete balance for finance.
+    await client.query(
+      `INSERT INTO loyalty_transactions (user_id, points, type, reason, balance_after, ref_order_id)
+       VALUES ($1, $2, 'adjust', $3, 0, NULL)`,
+      [
+        userId,
+        preDeleteLoyalty, // positive number representing the points that were zeroed
+        `account_deletion:zeroed_loyalty_${preDeleteLoyalty}_points`,
+      ],
     );
 
     // Sever links on FK-SET-NULL tables. RESTRICT tables (orders) keep

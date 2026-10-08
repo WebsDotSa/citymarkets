@@ -16,7 +16,7 @@ export function Skeleton({
   height,
 }: SkeletonProps) {
   const baseStyles =
-    "bg-gradient-to-r from-[#F3F4F6] via-[#E5E7EB] to-[#F3F4F6] bg-[length:200%_100%] animate-shimmer";
+    "bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer";
 
   const variants = {
     text: "h-4 rounded-lg",
@@ -41,7 +41,7 @@ export function ProductCardSkeleton({ className }: { className?: string }) {
       className={`bg-white rounded-3xl overflow-hidden shadow-sm ${className}`}
     >
       {/* Image */}
-      <div className="aspect-square bg-gradient-to-r from-[#F3F4F6] via-[#E5E7EB] to-[#F3F4F6] bg-[length:200%_100%] animate-shimmer" />
+      <div className="aspect-square bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer" />
 
       {/* Content */}
       <div className="p-4 space-y-3">
@@ -54,7 +54,7 @@ export function ProductCardSkeleton({ className }: { className?: string }) {
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="w-4 h-4 rounded-full bg-gradient-to-r from-[#F3F4F6] via-[#E5E7EB] to-[#F3F4F6] bg-[length:200%_100%] animate-shimmer"
+              className="w-4 h-4 rounded-full bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer"
             />
           ))}
         </div>
@@ -75,7 +75,7 @@ export function CategoryCardSkeleton({ className }: { className?: string }) {
     <div
       className={`flex flex-col items-center p-4 rounded-3xl bg-white shadow-sm ${className}`}
     >
-      <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-[#F3F4F6] via-[#E5E7EB] to-[#F3F4F6] bg-[length:200%_100%] animate-shimmer mb-3" />
+      <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer mb-3" />
       <Skeleton variant="text" className="w-16" />
     </div>
   );
@@ -112,7 +112,7 @@ export function OrderCardSkeleton({ className }: { className?: string }) {
       className={`bg-white rounded-2xl overflow-hidden shadow-sm ${className}`}
     >
       {/* Header */}
-      <div className="p-4 border-b border-[#F3F4F6]">
+      <div className="p-4 border-b border-gray-100">
         <div className="flex justify-between items-start">
           <div className="space-y-2">
             <Skeleton variant="text" className="w-24" />
@@ -172,8 +172,7 @@ export function ProfileCardSkeleton({ className }: { className?: string }) {
 export function BannerSkeleton({ className }: { className?: string }) {
   return (
     <div
-      className={`rounded-3xl overflow-hidden ${className}`}
-      style={{ height: "200px" }}
+      className={`rounded-3xl overflow-hidden h-[200px] ${className}`}
     >
       <Skeleton variant="rectangular" className="w-full h-full" />
     </div>
@@ -217,7 +216,7 @@ export function SectionSkeleton({ className }: { className?: string }) {
 // Page Skeleton (Full Page Loading)
 export function PageSkeleton() {
   return (
-    <div className="min-h-screen bg-[#FAFBFC] pb-24">
+    <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header */}
       <div className="bg-white px-4 py-4 shadow-sm">
         <div className="flex items-center gap-4">
@@ -264,7 +263,7 @@ export function TableRowSkeleton({
   className?: string;
 }) {
   return (
-    <div className={`flex items-center gap-4 p-4 border-b border-[#F3F4F6] ${className}`}>
+    <div className={`flex items-center gap-4 p-4 border-b border-gray-100 ${className}`}>
       {[...Array(columns)].map((_, i) => (
         <Skeleton
           key={i}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
 import { ChatPanel } from '@/components/ui/chat-panel/chat-panel';
@@ -38,6 +38,24 @@ const STATUS_OPTIONS = [
 ];
 
 export default function AdminChatHubPage() {
+  // SECURITY/PERF (PCP-180): Next.js requires useSearchParams() to be
+  // wrapped in <Suspense> in client components so the static-prerender
+  // path doesn't bail. Without this, every prerender of the parent
+  // route becomes dynamic, killing the build's static optimisation
+  // AND raising a runtime warning in dev. Wrap the body in Suspense
+  // and let the default export be the wrapper.
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center py-16">
+        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    }>
+      <AdminChatHubContent />
+    </Suspense>
+  );
+}
+
+function AdminChatHubContent() {
   const router = useRouter();
   const search = useSearchParams();
   const initialOrderId = search.get('order');
@@ -246,7 +264,7 @@ export default function AdminChatHubPage() {
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-bold text-sm">#{o.order_number}</span>
                           {o.unread_count > 0 && (
-                            <span className="bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">
+                            <span className="bg-red-500 text-white text-tiny font-bold rounded-full px-1.5 py-0.5">
                               {o.unread_count}
                             </span>
                           )}
@@ -254,7 +272,7 @@ export default function AdminChatHubPage() {
                         <div className="text-xs text-gray-700 truncate">
                           {o.user_name || o.guest_name || 'عميل'}
                         </div>
-                        <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-500">
+                        <div className="flex items-center gap-2 mt-1 text-tiny text-gray-500">
                           <Clock className="w-3 h-3" />
                           {new Date(o.created_at).toLocaleString('ar-SA', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
                           <span>·</span>
@@ -310,7 +328,7 @@ export default function AdminChatHubPage() {
                       <div>{activeOrder.address_text}</div>
                     </div>
                   )}
-                  <div className="text-[10px] text-gray-400 mt-2">
+                  <div className="text-tiny text-gray-400 mt-2">
                     #{activeOrder.order_number} · {new Date(activeOrder.created_at).toLocaleString('ar-SA')}
                   </div>
                 </div>
@@ -353,7 +371,7 @@ export default function AdminChatHubPage() {
                     </div>
                     <button
                       onClick={() => setAddingProduct(!addingProduct)}
-                      className="text-[10px] flex items-center gap-1 px-2 py-1 rounded"
+                      className="text-tiny flex items-center gap-1 px-2 py-1 rounded"
                       style={{ backgroundColor: BRAND.primaryLight, color: BRAND.primaryDark }}
                     >
                       <Plus className="w-3 h-3" /> أضف منتجاً
@@ -373,7 +391,7 @@ export default function AdminChatHubPage() {
                         className="w-full border border-gray-200 rounded px-2 py-1 text-xs mb-1"
                       />
                       {searchingProducts && (
-                        <div className="text-[10px] text-gray-500">جاري البحث...</div>
+                        <div className="text-tiny text-gray-500">جاري البحث...</div>
                       )}
                       <div className="space-y-1 max-h-40 overflow-y-auto">
                         {productResults.map((p) => (
@@ -386,8 +404,8 @@ export default function AdminChatHubPage() {
                               <img src={p.image_url} alt="" className="w-8 h-8 rounded object-cover" />
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="text-[11px] font-semibold truncate">{p.name_ar}</div>
-                              <div className="text-[10px] text-gray-500">{p.price.toFixed(2)} ر.س</div>
+                              <div className="text-2xs font-semibold truncate">{p.name_ar}</div>
+                              <div className="text-tiny text-gray-500">{p.price.toFixed(2)} ر.س</div>
                             </div>
                           </button>
                         ))}
@@ -411,7 +429,7 @@ export default function AdminChatHubPage() {
                             <div className="text-xs font-semibold truncate">
                               {it.name_ar || it.free_text}
                             </div>
-                            <div className="text-[10px] text-gray-500">×{it.quantity}</div>
+                            <div className="text-tiny text-gray-500">×{it.quantity}</div>
                           </div>
                         </div>
                         <div className="flex gap-1 mt-1.5">
@@ -425,20 +443,20 @@ export default function AdminChatHubPage() {
                           />
                           <button
                             onClick={() => confirmPriceForItem(it.id)}
-                            className="text-[10px] px-2 py-1 rounded text-white flex items-center gap-1"
+                            className="text-tiny px-2 py-1 rounded text-white flex items-center gap-1"
                             style={{ backgroundColor: BRAND.brandGreen }}
                           >
                             <CheckCircle2 className="w-3 h-3" /> تأكيد
                           </button>
                         </div>
                         {it.resolved_at && (
-                          <div className="text-[9px] text-green-700 mt-1">✓ تم التأكيد</div>
+                          <div className="text-3xs text-green-700 mt-1">✓ تم التأكيد</div>
                         )}
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-2 pt-2 border-t border-gray-100 text-[11px]">
+                  <div className="mt-2 pt-2 border-t border-gray-100 text-2xs">
                     <div className="flex justify-between"><span>المجموع الفرعي:</span><span>{activeOrder.subtotal.toFixed(2)}</span></div>
                     <div className="flex justify-between"><span>رسوم الخدمة:</span><span>{activeOrder.service_fee.toFixed(2)}</span></div>
                     <div className="flex justify-between"><span>الضريبة:</span><span>{activeOrder.tax.toFixed(2)}</span></div>

@@ -105,11 +105,11 @@ export function AdminHeader({
   ];
 
   return (
-    <header className="sticky top-0 z-40 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/80 flex items-center px-4 lg:px-6 gap-4">
+    <header className="sticky top-0 z-40 h-16 bg-white/80 backdrop-blur-xl border-b border-gray-200/80 flex items-center px-4 lg:px-6 gap-4">
       {/* Mobile menu button */}
       <button
         onClick={onMenuClick}
-        className="lg:hidden p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+        className="lg:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
         aria-label="فتح القائمة"
       >
         <Menu className="w-5 h-5" />
@@ -122,7 +122,7 @@ export function AdminHeader({
       >
         <Link
           href="/admin"
-          className="flex items-center gap-1 text-slate-500 hover:text-primary transition-colors flex-shrink-0"
+          className="flex items-center gap-1 text-gray-500 hover:text-primary transition-colors flex-shrink-0"
         >
           <Home className="w-4 h-4" />
           <span className="hidden sm:inline">الرئيسية</span>
@@ -134,15 +134,15 @@ export function AdminHeader({
               key={crumb.href}
               className="flex items-center gap-1.5 min-w-0"
             >
-              <ChevronLeft className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+              <ChevronLeft className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
               {isLast ? (
-                <span className="font-semibold text-slate-800 truncate">
+                <span className="font-semibold text-gray-800 truncate">
                   {crumb.label}
                 </span>
               ) : (
                 <Link
                   href={crumb.href}
-                  className="text-slate-500 hover:text-primary transition-colors truncate"
+                  className="text-gray-500 hover:text-primary transition-colors truncate"
                 >
                   {crumb.label}
                 </Link>
@@ -158,13 +158,13 @@ export function AdminHeader({
         {showSearch && (
           <form onSubmit={handleSearch} className="hidden md:block">
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="بحث سريع..."
-                className="w-48 h-9 pr-9 pl-3 bg-slate-100 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all"
+                className="w-48 h-9 pr-9 pl-3 bg-gray-100 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all"
               />
             </div>
           </form>
@@ -174,14 +174,14 @@ export function AdminHeader({
         <div className="relative" ref={quickAddRef}>
           <button
             onClick={() => setShowQuickAdd(!showQuickAdd)}
-            className="p-2 text-slate-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+            className="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
             title="إضافة سريع"
           >
             <Plus className="w-5 h-5" />
           </button>
           {showQuickAdd && (
             <div className="admin-dropdown admin-animate-scale-in">
-              <div className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 إضافة سريع
               </div>
               {quickAddItems.map((item) => (
@@ -205,7 +205,7 @@ export function AdminHeader({
         <div className="relative" ref={notificationRef}>
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="الإشعارات"
           >
             <Bell className="w-5 h-5" />
@@ -215,15 +215,15 @@ export function AdminHeader({
           </button>
           {showNotifications && (
             <div className="admin-dropdown admin-animate-scale-in w-80">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100">
-                <span className="text-sm font-semibold text-slate-800">الإشعارات</span>
+              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
+                <span className="text-sm font-semibold text-gray-800">الإشعارات</span>
                 <button className="text-xs text-primary hover:underline">قراءة الكل</button>
               </div>
               <div className="max-h-80 overflow-y-auto admin-scroll">
                 {notifications.map((notif) => (
                   <div
                     key={notif.id}
-                    className={`px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-50 last:border-0 ${
+                    className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-50 last:border-0 ${
                       notif.unread ? "bg-primary/5" : ""
                     }`}
                   >
@@ -232,13 +232,13 @@ export function AdminHeader({
                         <span className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-800">
+                        <p className="text-sm font-medium text-gray-800">
                           {notif.title}
                         </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-gray-500 mt-0.5">
                           {notif.message}
                         </p>
-                        <p className="text-[10px] text-slate-400 mt-1">
+                        <p className="text-tiny text-gray-400 mt-1">
                           {notif.time}
                         </p>
                       </div>
@@ -246,7 +246,7 @@ export function AdminHeader({
                   </div>
                 ))}
               </div>
-              <div className="px-4 py-2 border-t border-slate-100">
+              <div className="px-4 py-2 border-t border-gray-100">
                 <Link
                   href="/admin/notifications"
                   className="text-xs text-primary hover:underline font-medium"
@@ -262,6 +262,7 @@ export function AdminHeader({
         <Link
           href="/"
           target="_blank"
+          rel="noopener noreferrer"
           className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm text-primary hover:bg-primary/5 rounded-lg font-medium transition-colors"
         >
           <span>الموقع</span>
@@ -272,12 +273,12 @@ export function AdminHeader({
         <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2 p-1.5 hover:bg-slate-100 rounded-xl transition-colors"
+            className="flex items-center gap-2 p-1.5 hover:bg-gray-100 rounded-xl transition-colors"
           >
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primaryDark flex items-center justify-center text-white font-bold text-sm shadow">
               م
             </div>
-            <ChevronLeft className="w-4 h-4 text-slate-400 hidden sm:block" />
+            <ChevronLeft className="w-4 h-4 text-gray-400 hidden sm:block" />
           </button>
           {showUserMenu && (
             <div className="admin-dropdown admin-animate-scale-in">
@@ -347,7 +348,7 @@ export function PageHeader({
   onTabChange,
 }: PageHeaderProps) {
   const badgeStyles = {
-    default: "bg-slate-100 text-slate-600",
+    default: "bg-gray-100 text-gray-600",
     success: "bg-primary-100 text-primary-700",
     warning: "bg-amber-100 text-amber-700",
     danger: "bg-red-100 text-red-700",
@@ -359,7 +360,7 @@ export function PageHeader({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
+            <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
             {badge && (
               <span
                 className={`px-2.5 py-1 text-xs font-semibold rounded-lg ${badgeStyles[badge.variant]}`}
@@ -369,7 +370,7 @@ export function PageHeader({
             )}
           </div>
           {description && (
-            <p className="text-sm text-slate-500 mt-1">{description}</p>
+            <p className="text-sm text-gray-500 mt-1">{description}</p>
           )}
         </div>
         {actions && (
@@ -394,7 +395,7 @@ export function PageHeader({
                   className={`text-xs px-1.5 py-0.5 rounded-full ${
                     activeTab === tab.value
                       ? "bg-white/20 text-white"
-                      : "bg-slate-200 text-slate-600"
+                      : "bg-gray-200 text-gray-600"
                   }`}
                 >
                   {tab.count}
@@ -431,7 +432,7 @@ export function StatCard({
   className = "",
 }: StatCardProps) {
   const variantClasses = {
-    default: "from-slate-500 to-slate-600",
+    default: "from-gray-500 to-gray-600",
     primary: "from-primary to-primaryDark",
     success: "from-primary-500 to-primary-600",
     warning: "from-amber-500 to-amber-600",
@@ -445,8 +446,8 @@ export function StatCard({
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="text-3xl font-bold text-slate-800 mt-2">{value}</p>
+          <p className="text-sm font-medium text-gray-500">{title}</p>
+          <p className="text-3xl font-bold text-gray-800 mt-2">{value}</p>
           {trend && (
             <div
               className={`flex items-center gap-1 mt-2 text-sm font-medium ${
@@ -454,7 +455,7 @@ export function StatCard({
                   ? trend.positive
                     ? "text-primary-600"
                     : "text-red-600"
-                  : "text-slate-500"
+                  : "text-gray-500"
               }`}
             >
               {trend.positive !== undefined ? (

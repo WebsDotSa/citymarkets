@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
+import { isValidGuestKey } from '@/lib/identity/address-service';
 import { sanitizePlaceImageUrls } from '@/lib/catalog';
 import {
   type AddressRow,
@@ -9,7 +10,27 @@ import {
   updateAddress as updateAddressService,
 } from '@/lib/identity/address-service';
 
-import { error as logError } from '@/lib/logger';
+import { error as logError } from "@/lib/logger";
+
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
+
+// SECURITY (PCP-130): rate limit on address creation/deletion. An
+// authenticated user could otherwise spam the delivery_addresses
+// table (1 INSERT per request) and balloon the row count. 30/hour
+// per user, 60/hour per IP — caps legitimate-use while still
+// allowing address book cleanups.
+const ADDRESS_WRITE_CONFIG = {
+  maxRequests: 30,
+  windowMs: 60 * 60 * 1000,
+  keyPrefix: "address:write",
+} as const;
+
+const ADDRESS_WRITE_IP_CONFIG = {
+  maxRequests: 60,
+  windowMs: 60 * 60 * 1000,
+  keyPrefix: "address:write:ip",
+} as const;
 
 // SECURITY: place_images validation now mirrors the strict C3 RBAC
 // allowlist from `@/lib/place-image`. Previous prefix-only check
@@ -26,27 +47,17 @@ type Owner =
   | { kind: "user"; userId: string }
   | { kind: "guest"; guestKey: string };
 
-async function ownerFromRequest(request: NextRequest): Promise<Owner | null> {
-  const userId = await resolveCustomerUserIdFromRequest(request);
-  if (userId) return { kind: "user", userId };
-  const guestKey = request.headers.get("x-guest-key");
-  if (guestKey) return { kind: "guest", guestKey };
-  return null;
-}
-
 /**
  * Strip owner-identifying fields from a row before sending it to the
  * client. The address service returns `user_id` and `guest_key` so
  * internal callers can audit, but the delivery-addresses contract
- * (predates the service) never exposed them — keep the response
- * shape identical to the pre-P2-3 implementation.
+ * never exposed them — keep the response shape consistent.
  *
- * `place_images` is COALESCEd to `[]` here because the old SQL had
- * `COALESCE(place_images, '{}')`; the service returns the raw value
- * (could be NULL when the row was written before the column was
- * added in migration 049). The web client treats `null` as `[]`
- * already via rowToAddress, but the raw JSON shape stays identical
- * to the pre-P2-3 response.
+ * `place_images` is COALESCEd to `[]` here because the service can
+ * return NULL when the row was written before the column was added
+ * (migration 049). The web client treats `null` as `[]` via
+ * rowToAddress on the client side, but the raw JSON shape here stays
+ * consistent.
  */
 function toClientRow(row: AddressRow): Record<string, unknown> {
   const { user_id: _u, guest_key: _g, ...rest } = row;
@@ -56,6 +67,20 @@ function toClientRow(row: AddressRow): Record<string, unknown> {
     ...rest,
     place_images: Array.isArray(row.place_images) ? row.place_images : [],
   };
+}
+
+async function ownerFromRequest(request: NextRequest): Promise<Owner | null> {
+  const userId = await resolveCustomerUserIdFromRequest(request);
+  if (userId) return { kind: "user", userId };
+  // Client-supplied — only whitelisted formats (UUID / guest_<ts>_<rand>)
+  // are honoured; anything else is treated as absent (→ 400 below).
+  // Hotfix 9580caf: validate the x-guest-key header before letting it
+  // reach SQL — without this guard the original code would have
+  // emitted a SQL-injection vector into the VALUES clause.
+  const rawGuestKey = request.headers.get("x-guest-key");
+  const guestKey = isValidGuestKey(rawGuestKey) ? rawGuestKey : null;
+  if (guestKey) return { kind: "guest", guestKey };
+  return null;
 }
 
 // GET /api/v1/delivery-addresses
@@ -90,6 +115,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { success: false, error: "يجب تسجيل الدخول أو استخدام معرّف الضيف" },
       { status: 400 }
+    );
+  }
+
+  // SECURITY (PCP-130): rate limit writes. IP-first (catches unauth
+  // guest floods) then per-owner. The owner key is namespaced by kind
+  // so user A and guest G never share a bucket.
+  const clientIp = getClientIp(request);
+  const ipLimit = await checkRateLimit(clientIp, ADDRESS_WRITE_IP_CONFIG);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد العمليات، حاول لاحقاً" },
+      { status: 429 }
+    );
+  }
+  const ownerKey =
+    owner.kind === "user" ? `user:${owner.userId}` : `guest:${owner.guestKey}`;
+  const userLimit = await checkRateLimit(ownerKey, ADDRESS_WRITE_CONFIG);
+  if (!userLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تجاوزت عدد العمليات، حاول لاحقاً" },
+      { status: 429 }
     );
   }
 

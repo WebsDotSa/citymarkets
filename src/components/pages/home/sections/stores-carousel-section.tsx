@@ -66,7 +66,7 @@ function VendorCard({ vendor }: { vendor: HomeVendor }) {
       className="group flex-shrink-0 w-44 sm:w-52"
       style={{ scrollSnapAlign: "start" }}
     >
-      <div className="relative h-44 sm:h-52 rounded-3xl overflow-hidden bg-white border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+      <div className="relative h-44 sm:h-52 rounded-3xl overflow-hidden bg-white border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
         {/* gradient header */}
         <div
           className="absolute inset-x-0 top-0 h-20 sm:h-24"
@@ -78,15 +78,15 @@ function VendorCard({ vendor }: { vendor: HomeVendor }) {
         {/* open/closed pill */}
         <div className="absolute top-3 right-3 z-10">
           <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md ${
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-tiny font-bold backdrop-blur-md ${
               vendor.isOpen
                 ? "bg-emerald-500/95 text-white shadow-sm"
-                : "bg-slate-700/90 text-white"
+                : "bg-gray-700/90 text-white"
             }`}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                vendor.isOpen ? "bg-white animate-pulse" : "bg-slate-300"
+                vendor.isOpen ? "bg-white animate-pulse" : "bg-gray-300"
               }`}
             />
             {vendor.isOpen ? "مفتوح" : "مغلق"}
@@ -116,15 +116,15 @@ function VendorCard({ vendor }: { vendor: HomeVendor }) {
 
         {/* bottom content */}
         <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4 pt-12">
-          <h3 className="text-sm sm:text-base font-bold text-slate-900 line-clamp-1 group-hover:text-primary transition-colors">
+          <h3 className="text-sm sm:text-base font-bold text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">
             {vendor.name}
           </h3>
           {vendor.description && (
-            <p className="text-[11px] sm:text-xs text-slate-500 line-clamp-2 mt-0.5 leading-snug">
+            <p className="text-2xs sm:text-xs text-gray-500 line-clamp-2 mt-0.5 leading-snug">
               {vendor.description}
             </p>
           )}
-          <div className="mt-2 flex items-center gap-1 text-[11px] font-bold text-primary">
+          <div className="mt-2 flex items-center gap-1 text-2xs font-bold text-primary">
             تصفح المتجر
             <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
           </div>
@@ -181,10 +181,10 @@ export function StoresCarouselSection() {
               <Store className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">
                 تسوّق من المتاجر
               </h2>
-              <p className="text-sm text-slate-500 mt-0.5 font-normal">
+              <p className="text-sm text-gray-500 mt-0.5 font-normal">
                 قهوة، هدايا، عبايات وأكثر
               </p>
             </div>
@@ -202,16 +202,16 @@ export function StoresCarouselSection() {
                 <button
                   onClick={() => scrollBy("right")}
                   aria-label="السابق"
-                  className="hidden md:flex w-9 h-9 bg-white border border-slate-100 shadow-sm rounded-full items-center justify-center hover:bg-slate-50 transition-colors"
+                  className="hidden md:flex w-9 h-9 bg-white border border-gray-100 shadow-sm rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
                 >
-                  <ChevronRight className="w-4 h-4 text-slate-700" />
+                  <ChevronRight className="w-4 h-4 text-gray-700" />
                 </button>
                 <button
                   onClick={() => scrollBy("left")}
                   aria-label="التالي"
-                  className="hidden md:flex w-9 h-9 bg-white border border-slate-100 shadow-sm rounded-full items-center justify-center hover:bg-slate-50 transition-colors"
+                  className="hidden md:flex w-9 h-9 bg-white border border-gray-100 shadow-sm rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
                 >
-                  <ChevronLeft className="w-4 h-4 text-slate-700" />
+                  <ChevronLeft className="w-4 h-4 text-gray-700" />
                 </button>
               </>
             )}
@@ -228,7 +228,7 @@ export function StoresCarouselSection() {
               ? [...Array(4)].map((_, i) => (
                   <div
                     key={i}
-                    className="flex-shrink-0 w-44 sm:w-52 h-44 sm:h-52 rounded-3xl bg-slate-100 animate-pulse"
+                    className="flex-shrink-0 w-44 sm:w-52 h-44 sm:h-52 rounded-3xl bg-gray-100 animate-pulse"
                   />
                 ))
               : vendors.map((v) => <VendorCard key={v.id} vendor={v} />)}

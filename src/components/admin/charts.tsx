@@ -27,7 +27,7 @@ export function BarRow({
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   const fill =
     emphasis === "neutral"
-      ? "bg-slate-500"
+      ? "bg-gray-500"
       : emphasis === "success"
       ? "bg-emerald-500"
       : emphasis === "warning"

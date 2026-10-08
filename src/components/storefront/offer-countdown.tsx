@@ -67,7 +67,7 @@ export function OfferCountdown({
   if (variant === "compact") {
     return (
       <span
-        className={`text-[11px] font-medium text-gray-600 tabular-nums ${className}`}
+        className={`text-2xs font-medium text-gray-600 tabular-nums ${className}`}
         aria-label={`ينتهي العرض بعد ${parts.days} يوم و${parts.hours} ساعة`}
       >
         {parts.days > 0 ? `${parts.days}ي ` : ""}
@@ -81,7 +81,7 @@ export function OfferCountdown({
   if (variant === "pill") {
     return (
       <div
-        className={`inline-flex items-center gap-1 bg-amber-100 text-amber-800 rounded-full px-2.5 py-1 text-[11px] font-medium tabular-nums ${className}`}
+        className={`inline-flex items-center gap-1 bg-amber-100 text-amber-800 rounded-full px-2.5 py-1 text-2xs font-medium tabular-nums ${className}`}
         aria-label={`ينتهي العرض بعد ${parts.days} يوم و${parts.hours} ساعة و${parts.minutes} دقيقة`}
       >
         <span>ينتهي خلال</span>
@@ -118,7 +118,7 @@ function CountUnit({ value, label }: { value: number; label: string }) {
       <span className="text-base font-bold tabular-nums leading-none">
         {String(value).padStart(2, "0")}
       </span>
-      <span className="text-[9px] opacity-70 mt-1">{label}</span>
+      <span className="text-3xs opacity-70 mt-1">{label}</span>
     </div>
   );
 }

@@ -46,18 +46,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let userId = await resolveCustomerUserIdFromRequest(request);
-  const sessionId = getGuestSessionIdFromRequest(request);
+  const userId = await resolveCustomerUserIdFromRequest(request);
 
-  // SECURITY (F8): previously this endpoint accepted fully-anonymous
-  // requests (no user, no guest session). An unauthenticated attacker
-  // could spam direct-order rows, attach them to arbitrary addresses
-  // (the route upserted addresses keyed only on label), and burn
-  // driver/admin time triaging. Require EITHER a logged-in customer
-  // OR an established guest session before we touch the DB.
-  if (!userId && !sessionId) {
+  // SECURITY: Direct orders require login. Guest ordering is removed
+  // because the full flow (payment, chat, cleanup) requires auth.
+  if (!userId) {
     return NextResponse.json(
-      { success: false, error: 'غير مصرح' },
+      { success: false, error: 'يجب تسجيل الدخول لإنشاء طلب مباشر' },
       { status: 401 }
     );
   }
@@ -78,15 +73,7 @@ export async function POST(request: NextRequest) {
   }
 
   const data = parsed.data;
-  // SECURITY (F8): guests MUST send an idempotency_key so a double-tap
-  // doesn't create two orders and so we can later scope guest reads to
-  // "orders where idempotency_key = $key" without trusting user_id.
-  if (!userId && !data.idempotency_key) {
-    return NextResponse.json(
-      { success: false, error: 'مفتاح تأكيد الطلب مطلوب للضيوف' },
-      { status: 400 }
-    );
-  }
+  // Idempotency key optional for authed users (dedupes double-taps)
   const idempotencyKey = data.idempotency_key
     ? data.idempotency_key.slice(0, 64)
     : null;
@@ -124,15 +111,16 @@ export async function POST(request: NextRequest) {
   try {
     await client.query('BEGIN');
 
-    // SECURITY (F8): idempotency dedupe. A double-tap on the
-    // "تأكيد الطلب" button (or a retried POST from a flaky network)
-    // would otherwise create two direct orders for the same 4 SAR fee.
-    // If an order already exists for this key, return it untouched.
+    // SECURITY: idempotency dedupe for authed users.
+    // A double-tap on the "تأكيد الطلب" button would otherwise
+    // create two orders. Return the existing order if found.
     if (idempotencyKey) {
       const existing = await client.query(
         `SELECT id, tracking_code AS order_number FROM orders
-         WHERE idempotency_key = $1 LIMIT 1`,
-        [idempotencyKey]
+         WHERE idempotency_key = $1
+           AND user_id = $2
+         LIMIT 1`,
+        [idempotencyKey, userId]
       );
       if (existing.rows.length > 0) {
         await client.query('ROLLBACK');
@@ -148,29 +136,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 1) Upsert the address (customers often re-use the same label).
+    // 1) Create the address. Direct orders require login, so no guest path.
     //
-    // P2-3: delegate to the canonical address service. The original
-    // inline INSERT was broken — it referenced plus_code / city /
-    // district columns that don't exist on the `addresses` table; the
-    // service writes only valid columns and stores plus_code/city/
-    // district in direct_order_meta below (the route's pre-existing
-    // behaviour for those fields is preserved). The service also
-    // auto-promotes the new row to default when it's the owner's
-    // first address, which is the right default for a one-off direct
-    // order — the order pins the address by id so is_default doesn't
-    // affect downstream behaviour.
+    // Delegate to the canonical address service which auto-promotes
+    // the first address to default (good for one-off direct orders).
+    // The service only writes valid columns (label, address_text, lat, lng).
     //
     // Title fallback: the direct-order Zod schema has no `title` field,
-    // so we let the service's resolveTitle ladder (title → description
-    // → label) compute it. We pass description explicitly so a caller
-    // who DID supply a description still ends up with a non-empty
-    // title column (the migration-049 contract).
+    // so we let the service's resolveTitle ladder compute it.
     const addr = data.delivery_address;
-    const addressOwner = userId
-      ? { kind: "user" as const, userId }
-      : { kind: "guest" as const, guestKey: sessionId! };
-    const addrRow = await createAddressService(addressOwner, {
+    const addrRow = await createAddressService(
+      { kind: "user" as const, userId },
+      {
       label: addr.label,
       title: null,
       description: typeof addr.description === "string" ? addr.description : null,
@@ -275,47 +252,51 @@ export async function POST(request: NextRequest) {
 
     await client.query('COMMIT');
 
-    // P1-4 (full-system audit 2026-09-30): send the order-confirmation
-    // SMS post-COMMIT so the customer gets immediate acknowledgment
-    // regardless of payment_method. The catalog orders route
-    // (`src/app/api/v1/orders/route.ts`) already does this; direct
-    // orders previously skipped it, leaving the customer waiting for
-    // a payment webhook that may never arrive (wallet / bank_transfer
-    // have no online confirmation). Failures are logged but never
-    // block the response — Twilio outages must not roll back orders.
-    // P1-4 (full-system audit 2026-09-30): send the order-confirmation
-    // SMS post-COMMIT so the customer gets immediate acknowledgment
-    // regardless of payment_method. Mirrors the catalog orders route
-    // pattern (`src/app/api/v1/orders/route.ts`): try the top-level
-    // `customer_phone` first, fall back to `users.phone` for logged-in
-    // callers. Skipped when neither is available — the driver chat
-    // panel can still reach the customer via the address label.
-    // Failures are logged but never block the response — Twilio
-    // outages must not roll back orders.
-    let notifyPhone: string | undefined =
-      typeof data.customer_phone === 'string' && data.customer_phone.length > 0
-        ? data.customer_phone
-        : undefined;
-    if (!notifyPhone && userId) {
-      try {
-        const phRow = await client.query<{ phone: string }>(
-          'SELECT phone FROM users WHERE id = $1',
-          [userId]
-        );
-        notifyPhone = phRow.rows[0]?.phone ?? undefined;
-      } catch {
-        /* optional */
-      }
-    }
-    if (notifyPhone) {
-      sendOrderConfirmationSms({
-        phone: notifyPhone,
-        orderId,
-        total,
-      }).catch((smsErr) => {
-        logError('direct-order SMS confirmation failed', smsErr, { orderId });
-      });
-    }
+    // Async post-commit tasks (fire-and-forget):
+    // 1) Send customer SMS confirmation
+    // 2) Notify admin via WhatsApp
+    Promise.all([
+      (async () => {
+        try {
+          const phRow = await query<{ phone: string }>(
+            'SELECT phone FROM users WHERE id = $1',
+            [userId]
+          );
+          const notifyPhone = phRow.rows[0]?.phone;
+          if (notifyPhone) {
+            await sendOrderConfirmationSms({
+              phone: notifyPhone,
+              orderId,
+              total,
+            });
+          }
+        } catch (smsErr) {
+          logError('direct-order SMS confirmation failed', smsErr, { orderId });
+        }
+      })(),
+      (async () => {
+        try {
+          // Fetch customer name for the notification
+          const userRow = await query<{ name: string | null }>(
+            'SELECT name FROM users WHERE id = $1',
+            [userId]
+          );
+          const customerName = userRow.rows[0]?.name || null;
+
+          // Notify admin via WhatsApp
+          const { notifyAdminNewOrder } = await import('@/lib/orders/order-notify-admin');
+          await notifyAdminNewOrder({
+            id: orderNumber,
+            total,
+            customerName,
+          });
+        } catch (adminErr) {
+          logError('direct-order admin notification failed', adminErr, { orderId });
+        }
+      })(),
+    ]).catch(() => {
+      /* suppress errors, tasks logged individually */
+    });
 
     return NextResponse.json(
       {

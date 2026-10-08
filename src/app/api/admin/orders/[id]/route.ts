@@ -16,6 +16,11 @@ import {
   ORDER_DETAIL_JOINS,
 } from '@/lib/orders/sql-fragments';
 
+// Module-scoped so both GET and PATCH reuse the same regex instance.
+// Validates the canonical 8-4-4-4-12 UUID shape (case-insensitive).
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * GET /api/admin/orders/[id]
  *
@@ -28,6 +33,20 @@ export async function GET(
   const gate = await requireAdminApi(request, 'manage_orders');
   if (gate instanceof NextResponse) return gate;
   const { id: orderId } = await ctx.params;
+
+  // P2-9 (PCP-101 audit): validate UUID before opening a DB connection so
+  // we surface 400 with an Arabic message instead of leaking a Postgres
+  // 22P02 ("invalid input syntax for type uuid") as a 500. Mirrors the
+  // same guard on src/app/api/v1/orders/[id]/route.ts.
+  if (!UUID_RE.test(orderId)) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "معرّف الطلب غير صالح",
+      },
+      { status: 400 }
+    );
+  }
 
   try {
     // Reuse the canonical column-list + JOIN fragment so adding a new
@@ -48,13 +67,48 @@ export async function GET(
     }
 
     const items = await query(
-      `SELECT i.id, i.product_id, p.name_ar, p.image_url, p.price::float,
-              i.free_text, i.quantity, i.unit_price::float, i.notes,
-              i.resolved_price::float, i.resolved_at, i.resolved_by_admin_id::text
-       FROM direct_order_items i
-       LEFT JOIN products p ON p.id = i.product_id
-       WHERE i.order_id = $1
-       ORDER BY i.created_at ASC`,
+      // P2-8 (PCP-101 audit): order_items (catalog) + direct_order_items have
+      // different schemas; single-table read returns 0 items for 75/76 orders.
+      // Union them. Note: order_items has no `created_at`, so use ROW_NUMBER
+      // via UNION ALL + ordinal column for ordering.
+      `SELECT
+         id, product_id, name_ar, image_url, price,
+         free_text, quantity, unit_price, notes,
+         resolved_price, resolved_product_id, resolved_at,
+         resolved_by_admin_id
+       FROM (
+         SELECT i.id, i.product_id,
+                p.name_ar,
+                COALESCE(NULLIF(p.image_url, ''), NULLIF(p.image_urls[1], '')) AS image_url,
+                p.price::float8 AS price,
+                NULL::text       AS free_text,
+                i.qty            AS quantity,
+                i.unit_price::float8 AS unit_price,
+                i.notes,
+                NULL::numeric    AS resolved_price,
+                NULL::uuid       AS resolved_product_id,
+                NULL::timestamp  AS resolved_at,
+                NULL::uuid       AS resolved_by_admin_id,
+                1                AS _ord
+           FROM order_items i
+           LEFT JOIN vendor_products p ON p.id = i.product_id
+          WHERE i.order_id = $1
+         UNION ALL
+         SELECT i.id, i.product_id,
+                p.name_ar,
+                COALESCE(NULLIF(p.image_url, ''), NULLIF(p.image_urls[1], '')) AS image_url,
+                p.price::float8 AS price,
+                i.free_text, i.quantity, i.unit_price::float8, i.notes,
+                i.resolved_price::float8,
+                i.resolved_product_id,
+                i.resolved_at,
+                i.resolved_by_admin_id,
+                2                AS _ord
+           FROM direct_order_items i
+           LEFT JOIN vendor_products p ON p.id = i.product_id
+          WHERE i.order_id = $1
+       ) u
+       ORDER BY _ord ASC, quantity DESC NULLS LAST`,
       [orderId]
     );
 
@@ -107,6 +161,14 @@ export async function PATCH(
   if (gate instanceof NextResponse) return gate;
   const { id: orderId } = await ctx.params;
   const admin = gate.admin;
+
+  // Same UUID guard as GET above — see note in GET handler.
+  if (!UUID_RE.test(orderId)) {
+    return NextResponse.json(
+      { success: false, error: "معرّف الطلب غير صالح" },
+      { status: 400 }
+    );
+  }
 
   let body: unknown;
   try {

@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
+import { useStatusColorVars } from '@/hooks/use-color-vars';
 import { ChatPanel } from '@/components/ui/chat-panel/chat-panel';
 import { InvoiceActions } from '@/components/orders/invoice-actions';
 import { getOrderStatusConfig } from '@/lib/orders';
@@ -97,6 +98,7 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
   );
   const statusConfig = order ? getOrderStatusConfig(order.status) : null;
   const statusColor = statusConfig?.hex ?? '#6B7280';
+  const statusColorVars = useStatusColorVars(statusColor);
   const statusLabel = statusConfig?.label ?? '';
 
   if (loading) {
@@ -119,7 +121,7 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32" dir="rtl">
+    <div className="min-h-screen bg-gray-50 pb-32" dir="rtl" style={statusColorVars}>
       <div
         className="sticky top-0 z-10 text-white px-4 py-3 flex items-center gap-3"
         style={{ backgroundColor: BRAND.brandGreen }}
@@ -183,12 +185,12 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
         <div className="bg-white rounded-2xl p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5" style={{ color: statusColor }} />
+              <Clock className="w-5 h-5" style={{ color: 'var(--status-color)' }} />
               <span className="font-bold text-gray-900">{statusLabel}</span>
             </div>
             <span
               className="text-xs px-2.5 py-1 rounded-full font-bold"
-              style={{ backgroundColor: `${statusColor}20`, color: statusColor }}
+              style={{ backgroundColor: 'var(--status-bg)', color: 'var(--status-color)' }}
             >
               {isDirect ? 'طلب مباشر' : 'كتالوج'}
             </span>
@@ -329,7 +331,7 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
             <h2 className="font-bold text-gray-900 mb-2">
               {isDirect ? 'رسالة صوتية منك' : 'رسالة صوتية'}
             </h2>
-            <audio controls src={order.voice_note_url} className="w-full" style={{ height: 36 }} />
+            <audio controls src={order.voice_note_url} className="w-full h-9" />
           </div>
         )}
 

@@ -12,7 +12,9 @@ import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { offerInputSchema } from "@/lib/validation";
 import { cache } from "@/lib/cache";
+import { logAdminAction } from "@/lib/admin-audit";
 import { error as logError } from "@/lib/logger";
+import { parsePagination } from "@/lib/api/pagination";
 
 function toNumberOrZero(v: unknown): number {
   const n = Number(v);
@@ -31,9 +33,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50")));
-    const offset = (page - 1) * limit;
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 50 });
     const search = searchParams.get("search")?.trim();
     const isActive = searchParams.get("is_active");
     const isFeatured = searchParams.get("is_featured");
@@ -192,6 +192,22 @@ export async function POST(request: NextRequest) {
 
     await client.query("COMMIT");
     cache.invalidatePattern("offers:");
+
+    // P1-2 (security Phase 4, 2026-10-03): audit the offer create.
+    // Discounts are a common abuse vector (loyalty credit, free
+    // shipping, targeted price drops) so attribution + payload
+    // capture matters.
+    await logAdminAction(gate.admin, "offer.create", {
+      entityType: "offer",
+      entityId: offerId,
+      details: {
+        title_ar: parsed.data.title_ar,
+        discount_type: parsed.data.discount_type,
+        discount_value: parsed.data.discount_value,
+        target_count: parsed.data.targets.length,
+      },
+      request,
+    });
 
     return NextResponse.json({ success: true, data: { id: offerId } });
   } catch (error) {

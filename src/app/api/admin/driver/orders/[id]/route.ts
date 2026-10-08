@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 import {
   recordPaymentEvent,
   finalizePaymentEvent,
@@ -15,7 +16,7 @@ import { ORDER_LIST_COLUMNS } from '@/lib/orders/sql-fragments';
 import {
   awardPointsForOrder,
   getLoyaltySettings,
-  releaseRedeemHoldForOrder,
+  releaseRedeemHoldForOrderSafe,
 } from '@/lib/orders/loyalty';
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,8 @@ export async function GET(
   if (gate instanceof NextResponse) return gate;
 
   const { id } = await params;
+  const badId = validateUuidOrError(id, "معرّف الطلب");
+  if (badId) return badId;
 
   try {
     // SECURITY (RBAC): mirror the list endpoint's scope — a driver may
@@ -144,12 +147,24 @@ export async function PATCH(
   if (gate instanceof NextResponse) return gate;
 
   const { id } = await params;
-  const body = await request.json();
-  const { status, failureReason, claim } = body as {
-    status?: string;
-    failureReason?: string;
-    claim?: boolean;
-  };
+  const badId = validateUuidOrError(id, "معرّف الطلب");
+  if (badId) return badId;
+  const client = await pool.connect();
+  try {
+    // P2-2 (PCP-76.F3): parse JSON inside the try block so a malformed
+    // body surfaces as our 400 JSON response instead of bubbling up as
+    // Next.js's default 500 (no {success,error} envelope, no leak).
+    let body: { status?: string; failureReason?: string; claim?: boolean };
+    try {
+      body = (await request.json()) as typeof body;
+    } catch {
+      await client.query("ROLLBACK").catch(() => {});
+      return NextResponse.json(
+        { success: false, error: "بيانات غير صالحة" },
+        { status: 400 },
+      );
+    }
+    const { status, failureReason, claim } = body;
 
   // P2-1 (production hardening 2): the driver-role transition table
   // now lives in `@/lib/orders/state-machine`. The set of legal `to`
@@ -185,9 +200,7 @@ export async function PATCH(
     );
   }
 
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
+  await client.query("BEGIN");
 
     // Resolve the caller's drivers.id from their admin_users.id. Should
     // always exist post-T1 migration; defensive 403 if not.
@@ -365,7 +378,7 @@ export async function PATCH(
         // `pending_redeem` hold for this cancelled order. Best-effort:
         // failure is logged but does not block the response (same
         // `.catch(() => {})` posture as the coupon release above).
-        releaseRedeemHoldForOrder(client, { orderId: id }).catch((err) => {
+        releaseRedeemHoldForOrderSafe(pool, { orderId: id }).catch((err: unknown) => {
           logError("[driver cancel] loyalty hold release failed", err, { orderId: id });
         });
       }
@@ -483,7 +496,7 @@ export async function PATCH(
       // P1-7 (full-system audit 2026-09-30): release the loyalty
       // `pending_redeem` hold for this cancelled order. Same
       // best-effort posture as the claim branch above.
-      releaseRedeemHoldForOrder(client, { orderId: id }).catch((err) => {
+      releaseRedeemHoldForOrderSafe(pool, { orderId: id }).catch((err: unknown) => {
         logError("[driver cancel] loyalty hold release failed", err, { orderId: id });
       });
     }

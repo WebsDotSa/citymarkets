@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool, query } from "@/lib/db";
+import { computeOrderFees } from '@/lib/orders';
 import { computeDistanceFee } from '@/lib/delivery';
 import { getMainStoreAndDistance } from '@/lib/delivery/main-store';
-import {
-  computeParentServiceFee,
-  computeParentTax,
-} from '@/lib/orders/checkout/pricing';
+import { getClientIp } from "@/lib/request-ip";
+import { checkRateLimit, DELIVERY_QUOTE_IP_CONFIG } from "@/lib/rate-limit";
 
-import { error as logError } from '@/lib/logger';
+import { error as logError } from "@/lib/logger";
 
 /**
  * Guest-friendly delivery quote.
@@ -29,6 +28,24 @@ import { error as logError } from '@/lib/logger';
  * irrelevant for delivery fee when `deliveryMode === 'pickup'`).
  */
 export async function POST(request: NextRequest) {
+  // SECURITY (PCP-140): per-IP cap on the delivery-quote endpoint.
+  // The route is CSRF-exempt (stateless fee quote) and runs a
+  // distance-fee SQL+haversine per call. A scripted attacker could
+  // otherwise pin a worker on a flood. 30/min is well above the
+  // cart UI's debounce rate. The rate-limit check runs BEFORE
+  // input parse so a flood of bad bodies cannot exhaust the bucket
+  // (PCP-133 lesson).
+  const quoteRl = await checkRateLimit(
+    `delivery:quote:${getClientIp(request)}`,
+    DELIVERY_QUOTE_IP_CONFIG,
+  );
+  if (!quoteRl.allowed) {
+    return NextResponse.json(
+      { success: false, error: "تم تجاوز عدد المحاولات، حاول لاحقاً" },
+      { status: 429 },
+    );
+  }
+
   try {
     const body = await request.json().catch(() => ({}));
     const lat = Number(body?.latitude);
@@ -73,15 +90,15 @@ export async function POST(request: NextRequest) {
 
     // Pre-compute service + tax against the requested subtotal so the
     // checkout summary can show every cost line the order will persist.
-    // The orders route used to re-run `computeOrderFees` (now deleted —
-    // B8 fold) for the final insert — this is a UX hint, not a contract.
-    const serviceFee = computeParentServiceFee({
-      catalogSubtotal: subtotal,
-      pricing: pricing as never,
-    });
-    const tax = computeParentTax({
-      catalogSubtotal: subtotal,
-      pricing: pricing as never,
+    // The orders route re-runs `computeOrderFees` for the final insert
+    // — this is a UX hint, not a contract.
+    const fees = computeOrderFees({
+      subtotal,
+      discount: 0,
+      deliveryMode,
+      couponFreeDelivery: false,
+      distanceKm,
+      pricing,
     });
 
     return NextResponse.json({
@@ -89,8 +106,8 @@ export async function POST(request: NextRequest) {
       deliveryFee,
       isFreeDelivery: deliveryFee === 0,
       distanceKm: Math.round(distanceKm * 100) / 100,
-      serviceFee,
-      tax,
+      serviceFee: fees.serviceFee,
+      tax: fees.tax,
     });
   } catch (error) {
     logError("delivery-quote error:", error);

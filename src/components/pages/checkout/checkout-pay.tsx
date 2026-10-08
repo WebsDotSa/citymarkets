@@ -25,13 +25,20 @@ export function CheckoutPay() {
     return Number.isFinite(n) ? n : 0;
   }, [params]);
   const methodRaw = params.get("method") ?? "mada";
+  // Widen method types to include mastercard and amex (map to mada for Moyasar)
   const method: "mada" | "visa" | "apple_pay" | "stc_pay" =
     methodRaw === "visa" ||
     methodRaw === "apple_pay" ||
     methodRaw === "stc_pay" ||
     methodRaw === "mada"
       ? methodRaw
+      : methodRaw === "mastercard" || methodRaw === "amex"
+      ? "mada" // fallback to mada for non-Moyasar methods
       : "mada";
+
+  // Optional redirect after successful payment (e.g., /orders/direct/chat/{id})
+  const nextUrl = params.get("next");
+  const isInternalNext = nextUrl && nextUrl.startsWith("/");
 
   if (!orderId) {
     return (
@@ -50,9 +57,12 @@ export function CheckoutPay() {
         orderId={orderId}
         totalSar={total}
         paymentMethod={method}
-        onPaid={() =>
-          router.push(`/checkout/success?order_id=${encodeURIComponent(orderId)}`)
-        }
+        onPaid={() => {
+          const redirectUrl = isInternalNext
+            ? nextUrl
+            : `/checkout/success?order_id=${encodeURIComponent(orderId)}`;
+          router.push(redirectUrl);
+        }}
         onError={(msg) => showToast(msg, "error")}
       />
     </div>

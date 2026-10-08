@@ -7,7 +7,7 @@ import { checkRateLimit, createRateLimitHeaders, GENERAL_API_CONFIG } from "@/li
 import { isVendorOpen, parseVendorHours } from "@/lib/delivery/vendor-store-hours";
 import { generateVendorOrderNumber } from "@/lib/orders/order-number";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 /**
  * Order item type for internal use
@@ -130,34 +130,67 @@ export async function GET(
       return NextResponse.json({ error: "لا توجد أوردرات" }, { status: 404 });
     }
 
-    const orders = await Promise.all(
-      result.rows.map(async (o) => {
+    // P2-4 (PCP-76.F4): collapse the per-order items N+1 into a single
+    // bulk query keyed by `order_id = ANY($1)`. The previous Promise.all
+    // fired one round-trip per order; with LIMIT 10 that's 11 queries,
+    // and the wasted work is even worse when ?id= is set (orders[1..N]
+    // items are queried and then thrown away).
+    const orderIds = result.rows.map((o) => o.id as string);
+    const itemsByOrder: Record<string, Array<{
+      id: string;
+      product_id: string | null;
+      product_name_snapshot: string;
+      image_urls: string[] | null;
+      unit_price: string;
+      quantity: number;
+      line_total: string;
+      notes: string | null;
+    }>> = {};
+    if (orderIds.length > 0) {
+      const bulkItems = await query<{
+        order_id: string;
+        id: string;
+        product_id: string | null;
+        product_name_snapshot: string;
+        image_urls: string[] | null;
+        unit_price: string;
+        quantity: number;
+        line_total: string;
+        notes: string | null;
+      }>(
         // SECURITY: migration 054 makes vendor_order_items.product_id
-        // nullable (ON DELETE SET NULL). Use LEFT JOIN so historical
-        // rows where the product was deleted still render — fall back
-        // to the snapshot and a null image when `vp.id IS NULL`.
-        const itemsResult = await query(
-          `SELECT voi.*, vp.image_urls
+        // nullable (ON DELETE SET NULL). LEFT JOIN keeps historical rows
+        // for deleted products, falling back to the snapshot + null image.
+        `SELECT voi.order_id, voi.id, voi.product_id, voi.product_name_snapshot,
+                voi.unit_price, voi.quantity, voi.line_total, voi.notes, vp.image_urls
            FROM vendor_order_items voi
            LEFT JOIN vendor_products vp ON voi.product_id = vp.id
-           WHERE voi.order_id = $1`,
-          [o.id]
-        );
+          WHERE voi.order_id = ANY($1::uuid[])`,
+        [orderIds],
+      );
+      for (const row of bulkItems.rows) {
+        if (!itemsByOrder[row.order_id]) itemsByOrder[row.order_id] = [];
+        itemsByOrder[row.order_id].push(row);
+      }
+    }
 
-        return {
-          id: o.id,
-          orderNumber: o.order_number,
-          status: o.status,
-          paymentStatus: o.payment_status,
-          paymentMethod: o.payment_method,
-          items: itemsResult.rows.map((i) => ({
-            id: i.id,
-            productId: i.product_id,
-            productName: i.product_name_snapshot,
-            image: i.image_urls?.[0] || null,
-            unitPrice: parseFloat(i.unit_price),
-            quantity: i.quantity,
-            lineTotal: parseFloat(i.line_total),
+    const orders = result.rows.map((o) => {
+      const itemsResult = itemsByOrder[o.id] ?? [];
+
+      return {
+        id: o.id,
+        orderNumber: o.order_number,
+        status: o.status,
+        paymentStatus: o.payment_status,
+        paymentMethod: o.payment_method,
+        items: itemsResult.map((i) => ({
+          id: i.id,
+          productId: i.product_id,
+          productName: i.product_name_snapshot,
+          image: i.image_urls?.[0] || null,
+          unitPrice: parseFloat(i.unit_price),
+          quantity: i.quantity,
+          lineTotal: parseFloat(i.line_total),
             notes: i.notes,
           })),
           subtotal: parseFloat(o.subtotal),
@@ -177,8 +210,7 @@ export async function GET(
             cancelled_at: o.cancelled_at,
           }),
         };
-      })
-    );
+    });
 
     return NextResponse.json({
       orders: orderId ? [orders[0]] : orders,
@@ -383,22 +415,59 @@ export async function POST(
 
     const order = orderResult.rows[0];
 
-    // Create order items
-    for (const item of orderItems) {
+    // P2-6 (PCP-76.F5): bulk INSERT all items with one round-trip and a
+    // single bulk UPDATE for the stock-quantity decrement. The for-loop
+    // version issued (N items) + (N tracked) sequential queries on the
+    // held connection; on a 20-item cart that was 21+ round-trips.
+    //
+    // The bulk INSERT uses VALUES, (…), (…), … expansion — safe because
+    // every $N is bound, not interpolated.
+    if (orderItems.length > 0) {
+      const itemValuesSql: string[] = [];
+      const itemBindVals: unknown[] = [];
+      let itemN = 1;
+      for (const item of orderItems) {
+        itemValuesSql.push(
+          `($${itemN++}, $${itemN++}, $${itemN++}, $${itemN++}, $${itemN++}, $${itemN++}, $${itemN++})`,
+        );
+        itemBindVals.push(
+          order.id,
+          item.productId,
+          item.productName,
+          item.unitPrice,
+          item.quantity,
+          item.lineTotal,
+          item.notes,
+        );
+      }
       await client.query(
-        `INSERT INTO vendor_order_items 
+        `INSERT INTO vendor_order_items
           (order_id, product_id, product_name_snapshot, unit_price, quantity, line_total, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [order.id, item.productId, item.productName, item.unitPrice, item.quantity, item.lineTotal, item.notes]
+         VALUES ${itemValuesSql.join(", ")}`,
+        itemBindVals,
       );
 
-      // Update stock if tracking
-      if (productMap.get(item.productId)?.track_stock) {
+      // Bulk stock decrement for the items that actually track inventory.
+      const trackedIds = orderItems
+        .filter((it) => productMap.get(it.productId)?.track_stock)
+        .map((it) => it.productId);
+      if (trackedIds.length > 0) {
+        // Each row: [productId, decrementQty, productId2, decrementQty2, ...]
+        const updateSql: string[] = [];
+        const updateBindVals: unknown[] = [];
+        let upN = 1;
+        for (const item of orderItems) {
+          if (productMap.get(item.productId)?.track_stock) {
+            updateSql.push(`($${upN++}::uuid, $${upN++}::int)`);
+            updateBindVals.push(item.productId, item.quantity);
+          }
+        }
         await client.query(
-          `UPDATE vendor_products 
-           SET stock_quantity = stock_quantity - $1 
-           WHERE id = $2`,
-          [item.quantity, item.productId]
+          `UPDATE vendor_products vp
+              SET stock_quantity = vp.stock_quantity - d.qty
+             FROM (VALUES ${updateSql.join(", ")}) AS d(id, qty)
+            WHERE vp.id = d.id`,
+          updateBindVals,
         );
       }
     }

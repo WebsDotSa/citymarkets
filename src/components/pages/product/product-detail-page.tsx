@@ -564,7 +564,7 @@ export function ProductDetailPage() {
             >
               <div className="text-right leading-tight">
                 <div className="text-xs font-bold">{subtotal.toFixed(0)} ر.س</div>
-                <div className="text-[10px] text-white/70">{itemCount} منتج</div>
+                <div className="text-tiny text-white/70">{itemCount} منتج</div>
               </div>
               <ShoppingBag className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
             </Link>

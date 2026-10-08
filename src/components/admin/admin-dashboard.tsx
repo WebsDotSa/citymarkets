@@ -336,7 +336,7 @@ export function AdminDashboard() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-4">
           <div className="admin-spinner" />
-          <p className="text-sm text-slate-500">جاري تحميل البيانات...</p>
+          <p className="text-sm text-gray-500">جاري تحميل البيانات...</p>
         </div>
       </div>
     );
@@ -347,8 +347,8 @@ export function AdminDashboard() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">لوحة التحكم</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-800">لوحة التحكم</h1>
+          <p className="text-sm text-gray-500 mt-1">
             نظرة عامة على متجر أسواق سيتي
           </p>
         </div>
@@ -361,7 +361,7 @@ export function AdminDashboard() {
           >
             <BellRing className="w-5 h-5" />
             {stats.unreadNotifications > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-tiny font-bold flex items-center justify-center">
                 {stats.unreadNotifications > 99 ? "99+" : stats.unreadNotifications}
               </span>
             )}
@@ -408,7 +408,7 @@ export function AdminDashboard() {
 
       {/* Quick Actions */}
       <div className="admin-card p-5">
-        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
           إجراءات سريعة
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -416,14 +416,14 @@ export function AdminDashboard() {
             <Link
               key={action.label}
               href={action.href}
-              className="group bg-slate-50 hover:bg-slate-100 rounded-xl p-4 text-center transition-all hover:shadow-md hover:-translate-y-0.5"
+              className="group bg-gray-50 hover:bg-gray-100 rounded-xl p-4 text-center transition-all hover:shadow-md hover:-translate-y-0.5"
             >
               <div
                 className={`w-12 h-12 mx-auto rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center text-white shadow-lg mb-3 group-hover:shadow-xl transition-shadow`}
               >
                 {action.icon}
               </div>
-              <p className="text-sm font-medium text-slate-700 group-hover:text-primary transition-colors">
+              <p className="text-sm font-medium text-gray-700 group-hover:text-primary transition-colors">
                 {action.label}
               </p>
             </Link>
@@ -464,7 +464,7 @@ export function AdminDashboard() {
                   {recentOrders.map((order) => {
                     const status = statusConfig[order.status] || {
                       label: order.status,
-                      className: "bg-slate-100 text-slate-600",
+                      className: "bg-gray-100 text-gray-600",
                       icon: null,
                     };
                     return (
@@ -479,10 +479,10 @@ export function AdminDashboard() {
                         </td>
                         <td>
                           <div>
-                            <p className="font-medium text-slate-800">
+                            <p className="font-medium text-gray-800">
                               {order.name}
                             </p>
-                            <p className="text-xs text-slate-500" dir="ltr">
+                            <p className="text-xs text-gray-500" dir="ltr">
                               {order.phone}
                             </p>
                           </div>
@@ -498,7 +498,7 @@ export function AdminDashboard() {
                             {status.label}
                           </span>
                         </td>
-                        <td className="text-slate-500 text-xs">
+                        <td className="text-gray-500 text-xs">
                           {new Date(order.created_at).toLocaleDateString("ar-SA")}
                         </td>
                       </tr>
@@ -508,7 +508,7 @@ export function AdminDashboard() {
               </table>
             ) : (
               <div className="admin-empty">
-                <ShoppingBag className="w-12 h-12 text-slate-300 mb-3" />
+                <ShoppingBag className="w-12 h-12 text-gray-300 mb-3" />
                 <p className="admin-empty-title">لا توجد طلبات</p>
                 <p className="admin-empty-description">
                   ستظهر الطلبات هنا عند وصولها
@@ -523,7 +523,7 @@ export function AdminDashboard() {
           {/* Revenue Chart */}
           <div className="admin-card p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-slate-800">إيرادات آخر 14 يوم</h3>
+              <h3 className="text-sm font-semibold text-gray-800">إيرادات آخر 14 يوم</h3>
               <Link
                 href="/admin/analytics"
                 className="text-xs text-primary hover:underline"
@@ -534,8 +534,8 @@ export function AdminDashboard() {
             <div className="space-y-3">
               {revenueChartData.map((item) => (
                 <div key={item.label} className="flex items-center gap-3">
-                  <span className="text-xs text-slate-500 w-16">{item.label}</span>
-                  <div className="flex-1 h-8 bg-slate-100 rounded-lg overflow-hidden">
+                  <span className="text-xs text-gray-500 w-16">{item.label}</span>
+                  <div className="flex-1 h-8 bg-gray-100 rounded-lg overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-primary to-primaryDark rounded-lg transition-all duration-500 flex items-center justify-end px-2"
                       style={{
@@ -580,53 +580,53 @@ export function AdminDashboard() {
 
           {/* Content Stats */}
           <div className="admin-card p-5">
-            <h3 className="text-sm font-semibold text-slate-800 mb-4">
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">
               إدارة المحتوى
             </h3>
             <div className="space-y-3">
               <Link
                 href="/admin/categories"
-                className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group"
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                     <FolderTree className="w-5 h-5 text-blue-600" />
                   </div>
-                  <span className="text-sm font-medium text-slate-700">
+                  <span className="text-sm font-medium text-gray-700">
                     الفئات
                   </span>
                 </div>
-                <span className="text-lg font-bold text-slate-800 group-hover:text-primary transition-colors">
+                <span className="text-lg font-bold text-gray-800 group-hover:text-primary transition-colors">
                   {stats.categories}
                 </span>
               </Link>
               <Link
                 href="/admin/home-design"
-                className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group"
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
                     <LayoutTemplate className="w-5 h-5 text-emerald-600" />
                   </div>
-                  <span className="text-sm font-medium text-slate-700">
+                  <span className="text-sm font-medium text-gray-700">
                     تصميم الصفحة الرئيسية
                   </span>
                 </div>
-                <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" />
+                <ChevronLeft className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors" />
               </Link>
               <Link
                 href="/admin/coupons"
-                className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group"
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
                     <TicketPercent className="w-5 h-5 text-amber-600" />
                   </div>
-                  <span className="text-sm font-medium text-slate-700">
+                  <span className="text-sm font-medium text-gray-700">
                     كوبونات الخصم
                   </span>
                 </div>
-                <span className="text-lg font-bold text-slate-800 group-hover:text-primary transition-colors">
+                <span className="text-lg font-bold text-gray-800 group-hover:text-primary transition-colors">
                   {stats.coupons}
                 </span>
               </Link>
@@ -636,7 +636,7 @@ export function AdminDashboard() {
           {/* Users */}
           <div className="admin-card p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-slate-800">
+              <h3 className="text-sm font-semibold text-gray-800">
                 المستخدمين
               </h3>
               <Link
@@ -651,10 +651,10 @@ export function AdminDashboard() {
                 <Users className="w-8 h-8" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-slate-800">
+                <p className="text-3xl font-bold text-gray-800">
                   {stats.users}
                 </p>
-                <p className="text-xs text-slate-500">مستخدم مسجل</p>
+                <p className="text-xs text-gray-500">مستخدم مسجل</p>
               </div>
             </div>
           </div>

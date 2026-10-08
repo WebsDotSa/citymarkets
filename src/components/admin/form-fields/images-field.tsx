@@ -23,7 +23,7 @@ export function ImagesField({
         {images.map((img, idx) => (
           <div
             key={idx}
-            className="relative w-20 h-20 bg-slate-50 rounded-lg overflow-hidden border border-slate-200"
+            className="relative w-20 h-20 bg-gray-50 rounded-lg overflow-hidden border border-gray-200"
           >
             <img
               src={img}
@@ -41,8 +41,8 @@ export function ImagesField({
             </button>
           </div>
         ))}
-        <label className="flex flex-col items-center justify-center w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition-colors">
-          <Plus className="w-5 h-5 text-slate-400" />
+        <label className="flex flex-col items-center justify-center w-20 h-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-colors">
+          <Plus className="w-5 h-5 text-gray-400" />
           <input
             type="file"
             accept="image/*"
@@ -52,7 +52,7 @@ export function ImagesField({
           />
         </label>
       </div>
-      <p className="text-xs text-slate-400">اضغط لإضافة更多 صورة</p>
+      <p className="text-xs text-gray-400">اضغط لإضافة更多 صورة</p>
     </div>
   );
 }

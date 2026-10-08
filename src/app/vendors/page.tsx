@@ -4,6 +4,7 @@ import Image from "next/image";
 import { query } from "@/lib/db";
 import { buildPageMetadata } from "@/lib/seo/site";
 import { SafeImage } from "@/components/ui/safe-image";
+import { PageContainer } from "@/components/ui/page-container";
 import { vendorTypeLabel, vendorTypeIcon } from '@/lib/catalog';
 
 export const metadata: Metadata = buildPageMetadata({
@@ -65,10 +66,10 @@ function FeaturedCarousel({ vendors }: { vendors: VendorWithStats[] }) {
     <section aria-label="المتاجر المميزة" className="mb-8">
       <div className="flex items-end justify-between gap-3 mb-4 px-1">
         <div>
-          <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight">
             المتاجر المميزة
           </h2>
-          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+          <p className="text-2xs sm:text-xs text-gray-500 mt-0.5">
             أفضل المتاجر المختارة لك
           </p>
         </div>
@@ -79,7 +80,7 @@ function FeaturedCarousel({ vendors }: { vendors: VendorWithStats[] }) {
           <Link
             key={v.id}
             href={`/vendors/${v.slug}`}
-            className="shrink-0 w-[260px] sm:w-[320px] group relative flex flex-col rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all overflow-hidden"
+            className="shrink-0 w-[260px] sm:w-[320px] group relative flex flex-col rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all overflow-hidden"
             style={{ scrollSnapAlign: "center" }}
           >
             <div className="relative h-28 overflow-hidden">
@@ -90,12 +91,12 @@ function FeaturedCarousel({ vendors }: { vendors: VendorWithStats[] }) {
                 sizes="320px"
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <div className="absolute top-2 right-2 bg-white/95 backdrop-blur px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-600 shadow-sm">
+              <div className="absolute top-2 right-2 bg-white/95 backdrop-blur px-2 py-0.5 rounded-full text-tiny font-bold text-amber-600 shadow-sm">
                 ⭐ مميز
               </div>
             </div>
             <div className="p-3 flex items-center gap-3">
-              <div className="relative w-12 h-12 rounded-xl bg-white border border-slate-100 shadow-sm overflow-hidden shrink-0">
+              <div className="relative w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm overflow-hidden shrink-0">
                 <SafeImage
                   src={v.logo_url}
                   alt=""
@@ -105,8 +106,8 @@ function FeaturedCarousel({ vendors }: { vendors: VendorWithStats[] }) {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-sm text-slate-900 truncate">{v.name_ar}</h3>
-                <p className="text-[11px] text-slate-500 truncate">
+                <h3 className="font-bold text-sm text-gray-900 truncate">{v.name_ar}</h3>
+                <p className="text-2xs text-gray-500 truncate">
                   {vendorTypeIcon(v.vendor_type)} {vendorTypeLabel(v.vendor_type)} · {v.product_count} منتج
                 </p>
               </div>
@@ -122,14 +123,15 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
   return (
     <Link
       href={`/vendors/${vendor.slug}`}
-      className="group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-slate-100 hover:-translate-y-0.5"
+      className="group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 hover:-translate-y-0.5"
+      style={{ '--vendor-color': vendor.primary_color ?? "#009345" } as React.CSSProperties}
     >
       <div
         className="relative h-32 overflow-hidden"
         style={{
           background: vendor.banner_url
             ? undefined
-            : `linear-gradient(135deg, ${vendor.primary_color ?? "#009345"} 0%, ${vendor.primary_color ?? "#009345"}cc 100%)`,
+            : 'linear-gradient(135deg, var(--vendor-color) 0%, var(--vendor-color) 100%)',
         }}
       >
         {vendor.banner_url && (
@@ -144,7 +146,7 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
         <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/30 to-transparent" />
         <div className="absolute top-2 left-2 flex gap-1">
           {vendor.is_featured && (
-            <span className="bg-amber-400 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+            <span className="bg-amber-400 text-amber-900 text-tiny font-bold px-2 py-0.5 rounded-full shadow-sm">
               ⭐
             </span>
           )}
@@ -154,7 +156,7 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
       <div className="pt-0 px-4 pb-4 relative">
         <div className="absolute -top-7 right-4">
           <div className="w-14 h-14 rounded-2xl bg-white border-4 border-white shadow-md flex items-center justify-center overflow-hidden"
-               style={{ borderColor: vendor.primary_color ?? "#009345" }}>
+               style={{ borderColor: 'var(--vendor-color)' }}>
             <SafeImage
               src={vendor.logo_url}
               alt=""
@@ -166,35 +168,35 @@ function VendorCard({ vendor }: { vendor: VendorWithStats }) {
         </div>
 
         <div className="pt-9">
-          <h3 className="font-bold text-base text-slate-900 group-hover:text-primary transition-colors truncate">
+          <h3 className="font-bold text-base text-gray-900 group-hover:text-primary transition-colors truncate">
             {vendor.name_ar}
           </h3>
           {vendor.name_en && (
-            <p className="text-xs text-slate-500 mb-1.5 truncate">{vendor.name_en}</p>
+            <p className="text-xs text-gray-500 mb-1.5 truncate">{vendor.name_en}</p>
           )}
           {vendor.description_ar && (
-            <p className="text-[13px] text-slate-600 line-clamp-2 min-h-[2.4em]">
+            <p className="text-sm text-gray-600 line-clamp-2 min-h-[2.4em]">
               {vendor.description_ar}
             </p>
           )}
 
           <div className="mt-3 flex items-center justify-between gap-2">
             <span
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-full"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-2xs font-bold rounded-full"
               style={{
-                background: `${vendor.primary_color ?? "#009345"}1a`,
-                color: vendor.primary_color ?? "#009345",
+                background: 'color-mix(in srgb, var(--vendor-color) 10%, transparent)',
+                color: 'var(--vendor-color)',
               }}
             >
               <span>{vendorTypeIcon(vendor.vendor_type)}</span>
               <span>{vendorTypeLabel(vendor.vendor_type)}</span>
             </span>
-            <span className="text-[11px] font-bold text-slate-500 tabular-nums" dir="ltr">
+            <span className="text-2xs font-bold text-gray-500 tabular-nums" dir="ltr">
               {vendor.product_count} منتج
             </span>
           </div>
 
-          <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+          <div className="mt-2.5 flex items-center gap-1.5 text-2xs text-gray-500">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             <span>مفتوح الآن</span>
           </div>
@@ -208,31 +210,30 @@ export default async function VendorsPage() {
   const vendors = await getVendors();
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="px-4 sm:px-6 max-w-6xl mx-auto pt-4 pb-12">
-        <FeaturedCarousel vendors={vendors} />
+    <PageContainer width="wide" background="gray-50" padding="normal" className="py-4 pb-12">
+      <FeaturedCarousel vendors={vendors} />
 
         <section aria-labelledby="all-vendors">
           <header className="flex items-end justify-between gap-3 mb-4 px-1 flex-wrap">
             <div>
-              <h1 id="all-vendors" className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              <h1 id="all-vendors" className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
                 جميع المتاجر
               </h1>
-              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+              <p className="text-2xs sm:text-xs text-gray-500 mt-0.5">
                 {vendors.length} متجر · تصفح حسب النوع
               </p>
             </div>
           </header>
 
           {vendors.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-2xl border border-slate-100">
-              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+            <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                 🏪
               </div>
-              <h2 className="text-xl font-bold text-slate-700 mb-2">
+              <h2 className="text-xl font-bold text-gray-700 mb-2">
                 لا توجد متاجر حالياً
               </h2>
-              <p className="text-slate-500 text-sm">
+              <p className="text-gray-500 text-sm">
                 سيتم إضافة المتاجر قريباً
               </p>
             </div>
@@ -244,7 +245,6 @@ export default async function VendorsPage() {
             </div>
           )}
         </section>
-      </div>
-    </div>
+    </PageContainer>
   );
 }

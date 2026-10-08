@@ -169,3 +169,67 @@ describe("isApnsConfigured (env shape standardization)", () => {
     expect(isApnsConfigured()).toBe(true);
   });
 });
+
+/**
+ * P2-1 (security Phase 4, 2026-10-03): production safety guard for
+ * the Apple review account. The bypass is a static OTP against a
+ * known phone; in production it would be a free login for anyone
+ * with the env. We now refuse to enable it in production unless
+ * APPLE_ALLOW_PRODUCTION_REVIEW=1 is set explicitly.
+ */
+function setEnv(key: string, value: string | undefined): void {
+  const env = process.env as Record<string, string | undefined>;
+  if (value === undefined) delete env[key];
+  else env[key] = value;
+}
+
+describe("isAppleReviewEnabled — production guard", () => {
+  beforeEach(() => {
+    setEnv("APPLE_REVIEW_ENABLED", undefined);
+    setEnv("APPLE_ALLOW_PRODUCTION_REVIEW", undefined);
+    setEnv("NODE_ENV", undefined);
+  });
+
+  afterEach(() => {
+    setEnv("APPLE_REVIEW_ENABLED", undefined);
+    setEnv("APPLE_ALLOW_PRODUCTION_REVIEW", undefined);
+    setEnv("NODE_ENV", undefined);
+  });
+
+  it("returns false when APPLE_REVIEW_ENABLED is not 'true'", async () => {
+    setEnv("APPLE_REVIEW_ENABLED", "false");
+    setEnv("NODE_ENV", "production");
+    const { isAppleReviewEnabled } = await loadFresh();
+    expect(isAppleReviewEnabled()).toBe(false);
+  });
+
+  it("returns true in non-production when APPLE_REVIEW_ENABLED=true", async () => {
+    setEnv("APPLE_REVIEW_ENABLED", "true");
+    setEnv("NODE_ENV", "development");
+    const { isAppleReviewEnabled } = await loadFresh();
+    expect(isAppleReviewEnabled()).toBe(true);
+  });
+
+  it("returns false in production even when APPLE_REVIEW_ENABLED=true (no override)", async () => {
+    setEnv("APPLE_REVIEW_ENABLED", "true");
+    setEnv("NODE_ENV", "production");
+    const { isAppleReviewEnabled } = await loadFresh();
+    expect(isAppleReviewEnabled()).toBe(false);
+  });
+
+  it("returns true in production only when both flags are set", async () => {
+    setEnv("APPLE_REVIEW_ENABLED", "true");
+    setEnv("NODE_ENV", "production");
+    setEnv("APPLE_ALLOW_PRODUCTION_REVIEW", "1");
+    const { isAppleReviewEnabled } = await loadFresh();
+    expect(isAppleReviewEnabled()).toBe(true);
+  });
+
+  it("does NOT enable when override is 'true' string (must be exactly '1')", async () => {
+    setEnv("APPLE_REVIEW_ENABLED", "true");
+    setEnv("NODE_ENV", "production");
+    setEnv("APPLE_ALLOW_PRODUCTION_REVIEW", "true");
+    const { isAppleReviewEnabled } = await loadFresh();
+    expect(isAppleReviewEnabled()).toBe(false);
+  });
+});

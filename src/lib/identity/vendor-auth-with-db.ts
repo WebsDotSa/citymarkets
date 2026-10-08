@@ -9,6 +9,7 @@ import {
   verifyVendorRequest,
 } from "./vendor-auth";
 import { createRoleCache, type RoleCache } from "./auth/role-cache";
+import { assertTokenVersionMatches } from "./auth/token-version";
 
 // Cache is shared with vendor-auth.ts so a successful DB verification
 // also satisfies the lighter `verifyVendorRequest` callers downstream.
@@ -27,14 +28,16 @@ const vendorSessionCache: RoleCache<VendorSessionEntry> =
  * the DB. Confirms:
  *   - staff + vendor still exist + are active
  *   - JWT role still matches the DB role (catches mid-session demotion)
+ *   - JWT `tokenVersion` claim still matches the DB row (catches
+ *     mid-session logout / password rotation / staff disable)
  *
- * Token version bumps in the DB still invalidate outstanding JWTs even
- * though we don't carry the version in the JWT — bumping forces a fresh
- * DB lookup on the next request.
- *
- * Imports `@/lib/db` (pg transitively). Kept in its own module so the
- * barrel `@/lib/identity` re-exporting `vendor-auth.ts` does not pull
- * pg into client bundles.
+ * SECURITY (PCP-144): token_version is now compared on every request.
+ * The JWT carries the row's `token_version` at sign time (see
+ * `signVendorSessionToken` in vendor-auth.ts). When a logout, password
+ * rotation, or admin-driven disable bumps the DB column, the next
+ * request re-reads the row → sees a higher value → returns null →
+ * the caller is forced to re-authenticate. The 60s role-cache TTL
+ * is no longer the only mitigation.
  */
 export async function verifyVendorRequestWithDb(
   request: NextRequest,
@@ -45,6 +48,16 @@ export async function verifyVendorRequestWithDb(
   const cached = vendorSessionCache.get(session.staffId);
   if (cached) {
     if (!cached.isActive || !cached.vendorIsActive) return null;
+    // SECURITY (PCP-144): even on a cache hit, the JWT's
+    // tokenVersion must match. A bump in the DB column should
+    // immediately invalidate this JWT — we do not wait for the
+    // cache TTL to expire. Bump paths (logout, staff PUT) clear
+    // both caches so this branch is reached with a fresh DB read.
+    if (cached.tokenVersion !== (session.tokenVersion ?? 1)) {
+      vendorSessionCache.clear(session.staffId);
+      clearVendorSessionCache(session.staffId);
+      return null;
+    }
   }
 
   const result = (await query(
@@ -76,11 +89,31 @@ export async function verifyVendorRequestWithDb(
     return null;
   }
 
+  // SECURITY (PCP-144): compare the DB row's token_version against
+  // the JWT's claim. A mismatch means the JWT was issued before the
+  // most recent logout / credential rotation and must be rejected.
+  // The login + staff PUT paths both bump token_version and clear
+  // the cache, so the next request is a cache miss → re-reads the
+  // DB → sees the new version → fails this comparison → null.
+  // The compare is centralised in assertTokenVersionMatches so the
+  // customer / admin / vendor verify paths cannot drift.
+  if (
+    !assertTokenVersionMatches(
+      { tokenVersion: session.tokenVersion },
+      staff.token_version,
+    )
+  ) {
+    vendorSessionCache.clear(session.staffId);
+    clearVendorSessionCache(session.staffId);
+    return null;
+  }
+  const dbTokenVersion = (staff.token_version ?? 1) as number;
+
   const entry: VendorSessionEntry = {
     role: staff.role as VendorRole,
     isActive: staff.is_active === true,
     vendorIsActive: staff.vendor_is_active === true,
-    tokenVersion: staff.token_version ?? 1,
+    tokenVersion: dbTokenVersion,
   };
   vendorSessionCache.set(session.staffId, entry);
 
@@ -92,5 +125,6 @@ export async function verifyVendorRequestWithDb(
     fullName: staff.full_name_ar || staff.full_name_en || staff.email,
     role: staff.role as VendorRole,
     permissions: staff.permissions || [],
+    tokenVersion: dbTokenVersion,
   };
 }

@@ -27,10 +27,10 @@ const SESSION = {
 };
 
 // Mutated per test in beforeEach
-const ORDER: { status: string; id: string } = { id: "vo-1", status: "pending" };
+const ORDER: { status: string; id: string } = { id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", status: "pending" };
 
 const ORDER_UPDATED = {
-  id: "vo-1",
+  id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
   order_number: "ORD-001",
   status: "confirmed",
   updated_at: "2026-01-01T00:00:00Z",
@@ -133,8 +133,8 @@ describe("PATCH /api/v1/vendor/orders/[id]/status — auth & validation", () => 
 
   it("returns 401 when session is invalid", async () => {
     vi.mocked(verifyVendorRequestWithDb).mockResolvedValueOnce(null);
-    const res = await PATCH(patchReq("vo-1", { status: "confirmed" }), {
-      params: Promise.resolve({ id: "vo-1" }),
+    const res = await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", { status: "confirmed" }), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     expect(res.status).toBe(401);
   });
@@ -144,15 +144,15 @@ describe("PATCH /api/v1/vendor/orders/[id]/status — auth & validation", () => 
       ...SESSION,
       role: "viewer",
     });
-    const res = await PATCH(patchReq("vo-1", { status: "confirmed" }), {
-      params: Promise.resolve({ id: "vo-1" }),
+    const res = await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", { status: "confirmed" }), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     expect(res.status).toBe(403);
   });
 
   it("returns 400 when status is missing", async () => {
-    const res = await PATCH(patchReq("vo-1", {}), {
-      params: Promise.resolve({ id: "vo-1" }),
+    const res = await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", {}), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     expect(res.status).toBe(400);
   });
@@ -161,8 +161,8 @@ describe("PATCH /api/v1/vendor/orders/[id]/status — auth & validation", () => 
     // P2-2: vendorOrderStatusSchema rejects values not in the canonical
     // enum. Previously a typo would hit the DB and crash with
     // `invalid input value for enum`. Now Zod short-circuits with 400.
-    const res = await PATCH(patchReq("vo-1", { status: "frobnicated" }), {
-      params: Promise.resolve({ id: "vo-1" }),
+    const res = await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", { status: "frobnicated" }), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -173,8 +173,8 @@ describe("PATCH /api/v1/vendor/orders/[id]/status — auth & validation", () => 
     // Smart mock that always returns empty for the SELECT — simulates
     // the cross-tenant WHERE clause filter excluding the row.
     vi.mocked(query).mockResolvedValue({ rows: [] } as never);
-    const res = await PATCH(patchReq("vo-other", { status: "confirmed" }), {
-      params: Promise.resolve({ id: "vo-other" }),
+    const res = await PATCH(patchReq("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", { status: "confirmed" }), {
+      params: Promise.resolve({ id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" }),
     } as never);
     expect(res.status).toBe(404);
   });
@@ -188,45 +188,45 @@ describe("PATCH /api/v1/vendor/orders/[id]/status — state machine", () => {
 
   it("rejects pending → delivered (skips intermediate states)", async () => {
     setupSmartMock({ initialOrderStatus: "pending" });
-    const res = await PATCH(patchReq("vo-1", { status: "delivered" }), {
-      params: Promise.resolve({ id: "vo-1" }),
+    const res = await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", { status: "delivered" }), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     expect(res.status).toBe(400);
   });
 
   it("rejects delivered → confirmed (terminal state)", async () => {
     setupSmartMock({ initialOrderStatus: "delivered" });
-    const res = await PATCH(patchReq("vo-1", { status: "confirmed" }), {
-      params: Promise.resolve({ id: "vo-1" }),
+    const res = await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", { status: "confirmed" }), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     expect(res.status).toBe(400);
   });
 
   it("accepts pending → confirmed", async () => {
     setupSmartMock({ initialOrderStatus: "pending" });
-    const res = await PATCH(patchReq("vo-1", { status: "confirmed" }), {
-      params: Promise.resolve({ id: "vo-1" }),
+    const res = await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", { status: "confirmed" }), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json).toMatchObject({
       success: true,
-      order: { id: "vo-1", status: "confirmed" },
+      order: { id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", status: "confirmed" },
     });
   });
 
   it("accepts confirmed → preparing", async () => {
     setupSmartMock({ initialOrderStatus: "confirmed" });
-    const res = await PATCH(patchReq("vo-1", { status: "preparing" }), {
-      params: Promise.resolve({ id: "vo-1" }),
+    const res = await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", { status: "preparing" }), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     expect(res.status).toBe(200);
   });
 
   it("accepts out_for_delivery → delivered and bumps daily stats", async () => {
     setupSmartMock({ initialOrderStatus: "out_for_delivery" });
-    const res = await PATCH(patchReq("vo-1", { status: "delivered" }), {
-      params: Promise.resolve({ id: "vo-1" }),
+    const res = await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", { status: "delivered" }), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     expect(res.status).toBe(200);
     const calls = vi.mocked(query).mock.calls;
@@ -252,8 +252,8 @@ describe("PATCH /api/v1/vendor/orders/[id]/status — cancellation restores stoc
       ],
     });
 
-    const res = await PATCH(patchReq("vo-1", { status: "cancelled" }), {
-      params: Promise.resolve({ id: "vo-1" }),
+    const res = await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", { status: "cancelled" }), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     expect(res.status).toBe(200);
 
@@ -280,8 +280,8 @@ describe("PATCH /api/v1/vendor/orders/[id]/status — cancellation restores stoc
         { product_id: null, quantity: 2 }, // product was deleted → migration 054
       ],
     });
-    const res = await PATCH(patchReq("vo-1", { status: "cancelled" }), {
-      params: Promise.resolve({ id: "vo-1" }),
+    const res = await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", { status: "cancelled" }), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     expect(res.status).toBe(200);
     const stockCalls = vi.mocked(query).mock.calls.filter((c) =>
@@ -301,8 +301,8 @@ describe("PATCH /api/v1/vendor/orders/[id]/status — vendor_id pinned", () => {
 
   it("SELECT WHERE pins vendor_id to session", async () => {
     setupSmartMock({ initialOrderStatus: "pending" });
-    await PATCH(patchReq("vo-1", { status: "confirmed" }), {
-      params: Promise.resolve({ id: "vo-1" }),
+    await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", { status: "confirmed" }), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     const selectCalls = vi.mocked(query).mock.calls.filter((c) =>
       String(c[0]).toUpperCase().startsWith("SELECT"),
@@ -315,8 +315,8 @@ describe("PATCH /api/v1/vendor/orders/[id]/status — vendor_id pinned", () => {
 
   it("UPDATE WHERE pins vendor_id to session", async () => {
     setupSmartMock({ initialOrderStatus: "pending" });
-    await PATCH(patchReq("vo-1", { status: "confirmed" }), {
-      params: Promise.resolve({ id: "vo-1" }),
+    await PATCH(patchReq("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", { status: "confirmed" }), {
+      params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
     } as never);
     const updateCalls = vi.mocked(query).mock.calls.filter((c) =>
       String(c[0]).toUpperCase().startsWith("UPDATE"),

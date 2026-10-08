@@ -18,11 +18,11 @@ function SectionHeader({ title, subtitle, link, linkText }: SectionHeaderProps) 
   return (
     <div className="flex items-end justify-between mb-5">
       <div>
-        <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+        <h2 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">
           {title}
         </h2>
         {subtitle && (
-          <p className="text-sm text-slate-500 mt-1 font-normal">{subtitle}</p>
+          <p className="text-sm text-gray-500 mt-1 font-normal">{subtitle}</p>
         )}
       </div>
       {link && (
@@ -83,7 +83,7 @@ export function QuickCategoriesSection() {
               <Link
                 key={cat.id}
                 href={`/categories/${encodeURIComponent(cat.slug)}`}
-                className="group flex flex-col items-center p-3 sm:p-4 bg-white rounded-3xl shadow-sm hover:shadow-md border border-slate-100 hover:-translate-y-0.5 transition-all duration-300"
+                className="group flex flex-col items-center p-3 sm:p-4 bg-white rounded-3xl shadow-sm hover:shadow-md border border-gray-100 hover:-translate-y-0.5 transition-all duration-300"
               >
                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-primary-light to-green-100 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
                   {cat.icon_url ? (
@@ -98,7 +98,7 @@ export function QuickCategoriesSection() {
                     <Sparkles className="w-5 h-5 text-primary" />
                   )}
                 </div>
-                <span className="text-xs sm:text-sm font-medium text-slate-900 text-center line-clamp-2 leading-tight">
+                <span className="text-xs sm:text-sm font-medium text-gray-900 text-center line-clamp-2 leading-tight">
                   {cat.name_ar}
                 </span>
               </Link>

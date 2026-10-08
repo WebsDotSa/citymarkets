@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BRAND } from '@/lib/brand-theme';
 import { getOrderStatusConfig } from '@/lib/orders';
+import { getOrderPaymentAction } from '@/lib/orders/order-payment-action';
+import { useBrandColorVars } from '@/hooks/use-color-vars';
 import { ChatPanel } from '@/components/ui/chat-panel/chat-panel';
 import {
   ChevronLeft,
@@ -16,6 +18,7 @@ import {
   ChevronDown,
   ChevronUp,
   MessageCircle,
+  CreditCard,
 } from 'lucide-react';
 import {
   useOrderPolling,
@@ -45,6 +48,7 @@ import {
  */
 export function DirectOrderChatPage({ orderId }: { orderId: string }) {
   const router = useRouter();
+  const colorVars = useBrandColorVars();
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [addingItem, setAddingItem] = useState(false);
   const [newItemText, setNewItemText] = useState('');
@@ -93,22 +97,22 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND.brandGreen }} />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl" style={colorVars}>
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--brand-green)' }} />
       </div>
     );
   }
 
   if (error || !order) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir="rtl">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir="rtl" style={colorVars}>
         <div className="text-center">
           <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-3" />
           <p className="text-red-600">{error || 'الطلب غير موجود'}</p>
           <button
             onClick={() => router.push('/orders')}
             className="mt-4 px-6 py-2 rounded-xl text-white"
-            style={{ backgroundColor: BRAND.brandGreen }}
+            style={{ backgroundColor: 'var(--brand-green)' }}
           >
             طلباتي
           </button>
@@ -118,13 +122,18 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
   }
 
   const isLocked = ['delivered', 'cancelled'].includes(order.status);
+  const paymentAction = getOrderPaymentAction({
+    status: order.status,
+    paymentStatus: order.payment_status,
+    paymentMethod: order.payment_method,
+  });
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-gray-50 flex flex-col" dir="rtl" style={colorVars}>
       {/* Header */}
       <div
         className="text-white px-4 py-3 flex items-center gap-3 flex-shrink-0 shadow-md"
-        style={{ backgroundColor: BRAND.brandGreen }}
+        style={{ backgroundColor: 'var(--brand-green)' }}
       >
         <button onClick={() => router.push('/orders')} className="p-1" aria-label="طلباتي">
           <ChevronLeft className="w-6 h-6" />
@@ -141,6 +150,48 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
         </span>
       </div>
 
+      {/* Payment status banner */}
+      {paymentAction !== 'none' && (
+        <div className={`px-4 py-3 flex items-center gap-2 ${
+          paymentAction === 'pay'
+            ? 'bg-amber-50 border-b border-amber-200'
+            : 'bg-red-50 border-b border-red-200'
+        }`}>
+          <CreditCard className={`w-5 h-5 ${
+            paymentAction === 'pay' ? 'text-amber-600' : 'text-red-600'
+          }`} />
+          <div className="flex-1">
+            <div className={`text-sm font-semibold ${
+              paymentAction === 'pay' ? 'text-amber-900' : 'text-red-900'
+            }`}>
+              {paymentAction === 'pay' ? 'الدفع المعلق' : 'فشل الدفع'}
+            </div>
+            <div className={`text-xs ${
+              paymentAction === 'pay' ? 'text-amber-800' : 'text-red-800'
+            }`}>
+              {paymentAction === 'pay'
+                ? 'يرجى إكمال الدفع لتأكيد الطلب'
+                : 'فشلت محاولة الدفع. يرجى إعادة المحاولة'}
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams({
+                order_id: order.id,
+                total: order.total.toFixed(2),
+                method: order.payment_method || 'mada',
+                next: `/orders/direct/chat/${order.id}`,
+              });
+              router.push(`/checkout/pay?${params.toString()}`);
+            }}
+            className="text-xs font-bold px-3 py-1.5 rounded-lg text-white"
+            style={{ backgroundColor: 'var(--brand-green)' }}
+          >
+            {paymentAction === 'pay' ? 'ادفع الآن' : 'أعد المحاولة'}
+          </button>
+        </div>
+      )}
+
       {/* Order details collapsible */}
       <div className="bg-white border-b border-gray-200">
         <button
@@ -148,7 +199,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
           className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-bold"
         >
           <span className="flex items-center gap-2">
-            <Package className="w-4 h-4" style={{ color: BRAND.brandGreen }} />
+            <Package className="w-4 h-4" style={{ color: 'var(--brand-green)' }} />
             تفاصيل الطلب
             <span className="text-xs font-normal text-gray-500">
               ({items.length} عناصر · {order.total.toFixed(2)} ر.س)
@@ -184,7 +235,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
                     <div className="text-xs font-semibold truncate">
                       {it.name_ar || it.free_text}
                     </div>
-                    <div className="text-[10px] text-gray-500">
+                    <div className="text-tiny text-gray-500">
                       ×{it.quantity}
                       {it.resolved_price ? (
                         <span className="text-green-700 mr-2">
@@ -235,7 +286,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
                         onClick={addItem}
                         disabled={adding}
                         className="flex-1 text-white text-xs py-1.5 rounded flex items-center justify-center gap-1 disabled:opacity-50"
-                        style={{ backgroundColor: BRAND.brandGreen }}
+                        style={{ backgroundColor: 'var(--brand-green)' }}
                       >
                         {adding ? <Loader2 className="w-3 h-3 animate-spin" /> : 'تأكيد'}
                       </button>
@@ -251,7 +302,7 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
                   <button
                     onClick={() => setAddingItem(true)}
                     className="w-full text-xs py-2 rounded-lg border border-dashed flex items-center justify-center gap-1"
-                    style={{ borderColor: BRAND.brandGreen, color: BRAND.brandGreen }}
+                    style={{ borderColor: 'var(--brand-green)', color: 'var(--brand-green)' }}
                   >
                     <Plus className="w-3 h-3" /> أضف منتجاً
                   </button>
@@ -262,18 +313,17 @@ export function DirectOrderChatPage({ orderId }: { orderId: string }) {
             {/* Voice note */}
             {order.voice_note_url && (
               <div className="bg-gray-50 rounded-lg p-2">
-                <div className="text-[10px] text-gray-500 mb-1">رسالة صوتية منك</div>
+                <div className="text-tiny text-gray-500 mb-1">رسالة صوتية منك</div>
                 <audio
                   controls
                   src={order.voice_note_url}
-                  className="w-full"
-                  style={{ height: 28 }}
+                  className="w-full h-7"
                 />
               </div>
             )}
 
             {/* Totals */}
-            <div className="text-[10px] text-gray-500 flex justify-between bg-gray-50 p-2 rounded-lg">
+            <div className="text-tiny text-gray-500 flex justify-between bg-gray-50 p-2 rounded-lg">
               <span>رسوم الخدمة:</span>
               <span>{order.service_fee.toFixed(2)} ر.س</span>
             </div>

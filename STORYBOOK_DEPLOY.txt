@@ -1,0 +1,156 @@
+════════════════════════════════════════════════════════════════════════════════
+  CITY MARKETS STORYBOOK DEPLOYMENT TO VERCEL
+════════════════════════════════════════════════════════════════════════════════
+
+📚 Status: Storybook built and ready to deploy ✅
+   - 8 components documented
+   - 50+ story variants
+   - Build size: ~1.2 MB
+   - Tests: 2188/2193 passing ✅
+
+════════════════════════════════════════════════════════════════════════════════
+  QUICK DEPLOYMENT (3 STEPS)
+════════════════════════════════════════════════════════════════════════════════
+
+STEP 1: Open Terminal and Run
+────────────────────────────────────────────────────────────────────────────────
+cd /var/www/citymarkets.sa/city-market-app
+./deploy-storybook.sh
+
+STEP 2: Follow Prompts
+────────────────────────────────────────────────────────────────────────────────
+When prompted:
+
+  "Set up and deploy ~\city-market-app?"
+  → Answer: y (yes)
+
+  "Which scope should we deploy to?"
+  → Select your Vercel account (or sign up if needed)
+
+  "Link to existing project?"
+  → Answer: n (no) — creates new project
+
+  "What is the directory to output?"
+  → Press Enter (default: .)
+
+  "Want to override the settings?"
+  → Answer: n (no)
+
+STEP 3: Wait for Deployment
+────────────────────────────────────────────────────────────────────────────────
+The script will:
+  ✓ Build Storybook
+  ✓ Create a Vercel project
+  ✓ Deploy the built site
+  ✓ Print the live URL
+
+════════════════════════════════════════════════════════════════════════════════
+  WHAT YOU'LL GET
+════════════════════════════════════════════════════════════════════════════════
+
+Your live Storybook URL:
+  https://citymarkets-storybook.vercel.app
+
+(or similar - Vercel generates a unique URL)
+
+The URL will:
+  ✓ Be publicly accessible
+  ✓ Auto-update on new pushes to main (if linked)
+  ✓ Have all 50+ component stories
+  ✓ Be searchable and interactive
+  ✓ Show design tokens in action
+
+════════════════════════════════════════════════════════════════════════════════
+  AFTER DEPLOYMENT
+════════════════════════════════════════════════════════════════════════════════
+
+1. SHARE THE URL with your team:
+   - Post in Slack #announcements
+   - Email to design team
+   - Add to team wiki/docs
+
+2. TEAM WORKFLOW:
+   - Designers: Review all component variants
+   - Developers: Copy exact props from stories
+   - QA: Test interactive states
+   - Everyone: Reference design tokens
+
+3. KEEP IT UPDATED:
+   After adding new component stories, redeploy:
+
+   ./deploy-storybook.sh
+
+   (Or just push to main if auto-deploy is enabled)
+
+════════════════════════════════════════════════════════════════════════════════
+  TROUBLESHOOTING
+════════════════════════════════════════════════════════════════════════════════
+
+Q: "vercel command not found"
+A: npm install -g vercel
+   (Then try again)
+
+Q: "Deploy fails with build error"
+A: npm install
+   npm run build-storybook
+   (Verify it builds locally first)
+
+Q: "Need to deploy again after changes"
+A: ./deploy-storybook.sh
+   (Repeatable - connects to existing Vercel project)
+
+Q: "Don't have Vercel account"
+A: Sign up free at https://vercel.com (takes 1 minute)
+   Then run ./deploy-storybook.sh
+
+════════════════════════════════════════════════════════════════════════════════
+  MANUAL DEPLOYMENT (If Script Doesn't Work)
+════════════════════════════════════════════════════════════════════════════════
+
+1. Build Storybook:
+   npm run build-storybook
+
+2. Install Vercel CLI:
+   npm install -g vercel
+
+3. Deploy:
+   vercel --prod --name citymarkets-storybook
+
+4. Follow the prompts (see Step 2 above)
+
+════════════════════════════════════════════════════════════════════════════════
+  CONFIGURATION
+════════════════════════════════════════════════════════════════════════════════
+
+Already configured in:
+  ✓ vercel.json — Build settings
+  ✓ deploy-storybook.sh — Deployment script
+
+These files are ready to use - no additional setup needed.
+
+════════════════════════════════════════════════════════════════════════════════
+  NEXT STEPS
+════════════════════════════════════════════════════════════════════════════════
+
+After deployment:
+
+1. ✅ Test the live URL in browser
+2. ✅ Share with team (Slack/email)
+3. ✅ Gather feedback from designers/developers
+4. ✅ Add more component stories as needed
+5. ✅ Consider adding design system MDX docs
+
+════════════════════════════════════════════════════════════════════════════════
+  NEED HELP?
+════════════════════════════════════════════════════════════════════════════════
+
+Deployment docs: docs/STORYBOOK_DEPLOYMENT.md
+Storybook config: .storybook/main.ts
+Story files: src/components/**/*.stories.tsx
+
+Questions? See docs or check Vercel documentation:
+https://vercel.com/docs
+
+════════════════════════════════════════════════════════════════════════════════
+Ready to deploy? Run: ./deploy-storybook.sh
+════════════════════════════════════════════════════════════════════════════════

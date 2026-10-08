@@ -5,19 +5,23 @@
  * module can be imported from any runtime (Node, Edge, RSC).
  *
  * Auth sources, in priority order:
- *   1. `Authorization: Bearer <jwt>` header — preferred for native mobile
+ *   1. `Authorization: Bearer *** header — preferred for native mobile
  *      clients (iOS/Android can't reliably set httpOnly cookies from native
  *      networking code). Native clients must store the JWT in the
  *      platform's secure store (Keychain / EncryptedSharedPreferences).
  *   2. `customer_session` httpOnly cookie — set by the web flow
  *      (`POST /api/v1/auth/twilio/verify`).
- *   3. Supabase session (fallback) — only honored when an explicit
- *      Supabase cookie is present.
+ *
+ * Legacy: an older version of this module had a Supabase `createServerClient`
+ * fallback (third auth source). Supabase was removed from the runtime in the
+ * 2026-09-30 cleanup, so the fallback was deleted and `resolveCustomerUserIdFromRequest`
+ * became an alias for `getCustomerUserIdFromRequest`. If a future login flow
+ * needs a third source, prefer extending the JWT verify path rather than
+ * reaching for Supabase again.
  */
-import { createServerClient } from "@supabase/ssr";
 import type { NextRequest } from "next/server";
 import { CUSTOMER_SESSION_COOKIE } from "./auth-cookie-name";
-import { getCustomerJwtSecretBytes, getSupabasePublicConfig, isCookieSecure } from "@/lib/env";
+import { getCustomerJwtSecretBytes, isCookieSecure } from "@/lib/env";
 import { signJwt, verifyJwt, type VerifyConfig } from "./auth/jwt-helper";
 import { createJwtVerifyCache } from "./auth/jwt-verify-cache";
 
@@ -70,13 +74,30 @@ const _customerVerifyCache = createJwtVerifyCache<CustomerJwtPayload>();
 export type CustomerJwtPayload = {
   userId: string;
   phone: string;
+  /**
+   * SECURITY (PCP-144): `users.token_version` at the time the JWT
+   * was minted. The DB-backed auth path (auth-helpers.ts getServerUser)
+   * re-reads the row and compares; if `token_version` has been
+   * bumped (logout, password change), the now-stale JWT is rejected.
+   * Defaults to 1 so a legacy token (no claim) still authenticates
+   * until it expires — the first login post-fix bakes the new claim
+   * in, and subsequent bumps invalidate it within one request.
+   */
+  tokenVersion?: number;
 };
 
 export async function signCustomerToken(
   payload: CustomerJwtPayload
 ): Promise<string> {
   return signJwt(
-    { userId: payload.userId, phone: payload.phone },
+    {
+      userId: payload.userId,
+      phone: payload.phone,
+      // Default 1 keeps the claim stable for callers that don't pass
+      // a tokenVersion. New callers should always pass the current
+      // row value (see the twilio-verify login flow).
+      tokenVersion: payload.tokenVersion ?? 1,
+    },
     payload.userId,
     {
       issuer: ISS,
@@ -94,15 +115,21 @@ export async function verifyCustomerToken(
   // same window skips HMAC entirely.
   const cached = _customerVerifyCache.get(token);
   if (cached !== null) return cached;
-  const payload = await verifyJwt<{ userId?: unknown; phone?: unknown }>(
-    token,
-    customerVerifyConfig(),
-  );
+  const payload = await verifyJwt<{
+    userId?: unknown;
+    phone?: unknown;
+    tokenVersion?: unknown;
+  }>(token, customerVerifyConfig());
   if (!payload) return null;
   const userId = typeof payload.userId === "string" ? payload.userId : null;
   const phone = typeof payload.phone === "string" ? payload.phone : null;
   if (!userId || !phone) return null;
-  const result: CustomerJwtPayload = { userId, phone };
+  const tokenVersion =
+    typeof payload.tokenVersion === "number" &&
+    Number.isFinite(payload.tokenVersion)
+      ? payload.tokenVersion
+      : 1;
+  const result: CustomerJwtPayload = { userId, phone, tokenVersion };
   _customerVerifyCache.set(token, result);
   return result;
 }
@@ -136,34 +163,18 @@ export async function getCustomerUserIdFromRequest(
 }
 
 /**
- * JWT cookie OR Bearer header OR Supabase session fallback.
- * Use in API routes where Supabase OTP is also a valid login path.
+ * JWT cookie OR Bearer header. The full identity resolution path.
+ *
+ * Use this everywhere you need "who is the caller?" — the previous
+ * `resolveCustomerUserIdFromRequest` was an alias for the same JWT-only
+ * resolution after the Supabase fallback was removed (2026-09-30).
+ *
  * NEVER trust x-user-id headers.
  */
 export async function resolveCustomerUserIdFromRequest(
   request: NextRequest
 ): Promise<string | null> {
-  const fromJwt = await getCustomerUserIdFromRequest(request);
-  if (fromJwt) return fromJwt;
-
-  const { url: supabaseUrl, anonKey: supabaseAnon } = getSupabasePublicConfig();
-  if (!supabaseUrl || !supabaseAnon) return null;
-
-  const supabase = createServerClient(supabaseUrl, supabaseAnon, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll() {
-        /* read-only in route handlers */
-      },
-    },
-  });
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session?.user?.id ?? null;
+  return getCustomerUserIdFromRequest(request);
 }
 
 /** Guest cart / checkout session id (client-supplied; not crypto-verified). */

@@ -1167,7 +1167,7 @@ export function CheckoutNew() {
                       الدفع الآمن عبر ميسر
                     </span>
                   </div>
-                  <span className="text-[11px] text-gray-500 font-mono" dir="ltr">
+                  <span className="text-2xs text-gray-500 font-mono" dir="ltr">
                     #{inlineOrder.orderId.replace(/-/g, "").slice(0, 8).toUpperCase()}
                   </span>
                 </div>
@@ -1426,7 +1426,7 @@ export function CheckoutNew() {
                 className="flex flex-col leading-tight min-w-0"
                 aria-label={`الإجمالي ${inlineOrder.totalSar.toFixed(2)} ريال`}
               >
-                <span className="text-[11px] text-gray-500">الإجمالي</span>
+                <span className="text-2xs text-gray-500">الإجمالي</span>
                 <span className="font-bold text-primary-600 text-base whitespace-nowrap">
                   {inlineOrder.totalSar.toFixed(2)} ر.س
                 </span>
@@ -1442,10 +1442,10 @@ export function CheckoutNew() {
                 className="flex flex-col leading-tight min-w-0"
                 aria-label={`الإجمالي ${total.toFixed(2)} ريال`}
               >
-                <span className="text-[11px] text-gray-500 flex items-center gap-1">
+                <span className="text-2xs text-gray-500 flex items-center gap-1">
                   <span>الإجمالي</span>
                   <span
-                    className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary/10 text-primary-700 text-[10px] font-bold"
+                    className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary/10 text-primary-700 text-tiny font-bold"
                     aria-label={`${items.length} منتجات`}
                   >
                     {items.length > 99 ? "99+" : items.length}
@@ -1458,7 +1458,7 @@ export function CheckoutNew() {
               <button
                 onClick={handlePlaceOrder}
                 disabled={isProcessing}
-                className="flex-1 py-3 bg-gradient-to-l from-[#009345] to-[#00B359] text-white rounded-2xl font-semibold hover:shadow-lg hover:shadow-[#009345]/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#009345] focus-visible:ring-offset-2"
+                className="flex-1 py-3 bg-gradient-to-l from-primary to-primary-500 text-white rounded-2xl font-semibold hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 aria-label={isProcessing ? "جاري إنشاء الطلب" : "تأكيد الطلب"}
               >
                 {isProcessing ? (

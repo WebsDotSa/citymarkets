@@ -24,6 +24,7 @@
  */
 
 import type { PoolClient } from "pg";
+import { error as logError } from "@/lib/logger";
 import { getAppSetting } from "@/lib/app-settings";
 
 export interface LoyaltySettings {
@@ -162,7 +163,21 @@ export async function resolveRedeemForOrder(
     return { debited: 0, duplicate: true };
   }
 
-  await client.query(
+  // PCP-145: the original code did not inspect the UPDATE's rowCount.
+  // If a concurrent order drained the user's balance between the
+  // `pending_redeem` hold and this resolve, the WHERE clause `balance
+  // >= $1` matches 0 rows, no exception fires, and the function
+  // returned `{ debited: points, duplicate: false }` — leaving an
+  // orphan `redeem` ledger row whose `loyalty_points.balance` was
+  // never debited. The customer effectively paid for this order
+  // with points that stayed available for the next order
+  // (double-spend).
+  //
+  // Capture rowCount and throw if 0 rows matched. Throwing lets the
+  // caller's transaction ROLLBACK, removing the orphan ledger row,
+  // and the outer try/catch in `reconcile-payment.ts` and
+  // `maybeCreditLoyaltyOnDelivery` will log the failure to ops.
+  const debited = await client.query(
     `UPDATE loyalty_points
         SET balance = balance - $1,
             lifetime_redeemed = lifetime_redeemed + $1,
@@ -170,6 +185,14 @@ export async function resolveRedeemForOrder(
       WHERE user_id = $2 AND balance >= $1`,
     [points, userId],
   );
+
+  if ((debited.rowCount ?? 0) === 0) {
+    throw new Error(
+      `[loyalty] resolveRedeemForOrder: insufficient balance for user=${userId} ` +
+        `(attempted to debit ${points} points; concurrent spend likely). ` +
+        `Order=${orderId}. Rolling back orphan redeem ledger row.`,
+    );
+  }
 
   return { debited: points, duplicate: false };
 }
@@ -204,4 +227,28 @@ export async function releaseRedeemHoldForOrder(
     [args.orderId],
   );
   return { released: (deleted.rowCount ?? 0) > 0 };
+}
+
+/**
+ * P2-3 (PCP-76.F2): self-contained variant that acquires its OWN
+ * connection. Use this from background / post-COMMIT paths where the
+ * caller's `PoolClient` is already released and we cannot reuse it.
+ *
+ * Best-effort: any connection failure is swallowed and surfaced via the
+ * logger so it never bubbles up to the caller. This matches the
+ * `.catch(() => {})` posture already used at the call sites.
+ */
+export async function releaseRedeemHoldForOrderSafe(
+  pool: import("pg").Pool,
+  args: { orderId: string },
+): Promise<void> {
+  const client = await pool.connect().catch(() => null);
+  if (!client) return;
+  try {
+    await releaseRedeemHoldForOrder(client, args);
+  } catch (err) {
+    logError("[loyalty] release hold failed (safe)", err, { orderId: args.orderId });
+  } finally {
+    client.release();
+  }
 }

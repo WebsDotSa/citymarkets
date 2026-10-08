@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { error as logError } from "@/lib/logger";
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 export const dynamic = "force-dynamic";
 
 interface OfferRow {
@@ -51,6 +52,8 @@ export async function GET(
 ) {
   try {
     const { id } = await ctx.params;
+  const badId = validateUuidOrError(id, "معرّف العرض");
+  if (badId) return badId;
     if (!id) {
       return NextResponse.json({ success: false, error: "معرّف العرض مطلوب" }, { status: 400 });
     }

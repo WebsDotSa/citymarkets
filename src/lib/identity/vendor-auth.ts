@@ -20,6 +20,18 @@ export interface VendorSession {
   fullName: string;
   role: VendorRole;
   permissions: string[];
+  /**
+   * SECURITY (PCP-144): `vendor_staff.token_version` at the time
+   * the JWT was minted. The DB-backed auth path
+   * (verifyVendorRequestWithDb in vendor-auth-with-db.ts) re-reads
+   * the row and compares; if `token_version` has been bumped
+   * (logout, password change, role demotion, is_active flip), the
+   * now-stale JWT is rejected on the next request. Defaults to 1 so
+   * a legacy token (no claim) still authenticates until it expires
+   * — the next login post-fix bakes the new claim in, and any
+   * subsequent bump invalidates it within one request.
+   */
+  tokenVersion?: number;
 }
 
 export async function signVendorSessionToken(session: VendorSession): Promise<string> {
@@ -32,6 +44,11 @@ export async function signVendorSessionToken(session: VendorSession): Promise<st
       fullName: session.fullName,
       role: session.role,
       permissions: session.permissions,
+      // Default 1 keeps the claim stable for callers that don't
+      // pass a tokenVersion. New callers should always pass the
+      // current row value (see the vendor login + staff change
+      // routes).
+      tokenVersion: session.tokenVersion ?? 1,
     },
     session.staffId,
     {
@@ -56,6 +73,7 @@ export async function verifyVendorRequest(
     fullName?: unknown;
     role?: unknown;
     permissions?: unknown;
+    tokenVersion?: unknown;
   }>(
     token,
     { issuer: ISS, audience: AUD, secretBytes: getVendorJwtSecretBytes() },
@@ -75,6 +93,10 @@ export async function verifyVendorRequest(
     permissions: Array.isArray(payload.permissions)
       ? (payload.permissions as unknown[]).map(String)
       : [],
+    tokenVersion:
+      typeof payload.tokenVersion === "number" && Number.isFinite(payload.tokenVersion)
+        ? payload.tokenVersion
+        : 1,
   };
 }
 

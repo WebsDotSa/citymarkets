@@ -17,7 +17,7 @@ import {
   twilioSendVerification,
 } from '@/lib/twilio-verify';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 /**
  * POST /api/admin/auth/login
@@ -38,7 +38,20 @@ import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logge
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // M1 (PCP-101 dogfood): guard against empty / non-JSON bodies. Some
+    // older admin clients (or curl probes) POST form-encoded bodies with
+    // Content-Type: application/x-www-form-urlencoded, which causes
+    // request.json() to throw "Unexpected token... in JSON". Catch and
+    // return a 400 with a clear Arabic message instead of a 500.
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'صيغة البيانات المرسلة غير صالحة' },
+        { status: 400 },
+      );
+    }
     const parsed = adminLoginInputSchema.safeParse(body);
     if (!parsed.success) {
       const first = parsed.error.issues[0];
@@ -110,8 +123,13 @@ export async function POST(request: NextRequest) {
 
       // Lookup the admin row by normalized phone.
       const phoneDb = phoneForDb(e164);
+      // SECURITY (PCP-144): also SELECT token_version so we can bake
+      // the current value into the JWT claim. The DB-backed verify path
+      // (see admin-api-auth-db.ts) compares the claim against the live
+      // row to detect logout/password rotations/demotions.
       const result = await query(
-        `SELECT id, name, email, phone, role, is_active
+        `SELECT id, name, email, phone, role, is_active,
+                COALESCE(token_version, 1)::int AS token_version
            FROM admin_users
           WHERE LOWER(phone) = LOWER($1) AND is_active = true`,
         [phoneDb]
@@ -241,11 +259,15 @@ export async function POST(request: NextRequest) {
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
     const lookup = isEmail
       ? await query(
-          'SELECT id, name, email, phone, password_hash, role, is_active FROM admin_users WHERE LOWER(email) = LOWER($1)',
+          // SECURITY (PCP-144): include token_version so we can bake it
+          // into the JWT. Compare happens on every verify.
+          'SELECT id, name, email, phone, password_hash, role, is_active, COALESCE(token_version, 1)::int AS token_version FROM admin_users WHERE LOWER(email) = LOWER($1)',
           [identifier]
         )
       : await query(
-          'SELECT id, name, email, phone, password_hash, role, is_active FROM admin_users WHERE LOWER(email) = LOWER($1) OR LOWER(name) = LOWER($1)',
+          // SECURITY (PCP-144): include token_version so we can bake it
+          // into the JWT. Compare happens on every verify.
+          'SELECT id, name, email, phone, password_hash, role, is_active, COALESCE(token_version, 1)::int AS token_version FROM admin_users WHERE LOWER(email) = LOWER($1) OR LOWER(name) = LOWER($1)',
           [identifier]
         );
 
@@ -305,13 +327,17 @@ export async function POST(request: NextRequest) {
  */
 async function finalizeAdminLogin(
   _request: NextRequest,
-  admin: { id: string; name: string; email: string | null; phone: string | null; role: string }
+  admin: { id: string; name: string; email: string | null; phone: string | null; role: string; token_version?: number }
 ) {
   await query('UPDATE admin_users SET last_login_at = NOW() WHERE id = $1', [admin.id]);
+  // SECURITY (PCP-144): bake the live token_version into the JWT so the
+  // verify path (admin-api-auth-db.ts) can detect bumps on the next
+  // request after a logout / password rotation / demotion.
   const sessionToken = await signAdminSessionToken({
     id: admin.id,
     email: admin.email ?? '',
     role: admin.role as AdminRole,
+    tokenVersion: admin.token_version ?? 1,
   });
   const response = NextResponse.json({
     success: true,

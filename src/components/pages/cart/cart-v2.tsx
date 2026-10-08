@@ -11,6 +11,7 @@ import { useDeliveryLocationState, useDeliveryLocationActions } from "@/contexts
 import { useDeliveryQuote } from "@/hooks/use-delivery-quote";
 import { Button } from "@/components/design/button";
 import { EmptyCart } from "@/components/design/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
 import { apiFetch } from '@/lib/catalog';
@@ -65,8 +66,8 @@ const CHECKOUT_V2_ENABLED =
 
 export function CartV2() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuthState();
-  const { items, updateQuantity, removeItem, subtotal, clearCart, isHydrated } = useCart();
+  const { user } = useAuthState();
+  const { items, updateQuantity, removeItem, subtotal, clearCart } = useCart();
   const { addItem: wishlistAddItem } = useWishlistActions();
   const { showToast } = useToast();
   const { selectedAddress } = useDeliveryLocationState();
@@ -188,9 +189,6 @@ export function CartV2() {
 
   const handleCheckout = () => {
     if (checkoutBlockedByMixed) return;
-    // Auth bootstrap (/api/v1/auth/me) is async: `user` is null until it
-    // resolves, which used to bounce logged-in customers to the login page.
-    if (authLoading) return;
     if (!user) {
       router.push("/auth/login?redirect=/checkout");
     } else {
@@ -228,12 +226,6 @@ export function CartV2() {
     },
     [wishlistAddItem, removeItem, showToast],
   );
-
-  // The cart is restored from localStorage in a post-mount effect, so on a
-  // full page load `items` is [] for one render. Don't flash "empty cart".
-  if (!isHydrated) {
-    return <div className="min-h-screen bg-gray-50" aria-busy="true" />;
-  }
 
   if (items.length === 0) {
     return (
@@ -300,23 +292,21 @@ export function CartV2() {
           with the content, which is also why the StickyCartBar in the
           storefront chrome self-hides on /cart (see StickyCartBar). */}
       <div className="bg-white border-b border-gray-100 px-4 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
-              <ShoppingCart className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="font-bold text-gray-900">سلة التسوق</h1>
-              <p className="text-sm text-gray-500">{itemCount} منتجات</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowClearConfirm(true)}
-            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-            aria-label="إفراغ السلة"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
+        <div className="max-w-4xl mx-auto">
+          <PageHeader
+            title="سلة التسوق"
+            subtitle={`${itemCount} منتجات`}
+            icon={<ShoppingCart className="w-6 h-6 text-primary" />}
+            action={
+              <button
+                onClick={() => setShowClearConfirm(true)}
+                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                aria-label="إفراغ السلة"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            }
+          />
         </div>
       </div>
 
@@ -511,10 +501,10 @@ export function CartV2() {
               className="flex flex-col leading-tight min-w-0"
               aria-label={`إجمالي السلة ${formatPrice(total)}`}
             >
-              <span className="text-[11px] text-gray-500 flex items-center gap-1">
+              <span className="text-2xs text-gray-500 flex items-center gap-1">
                 <span>الإجمالي</span>
                 <span
-                  className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary/10 text-primary-700 text-[10px] font-bold"
+                  className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary/10 text-primary-700 text-tiny font-bold"
                   aria-label={`${itemCount} منتجات`}
                 >
                   {itemCount > 99 ? "99+" : itemCount}
@@ -567,15 +557,18 @@ export function CartV2() {
             </p>
           )}
 
-          {/* Guest Checkout Option — REMOVED 2026-10-08 (security review
-              F1). The middleware's PROTECTED_PREFIXES = ["/profile",
-              "/orders", "/checkout"] 307-redirects unauthenticated users
-              to /auth/login, so this button was a dead CTA that visually
-              advertised a guest-checkout capability the server doesn't
-              honor. The primary "تسجيل الدخول للدفع" button above
-              already handles the unauthenticated path correctly
-              (router.push("/auth/login?redirect=/checkout")). Re-add
-              this only when a real guest-checkout flow ships. */}
+          {/* Guest Checkout Option — REMOVED 2026-10-01.
+              The middleware in src/middleware.ts PROTECTED_PREFIXES = ["/profile",
+              "/orders", "/checkout"] forces every unauthenticated visitor hitting
+              /checkout to bounce to /auth/login. The cart UI advertised a guest
+              flow that the server-side guard silently overrides. Without a
+              guest-checkout server path (different DB row, different webhook,
+              different SMS body), we removed the button rather than ship a
+              dead CTA. Future guest-checkout work would need to: (1) add a
+              guest_orders table or reuse vendor_orders.guest_*, (2) update
+              PROTECTED_PREFIXES to carve out /checkout when ?guest=1, and
+              (3) make the Moyasar webhook accept guest-only orders. Until
+              then, "أكمل كزائر" is not wired. */}
         </div>
       </div>
     </div>

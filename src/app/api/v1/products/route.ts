@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
+import { parsePagination } from "@/lib/api/pagination";
 
 export const dynamic = 'force-dynamic';
 
@@ -114,9 +115,7 @@ export async function GET(request: NextRequest) {
     const includeChildren = searchParams.get('include_children') === '1' || searchParams.get('includeChildren') === '1';
     // BUGFIX (audit 2026-09-29): clamp pagination. A client passing `limit=10000`
     // used to walk the entire catalog; we cap at 100 rows per page and floor at 1.
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50') || 50));
-    const offset = (page - 1) * limit;
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 50 });
 
     // Build WHERE clause and params.
     //
@@ -254,7 +253,7 @@ export async function GET(request: NextRequest) {
     let orderSQL = 'p.sort_order DESC, p.name_ar ASC';
     if (sort === 'price-asc') orderSQL = 'COALESCE(p.discount_price, p.price) ASC';
     else if (sort === 'price-desc') orderSQL = 'COALESCE(p.discount_price, p.price) DESC';
-    else if (sort === 'newest') orderSQL = 'p.sort_order DESC, p.name_ar ASC';
+    else if (sort === 'newest') orderSQL = 'p.created_at DESC, p.name_ar ASC';
     else if (sort === 'discount') orderSQL = 'p.active_offer_id IS NULL, (CAST(p.price AS DECIMAL) - COALESCE(CAST(p.discount_price AS DECIMAL), CAST(p.price AS DECIMAL))) DESC';
 
     // When a search query is active and the user didn't pick a sort, rank

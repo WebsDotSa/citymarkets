@@ -356,7 +356,7 @@ export function AdminVendorApplications() {
                           {row.owner_email}
                         </span>
                         {row.owner_already_exists && (
-                          <span className="ms-2 inline-flex items-center gap-1 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">
+                          <span className="ms-2 inline-flex items-center gap-1 text-2xs text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">
                             <AlertCircle className="w-3 h-3" />
                             يوجد حساب مالك بنفس الإيميل
                           </span>
@@ -497,7 +497,7 @@ export function AdminVendorApplications() {
                         key={i}
                         href={d.url}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="block text-primary hover:underline truncate"
                       >
                         {d.kind}: {d.url}

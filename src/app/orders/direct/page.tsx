@@ -6,30 +6,28 @@ import { BRAND } from '@/lib/brand-theme';
 import { useAuthState } from '@/contexts/auth-context';
 import { csrfFetch } from '@/lib/csrf-client';
 import type { Address } from '@/lib/types';
+import { useAudioRecorder } from '@/hooks/use-audio-recorder';
 import {
   Mic,
   Square,
   MapPin,
   ChevronLeft,
   CreditCard,
-  Wallet,
-  Banknote,
   Smartphone,
   Loader2,
   AlertTriangle,
   CheckCircle2,
 } from 'lucide-react';
+import { ONLINE_RETRY_METHODS_SET } from '@/lib/payments/payment-methods';
 
-// Payment values MUST match `directOrderSchema` in src/lib/validation/order.ts.
-// Mismatched values silently 400 every submission — see prompt bug D1.
+// Payment options for direct orders: card methods only (no wallet/bank_transfer).
+// Values MUST match `directOrderSchema` in src/lib/validation/order.ts.
 const PAYMENT_OPTIONS = [
   { value: 'mada', label: 'مدى', icon: CreditCard },
   { value: 'visa', label: 'فيزا', icon: CreditCard },
   { value: 'mastercard', label: 'ماستركارد', icon: CreditCard },
   { value: 'amex', label: 'أمريكان إكسبريس', icon: CreditCard },
   { value: 'apple_pay', label: 'Apple Pay', icon: Smartphone },
-  { value: 'wallet', label: 'المحفظة', icon: Wallet },
-  { value: 'bank_transfer', label: 'تحويل بنكي', icon: Banknote },
 ] as const;
 
 /**
@@ -57,19 +55,22 @@ const TAX_RATE = 0.15;
 
 export default function DirectOrderCreatePage() {
   const router = useRouter();
-  const { user } = useAuthState();
+  const { user, loading: authLoading } = useAuthState();
+
+  // Require login: redirect guests to login
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
-  const [payment, setPayment] = useState<string>('cash');
+  const [payment, setPayment] = useState<string>('mada'); // Default to mada, not 'cash'
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<Array<{ free_text: string; quantity: number }>>([
     { free_text: '', quantity: 1 },
   ]);
-  const [recording, setRecording] = useState(false);
-  const [recordingMs, setRecordingMs] = useState(0);
-  const [voiceUrl, setVoiceUrl] = useState<string | null>(null);
-  const [voiceDuration, setVoiceDuration] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feeModalOpen, setFeeModalOpen] = useState(false);
@@ -79,6 +80,17 @@ export default function DirectOrderCreatePage() {
   // the retries within this session prevents double-tap / network-
   // retry from creating duplicate order rows (F8 hardening).
   const [idempotencyKey] = useState<string>(() => generateIdempotencyKey());
+
+  const {
+    recording,
+    recordingMs,
+    audioUrl: voiceUrl,
+    audioDuration: voiceDuration,
+    error: recordingError,
+    startRecording,
+    stopRecording,
+    clearRecording,
+  } = useAudioRecorder();
 
   useEffect(() => {
     fetch('/api/v1/orders/direct')
@@ -101,52 +113,6 @@ export default function DirectOrderCreatePage() {
       .catch(() => {});
   }, []);
 
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const rec = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      const chunks: Blob[] = [];
-      rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-      rec.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        const duration = Math.max(1, Math.round(recordingMs / 1000));
-        const fd = new FormData();
-        fd.append('file', blob, `voice-${Date.now()}.webm`);
-        fd.append('kind', 'voice');
-        const up = await fetch('/api/v1/upload/audio', { method: 'POST', body: fd, credentials: 'include' });
-        const upData = await up.json();
-        if (upData.success) {
-          setVoiceUrl(upData.url);
-          setVoiceDuration(duration);
-        }
-      };
-      rec.start();
-      (window as unknown as { __rec: MediaRecorder }).__rec = rec;
-      setRecording(true);
-      setRecordingMs(0);
-      const t = window.setInterval(() => {
-        setRecordingMs((ms) => {
-          if (ms >= 60000) {
-            stopRecording();
-            return ms;
-          }
-          return ms + 100;
-        });
-      }, 100);
-      (window as unknown as { __recTimer: number }).__recTimer = t;
-    } catch {
-      setError('تعذر الوصول للميكروفون');
-    }
-  }
-
-  function stopRecording() {
-    const rec = (window as unknown as { __rec?: MediaRecorder }).__rec;
-    if (rec && rec.state !== 'inactive') rec.stop();
-    setRecording(false);
-    const t = (window as unknown as { __recTimer?: number }).__recTimer;
-    if (t) clearInterval(t);
-  }
 
   function addItemRow() {
     setItems((arr) => [...arr, { free_text: '', quantity: 1 }]);
@@ -177,13 +143,6 @@ export default function DirectOrderCreatePage() {
     setSubmitting(true);
     setError(null);
     try {
-      // BUG D1 fix: `payment` is now guaranteed to be one of the 7
-      // tokens in `directOrderSchema` because we removed the
-      // non-schema values from `PAYMENT_OPTIONS` above.
-      // BUG D2 fix: idempotency_key is required for guests (the
-      // route returns 400 'مفتاح تأكيد الطلب مطلوب للضيوف' without
-      // it). We send it for every caller so the same key dedupes
-      // double-taps across both guest + authed sessions.
       const res = await csrfFetch('/api/v1/orders/direct', {
         method: 'POST',
         credentials: 'include',
@@ -216,8 +175,20 @@ export default function DirectOrderCreatePage() {
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'فشل إنشاء الطلب');
-      // Open the dedicated chat page (matches "تأكيد الطلب وفتح محادثة مباشرة بعدها")
-      router.push(`/orders/direct/chat/${data.orderId}`);
+
+      // For electronic payment methods, redirect to checkout/pay page
+      if (ONLINE_RETRY_METHODS_SET.has(payment as any)) {
+        const params = new URLSearchParams({
+          order_id: data.orderId,
+          total: data.total.toFixed(2),
+          method: payment,
+          next: `/orders/direct/chat/${data.orderId}`,
+        });
+        router.push(`/checkout/pay?${params.toString()}`);
+      } else {
+        // For non-electronic methods, go directly to chat
+        router.push(`/orders/direct/chat/${data.orderId}`);
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -385,22 +356,29 @@ export default function DirectOrderCreatePage() {
             <span className="text-xs text-gray-400">اختياري</span>
           </div>
           {!voiceUrl ? (
-            <button
-              onClick={recording ? stopRecording : startRecording}
-              className={`flex items-center gap-2 w-full justify-center p-3 rounded-xl border ${
-                recording ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50'
-              }`}
-            >
-              {recording ? <Square className="w-5 h-5 text-red-500" /> : <Mic className="w-5 h-5" />}
-              <span className="text-sm font-semibold">
-                {recording ? `جاري التسجيل ${Math.round(recordingMs / 1000)} ثانية` : 'سجّل ملاحظة صوتية'}
-              </span>
-            </button>
+            <>
+              <button
+                onClick={recording ? stopRecording : startRecording}
+                className={`flex items-center gap-2 w-full justify-center p-3 rounded-xl border ${
+                  recording ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50'
+                }`}
+              >
+                {recording ? <Square className="w-5 h-5 text-red-500" /> : <Mic className="w-5 h-5" />}
+                <span className="text-sm font-semibold">
+                  {recording ? `جاري التسجيل ${Math.round(recordingMs / 1000)} ثانية` : 'سجّل ملاحظة صوتية'}
+                </span>
+              </button>
+              {recordingError && (
+                <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded">
+                  {recordingError}
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
               <audio src={voiceUrl} controls className="flex-1" style={{ height: 32 }} />
               <button
-                onClick={() => { setVoiceUrl(null); setVoiceDuration(null); }}
+                onClick={clearRecording}
                 className="text-red-500 text-sm"
               >
                 حذف

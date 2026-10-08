@@ -55,7 +55,7 @@ export default async function BlogPage() {
   return (
     <main className="min-h-screen bg-gray-50" id="main-content">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-[#009345] to-[#007A38] text-white py-12">
+      <section className="bg-gradient-to-br from-primary to-primary-dark text-white py-12">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h1 className="text-4xl font-bold mb-3">المدونة</h1>
           <p className="text-white/90 text-lg">نصائح، وصفات، وعروض حصرية</p>
@@ -76,7 +76,7 @@ export default async function BlogPage() {
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#009345] to-[#007A38]" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary-dark" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">

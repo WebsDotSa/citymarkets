@@ -220,15 +220,15 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
   return (
     <div className="p-6 max-w-4xl mx-auto" dir="rtl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <FolderTree className="w-6 h-6 text-primary" />
           الأقسام
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-gray-500">
           أضف تصنيفات خاصة بمتجرك تظهر للزبائن على واجهة متجرك فقط.
           التصنيفات العامة يديرها فريق الإدارة وتظهر لجميع المتاجر.
         </p>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-gray-500">
           بعد إنشاء القسم، اذهب إلى{" "}
           <Link
             href={`/vendor/${slug}/admin/products`}
@@ -240,8 +240,8 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6">
-        <h2 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-6">
+        <h2 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <Plus className="w-4 h-4 text-primary" />
           إضافة قسم جديد
         </h2>
@@ -258,7 +258,7 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
           <div>
             <label
               htmlFor="nameAr"
-              className="block text-sm font-medium text-slate-700 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               الاسم بالعربية
               <span className="text-red-500 ms-1">*</span>
@@ -268,7 +268,7 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
               type="text"
               value={nameAr}
               onChange={(e) => setNameAr(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               placeholder="تمور فاخرة"
               maxLength={120}
             />
@@ -276,7 +276,7 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
           <div>
             <label
               htmlFor="nameEn"
-              className="block text-sm font-medium text-slate-700 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               الاسم بالإنجليزية (اختياري)
             </label>
@@ -285,18 +285,18 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
               type="text"
               value={nameEn}
               onChange={(e) => setNameEn(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               placeholder="Premium Dates"
               dir="ltr"
               maxLength={120}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
             <input
               type="checkbox"
               checked={isPrivate}
               onChange={(e) => setIsPrivate(e.target.checked)}
-              className="rounded border-slate-300 text-primary focus:ring-primary"
+              className="rounded border-gray-300 text-primary focus:ring-primary"
             />
             <span className="flex items-center gap-1.5">
               {isPrivate ? (
@@ -338,20 +338,20 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
       </div>
 
       {/* PRIVATE — editable */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6">
-        <h2 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-6">
+        <h2 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <Lock className="w-4 h-4 text-amber-600" />
           تصنيفاتي ({sortedPrivate.length})
         </h2>
-        <p className="text-xs text-slate-500 mb-3">
+        <p className="text-xs text-gray-500 mb-3">
           تظهر هذه الأقسام في صفحة متجرك فقط، ولا تظهر للمتاجر الأخرى.
         </p>
         {loading ? (
-          <div className="flex items-center justify-center py-10 text-slate-400">
+          <div className="flex items-center justify-center py-10 text-gray-400">
             <Loader2 className="w-6 h-6 animate-spin" />
           </div>
         ) : sortedPrivate.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-6">
+          <p className="text-sm text-gray-400 text-center py-6">
             لم تنشئ أي قسم خاص بعد.
           </p>
         ) : (
@@ -369,12 +369,13 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
                       value={editNameAr}
                       onChange={(e) => setEditNameAr(e.target.value)}
                       placeholder="الاسم بالعربية"
-                      className="flex-1 rounded-lg border border-slate-300 px-2 py-1 text-sm"
+                      aria-label="الاسم بالعربية"
+                      className="flex-1 rounded-lg border border-gray-300 px-2 py-1 text-sm"
                     />
                     <button
                       type="button"
                       onClick={cancelEdit}
-                      className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                      className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                       aria-label="إلغاء"
                     >
                       <X className="w-4 h-4" />
@@ -385,8 +386,9 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
                     value={editNameEn}
                     onChange={(e) => setEditNameEn(e.target.value)}
                     placeholder="الاسم بالإنجليزية (اختياري)"
+                    aria-label="الاسم بالإنجليزية (اختياري)"
                     dir="ltr"
-                    className="rounded-lg border border-slate-300 px-2 py-1 text-sm"
+                    className="rounded-lg border border-gray-300 px-2 py-1 text-sm"
                   />
                   <div className="flex gap-2">
                     <button
@@ -450,20 +452,20 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
       </div>
 
       {/* GLOBAL — read-only */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5">
-        <h2 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+        <h2 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <Globe2 className="w-4 h-4 text-blue-600" />
           التصنيفات العامة ({sortedGlobal.length})
         </h2>
-        <p className="text-xs text-slate-500 mb-3">
+        <p className="text-xs text-gray-500 mb-3">
           هذه التصنيفات يديرها فريق الإدارة وتظهر لجميع المتاجر.
         </p>
         {loading ? (
-          <div className="flex items-center justify-center py-10 text-slate-400">
+          <div className="flex items-center justify-center py-10 text-gray-400">
             <Loader2 className="w-6 h-6 animate-spin" />
           </div>
         ) : sortedGlobal.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-6">
+          <p className="text-sm text-gray-400 text-center py-6">
             لا توجد تصنيفات عامة.
           </p>
         ) : (
@@ -471,13 +473,13 @@ export default function VendorCategoriesPage({ params }: CategoriesPageProps) {
             {sortedGlobal.map((c) => (
               <div
                 key={c.id}
-                className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-3 py-1.5 text-sm text-slate-700"
+                className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 border border-gray-200 px-3 py-1.5 text-sm text-gray-700"
                 title={c.slug}
               >
                 <Globe2 className="w-3.5 h-3.5 text-blue-500" aria-hidden />
                 <span className="font-medium">{c.name_ar}</span>
                 {c.name_en && (
-                  <span className="text-slate-400 text-xs" dir="ltr">
+                  <span className="text-gray-400 text-xs" dir="ltr">
                     · {c.name_en}
                   </span>
                 )}

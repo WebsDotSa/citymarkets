@@ -53,16 +53,16 @@ export function EmptyState({
 
   const renderContent = () => (
     <>
-      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#E6F5EC] to-[#D1FAE5] flex items-center justify-center mb-6 animate-float">
+      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center mb-6 animate-float">
         {customIcon ? (
           <div className="text-primary">{customIcon}</div>
         ) : (
           <IconComponent className="w-12 h-12 text-primary" />
         )}
       </div>
-      <h3 className="text-xl font-bold text-[#111827] mb-2">{title}</h3>
+      <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
       {description && (
-        <p className="text-[#6B7280] text-center max-w-sm mb-6">{description}</p>
+        <p className="text-gray-500 text-center max-w-sm mb-6">{description}</p>
       )}
       {(actionLabel || onAction) && (
         <div className="flex flex-col sm:flex-row gap-3">
@@ -180,7 +180,7 @@ export function LoadingState({
       className={`flex flex-col items-center justify-center py-16 ${className}`}
     >
       <div className="w-16 h-16 border-4 border-primary/20 border-t-[#009345] rounded-full animate-spin mb-4" />
-      <p className="text-[#6B7280]">{message}</p>
+      <p className="text-gray-500">{message}</p>
     </div>
   );
 }
@@ -214,7 +214,7 @@ export function ErrorState({
           />
         </svg>
       </div>
-      <h3 className="text-lg font-bold text-[#111827] mb-2">{message}</h3>
+      <h3 className="text-lg font-bold text-gray-900 mb-2">{message}</h3>
       {onRetry && (
         <Button
           variant="outline"
@@ -250,8 +250,8 @@ export function ComingSoon({ feature, className }: { feature?: string; className
           />
         </svg>
       </div>
-      <h3 className="text-xl font-bold text-[#111827] mb-2">قريباً!</h3>
-      <p className="text-[#6B7280] max-w-sm">
+      <h3 className="text-xl font-bold text-gray-900 mb-2">قريباً!</h3>
+      <p className="text-gray-500 max-w-sm">
         {feature
           ? `ميزة "${feature}" ستتوفر قريباً. stay tuned!`
           : "هذه الميزة ستتوفر قريباً. ابقَ على اطلاع!"}

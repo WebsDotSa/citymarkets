@@ -111,7 +111,7 @@ function VendorCard({ vendor }: VendorCardProps) {
         {/* Open / closed pill — top-left in RTL */}
         <div className="absolute top-2 right-2">
           <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur ${
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-tiny font-bold backdrop-blur ${
               vendor.isOpen
                 ? "bg-emerald-500/95 text-white"
                 : "bg-gray-800/80 text-white"
@@ -139,7 +139,7 @@ function VendorCard({ vendor }: VendorCardProps) {
           {vendor.name}
         </h3>
         {vendor.description && (
-          <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">
+          <p className="text-2xs text-gray-500 line-clamp-1 mt-0.5">
             {vendor.description}
           </p>
         )}
@@ -197,7 +197,7 @@ export function StoresShowcase() {
             <h2 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
               تسوق من المتاجر
             </h2>
-            <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
+            <p className="text-2xs sm:text-xs text-gray-500 mt-0.5">
               قهوة، هدايا، عبايات والمزيد
             </p>
           </div>

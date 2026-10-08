@@ -140,7 +140,6 @@ export async function listWishlist(userId: string): Promise<WishlistItem[]> {
       id: r.id,
       name: r.name,
       name_ar: r.name_ar,
-      slug: r.slug,
       price: Number(r.price),
       discount_price: r.discount_price != null ? Number(r.discount_price) : null,
       image_url: r.image_url,
@@ -217,6 +216,9 @@ export async function addToWishlist(
      )
      SELECT i.product_id, i.added_at, ${WISHLIST_PRODUCT_FIELDS}
      ${WISHLIST_INSERTED_JOIN}`,
+     FROM inserted i
+     JOIN products_unified p ON p.id = i.product_id
+     LEFT JOIN vendors v ON v.id = p.vendor_id`,
     [userId, productId],
   );
 
@@ -235,7 +237,6 @@ export async function addToWishlist(
         id: row.id,
         name: row.name,
         name_ar: row.name_ar,
-        slug: row.slug,
         price: Number(row.price),
         discount_price: row.discount_price != null ? Number(row.discount_price) : null,
         image_url: row.image_url,

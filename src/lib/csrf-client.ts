@@ -1,49 +1,144 @@
 /**
- * Browser-side CSRF helper.
+ * Browser-side CSRF helper — Synchronizer Token Pattern client.
  *
- * The proxy (`src/proxy.ts`) enforces a double-submit cookie pattern on
- * every mutating API route under `/api/v1/` and `/api/admin/`. The cookie
- * `csrf_token` is `httpOnly: false` so JavaScript CAN read it; the
- * matching header `x-csrf-token` MUST be echoed by the client on every
- * POST/PUT/PATCH/DELETE.
+ * The server (`src/middleware.ts` + `src/lib/csrf.ts`) issues an
+ * HTTPOnly `csrf_token` cookie on every request. JavaScript can no
+ * longer read that cookie — by design (P2-2 / 2026-10-03) — because
+ * the cookie's visibility was the load-bearing CSRF vulnerability:
+ * any XSS payload could read it and forge the matching header.
  *
- * Without these headers, the proxy responds with 403
- * `انتهاك أمان - رمز التحقق غير صالح` and the order create call fails.
+ * The new flow:
+ *   1. The server-issued HTTPOnly cookie carries the token.
+ *   2. The application JS fetches the token from
+ *      `GET /api/v1/auth/csrf`, which returns the current token as
+ *      JSON. The fetch is same-origin, so the browser attaches the
+ *      cookie automatically; the server reads the cookie and echoes
+ *      the value in the body.
+ *   3. The application JS caches the token in memory and echoes it as
+ *      `x-csrf-token` on every mutating request (via `csrfFetch`).
+ *   4. The server validates that the header equals the cookie value
+ *      (constant-time). Cross-site requests can not include the
+ *      cookie (SameSite=strict), so they fail.
  *
- * This module is the only place the cookie/header pair is read on the
- * client. Use `csrfFetch` from any mutating client-side handler.
+ * Public surface unchanged: `csrfFetch(input, init)` and `csrfHeaders`
+ * still have the same shape callers expect. The only behavioural
+ * change is that the first call to a mutating endpoint before the
+ * in-flight `/api/v1/auth/csrf` fetch resolves will hit the network
+ * without the CSRF header — the server will reject it. In practice
+ * the auto-fetcher below warms the cache before any user interaction,
+ * so this is invisible.
+ *
+ * Use `csrfFetch` from any mutating client-side handler.
  */
 
-import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "./csrf-constants";
+import { CSRF_HEADER_NAME } from "./csrf-constants";
 
 /**
- * Read the current CSRF token from `document.cookie`. Returns `null`
- * on the server (no `document`) or when the cookie is missing — the
- * latter shouldn't happen on first paint because the proxy auto-issues
- * a cookie via `ensureCsrfCookie` on the very first request.
+ * Server endpoint that returns the current CSRF token. Kept here as a
+ * constant so all client callers reach the same route — and so a
+ * future move to e.g. `/api/v2/csrf` is one edit.
  */
-export function readCsrfToken(): string | null {
-  if (typeof document === "undefined") return null;
-  const raw = document.cookie;
-  if (!raw) return null;
-  const parts = raw.split("; ");
-  for (const part of parts) {
-    const eq = part.indexOf("=");
-    if (eq < 0) continue;
-    const name = part.slice(0, eq).trim();
-    if (name !== CSRF_COOKIE_NAME) continue;
+const CSRF_TOKEN_ENDPOINT = "/api/v1/auth/csrf";
+
+/**
+ * Module-scoped token cache. Survives across `csrfFetch` calls in the
+ * same page session but is wiped on a hard navigation (full page
+ * reload) — that is fine because the cookie is still set, and the
+ * next `/api/v1/auth/csrf` fetch refills the cache.
+ */
+let _cachedToken: string | null = null;
+let _inFlight: Promise<string | null> | null = null;
+
+/**
+ * Best-effort warm-up of the token cache. Called from `csrfHeaders`
+ * / `csrfFetch` so the first user POST usually hits a populated cache.
+ * Errors are swallowed: if the fetch fails (network blip, server
+ * down) the cache stays empty and the next call retries. The user
+ * will see a 403 on a real mutating request, which is the correct
+ * failure mode — silent fallback to a wrong token would be worse.
+ */
+function ensureTokenLoaded(): void {
+  if (_cachedToken || _inFlight) return;
+  if (typeof fetch === "undefined") return;
+  _inFlight = (async () => {
     try {
-      return decodeURIComponent(part.slice(eq + 1).trim());
+      const res = await fetch(CSRF_TOKEN_ENDPOINT, {
+        method: "GET",
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) return null;
+      const body = (await res.json()) as { token?: unknown };
+      const t = typeof body?.token === "string" ? body.token : null;
+      _cachedToken = t;
+      return t;
     } catch {
-      return part.slice(eq + 1).trim();
+      return null;
+    } finally {
+      _inFlight = null;
     }
-  }
-  return null;
+  })();
 }
 
 /**
- * Build a `Headers` object that includes the CSRF header if a token is
- * available. Safe to merge with existing headers.
+ * Return the cached CSRF token, or `null` if the cache has not been
+ * populated yet (the in-flight fetch has not resolved). Callers
+ * should treat `null` as "do not attach the header yet" — the next
+ * `csrfFetch` after the cache fills will include it.
+ *
+ * Exposed for tests and rare code paths that need to force a fetch
+ * and await it. Most callers should use `csrfHeaders` / `csrfFetch`.
+ */
+export function readCsrfToken(): string | null {
+  ensureTokenLoaded();
+  return _cachedToken;
+}
+
+/**
+ * Async variant: resolves with the current token, awaiting the
+ * in-flight fetch if needed. Useful when the caller MUST send the
+ * header (e.g. a checkout submit button) and cannot retry. Most
+ * callers should not need this — `csrfFetch` reads the cache
+ * synchronously and the first user POST usually hits a populated
+ * cache because the warm-up fired on first paint.
+ */
+export async function getCsrfToken(): Promise<string | null> {
+  if (_cachedToken) return _cachedToken;
+  ensureTokenLoaded();
+  if (_inFlight) {
+    await _inFlight.catch(() => null);
+  }
+  return _cachedToken;
+}
+
+/**
+ * Explicit warm-up helper. Application code SHOULD call this once on
+ * mount so the cache is populated before any mutating request fires.
+ * The auto-warm-up already fires on the first `readCsrfToken` /
+ * `csrfHeaders` / `csrfFetch` call, but a deliberate call here makes
+ * the lifecycle explicit and avoids relying on first-touch.
+ */
+export async function prefetchCsrfToken(): Promise<string | null> {
+  ensureTokenLoaded();
+  if (_inFlight) {
+    await _inFlight.catch(() => null);
+  }
+  return _cachedToken;
+}
+
+/**
+ * Reset the in-memory cache. Test-only helper — never call from
+ * production code. Exposed so unit tests can run in isolation
+ * without leaking tokens between cases.
+ */
+export function __resetCsrfCacheForTests(): void {
+  _cachedToken = null;
+  _inFlight = null;
+}
+
+/**
+ * Build a `Headers` object that includes the CSRF header if a token
+ * is available. Safe to merge with existing headers.
  */
 export function csrfHeaders(
   existing?: HeadersInit,

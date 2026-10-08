@@ -5,7 +5,7 @@ import { logAdminAction } from "@/lib/admin-audit";
 import { validateBody } from "@/lib/validation";
 import { z } from "zod";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 function idCheck(url: URL) {
   const id = url.searchParams.get("id");

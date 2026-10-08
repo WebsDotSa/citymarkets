@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { cache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache';
+import { cache, CACHE_TTL } from '@/lib/cache';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 import type { BlogPost } from '@/lib/types';
 import {
   BLOG_VIEW_IP_CONFIG,

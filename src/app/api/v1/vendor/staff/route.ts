@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query, pool } from "@/lib/db";
+import { query } from "@/lib/db";
 import { requireVendorRole, type VendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { hashPassword } from "@/lib/password";
 import { error as logError } from "@/lib/logger";
 import { logVendorAudit } from "@/lib/vendor-audit";
+import { checkRateLimit, createRateLimitHeaders, VENDOR_STAFF_CREATE_CONFIG } from "@/lib/rate-limit";
 
 const VALID_ROLES: VendorRole[] = ["owner", "manager", "staff", "viewer"];
 
@@ -108,6 +109,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "فقط المالك يمكنه إضافة مدير" },
         { status: 403 }
+      );
+    }
+
+    // SECURITY (PCP-136): input validation above comes first so a
+    // bad-input flood cannot pollute this per-vendor bucket
+    // (PCP-133 lesson). bcrypt cost 12 is the dominant cost on this
+    // path, so 10/min is a generous cap that still blocks scripted
+    // burst provisioning.
+    const staffRl = await checkRateLimit(
+      `vendor:staff:create:${session.vendorId}`,
+      VENDOR_STAFF_CREATE_CONFIG,
+    );
+    if (!staffRl.allowed) {
+      return NextResponse.json(
+        { error: "تم تجاوز عدد المحاولات، حاول لاحقاً" },
+        { status: 429, headers: createRateLimitHeaders(staffRl) },
       );
     }
 

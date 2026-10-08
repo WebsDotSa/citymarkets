@@ -9,6 +9,7 @@ import { pool } from "@/lib/db";
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { error as logError } from "@/lib/logger";
 import { eventsAckSchema as ackSchema } from "@/lib/validation";
+import { checkRateLimit, createRateLimitHeaders, EVENTS_ACK_CONFIG } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const userId = await resolveCustomerUserIdFromRequest(request);
@@ -27,6 +28,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(
       { success: false, error: "validation_failed" },
       { status: 400 },
+    );
+  }
+
+  // SECURITY (PCP-138): per-user rate limit on push ack. Validation
+  // above rejects bad input cheaply, so the bucket only sees real
+  // ack attempts (PCP-133 lesson). 60/min is well above natural usage
+  // and blocks scripted ack storms that would otherwise create
+  // unbounded UPDATE churn on broadcast_deliveries.
+  const ackRl = await checkRateLimit(`events:ack:${userId}`, EVENTS_ACK_CONFIG);
+  if (!ackRl.allowed) {
+    return NextResponse.json(
+      { success: false, error: "rate_limited" },
+      { status: 429, headers: createRateLimitHeaders(ackRl) },
     );
   }
 

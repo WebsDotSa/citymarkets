@@ -5,7 +5,7 @@
 // with made-up ids. The pixel is embedded in the broadcast HTML by
 // the email-dispatcher as `<img src=".../api/v1/track/open?d=<token>">`.
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { pool } from "@/lib/db";
 import { verifyDeliveryToken } from "@/lib/broadcasts/sign";
 import { error as logError } from "@/lib/logger";

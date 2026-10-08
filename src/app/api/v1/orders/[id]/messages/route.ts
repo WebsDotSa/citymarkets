@@ -11,6 +11,7 @@ import { getClientIp } from '@/lib/request-ip';
 import { error as logError } from '@/lib/logger';
 import { orderMessagePostSchema as postBodySchema } from '@/lib/validation';
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 const MESSAGES_PER_MIN = 30;
 
 /**
@@ -28,6 +29,8 @@ export async function GET(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const { id: orderId } = await ctx.params;
+  const badId = validateUuidOrError(orderId, "معرّف الطلب");
+  if (badId) return badId;
   const userId = await resolveCustomerUserIdFromRequest(request);
   const url = new URL(request.url);
 
@@ -110,6 +113,8 @@ export async function POST(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const { id: orderId } = await ctx.params;
+  const badId = validateUuidOrError(orderId, "معرّف الطلب");
+  if (badId) return badId;
   const userId = await resolveCustomerUserIdFromRequest(request);
   const ip = getClientIp(request);
 

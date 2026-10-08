@@ -425,6 +425,26 @@ export const ADMIN_LOGIN_IP_CONFIG: RateLimitConfig = {
 };
 
 /**
+ * Rate limit config for vendor staff login (PCP-124).
+ *
+ * Brute-force protection: 5/identifier/15min and 10/IP/15min. Same shape
+ * as admin login because the credential check is identical (bcrypt
+ * compare + Postgres lookup), and the impact of a successful brute force
+ * is the same: full vendor-side access.
+ */
+export const VENDOR_LOGIN_CONFIG: RateLimitConfig = {
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  maxRequests: 5,
+  keyPrefix: 'vendor:login',
+};
+
+export const VENDOR_LOGIN_IP_CONFIG: RateLimitConfig = {
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  maxRequests: 10,
+  keyPrefix: 'vendor:login:ip',
+};
+
+/**
  * Broadcast send trigger — caps how many campaigns a single admin can
  * fire (or schedule) in a 10-minute window. A misconfigured template
  * or wrong audience could otherwise burn SMS / email quota in seconds.
@@ -443,6 +463,57 @@ export const BROADCAST_SEND_IP_CONFIG: RateLimitConfig = {
   windowMs: 10 * 60 * 1000, // 10 minutes
   maxRequests: 20,
   keyPrefix: 'broadcast:send:ip',
+};
+
+/**
+ * Loyalty-wheel spin (POST /api/v1/spin). Caps how many times a single
+ * user can hit the endpoint per minute. The DB-side FOR UPDATE on
+ * `users` (added with PCP-135) is the authoritative 3-per-day gate; this
+ * rate limit just throttles abuse / burst attempts that would otherwise
+ * pile up contended row locks. 20/min is well above legitimate use
+ * (the server permits at most 3/day anyway).
+ */
+export const SPIN_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 20,
+  keyPrefix: 'spin',
+};
+
+/**
+ * Vendor staff creation (POST /api/v1/vendor/staff). Each successful
+ * call performs a bcrypt hash (cost 12) and an INSERT — together ~300ms
+ * on the dev box. Per-vendor cap so a manager cannot script N staff
+ * rows in a burst; 10/min is well above a real owner's onboarding flow
+ * (typically 1–3 invites at a time).
+ */
+export const VENDOR_STAFF_CREATE_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+  keyPrefix: 'vendor:staff:create',
+};
+
+/**
+ * Vendor product creation (POST /api/v1/vendor/products). Per-vendor
+ * cap. Products are much cheaper than staff (no bcrypt) but a flood
+ * still bloats the catalog and competes with legitimate vendor traffic.
+ * 30/min is generous for legitimate bulk upload flows.
+ */
+export const VENDOR_PRODUCT_CREATE_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 30,
+  keyPrefix: 'vendor:product:create',
+};
+
+/**
+ * Customer push-ack (POST /api/v1/events/ack). Per-user cap. The
+ * endpoint is idempotent but the request body still hits PG on every
+ * call; a scripted client can otherwise create unbounded UPDATE
+ * churn on `notifications`. 60/min is well above natural usage.
+ */
+export const EVENTS_ACK_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 60,
+  keyPrefix: 'events:ack',
 };
 
 /**
@@ -506,6 +577,123 @@ export const REVIEW_SUBMIT_IP_CONFIG: RateLimitConfig = {
   windowMs: 60 * 1000,
   maxRequests: 5,
   keyPrefix: 'reviews:submit:ip',
+};
+
+export const REFUND_REQUEST_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 3,             // > 3 refund requests / hour / user is suspicious
+  keyPrefix: 'refund:request',
+};
+
+export const REFUND_REQUEST_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 10,            // > 10 refund requests / hour / IP is suspicious (covers guest flows)
+  keyPrefix: 'refund:request:ip',
+};
+
+/**
+ * Custom analytics event ingestion (POST /api/v1/analytics/event).
+ * Fire-and-forget from the client; always returns 204. Without a cap,
+ * a single script can flood `analytics_events` with arbitrary
+ * `event_name='purchase'` and fake `revenue` values, distorting every
+ * downstream KPI dashboard. CSRF is enforced by middleware, so a
+ * scripted attacker would need a fresh csrf token per request — but
+ * the per-IP cap is the right floor. 60/min is well above the natural
+ * one-event-per-pageview rate (≈1–5/min for an active session) and
+ * cuts the bulk-inject vector.
+ */
+export const ANALYTICS_EVENT_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 60,
+  keyPrefix: 'analytics:event:ip',
+};
+
+/**
+ * Public delivery quote (POST /api/v1/delivery/quote). Already
+ * CSRF-exempt (stateless fee quote) but the route runs a
+ * distance-fee SQL+haversine per call. A single IP could otherwise
+ * pin a worker on a flood. 30/min is well above the cart UI's
+ * debounce rate and stops scripted distance-fee DoS.
+ */
+export const DELIVERY_QUOTE_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 30,
+  keyPrefix: 'delivery:quote:ip',
+};
+
+/**
+ * Customer push subscription registration (POST /api/v1/push/subscribe).
+ * The route does not require an authenticated user — guests can
+ * subscribe to the public track-page push feed. CSRF middleware blocks
+ * unauthenticated cross-origin POSTs, but a fresh `csrf_token` is
+ * issued on the very first GET to any page, so a scripted attacker
+ * can still pull one down and then spam subscriptions to a NULL
+ * user_id, which the broadcast worker would then try to fan-out to.
+ * 10/min/IP is well above the legitimate "subscribe once" flow.
+ */
+export const PUSH_SUBSCRIBE_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+  keyPrefix: 'push:subscribe:ip',
+};
+
+/**
+ * Pageview beacon (POST /api/v1/analytics/pageview). The DB has a
+ * (path, session_id, time_bucket) throttle that dedups within a 30s
+ * window, but a scripted attacker can rotate sessionIds at will and
+ * keep inserting. The endpoint is also a worker-pinning vector —
+ * each accepted request still acquires a PG connection and runs an
+ * INSERT. 120/min/IP is well above natural pageview rate (typical
+ * active session is ~1–3 pageviews/min).
+ */
+export const PAGEVIEW_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,
+  maxRequests: 120,
+  keyPrefix: 'analytics:pageview:ip',
+};
+
+/**
+ * Payment-method PATCH (PCP-136). Limits how often a single principal
+ * (logged-in user OR guest + IP) can flip the payment method on the same
+ * orderId. Without it, an authenticated user can hammer the endpoint to
+ * flood `orders.payment_method` + `vendor_orders.payment_method` audit
+ * rows via the surrounding FOR UPDATE lock, and a guest (with a stolen
+ * idempotency_key) can churn the row to obscure a tampering attempt.
+ *
+ * Same shape as REFUND_REQUEST_* (3/hour/user, 10/hour/IP) — payment
+ * method is a low-frequency action in normal UX (≤ once per checkout
+ * session), so anything past 3 per hour is suspicious.
+ */
+export const PAYMENT_METHOD_PATCH_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 3,
+  keyPrefix: 'payment-method:patch',
+};
+
+export const PAYMENT_METHOD_PATCH_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 10,
+  keyPrefix: 'payment-method:patch:ip',
+};
+
+/**
+ * Generic admin write endpoint rate limit (PCP-170 Phase 16).
+ *
+ * Used for admin write endpoints that mutate shared/admin-visible
+ * state (orders, vendors, coupons, reviews, etc.). Auth-gated so the
+ * blast radius is small, but a leaked admin JWT can still do damage
+ * — a 5/min/IP ceiling stops the leak from being a firehose.
+ */
+export const ADMIN_WRITE_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,  // 1 minute
+  maxRequests: 30,
+  keyPrefix: 'admin:write',
+};
+
+export const ADMIN_WRITE_IP_CONFIG: RateLimitConfig = {
+  windowMs: 60 * 1000,  // 1 minute
+  maxRequests: 60,
+  keyPrefix: 'admin:write:ip',
 };
 
 /**

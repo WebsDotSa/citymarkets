@@ -1,38 +1,10 @@
-/**
- * @deprecated 2026-10-04 — kept for iOS APIClient.swift backward
- * compatibility. New client-side flows should POST to
- * `/api/v1/checkout` (see `@/lib/orders/checkout/checkout-service`)
- * which owns the unified parent-order + vendor-order creation flow,
- * idempotency, and the address-priority invariant. Removal tracked
- * under docs/09-IMPLEMENTATION-BACKLOG.md "iOS APIClient migration".
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
-import {
-  getGuestSessionIdFromRequest,
-  resolveCustomerUserIdFromRequest,
-} from '@/lib/identity';
-import { resolveOrderAddress } from '@/lib/identity/address-service';
-import { createOrderSchema, validationError } from '@/lib/validation';
-import { checkRateLimit, ORDER_CREATE_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
-import { getClientIp } from '@/lib/request-ip';
+import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { isAppleReviewUser } from '@/lib/apple-review';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
-import { reportCheckoutError } from '@/lib/errors/checkout-error-reporter';
-import {
-  parseSlotsConfig,
-  riyadhWallClockToUtc,
-  toRiyadhDateKey,
-  validateSlotSelection,
-} from '@/lib/delivery';
-import { evaluateHours } from '@/lib/delivery/delivery-hours';
-import { getActiveStoreHours } from '@/lib/delivery/store-hours';
-import { resolvePaymentMethod } from '@/lib/payments/payment-methods';
+import { error as logError } from '@/lib/logger';
 import { ORDER_LIST_COLUMNS } from '@/lib/orders/sql-fragments';
-import { getLoyaltySettings } from '@/lib/orders/loyalty';
-import { getMainStoreAndDistance } from '@/lib/delivery/main-store';
-
 /**
  * Order item type for internal use
  */

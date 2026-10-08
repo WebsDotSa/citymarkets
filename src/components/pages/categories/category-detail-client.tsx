@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { ProductCard } from "@/components/storefront/product-card";
+import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/design/empty-state";
 import { ProductCardSkeleton } from "@/components/design/skeleton";
 import { BRAND } from "@/lib/brand-theme";
@@ -20,28 +21,17 @@ import {
   resolveCategoryImageSrc,
 } from '@/lib/catalog';
 import { emojiForCategoryName } from '@/lib/catalog';
+import { mapApiItemToProduct } from './categories-helpers';
 import type { Product, CategoryRow } from "@/lib/types";
 import { CategoryImage } from "./category-image";
+import type { ProductsApiItem } from './categories-helpers';
 
 type Sort = "popular" | "price-asc" | "price-desc" | "newest";
 
 const PAGE_SIZE = 24;
 type ProductApiResponse = {
   success: boolean;
-  data: Array<{
-    id: string;
-    name_ar: string;
-    name_en: string | null;
-    image_url: string | null;
-    price: number;
-    discount_price: number | null;
-    stock_qty: number;
-    unit: string | null;
-    is_featured: boolean;
-    is_active: boolean;
-    category_name: string;
-    category_slug: string;
-  }>;
+  data: ProductsApiItem[];
   pagination: { total: number; page: number; totalPages: number };
 };
 
@@ -98,27 +88,7 @@ export function CategoryDetailClient({
     const json: ProductApiResponse = await res.json();
     if (!json.success) throw new Error("API returned success=false");
 
-    const mapped: Product[] = json.data.map((p) => ({
-      id: p.id,
-      category_id: "",
-      name_ar: p.name_ar,
-      name_en: p.name_en,
-      barcode: null,
-      description: null,
-      image_url: p.image_url,
-      images: [],
-      price: p.price,
-      discount_price: p.discount_price,
-      stock_qty: p.stock_qty,
-      unit: p.unit ?? "قطعة",
-      is_featured: p.is_featured,
-      is_active: p.is_active,
-      category_name: p.category_name,
-      category_slug: p.category_slug,
-      category_icon: null,
-      created_at: "",
-      updated_at: "",
-    }));
+    const mapped: Product[] = json.data.map(mapApiItemToProduct);
 
     setProducts((prev) => (append ? [...prev, ...mapped] : mapped));
     setTotal(json.pagination.total);
@@ -129,6 +99,7 @@ export function CategoryDetailClient({
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setPage(1);  // Reset page when filters/sort change
     fetchPage(1, false, sort, inStockOnly).catch((e) => {
       if (!cancelled) setError(String(e?.message ?? e));
     }).finally(() => {
@@ -172,31 +143,43 @@ export function CategoryDetailClient({
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
-      {/* Sticky breadcrumb header */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-        <nav
+      {/* Sticky breadcrumb header — positioned below HeaderV2 (which is 64px/80px) */}
+      <div className="sticky top-header sm:top-header-sm z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+        <ol
           aria-label="مسار التنقل"
-          className="px-4 pt-3 pb-2 flex items-center gap-1.5 text-[11px] text-gray-500 overflow-x-auto scrollbar-hide"
+          className="px-4 pt-3 pb-2 flex items-center gap-1.5 text-2xs text-gray-500 overflow-x-auto scrollbar-hide"
         >
-          <Link href="/categories" className="hover:text-primary font-bold whitespace-nowrap">
-            الأقسام
-          </Link>
+          <li>
+            <Link href="/categories" className="hover:text-primary font-bold whitespace-nowrap">
+              الرئيسية
+            </Link>
+          </li>
           {parent ? (
             <>
-              <ChevronLeft className="w-3 h-3 text-gray-300 rotate-180" aria-hidden="true" />
-              <Link
-                href={`/categories/${encodeURIComponent(parent.slug)}`}
-                className="hover:text-primary font-bold whitespace-nowrap"
-              >
-                {parent.name_ar}
-              </Link>
+              <li aria-hidden="true" className="text-gray-300">
+                /
+              </li>
+              <li>
+                <Link
+                  href={`/categories/${encodeURIComponent(parent.slug)}`}
+                  className="hover:text-primary font-bold whitespace-nowrap"
+                >
+                  {parent.name_ar}
+                </Link>
+              </li>
             </>
           ) : null}
-          <ChevronLeft className="w-3 h-3 text-gray-300 rotate-180" aria-hidden="true" />
-          <span className="text-gray-900 font-bold whitespace-nowrap" aria-current="page">
-            {category.name_ar}
-          </span>
-        </nav>
+          {parent ? (
+            <li aria-hidden="true" className="text-gray-300">
+              /
+            </li>
+          ) : null}
+          <li>
+            <span className="text-gray-900 font-bold whitespace-nowrap" aria-current="page">
+              {category.name_ar}
+            </span>
+          </li>
+        </ol>
       </div>
 
       {/* Hero */}
@@ -204,7 +187,7 @@ export function CategoryDetailClient({
         <div className="flex items-start gap-4">
           <CategoryIcon category={category} parent={parent} />
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+            <p className="text-2xs font-bold uppercase tracking-widest text-primary">
               {hasChildren ? "قسم رئيسي" : "قسم فرعي"}
             </p>
             <h1 className="mt-1 text-2xl font-black text-gray-900 leading-tight">
@@ -241,7 +224,7 @@ export function CategoryDetailClient({
 
         {isAdmin ? (
           <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-between gap-2">
-            <p className="text-[11px] text-amber-900 font-bold">إجراءات المسؤول</p>
+            <p className="text-2xs text-amber-900 font-bold">إجراءات المسؤول</p>
             <Link
               href={`/admin/products?new=1&category=${encodeURIComponent(category.slug)}`}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm"
@@ -265,12 +248,12 @@ export function CategoryDetailClient({
         <SiblingRail parent={parent} siblings={siblings} currentSlug={category.slug} />
       ) : null}
 
-      {/* Toolbar */}
-      <div className="sticky top-[41px] z-10 bg-gray-50/95 backdrop-blur-sm border-b border-gray-100">
+      {/* Toolbar — positioned below breadcrumb (64+40px = 104px on mobile, 80+40px = 120px on sm+) */}
+      <div className="sticky top-header-breadcrumb sm:top-header-sm-breadcrumb z-10 bg-gray-50/95 backdrop-blur-sm border-b border-gray-100">
         <div className="px-4 py-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
           <SortPill current={sort} onChange={setSort} />
           <StockToggle value={inStockOnly} onChange={setInStockOnly} />
-          <span className="ms-auto text-[11px] text-gray-500 font-bold whitespace-nowrap" dir="ltr">
+          <span className="ms-auto text-2xs text-gray-500 font-bold whitespace-nowrap">
             {total} منتج
           </span>
         </div>
@@ -379,12 +362,12 @@ function SubCategoryRail({
       className="bg-white border-b border-gray-100"
     >
       <div className="px-4 py-3 flex items-center justify-between mb-1">
-        <p className="text-[11px] font-bold text-gray-500">
+        <p className="text-2xs font-bold text-gray-500">
           الأقسام الفرعية لـ {parent.name_ar}
         </p>
         <Link
           href={`/categories/${encodeURIComponent(parent.slug)}`}
-          className="text-[11px] font-bold text-primary"
+          className="text-2xs font-bold text-primary"
         >
           عرض الكل
         </Link>
@@ -415,7 +398,7 @@ function SubCategoryRail({
                 {c.name_ar}
                 {c.product_count ? (
                   <span
-                    className={`ms-1.5 text-[10px] ${active ? "opacity-80" : "text-gray-400"}`}
+                    className={`ms-1.5 text-tiny ${active ? "opacity-80" : "text-gray-400"}`}
                     dir="ltr"
                   >
                     ({c.product_count})
@@ -445,13 +428,13 @@ function SiblingRail({
       className="bg-white border-b border-gray-100"
     >
       <div className="px-4 py-3 flex items-center justify-between mb-1">
-        <p className="text-[11px] font-bold text-gray-500">
+        <p className="text-2xs font-bold text-gray-500">
           {parent ? `أقسام أخرى في ${parent.name_ar}` : "أقسام مشابهة"}
         </p>
         {parent ? (
           <Link
             href={`/categories/${encodeURIComponent(parent.slug)}`}
-            className="text-[11px] font-bold text-primary"
+            className="text-2xs font-bold text-primary"
           >
             عرض الكل
           </Link>
@@ -494,44 +477,29 @@ function SortPill({ current, onChange }: { current: Sort; onChange: (s: Sort) =>
     { key: "newest", label: "الأحدث" },
   ];
   return (
-    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-full p-1 shadow-sm">
-      <Filter className="w-3.5 h-3.5 text-gray-400 ms-2 me-1" aria-hidden="true" />
-      {opts.map((o) => {
-        const active = o.key === current;
-        return (
-          <button
-            key={o.key}
-            type="button"
-            onClick={() => onChange(o.key)}
-            className={`px-3 py-1 rounded-full text-[11px] font-bold transition ${
-              active
-                ? "bg-primary text-white"
-                : "text-gray-600 hover:bg-gray-50"
-            }`}
-            aria-pressed={active}
-          >
-            {o.label}
-          </button>
-        );
-      })}
+    <div className="flex items-center gap-1.5">
+      {opts.map((o) => (
+        <Chip
+          key={o.key}
+          label={o.label}
+          selected={o.key === current}
+          onClick={() => onChange(o.key)}
+          size="sm"
+        />
+      ))}
     </div>
   );
 }
 
 function StockToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button
-      type="button"
+    <Chip
+      label="متوفر فقط"
+      selected={value}
       onClick={() => onChange(!value)}
-      className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition ${
-        value
-          ? "bg-primary text-white border-primary"
-          : "bg-white text-gray-700 border-gray-200 hover:border-primary hover:text-primary"
-      }`}
-      aria-pressed={value}
-    >
-      متوفر فقط
-    </button>
+      variant="outlined"
+      size="sm"
+    />
   );
 }
 

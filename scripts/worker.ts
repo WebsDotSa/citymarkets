@@ -7,6 +7,8 @@
 import { pool } from '../src/lib/db';
 import { sendPushToUser } from '../src/lib/push';
 import { processBroadcasts } from '../src/lib/broadcasts/worker';
+import { cleanupOldPageViews } from '../src/lib/analytics/page-views-retention';
+import { deleteFromR2, r2KeyFromUrl } from '../src/lib/r2';
 // Deep-import (NOT the @/lib/queue barrel) because the barrel starts
 // with `import "server-only"` which throws when the file is loaded by
 // plain tsx outside of Next.js — the worker is a long-lived Node
@@ -55,6 +57,22 @@ const tasks: ScheduledTask[] = [
     interval: 60 * 60 * 1000, // 1 hour
     handler: deactivateExpiredCoupons,
   },
+  {
+    // PCP-148: page_views is append-only analytics at ~120 rows/day with
+    // 7 indexes. Without a retention policy it grows to ~28 MB in a year.
+    // Window is read from public.page_views_retention_days() (default 90
+    // days) so future tuning is a one-line migration, not a code change.
+    name: 'cleanup-old-page-views',
+    interval: 24 * 60 * 60 * 1000, // 24 hours
+    handler: cleanupOldPageViewsTask,
+  },
+  {
+    // Direct order voice note cleanup: delete files from R2 after 3 days
+    // and null the URLs so they're not accessible on the order detail page.
+    name: 'cleanup-voice-notes',
+    interval: 60 * 60 * 1000, // 1 hour
+    handler: cleanupVoiceNotes,
+  },
 ];
 
 async function cleanupExpiredOtps(): Promise<void> {
@@ -78,6 +96,18 @@ async function cleanupOldNotifications(): Promise<void> {
     console.log(`[Worker] Deleted ${result.rowCount} old notifications`);
   } catch (error) {
     console.error('[Worker] Failed to cleanup notifications:', error);
+  }
+}
+
+async function cleanupOldPageViewsTask(): Promise<void> {
+  console.log('[Worker] Cleaning up old page views...');
+  try {
+    const result = await cleanupOldPageViews();
+    console.log(
+      `[Worker] Deleted ${result.deleted} page_views older than ${result.retentionDays} days (cutoff=${result.cutoffIso})`
+    );
+  } catch (error) {
+    console.error('[Worker] Failed to cleanup page views:', error);
   }
 }
 
@@ -153,6 +183,85 @@ async function deactivateExpiredCoupons(): Promise<void> {
     console.log(`[Worker] Deactivated ${result.rowCount ?? 0} expired coupons`);
   } catch (error) {
     console.error('[Worker] Failed to deactivate expired coupons:', error);
+  }
+}
+
+async function cleanupVoiceNotes(): Promise<void> {
+  console.log('[Worker] Cleaning up old voice notes…');
+  try {
+    // Find direct orders (type='direct') that were delivered or cancelled
+    // more than 3 days ago by checking order_status_logs.
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 3);
+
+    const ordersToCleanup = await pool.query(
+      `SELECT DISTINCT o.id, o.voice_note_url
+       FROM orders o
+       WHERE o.type = 'direct'
+         AND o.voice_note_url IS NOT NULL
+         AND EXISTS (
+           SELECT 1 FROM order_status_logs osl
+           WHERE osl.order_id = o.id
+             AND osl.new_status IN ('delivered', 'cancelled')
+             AND osl.created_at < $1
+         )`,
+      [cutoff]
+    );
+
+    let deletedCount = 0;
+    for (const order of ordersToCleanup.rows) {
+      try {
+        // Delete from R2
+        if (order.voice_note_url) {
+          const key = r2KeyFromUrl(order.voice_note_url);
+          if (key) {
+            await deleteFromR2(key);
+          }
+        }
+        // Null the URL in the database
+        await pool.query(
+          'UPDATE orders SET voice_note_url = NULL WHERE id = $1',
+          [order.id]
+        );
+        deletedCount++;
+      } catch (err) {
+        console.error(`[Worker] Failed to cleanup voice note for order ${order.id}:`, err);
+      }
+    }
+
+    // Also cleanup direct_order_messages audio
+    const messagesToCleanup = await pool.query(
+      `SELECT DISTINCT dom.id, dom.audio_url
+       FROM direct_order_messages dom
+       WHERE dom.audio_url IS NOT NULL
+         AND EXISTS (
+           SELECT 1 FROM order_status_logs osl
+           WHERE osl.order_id = dom.order_id
+             AND osl.new_status IN ('delivered', 'cancelled')
+             AND osl.created_at < $1
+         )`,
+      [cutoff]
+    );
+
+    for (const msg of messagesToCleanup.rows) {
+      try {
+        const key = r2KeyFromUrl(msg.audio_url);
+        if (key) {
+          await deleteFromR2(key);
+        }
+        await pool.query(
+          'UPDATE direct_order_messages SET audio_url = NULL WHERE id = $1',
+          [msg.id]
+        );
+        deletedCount++;
+      } catch (err) {
+        console.error(`[Worker] Failed to cleanup message audio ${msg.id}:`, err);
+      }
+    }
+
+    console.log(`[Worker] Cleaned up ${deletedCount} voice notes older than 3 days`);
+  } catch (error) {
+    console.error('[Worker] Failed to cleanup voice notes:', error);
   }
 }
 

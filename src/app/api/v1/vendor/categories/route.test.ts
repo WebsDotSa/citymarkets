@@ -11,19 +11,39 @@ import { NextResponse } from "next/server";
  * {global, private} response shape.
  */
 
-type QueryCall = { sql: string; params: unknown[] };
-const calls: QueryCall[] = [];
+// `vi.hoisted` runs before everything else (including `vi.mock`
+// factory hoisting). The shared `calls` array + handler indirection
+// live here so the @/lib/db factory can read them without referring
+// to any test-file-level `const`/`let` (which would be TDZ at
+// hoisting time).
+const { calls, getHandler, setHandler } = vi.hoisted(() => {
+  const calls: { sql: string; params: unknown[] }[] = [];
+  type QueryHandler = (sql: string, params: unknown[]) => unknown;
+  type GlobalWithHandler = { __categoriesTestHandler?: QueryHandler | null };
+  const getHandler = (): QueryHandler | null =>
+    (globalThis as GlobalWithHandler).__categoriesTestHandler ?? null;
+  const setHandler = (h: QueryHandler | null): void => {
+    (globalThis as GlobalWithHandler).__categoriesTestHandler = h;
+  };
+  (globalThis as GlobalWithHandler).__categoriesTestHandler = null;
+  return { calls, getHandler, setHandler };
+});
 
-vi.mock("@/lib/db", () => ({
-  pool: { connect: vi.fn() },
-  query: vi.fn(async (sql: string, params: unknown[] = []) => {
-    calls.push({ sql, params });
-    if ((query as any).mockHandler) {
-      return await (query as any).mockHandler(sql, params);
-    }
-    return { rows: [] };
-  }),
-}));
+vi.mock("@/lib/db", () => {
+  const makeQueryMock = () =>
+    vi.fn(async (sql: string, params: unknown[] = []) => {
+      calls.push({ sql, params });
+      const handler = getHandler();
+      if (handler) {
+        return await handler(sql, params);
+      }
+      return { rows: [] };
+    });
+  return {
+    pool: { connect: vi.fn(), query: makeQueryMock() },
+    query: makeQueryMock(),
+  };
+});
 
 vi.mock("@/lib/cache", () => ({
   cache: {
@@ -69,7 +89,7 @@ beforeEach(() => {
   calls.length = 0;
   mockSession = { vendorId: "v1", vendorSlug: "acme", role: "manager", staffId: "s1" };
   mockRoleForbidden = null;
-  (query as any).mockHandler = null;
+  setHandler(null);
 });
 
 describe("GET /api/v1/vendor/categories", () => {
@@ -85,11 +105,11 @@ describe("GET /api/v1/vendor/categories", () => {
       { id: "g2", name_ar: "فواكه", name_en: "Fruit", slug: "fruit", parent_id: null, sort_order: 2, is_active: true, vendor_id: null },
       { id: "p1", name_ar: "تمور", name_en: "Dates", slug: "dates", parent_id: null, sort_order: 0, is_active: true, vendor_id: "v1" },
     ];
-    (query as any).mockHandler = async (sql: string) => {
+    setHandler(async (sql: string) => {
       // SQL spans multiple lines — `s` flag lets `.` match \n.
       if (/SELECT id, name_ar[\s\S]*FROM categories/i.test(sql)) return { rows };
       return { rows: [] };
-    };
+    });
     const res = await GET(makeRequest() as unknown as never);
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -137,14 +157,13 @@ describe("POST /api/v1/vendor/categories", () => {
 
   it("creates a PRIVATE row by default (vendor_id = current)", async () => {
     let insertParams: unknown[] | null = null;
-    (query as any).mockHandler = async (sql: string, params: unknown[] = []) => {
-      if (sql.startsWith("SELECT id FROM categories")) return { rows: [] };
+    setHandler(async (sql: string, params: unknown[] = []) => {
       if (sql.startsWith("INSERT INTO categories")) {
         insertParams = params;
         return { rows: [{ id: "new-cat-id" }] };
       }
       return { rows: [] };
-    };
+    });
     const res = await POST(
       makeRequest({ nameAr: "تمور فاخرة", nameEn: "Premium Dates" }) as unknown as never,
     );
@@ -162,14 +181,13 @@ describe("POST /api/v1/vendor/categories", () => {
 
   it("creates a GLOBAL row when isPrivate=false (vendor_id NULL)", async () => {
     let insertParams: unknown[] | null = null;
-    (query as any).mockHandler = async (sql: string, params: unknown[] = []) => {
-      if (sql.startsWith("SELECT id FROM categories")) return { rows: [] };
+    setHandler(async (sql: string, params: unknown[] = []) => {
       if (sql.startsWith("INSERT INTO categories")) {
         insertParams = params;
         return { rows: [{ id: "global-id" }] };
       }
       return { rows: [] };
-    };
+    });
     const res = await POST(
       makeRequest({ nameAr: "قهوة", isPrivate: false }) as unknown as never,
     );
@@ -181,75 +199,103 @@ describe("POST /api/v1/vendor/categories", () => {
     expect(insertParams).toHaveLength(3);
   });
 
-  it("scopes the slug uniqueness check to the vendor's private scope", async () => {
-    let privateCheckParams: unknown[] | null = null;
-    (query as any).mockHandler = async (sql: string, params: unknown[] = []) => {
-      if (/SELECT id FROM categories WHERE vendor_id = \$1 AND slug = \$2/.test(sql)) {
-        privateCheckParams = params;
-        return { rows: [] };
-      }
+  it("inserts with the supplied slug verbatim when free (no SELECT probe)", async () => {
+    // SECURITY (PCP-149): the old code did a SELECT-before-INSERT
+    // round-trip; the new path skips it and lets the partial unique
+    // index do the work. Only one INSERT should be issued when the
+    // slug is free.
+    let insertCount = 0;
+    setHandler(async (sql: string) => {
       if (sql.startsWith("INSERT INTO categories")) {
+        insertCount++;
         return { rows: [{ id: "id" }] };
       }
       return { rows: [] };
-    };
+    });
     const res = await POST(
       makeRequest({ nameAr: "قهوة", slug: "my-qahwa" }) as unknown as never,
     );
     expect(res.status).toBe(200);
-    // The scope check must include `vendor_id = $1` so the same slug
-    // can exist under another vendor (partial uniques).
-    expect(privateCheckParams).toEqual(["v1", "my-qahwa"]);
+    expect(insertCount).toBe(1);
   });
 
-  it("scopes the slug uniqueness check to global scope when isPrivate=false", async () => {
-    let globalCheckParams: unknown[] | null = null;
-    (query as any).mockHandler = async (sql: string, params: unknown[] = []) => {
-      if (/SELECT id FROM categories WHERE vendor_id IS NULL AND slug = \$1/.test(sql)) {
-        globalCheckParams = params;
-        return { rows: [] };
-      }
+  it("retries the INSERT with a numeric suffix on pg 23505 (unique_violation)", async () => {
+    // SECURITY (PCP-149): when the base slug is taken, the INSERT
+    // throws pg code 23505 and the route appends "-2" and retries
+    // instead of doing a SELECT loop. At most MAX_SLUG_RETRIES=5
+    // attempts total.
+    let insertCount = 0;
+    setHandler(async (sql: string, params: unknown[] = []) => {
       if (sql.startsWith("INSERT INTO categories")) {
+        insertCount++;
+        if (insertCount === 1) {
+          // Simulate the partial unique index rejecting the slug.
+          const err: any = new Error("duplicate key value violates unique constraint");
+          err.code = "23505";
+          throw err;
+        }
         return { rows: [{ id: "id" }] };
       }
       return { rows: [] };
-    };
-    const res = await POST(
-      makeRequest({ nameAr: "قهوة", slug: "my-qahwa", isPrivate: false }) as unknown as never,
-    );
-    expect(res.status).toBe(200);
-    expect(globalCheckParams).toEqual(["my-qahwa"]);
-  });
-
-  it("appends a numeric suffix when the vendor's slug is already taken", async () => {
-    let slugChecks = 0;
-    (query as any).mockHandler = async (sql: string) => {
-      if (/SELECT id FROM categories WHERE vendor_id = \$1 AND slug/.test(sql)) {
-        slugChecks++;
-        // First check (base) returns a row (taken); subsequent checks free.
-        return slugChecks === 1 ? { rows: [{ id: "other" }] } : { rows: [] };
-      }
-      if (sql.startsWith("INSERT INTO categories")) {
-        return { rows: [{ id: "id" }] };
-      }
-      return { rows: [] };
-    };
+    });
     const res = await POST(
       makeRequest({ nameAr: "قهوة" }) as unknown as never,
     );
     expect(res.status).toBe(200);
     const body = await res.json();
-    // generateSlug("قهوة") → "qhwah" per the transliteration table; the
-    // unique-suffix loop must append "-2" verbatim, not trim the base.
+    // generateSlug("قهوة") → "qhwah"; on 23505 the route appends "-2".
     expect(body.data.slug).toBe("qhwah-2");
+    // Exactly two attempts: the rejected base slug + the successful "-2".
+    expect(insertCount).toBe(2);
+  });
+
+  it("returns 409 when every retry attempt collides", async () => {
+    // SECURITY (PCP-149): 5 attempts exhausted — surface a 409 so the
+    // client picks a different slug instead of silently 200ing.
+    setHandler(async (sql: string) => {
+      if (sql.startsWith("INSERT INTO categories")) {
+        const err: any = new Error("duplicate key value violates unique constraint");
+        err.code = "23505";
+        throw err;
+      }
+      return { rows: [] };
+    });
+    const res = await POST(
+      makeRequest({ nameAr: "قهوة" }) as unknown as never,
+    );
+    expect(res.status).toBe(409);
+  });
+
+  it("rethrows non-23505 errors (does not swallow DB faults)", async () => {
+    // SECURITY (PCP-149): only 23505 should be caught. A 23502 (not_null)
+    // or 23503 (fk_violation) or 08006 (connection) must propagate so
+    // the global error handler can log + 500 — not be turned into a
+    // silent 409 by the retry loop.
+    setHandler(async (sql: string) => {
+      if (sql.startsWith("INSERT INTO categories")) {
+        const err: any = new Error("connection lost");
+        err.code = "08006";
+        throw err;
+      }
+      return { rows: [] };
+    });
+    const res = await POST(
+      makeRequest({ nameAr: "قهوة" }) as unknown as never,
+    );
+    // The route's outer try/catch logs and returns a 500-class
+    // response, never a 2xx success. We accept anything that is not
+    // 200/409 to keep the test resilient to error-shaping changes,
+    // while still proving the error was NOT swallowed into a
+    // successful retry path.
+    expect(res.status).not.toBe(200);
+    expect(res.status).not.toBe(409);
   });
 
   it("busts the storefront cache on private POST", async () => {
-    (query as any).mockHandler = async (sql: string) => {
-      if (sql.startsWith("SELECT id FROM categories")) return { rows: [] };
+    setHandler(async (sql: string) => {
       if (sql.startsWith("INSERT INTO categories")) return { rows: [{ id: "id" }] };
       return { rows: [] };
-    };
+    });
     await POST(makeRequest({ nameAr: "قهوة" }) as unknown as never);
     expect(vi.mocked(cache.invalidatePattern)).toHaveBeenCalledWith(
       "vendor-storefront:acme:categories:",
@@ -259,11 +305,10 @@ describe("POST /api/v1/vendor/categories", () => {
   });
 
   it("busts the public categories cache too on global POST", async () => {
-    (query as any).mockHandler = async (sql: string) => {
-      if (sql.startsWith("SELECT id FROM categories")) return { rows: [] };
+    setHandler(async (sql: string) => {
       if (sql.startsWith("INSERT INTO categories")) return { rows: [{ id: "id" }] };
       return { rows: [] };
-    };
+    });
     await POST(
       makeRequest({ nameAr: "قهوة", isPrivate: false }) as unknown as never,
     );

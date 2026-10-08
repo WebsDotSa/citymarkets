@@ -57,7 +57,7 @@ export default function AdminDirectOrdersPage() {
             <p className="text-sm text-gray-500">إجمالي {total} طلب</p>
           </div>
           <button
-            onClick={() => router.push('/orders/direct/chat')}
+            onClick={() => router.push('/admin/orders/direct/chat')}
             className="mr-auto text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2"
             style={{ backgroundColor: BRAND.brandGreen }}
           >
@@ -101,7 +101,7 @@ export default function AdminDirectOrdersPage() {
             {orders.map((o) => (
               <button
                 key={o.id}
-                onClick={() => router.push(`/orders/direct/${o.id}`)}
+                onClick={() => router.push(`/admin/orders/direct/${o.id}`)}
                 className="w-full bg-white rounded-xl p-4 border border-gray-200 hover:border-green-500 transition text-right"
               >
                 <div className="flex items-start justify-between gap-3">

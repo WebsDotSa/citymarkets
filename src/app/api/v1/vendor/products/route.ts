@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireVendorRole, type VendorRole } from "@/lib/identity";
+import { requireVendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { parsePagination } from "@/lib/api/pagination";
+import { error as logError } from '@/lib/logger';
+import { checkRateLimit, createRateLimitHeaders, VENDOR_PRODUCT_CREATE_CONFIG } from '@/lib/rate-limit';
 
 export async function GET(request: Request) {
   try {
@@ -12,14 +14,10 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 20 });
     const search = searchParams.get("search");
     const isActive = searchParams.get("isActive");
     const lowStock = searchParams.get("lowStock");
-
-    const offset = (page - 1) * limit;
-
     let whereClause = "WHERE vendor_id = $1";
     const values: (string | number | boolean)[] = [session.vendorId];
     let paramIndex = 2;
@@ -118,6 +116,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "اسم المنتج والسعر مطلوبان" },
         { status: 400 }
+      );
+    }
+
+    // SECURITY (PCP-137): per-vendor rate limit on product creation.
+    // The body schema check above is fast and rejects bad input without
+    // touching this bucket (PCP-133 lesson). 30/min covers legitimate
+    // bulk upload flows and stops scripted catalog flooding.
+    const productRl = await checkRateLimit(
+      `vendor:product:create:${session.vendorId}`,
+      VENDOR_PRODUCT_CREATE_CONFIG,
+    );
+    if (!productRl.allowed) {
+      return NextResponse.json(
+        { error: "تم تجاوز عدد المحاولات، حاول لاحقاً" },
+        { status: 429, headers: createRateLimitHeaders(productRl) },
       );
     }
 

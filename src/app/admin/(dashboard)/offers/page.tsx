@@ -209,7 +209,7 @@ function AdminOffersContent() {
               {row.title_ar}
             </p>
             {row.title_en ? (
-              <p className="text-[11px] text-gray-500 truncate" dir="ltr">
+              <p className="text-2xs text-gray-500 truncate" dir="ltr">
                 {row.title_en}
               </p>
             ) : null}
@@ -235,7 +235,7 @@ function AdminOffersContent() {
       key: "window",
       label: "الفترة",
       render: (row: AdminOffer) => (
-        <div className="text-[11px] text-gray-500 leading-tight">
+        <div className="text-2xs text-gray-500 leading-tight">
           <div>من: {new Date(row.starts_at).toLocaleDateString("ar-SA")}</div>
           <div>إلى: {new Date(row.ends_at).toLocaleDateString("ar-SA")}</div>
         </div>
@@ -251,12 +251,12 @@ function AdminOffersContent() {
       label: "مميّز",
       render: (row: AdminOffer) =>
         row.is_featured ? (
-          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+          <span className="inline-flex items-center gap-1 text-2xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
             <Sparkles className="w-3 h-3" />
             مميّز
           </span>
         ) : (
-          <span className="text-[11px] text-gray-400">—</span>
+          <span className="text-2xs text-gray-400">—</span>
         ),
     },
   ];

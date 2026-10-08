@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { cache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache';
+import { cache, CACHE_TTL } from '@/lib/cache';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
+import { parsePagination } from "@/lib/api/pagination";
 import { sanitizeHtml } from '@/lib/sanitize-html';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 import type { BlogPost } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -15,8 +16,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const featured = searchParams.get('featured');
-    const limit = Math.min(50, parseInt(searchParams.get('limit') || '10', 10));
-    const offset = (parseInt(searchParams.get('page') || '1', 10) - 1) * limit;
+    const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 10 });
 
     // Cache key based on params
     const cacheKey = `blog:list:${category || 'all'}:${featured || 'no'}:${limit}:${offset}`;

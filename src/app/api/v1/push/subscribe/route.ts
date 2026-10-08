@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCustomerUserIdFromRequest } from '@/lib/identity';
+import { getClientIp } from "@/lib/request-ip";
+import { checkRateLimit, PUSH_SUBSCRIBE_IP_CONFIG } from "@/lib/rate-limit";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 interface SubscriptionPayload {
   endpoint: string;
@@ -10,6 +12,26 @@ interface SubscriptionPayload {
 }
 
 export async function POST(req: NextRequest) {
+  // SECURITY (PCP-141): per-IP cap on push subscription. The route
+  // does NOT require an authenticated user — guests can subscribe
+  // to the public track-page feed. CSRF middleware blocks bare
+  // cross-origin POSTs, but a fresh csrf_token is issued on the
+  // first GET to any page, so a scripted attacker can still pull
+  // one down and spam NULL-user subscriptions. The endpoint-key
+  // uniqueness in the DB limits the rows-on-disk damage, but the
+  // broadcast worker still has to walk all NULL-user rows on every
+  // send. 10/min/IP is well above the legitimate "subscribe once"
+  // flow. Input validation below runs AFTER the rate-limit check
+  // (no per-endpoint input here — the only fields are the
+  // SubscriptionPayload shape).
+  const pushRl = await checkRateLimit(
+    `push:subscribe:${getClientIp(req)}`,
+    PUSH_SUBSCRIBE_IP_CONFIG,
+  );
+  if (!pushRl.allowed) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   let body: SubscriptionPayload;
   try {
     body = await req.json();

@@ -132,7 +132,17 @@ export async function getOverviewKpis(periodDays: PeriodDays): Promise<OverviewK
         (SELECT COUNT(*) FROM products_unified WHERE stock_qty <= 5 AND stock_qty > 0)                  AS low_stock,
         (SELECT COUNT(*) FROM categories WHERE is_active = true)                                        AS categories,
         (SELECT COUNT(*) FROM users  WHERE created_at >= NOW() - make_interval(days => $1::int))        AS users,
-        (SELECT COUNT(*) FROM banners WHERE active = true)                                               AS banners,
+        -- migration 077 (drop_banners_table) removed the standalone banners table;
+        -- the home-layout editor stores banner-shaped objects inline as a section
+        -- setting on home_layouts rows. The KPI surface still shows a "banners"
+        -- field for backwards compatibility with the admin UI; the count is
+        -- derived from the number of distinct image refs across active layouts.
+        (SELECT COUNT(DISTINCT banner->>'id')
+           FROM home_layouts, jsonb_array_elements(sections) AS section,
+                jsonb_array_elements(section->'settings'->'banners') AS banner
+          WHERE (section->>'type') = 'banners'
+            AND (banner->>'id') IS NOT NULL
+        )                                                                                                AS banners,
         (SELECT COUNT(*) FROM coupons
            WHERE is_active = true AND (expires_at IS NULL OR expires_at > NOW()))                       AS active_coupons
     ),

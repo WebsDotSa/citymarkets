@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   try {
-    if (!verifyWebhookSignature(authHeader)) {
+    if (!(await verifyWebhookSignature(authHeader))) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
   } catch {

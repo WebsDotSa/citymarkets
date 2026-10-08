@@ -92,7 +92,7 @@ function LastStatusChangeBadge({
 }) {
   if (!change) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-400 mt-2">
+      <span className="inline-flex items-center gap-1.5 text-2xs text-gray-400 mt-2">
         <Clock className="w-3 h-3" />
         لم يتم تسجيل أي تغيير على الحالة بعد
       </span>
@@ -123,7 +123,7 @@ function LastStatusChangeBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-[11px] mt-2 px-2.5 py-1 rounded-full border ${colorClass}`}
+      className={`inline-flex items-center gap-1.5 text-2xs mt-2 px-2.5 py-1 rounded-full border ${colorClass}`}
     >
       <Icon className="w-3 h-3" />
       <span className="font-semibold">آخر تحديث:</span>
@@ -485,7 +485,7 @@ export default function AdminOrderDetailPage() {
               target="_blank"
               rel="noopener noreferrer"
               title="إرسال رسالة واتساب للعميل"
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#20bd5a] transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors shadow-sm"
             >
               <WhatsAppIcon className="w-4 h-4 shrink-0" />
               مراسلة العميل
@@ -819,7 +819,7 @@ export default function AdminOrderDetailPage() {
                         href={whatsappUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#25D366] text-white text-xs font-semibold hover:bg-[#20bd5a] transition-colors"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-dark transition-colors"
                       >
                         <WhatsAppIcon className="w-3 h-3" />
                         واتساب
@@ -846,7 +846,7 @@ export default function AdminOrderDetailPage() {
             <h2 className="font-bold text-secondary flex items-center gap-2 mb-3">
               <StickyNote className="w-4 h-4 text-primary" />
               ملاحظات داخلية
-              <span className="text-[10px] text-gray-400 font-normal mr-1">(للفريق فقط)</span>
+              <span className="text-tiny text-gray-400 font-normal mr-1">(للفريق فقط)</span>
             </h2>
             <textarea
               value={internalNotes}

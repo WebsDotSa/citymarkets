@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TicketPercent, ArrowRight, Copy, Check } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { Card } from "@/components/ui/card";
 
 // Shape mirrors the response shape of /api/v1/coupons (which returns the
 // currently-active subset of coupons). Both profile-coupons and the cart
@@ -198,12 +200,12 @@ export function AvailableCoupons({
           حسابي
         </Link>
 
-        <header className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            كل الكوبونات النشطة — استخدمها عند الطلب لكسب خصم أو توصيل مجاني.
-          </p>
-        </header>
+        <PageHeader
+          icon={<TicketPercent className="w-6 h-6 text-primary" />}
+          title={headerTitle}
+          subtitle="كل الكوبونات النشطة — استخدمها عند الطلب لكسب خصم أو توصيل مجاني."
+          className="mb-6"
+        />
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
@@ -212,7 +214,7 @@ export function AvailableCoupons({
         )}
 
         {coupons.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+          <Card className="p-8 text-center">
             <TicketPercent className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <h2 className="font-semibold text-gray-900 mb-1">
               ما عندنا عروض حالياً
@@ -220,7 +222,7 @@ export function AvailableCoupons({
             <p className="text-sm text-gray-500">
               تابعنا — رح نضيف كوبونات جديدة قريباً.
             </p>
-          </div>
+          </Card>
         ) : (
           <ul className="space-y-3">
             {coupons.map((c) => {

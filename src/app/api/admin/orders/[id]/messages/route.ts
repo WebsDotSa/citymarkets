@@ -4,6 +4,12 @@ import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { error as logError } from '@/lib/logger';
 import { orderMessagePostSchema as postBodySchema } from '@/lib/validation';
 
+// Module-scoped UUID validator. P2-9 (PCP-101 audit): same fix as
+// /api/admin/orders/[id] — pre-validate before opening a pool
+// connection so bad UUIDs surface as 400 not 500.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * GET  /api/admin/orders/[id]/messages  → admin reads all messages
  * POST /api/admin/orders/[id]/messages  → admin sends reply
@@ -15,6 +21,13 @@ export async function GET(
   const gate = await requireAdminApi(request, 'manage_orders');
   if (gate instanceof NextResponse) return gate;
   const { id: orderId } = await ctx.params;
+
+  if (!UUID_RE.test(orderId)) {
+    return NextResponse.json(
+      { success: false, error: 'معرّف الطلب غير صالح' },
+      { status: 400 }
+    );
+  }
 
   const client = await pool.connect();
   try {
@@ -70,6 +83,13 @@ export async function POST(
   if (gate instanceof NextResponse) return gate;
   const { id: orderId } = await ctx.params;
   const admin = gate.admin;
+
+  if (!UUID_RE.test(orderId)) {
+    return NextResponse.json(
+      { success: false, error: 'معرّف الطلب غير صالح' },
+      { status: 400 }
+    );
+  }
 
   let body: unknown;
   try {

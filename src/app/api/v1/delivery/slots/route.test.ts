@@ -117,8 +117,17 @@ describe("GET /api/v1/delivery/slots — migration 060/078 regression", () => {
 
   it("counts booked slots globally (no per-zone partition)", async () => {
     makeQueryMock({ slotBookings: { morning: 5, noon: 0 } });
+    // Request a future date (tomorrow) to ensure the window hasn't
+    // passed yet. This isolates the test to verify that booked counts
+    // are global (not per-zone), without time-dependent failures.
+    const tomorrow = new Date();
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    const yyyy = tomorrow.getUTCFullYear();
+    const mm = String(tomorrow.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(tomorrow.getUTCDate()).padStart(2, "0");
+    const dateStr = `${yyyy}-${mm}-${dd}`;
     const res = await GET(
-      mockRequest("http://localhost/api/v1/delivery/slots") as never,
+      mockRequest(`http://localhost/api/v1/delivery/slots?date=${dateStr}`) as never,
     );
     const body = await res.json();
     const morning = body.data.windows.find((w: { id: string }) => w.id === "morning");

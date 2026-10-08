@@ -63,7 +63,7 @@ describe("GET /api/admin/driver/orders/[id] — products_unified migration", () 
   it("joins order_items to products_unified and never to bare products", async () => {
     await GET(
       mockRequest("http://localhost/api/admin/driver/orders/uuid-1") as never,
-      { params: Promise.resolve({ id: "uuid-1" }) } as never,
+      { params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }) } as never,
     );
 
     const queriedProducts = calls.some(
@@ -134,10 +134,10 @@ describe("PATCH /api/admin/driver/orders/[id] — COD paid through ledger (P1-1)
           // and collecting COD payment. The non-claim branch (claim:false
           // would also work) is the realistic flow; we use claim:false
           // because the driver already owns the order.
-          return { rows: [{ id: "ord-1", status: "on_the_way", payment_status: "pending", driver_id: "driver-1" }] };
+          return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", status: "on_the_way", payment_status: "pending", driver_id: "driver-1" }] };
         }
         // UPDATE orders ... RETURNING
-        return { rows: [{ id: "ord-1", order_number: "TRK1", status: "delivered" }] };
+        return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", order_number: "TRK1", status: "delivered" }] };
       }),
       release: vi.fn(),
     };
@@ -146,13 +146,13 @@ describe("PATCH /api/admin/driver/orders/[id] — COD paid through ledger (P1-1)
 
     await PATCH(
       patchRequest({ status: "delivered" }) as never,
-      { params: Promise.resolve({ id: "ord-1" }) } as never,
+      { params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }) } as never,
     );
 
     // Ledger INSERT happened with gateway='cod' and eventType='cod.collected'
     expect(recordPaymentEvent).toHaveBeenCalledTimes(1);
     expect(vi.mocked(recordPaymentEvent).mock.calls[0][1]).toMatchObject({
-      invoiceId: "ord-1",
+      invoiceId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       gateway: "cod",
       eventType: "cod.collected",
     });
@@ -160,7 +160,7 @@ describe("PATCH /api/admin/driver/orders/[id] — COD paid through ledger (P1-1)
     // finalizePaymentEvent ran with status='processed' for the cod event
     expect(finalizePaymentEvent).toHaveBeenCalledTimes(1);
     expect(vi.mocked(finalizePaymentEvent).mock.calls[0][1]).toMatchObject({
-      invoiceId: "ord-1",
+      invoiceId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       gateway: "cod",
       eventType: "cod.collected",
       status: "processed",
@@ -180,9 +180,9 @@ describe("PATCH /api/admin/driver/orders/[id] — COD paid through ledger (P1-1)
         }
         if (s.startsWith("SELECT") && /FOR UPDATE/.test(s)) {
           // already paid (e.g. online payment) — no COD collection
-          return { rows: [{ id: "ord-1", status: "on_the_way", payment_status: "paid", driver_id: "driver-1" }] };
+          return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", status: "on_the_way", payment_status: "paid", driver_id: "driver-1" }] };
         }
-        return { rows: [{ id: "ord-1", order_number: "TRK1", status: "delivered" }] };
+        return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", order_number: "TRK1", status: "delivered" }] };
       }),
       release: vi.fn(),
     };
@@ -191,7 +191,7 @@ describe("PATCH /api/admin/driver/orders/[id] — COD paid through ledger (P1-1)
 
     await PATCH(
       patchRequest({ status: "delivered" }) as never,
-      { params: Promise.resolve({ id: "ord-1" }) } as never,
+      { params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }) } as never,
     );
 
     // No ledger writes — order was already paid
@@ -216,9 +216,9 @@ describe("PATCH /api/admin/driver/orders/[id] — COD paid through ledger (P1-1)
           return { rows: [{ id: "driver-1" }] };
         }
         if (s.startsWith("SELECT") && /FOR UPDATE/.test(s)) {
-          return { rows: [{ id: "ord-1", status: "on_the_way", payment_status: "pending", driver_id: "driver-1" }] };
+          return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", status: "on_the_way", payment_status: "pending", driver_id: "driver-1" }] };
         }
-        return { rows: [{ id: "ord-1", order_number: "TRK1", status: "delivered" }] };
+        return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", order_number: "TRK1", status: "delivered" }] };
       }),
       release: vi.fn(),
     };
@@ -227,7 +227,7 @@ describe("PATCH /api/admin/driver/orders/[id] — COD paid through ledger (P1-1)
 
     await PATCH(
       patchRequest({ status: "delivered" }) as never,
-      { params: Promise.resolve({ id: "ord-1" }) } as never,
+      { params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }) } as never,
     );
 
     // Ledger was attempted but short-circuited as duplicate
@@ -257,9 +257,9 @@ describe("PATCH /api/admin/driver/orders/[id] — COD paid through ledger (P1-1)
           return { rows: [{ id: "driver-1" }] };
         }
         if (s.startsWith("SELECT") && /FOR UPDATE/.test(s)) {
-          return { rows: [{ id: "ord-1", status: "pending", payment_status: "pending", driver_id: null }] };
+          return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", status: "pending", payment_status: "pending", driver_id: null }] };
         }
-        return { rows: [{ id: "ord-1", order_number: "TRK1", status: "on_the_way" }] };
+        return { rows: [{ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", order_number: "TRK1", status: "on_the_way" }] };
       }),
       release: vi.fn(),
     };
@@ -268,7 +268,7 @@ describe("PATCH /api/admin/driver/orders/[id] — COD paid through ledger (P1-1)
 
     await PATCH(
       patchRequest({ status: "on_the_way", claim: true }) as never,
-      { params: Promise.resolve({ id: "ord-1" }) } as never,
+      { params: Promise.resolve({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }) } as never,
     );
 
     // No ledger writes for non-COD-collected transitions

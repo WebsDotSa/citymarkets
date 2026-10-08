@@ -91,11 +91,37 @@ export function resolveTitle(input: { title?: unknown; description?: unknown; la
 }
 
 /**
+ * Guest keys are client-supplied (x-guest-key header, session_id cookie).
+ * Every legitimate generator emits a UUID or `guest_<ms>_<base36>`, so
+ * anything outside this whitelist is rejected before it reaches SQL.
+ */
+const GUEST_KEY_RE = /^[A-Za-z0-9_-]{8,128}$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isValidGuestKey(value: unknown): value is string {
+  return typeof value === "string" && GUEST_KEY_RE.test(value);
+}
+
+export class InvalidAddressOwnerError extends Error {
+  constructor() {
+    super("invalid address owner");
+    this.name = "InvalidAddressOwnerError";
+  }
+}
+
+function assertValidOwner(owner: AddressOwner): void {
+  const ok =
+    owner.kind === "user" ? UUID_RE.test(owner.userId) : isValidGuestKey(owner.guestKey);
+  if (!ok) throw new InvalidAddressOwnerError();
+}
+
+/**
  * Build the WHERE-clause fragment that scopes an address query to its
  * owner. Returns the SQL fragment and the param value so callers can
  * splice them into larger queries safely.
  */
 function ownerWhere(owner: AddressOwner): { sql: string; param: string } {
+  assertValidOwner(owner);
   return owner.kind === "user"
     ? { sql: "user_id = $1::uuid", param: owner.userId }
     : { sql: "guest_key = $1", param: owner.guestKey };
@@ -145,6 +171,7 @@ export async function createAddress(
   owner: AddressOwner,
   input: AddressInput,
 ): Promise<AddressRow> {
+  assertValidOwner(owner);
   const title = resolveTitle({ title: input.title, description: input.description, label: input.label });
 
   // Decide default flag + clear others — wrapped in a transaction so
@@ -171,30 +198,23 @@ export async function createAddress(
       // only one unique placeholder, even though it appears twice in the
       // text.
       await client.query(
-        `UPDATE addresses SET is_default = false WHERE ${whereSql} AND id <> COALESCE((SELECT id FROM addresses WHERE ${whereSql} LIMIT 1), '00000000-0000-0000-0000-000000000000'::uuid)`,
+        `UPDATE addresses SET is_default = false WHERE ${whereSql} AND is_default = true`,
         [param],
       );
     }
 
+    // SECURITY: the owner value is always a bound parameter ($1) — it was
+    // previously interpolated into the SQL text (SQL injection via the
+    // guest key header, and a syntax error for every user-owned insert).
     const ownerColumn = owner.kind === "user" ? "user_id" : "guest_key";
-    // SECURITY/PARSE: previously this interpolated `${owner.userId}::uuid`
-    // directly into the VALUES clause as a SQL fragment. pg's parser saw
-    // `58f85100-xxxx-...` and read the leading digits as a numeric
-    // literal, then choked on the hex tail ("trailing junk after numeric
-    // literal at or near 58f85100"). The fix is to pass the owner value
-    // as a bound parameter ($1) and let pg cast it server-side. The
-    // cast is conditional because the guest owner column is TEXT, not
-    // UUID.
-    const ownerValue =
-      owner.kind === "user" ? owner.userId : owner.guestKey;
-    const ownerCast = owner.kind === "user" ? "$1::uuid" : "$1";
+    const ownerCast = owner.kind === "user" ? "::uuid" : "";
 
     const insertResult = await client.query<AddressRow>(
       `INSERT INTO addresses (${ownerColumn}, label, description, title, lat, lng, address_text, is_default, place_images)
-       VALUES (${ownerCast}, $2, $3, $4, $5::float8, $6::float8, $7, $8, $9::text[])
+       VALUES ($1${ownerCast}, $2, $3, $4, $5::float8, $6::float8, $7, $8, COALESCE($9::text[], '{}'))
        RETURNING ${SELECT_FIELDS}`,
       [
-        ownerValue,
+        param,
         input.label,
         input.description ?? null,
         title,

@@ -3,7 +3,7 @@ import { pool } from '@/lib/db';
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import { getClientIp } from '@/lib/request-ip';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 import {
   checkRateLimit,
   PAYMENT_STATUS_CONFIG,

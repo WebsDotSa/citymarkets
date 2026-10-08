@@ -4,6 +4,7 @@ import { useEffect, useState, use } from "react";
 import { useConfirm } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
 import { Tag, Plus, Loader2, Copy, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
+import { useFormFieldIdFromLabel } from "@/hooks/use-form-field-id";
 import { useVendorRole } from "../_lib/vendor-role-context";
 
 interface CouponsPageProps {
@@ -171,7 +172,7 @@ export default function VendorCouponsPage({ params }: CouponsPageProps) {
                       <span className="text-xs text-emerald-600">✓ تم النسخ</span>
                     )}
                     {!c.isActive && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">
+                      <span className="text-tiny px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">
                         معطل
                       </span>
                     )}
@@ -287,6 +288,17 @@ function CouponModal({
   const [form, setForm] = useState<any>(initial);
   const [error, setError] = useState<string | null>(null);
 
+  // Stable ids for label/input binding. Scoped to the modal so the form
+  // is uniquely identified per mount, even if multiple modals ever
+  // stack on the same page.
+  const codeId = useFormFieldIdFromLabel("vendor-coupon-modal", "كود الكوبون");
+  const discountTypeId = useFormFieldIdFromLabel("vendor-coupon-modal", "نوع الخصم");
+  const discountValueId = useFormFieldIdFromLabel("vendor-coupon-modal", "القيمة");
+  const minOrderId = useFormFieldIdFromLabel("vendor-coupon-modal", "حد أدنى للطلب");
+  const maxUsesId = useFormFieldIdFromLabel("vendor-coupon-modal", "عدد الاستخدامات");
+  const validFromId = useFormFieldIdFromLabel("vendor-coupon-modal", "صالح من");
+  const validUntilId = useFormFieldIdFromLabel("vendor-coupon-modal", "ينتهي في");
+
   useEffect(() => {
     setForm(initial);
     setError(null);
@@ -356,10 +368,14 @@ function CouponModal({
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor={codeId}
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 كود الكوبون
               </label>
               <input
+                id={codeId}
                 type="text"
                 value={form.code}
                 onChange={(e) => update("code", e.target.value.toUpperCase())}
@@ -370,10 +386,14 @@ function CouponModal({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor={discountTypeId}
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   نوع الخصم
                 </label>
                 <select
+                  id={discountTypeId}
                   value={form.discountType}
                   onChange={(e) => update("discountType", e.target.value)}
                   className={inputClass}
@@ -383,10 +403,14 @@ function CouponModal({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor={discountValueId}
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   القيمة
                 </label>
                 <input
+                  id={discountValueId}
                   type="number"
                   value={form.discountValue}
                   onChange={(e) => update("discountValue", e.target.value)}
@@ -400,10 +424,14 @@ function CouponModal({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor={minOrderId}
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   حد أدنى للطلب
                 </label>
                 <input
+                  id={minOrderId}
                   type="number"
                   value={form.minOrder ?? ""}
                   onChange={(e) =>
@@ -415,10 +443,14 @@ function CouponModal({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor={maxUsesId}
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   عدد الاستخدامات
                 </label>
                 <input
+                  id={maxUsesId}
                   type="number"
                   value={form.maxUses ?? ""}
                   onChange={(e) =>
@@ -433,10 +465,14 @@ function CouponModal({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor={validFromId}
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   صالح من
                 </label>
                 <input
+                  id={validFromId}
                   type="date"
                   value={form.validFrom?.slice(0, 10) ?? ""}
                   onChange={(e) => update("validFrom", e.target.value || null)}
@@ -444,10 +480,14 @@ function CouponModal({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor={validUntilId}
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   ينتهي في
                 </label>
                 <input
+                  id={validUntilId}
                   type="date"
                   value={form.validUntil?.slice(0, 10) ?? ""}
                   onChange={(e) => update("validUntil", e.target.value || null)}
@@ -462,6 +502,7 @@ function CouponModal({
                 checked={form.isActive !== false}
                 onChange={(e) => update("isActive", e.target.checked)}
                 className="w-4 h-4 accent-primary"
+                aria-label="فعّال"
               />
               <span className="text-sm text-gray-900">فعّال</span>
             </label>

@@ -1,0 +1,30 @@
+-- ══════════════════════════════════════════════════════════════
+-- 098 — Document .next-cache-host permission requirement
+--
+-- During deploy (see docker-compose.yml), the host directory
+-- `.next-cache-host/` is bind-mounted onto `/app/.next/cache` inside
+-- the app container. The container runs as UID 1001 (nextjs) so the
+-- bind-mount source MUST be writable by UID 1001.
+--
+-- A root-owned bind-mount source (default after `mkdir` as root)
+-- causes `EACCES: permission denied, mkdir
+-- '/app/.next/cache/images/<hash>'` on the first optimized image
+-- request. The image fetch returns 404 in that case but the page
+-- continues to serve other content; the admin sees broken/missing
+-- thumbnails in the products list.
+--
+-- Fix on the host (one-time per fresh clone):
+--
+--   sudo chown -R 1001:1001 /var/www/citymarkets.sa/city-market-app/.next-cache-host
+--
+-- The Dockerfile's `RUN chown -R nextjs:nodejs /app/.next/cache` only
+-- fixes the IMAGE-LAYER permissions. Once the host directory is
+-- bind-mounted, the host's UID/GID wins.
+--
+-- This migration has no SQL effect — it's a deployment note. We
+-- record it in app_migrations so the team sees the warning when
+-- they inspect the migration history.
+-- ══════════════════════════════════════════════════════════════
+
+-- Pure documentation; no schema change.
+SELECT 1 AS info;

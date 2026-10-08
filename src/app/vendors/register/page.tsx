@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Store, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
+import { useFormFieldIdFromLabel } from "@/hooks/use-form-field-id";
 
 const VENDOR_TYPES = [
   { value: "food_beverage", label: "طعام ومشروبات", icon: "🍽️" },
@@ -81,6 +82,25 @@ export default function VendorRegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  // Stable ids for every visible label/input pair. Hook order must be
+  // stable across renders — declared up here so the `if (submitted)`
+  // early-return below doesn't break hook ordering.
+  const businessNameArId = useFormFieldIdFromLabel("vendor-register", "اسم المتجر بالعربية");
+  const businessNameEnId = useFormFieldIdFromLabel("vendor-register", "اسم المتجر بالإنجليزية");
+  const vendorTypeLegendId = useFormFieldIdFromLabel("vendor-register", "نوع النشاط");
+  const descriptionArId = useFormFieldIdFromLabel("vendor-register", "وصف مختصر عن المتجر");
+  const ownerFullNameId = useFormFieldIdFromLabel("vendor-register", "الاسم الكامل");
+  const ownerEmailId = useFormFieldIdFromLabel("vendor-register", "البريد الإلكتروني");
+  const ownerPhoneId = useFormFieldIdFromLabel("vendor-register", "رقم الجوال");
+  const ownerWhatsappId = useFormFieldIdFromLabel("vendor-register", "رقم الواتساب");
+  const ownerPasswordId = useFormFieldIdFromLabel("vendor-register", "كلمة المرور");
+  const ownerPasswordConfirmId = useFormFieldIdFromLabel("vendor-register", "تأكيد كلمة المرور");
+  const cityId = useFormFieldIdFromLabel("vendor-register", "المدينة");
+  const addressArId = useFormFieldIdFromLabel("vendor-register", "عنوان المتجر");
+  const deliveryModeLegendId = useFormFieldIdFromLabel("vendor-register", "طريقة التوصيل المفضلة");
+  const acceptsCodId = useFormFieldIdFromLabel("vendor-register", "الدفع عند الاستلام");
+  const acceptsOnlinePaymentId = useFormFieldIdFromLabel("vendor-register", "الدفع الإلكتروني (بطاقة / آبل باي)");
 
   const updateField = <K extends keyof FormState>(
     key: K,
@@ -244,10 +264,14 @@ export default function VendorRegisterPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-2">بيانات المتجر</h2>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor={businessNameArId}
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   اسم المتجر بالعربية <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id={businessNameArId}
                   type="text"
                   value={form.businessNameAr}
                   onChange={(e) => updateField("businessNameAr", e.target.value)}
@@ -258,10 +282,14 @@ export default function VendorRegisterPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor={businessNameEnId}
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   اسم المتجر بالإنجليزية (اختياري)
                 </label>
                 <input
+                  id={businessNameEnId}
                   type="text"
                   value={form.businessNameEn}
                   onChange={(e) => updateField("businessNameEn", e.target.value)}
@@ -271,10 +299,17 @@ export default function VendorRegisterPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label
+                  id={vendorTypeLegendId}
+                  className="block text-sm font-medium text-gray-700 mb-3"
+                >
                   نوع النشاط <span className="text-red-500">*</span>
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div
+                  className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+                  role="radiogroup"
+                  aria-labelledby={vendorTypeLegendId}
+                >
                   {VENDOR_TYPES.map((t) => (
                     <button
                       key={t.value}
@@ -296,10 +331,14 @@ export default function VendorRegisterPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor={descriptionArId}
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   وصف مختصر عن المتجر (اختياري)
                 </label>
                 <textarea
+                  id={descriptionArId}
                   value={form.descriptionAr}
                   onChange={(e) => updateField("descriptionAr", e.target.value)}
                   rows={3}
@@ -319,10 +358,14 @@ export default function VendorRegisterPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor={ownerFullNameId}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     الاسم الكامل <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id={ownerFullNameId}
                     type="text"
                     value={form.ownerFullName}
                     onChange={(e) => updateField("ownerFullName", e.target.value)}
@@ -333,10 +376,14 @@ export default function VendorRegisterPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor={ownerEmailId}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     البريد الإلكتروني <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id={ownerEmailId}
                     type="email"
                     value={form.ownerEmail}
                     onChange={(e) => updateField("ownerEmail", e.target.value)}
@@ -348,10 +395,14 @@ export default function VendorRegisterPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor={ownerPhoneId}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     رقم الجوال <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id={ownerPhoneId}
                     type="tel"
                     value={form.ownerPhone}
                     onChange={(e) => updateField("ownerPhone", e.target.value)}
@@ -363,10 +414,14 @@ export default function VendorRegisterPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor={ownerWhatsappId}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     رقم الواتساب (اختياري)
                   </label>
                   <input
+                    id={ownerWhatsappId}
                     type="tel"
                     value={form.ownerWhatsapp}
                     onChange={(e) => updateField("ownerWhatsapp", e.target.value)}
@@ -379,10 +434,14 @@ export default function VendorRegisterPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor={ownerPasswordId}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     كلمة المرور <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id={ownerPasswordId}
                     type="password"
                     value={form.ownerPassword}
                     onChange={(e) => updateField("ownerPassword", e.target.value)}
@@ -393,10 +452,14 @@ export default function VendorRegisterPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor={ownerPasswordConfirmId}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     تأكيد كلمة المرور <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id={ownerPasswordConfirmId}
                     type="password"
                     value={form.ownerPasswordConfirm}
                     onChange={(e) =>
@@ -418,10 +481,14 @@ export default function VendorRegisterPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor={cityId}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     المدينة (اختياري)
                   </label>
                   <input
+                    id={cityId}
                     type="text"
                     value={form.city}
                     onChange={(e) => updateField("city", e.target.value)}
@@ -430,10 +497,14 @@ export default function VendorRegisterPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor={addressArId}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     عنوان المتجر (اختياري)
                   </label>
                   <input
+                    id={addressArId}
                     type="text"
                     value={form.addressAr}
                     onChange={(e) => updateField("addressAr", e.target.value)}
@@ -444,10 +515,17 @@ export default function VendorRegisterPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label
+                  id={deliveryModeLegendId}
+                  className="block text-sm font-medium text-gray-700 mb-3"
+                >
                   طريقة التوصيل المفضلة
                 </label>
-                <div className="space-y-2">
+                <div
+                  className="space-y-2"
+                  role="radiogroup"
+                  aria-labelledby={deliveryModeLegendId}
+                >
                   {DELIVERY_MODES.map((m) => (
                     <label
                       key={m.value}

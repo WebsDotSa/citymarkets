@@ -48,6 +48,8 @@ export interface SignConfig {
   secretBytes: Uint8Array;
   /** Expiration — passed verbatim to `setExpirationTime` (e.g. `"7d"`). */
   expirationTime: string;
+  /** Key ID (kid) — identifies which secret version signed this token (for rotation support). */
+  keyId?: string;
 }
 
 export interface VerifyConfig {
@@ -69,8 +71,14 @@ export async function signJwt(
   subject: string,
   config: SignConfig,
 ): Promise<string> {
-  return new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
+  // jose's setProtectedHeader expects a JWTHeaderParameters (alg is a
+  // required literal). Use the helper directly so the optional kid is
+  // added without widening the type.
+  const builder = new SignJWT(payload).setProtectedHeader({ alg: "HS256" });
+  if (config.keyId) {
+    builder.setProtectedHeader({ alg: "HS256", kid: config.keyId });
+  }
+  return builder
     .setSubject(subject)
     .setIssuedAt()
     .setIssuer(config.issuer)

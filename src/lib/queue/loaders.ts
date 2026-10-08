@@ -16,6 +16,7 @@
  * preserved downstream so callers don't need to coerce.
  */
 import { pool } from "@/lib/db";
+import { decryptPii } from "@/lib/security/pii-crypto";
 
 export interface NotifyAdminOrder {
   id: string | number;
@@ -45,9 +46,13 @@ export async function loadOrderForNotification(
     id: string | number;
     total: number | string;
     guest_name: string | null;
+    guest_name_encrypted: string | null;
     customer_name: string | null;
+    customer_name_encrypted: string | null;
   }>(
-    `SELECT o.id, o.total, o.guest_name, u.name AS customer_name
+    `SELECT o.id, o.total,
+            o.guest_name, o.guest_name_encrypted,
+            u.name AS customer_name, u.name_encrypted AS customer_name_encrypted
        FROM orders o
        LEFT JOIN users u ON u.id = o.user_id
       WHERE o.id = $1
@@ -56,10 +61,19 @@ export async function loadOrderForNotification(
   );
   const row = rows[0];
   if (!row) return null;
+  // P0-3 PII cutover: prefer the encrypted + decrypted value over the
+  // plaintext column. Falls back to the plaintext column for rows that
+  // pre-date the backfill.
+  const guestName = row.guest_name_encrypted
+    ? decryptPii(row.guest_name_encrypted) ?? row.guest_name
+    : row.guest_name;
+  const userName = row.customer_name_encrypted
+    ? decryptPii(row.customer_name_encrypted) ?? row.customer_name
+    : row.customer_name;
   return {
     id: row.id,
     total: Number(row.total),
-    customerName: row.guest_name ?? row.customer_name ?? null,
+    customerName: guestName ?? userName ?? null,
   };
 }
 
@@ -77,13 +91,20 @@ export async function loadPaidSmsArgs(
     id: string | number;
     total: number | string;
     guest_name: string | null;
+    guest_name_encrypted: string | null;
     guest_phone: string | null;
+    guest_phone_encrypted: string | null;
     user_phone: string | null;
+    user_phone_encrypted: string | null;
     user_name: string | null;
+    user_name_encrypted: string | null;
     recovered_count: number | string | null;
   }>(
-    `SELECT o.id, o.total, o.guest_name, o.guest_phone,
-            u.name AS user_name, u.phone AS user_phone,
+    `SELECT o.id, o.total,
+            o.guest_name, o.guest_name_encrypted,
+            o.guest_phone, o.guest_phone_encrypted,
+            u.name AS user_name, u.name_encrypted AS user_name_encrypted,
+            u.phone AS user_phone, u.phone_encrypted AS user_phone_encrypted,
             COALESCE((SELECT COUNT(*)::int FROM abandoned_carts ac
                        WHERE ac.recovered_order_id = o.id), 0) AS recovered_count
        FROM orders o
@@ -94,11 +115,26 @@ export async function loadPaidSmsArgs(
   );
   const row = rows[0];
   if (!row) return null;
-  const phone = row.guest_phone ?? row.user_phone ?? null;
+  // P0-3 PII cutover: prefer the encrypted + decrypted value over the
+  // plaintext column. Falls back to the plaintext column for rows that
+  // pre-date the backfill.
+  const guestPhone = row.guest_phone_encrypted
+    ? decryptPii(row.guest_phone_encrypted) ?? row.guest_phone
+    : row.guest_phone;
+  const userPhone = row.user_phone_encrypted
+    ? decryptPii(row.user_phone_encrypted) ?? row.user_phone
+    : row.user_phone;
+  const guestName = row.guest_name_encrypted
+    ? decryptPii(row.guest_name_encrypted) ?? row.guest_name
+    : row.guest_name;
+  const userName = row.user_name_encrypted
+    ? decryptPii(row.user_name_encrypted) ?? row.user_name
+    : row.user_name;
+  const phone = guestPhone ?? userPhone ?? null;
   if (!phone) return null;
   return {
     phone,
-    customer_name: row.guest_name ?? row.user_name ?? null,
+    customer_name: guestName ?? userName ?? null,
     order_id: row.id,
     total: Number(row.total),
     recovered_from_abandoned_count: Number(row.recovered_count ?? 0),

@@ -153,7 +153,7 @@ export function AdminActivity() {
               {r.admin_name || r.admin_email || "—"}
             </div>
             {r.admin_name && r.admin_email ? (
-              <div className="text-[11px] text-gray-500" dir="ltr">
+              <div className="text-2xs text-gray-500" dir="ltr">
                 {r.admin_email}
               </div>
             ) : null}
@@ -177,7 +177,7 @@ export function AdminActivity() {
             <div>
               <div className="text-xs text-gray-700">{r.entity_type}</div>
               {r.entity_id ? (
-                <div className="text-[10px] text-gray-400 font-mono" dir="ltr">
+                <div className="text-tiny text-gray-400 font-mono" dir="ltr">
                   {String(r.entity_id).slice(0, 12)}…
                 </div>
               ) : null}
@@ -191,7 +191,7 @@ export function AdminActivity() {
         label: "IP",
         render: (r: ActivityRow) =>
           r.ip_address ? (
-            <span className="text-[11px] font-mono text-gray-500" dir="ltr">
+            <span className="text-2xs font-mono text-gray-500" dir="ltr">
               {r.ip_address}
             </span>
           ) : (
@@ -260,6 +260,7 @@ export function AdminActivity() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <input
             type="text"
+            aria-label="البريد الإلكتروني للمدير"
             value={filters.admin_email}
             onChange={(e) =>
               setFilters((f) => ({ ...f, admin_email: e.target.value }))
@@ -270,6 +271,7 @@ export function AdminActivity() {
           />
           <input
             type="text"
+            aria-label="الإجراء (مثل store.*)"
             value={filters.action}
             onChange={(e) => setFilters((f) => ({ ...f, action: e.target.value }))}
             placeholder="الإجراء (مثل store.*)"
@@ -278,6 +280,7 @@ export function AdminActivity() {
           />
           <input
             type="text"
+            aria-label="نوع الكيان"
             value={filters.entity_type}
             onChange={(e) =>
               setFilters((f) => ({ ...f, entity_type: e.target.value }))
@@ -287,6 +290,7 @@ export function AdminActivity() {
           />
           <input
             type="date"
+            aria-label="من تاريخ"
             value={filters.from}
             onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))}
             className="h-10 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary"
@@ -294,6 +298,7 @@ export function AdminActivity() {
           />
           <input
             type="date"
+            aria-label="إلى تاريخ"
             value={filters.to}
             onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))}
             className="h-10 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary"

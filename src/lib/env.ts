@@ -268,10 +268,41 @@ export function isNativePushSenderConfigured(): boolean {
 // ──────────────────────────────────────────────────────────────────────
 // Apple App Store Review account
 // ──────────────────────────────────────────────────────────────────────
-
-/** Set true to allow the iOS App Store review account to bypass OTP. */
+//
+// SECURITY (Phase 4, 2026-10-03, P2-1 from the audit):
+// `isAppleReviewEnabled` previously returned true whenever
+// APPLE_REVIEW_ENABLED=true, regardless of NODE_ENV. If the env var
+// was set in production — by an operator who wanted to test the
+// review flow, or by a leaked env file — the production deployment
+// would accept a hard-coded OTP for the configured phone. The
+// audit rated this as a "high" finding because the OTP is a static
+// value in env and the phone is known, so anyone with the env
+// could log in as the Apple Reviewer.
+//
+// The fix: hard-refuse to enable the feature in production, even if
+// APPLE_REVIEW_ENABLED=true. The iOS App Store review process
+// happens against builds that are submitted for review; the
+// reviewer's login happens in a non-production environment. The
+// dev / staging deployments where the feature is needed are
+// NODE_ENV !== "production" by definition.
+//
+// To re-enable in production temporarily (e.g. for an Apple review
+// of a production build), set APPLE_ALLOW_PRODUCTION_REVIEW=1 in
+// addition to APPLE_REVIEW_ENABLED=true. The double-key is
+// intentional: a misconfigured env file alone is not enough.
+// ──────────────────────────────────────────────────────────────────────
 export function isAppleReviewEnabled(): boolean {
-  return (process.env.APPLE_REVIEW_ENABLED ?? "").toLowerCase() === "true";
+  if ((process.env.APPLE_REVIEW_ENABLED ?? "").toLowerCase() !== "true") {
+    return false;
+  }
+  // Hard-block in production unless explicitly overridden.
+  if (process.env.NODE_ENV === "production") {
+    if (process.env.APPLE_ALLOW_PRODUCTION_REVIEW === "1") {
+      return true;
+    }
+    return false;
+  }
+  return true;
 }
 
 /** Phone number (E.164) Apple reviewers will sign in with. */

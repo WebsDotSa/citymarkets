@@ -65,7 +65,7 @@ export function HomeRedesign() {
   const isLoggedIn = !!user;
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-gray-50">
       <HeroSection />
       <QuickCategoriesSection />
       <StoresCarouselSection />

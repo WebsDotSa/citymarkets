@@ -60,7 +60,7 @@ export function Modal({
       onClick={closeOnOverlay ? onClose : undefined}
     >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" />
 
       {/* Modal */}
       <div
@@ -69,19 +69,19 @@ export function Modal({
       >
         {/* Header */}
         {(title || showClose) && (
-          <div className="flex items-start justify-between p-6 border-b border-slate-100">
+          <div className="flex items-start justify-between p-6 border-b border-gray-100">
             <div>
               {title && (
-                <h2 className="text-xl font-bold text-slate-800">{title}</h2>
+                <h2 className="text-xl font-bold text-gray-800">{title}</h2>
               )}
               {description && (
-                <p className="text-sm text-slate-500 mt-1">{description}</p>
+                <p className="text-sm text-gray-500 mt-1">{description}</p>
               )}
             </div>
             {showClose && (
               <button
                 onClick={onClose}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -108,7 +108,7 @@ interface ModalFooterProps {
 export function ModalFooter({ children, className = "" }: ModalFooterProps) {
   return (
     <div
-      className={`flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/50 ${className}`}
+      className={`flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50 ${className}`}
     >
       {children}
     </div>
@@ -180,8 +180,8 @@ export function ConfirmDialog({
         >
           {icon || defaultIcon}
         </div>
-        <h3 className="text-lg font-bold text-slate-800 mb-2">{title}</h3>
-        <p className="text-sm text-slate-500 mb-6">{message}</p>
+        <h3 className="text-lg font-bold text-gray-800 mb-2">{title}</h3>
+        <p className="text-sm text-gray-500 mb-6">{message}</p>
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={onCancel}

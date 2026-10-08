@@ -5,8 +5,10 @@ import { generateSlug } from "@/lib/slug";
 import { cache } from "@/lib/cache";
 import { CITY_MARKETS_VENDOR_ID } from "@/lib/types";
 import { deleteFromR2, r2KeyFromUrl } from "@/lib/r2";
+import { logAdminAction } from "@/lib/admin-audit";
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError, warn as logWarn } from '@/lib/logger';
+import { parsePagination } from "@/lib/api/pagination";
 
 const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -77,6 +79,16 @@ export async function GET(request: NextRequest) {
   const gate = await requireAdminApi(request, "manage_categories");
   if (gate instanceof NextResponse) return gate;
   try {
+    // P2-11 (PCP-101 audit): LIMIT + offset pagination — full categories
+    // table was 89 KB / 156 rows; admin UI freezes on useMemo + render.
+    // Count is computed against the same WHERE clause so totalPages stays
+    // consistent with the page slice.
+    // PCP-118: use the centralised parsePagination helper so every list
+    // route applies the same clamp (default 50, max 100) and the same
+    // edge-case handling (NaN, negative, empty, page > MAX_PAGE).
+    const url = new URL(request.url);
+    const { limit, page, offset } = parsePagination(url.searchParams);
+
     const result = await query(
       `SELECT
          c.id,
@@ -115,9 +127,24 @@ export async function GET(request: NextRequest) {
          ORDER BY p.is_active DESC, p.updated_at DESC NULLS LAST, p.id
          LIMIT 1
        ) fp ON true
-       ORDER BY c.sort_order ASC, c.name_ar ASC`
+       ORDER BY c.sort_order ASC, c.name_ar ASC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset],
     );
-    return NextResponse.json({ success: true, data: result.rows });
+    const countRows = await query<{ total: string }>(
+      `SELECT COUNT(*)::int AS total FROM categories`,
+    );
+    const total = Number(countRows.rows[0]?.total ?? 0);
+    return NextResponse.json({
+      success: true,
+      data: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     logError("GET categories error:", error);
     return NextResponse.json(
@@ -186,9 +213,17 @@ export async function POST(request: NextRequest) {
         finalActive,
         description_ar?.trim() || null,
         description_en?.trim() || null,
-      ]
-    );
+      ]);
     cache.invalidatePattern("categories:");
+    // P1-2 (security Phase 4, 2026-10-03): audit the create so a
+    // later inspection can see which admin added a category, with
+    // the IP and the request payload recorded for incident review.
+    await logAdminAction(gate.admin, "category.create", {
+      entityType: "category",
+      entityId: result.rows[0].id,
+      details: { name_ar, name_en, slug: finalSlug, parent_id: resolvedParent },
+      request,
+    });
     return NextResponse.json({
       success: true,
       data: { id: result.rows[0].id, slug: finalSlug },

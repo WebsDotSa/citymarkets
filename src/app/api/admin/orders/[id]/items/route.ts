@@ -5,6 +5,12 @@ import { logAdminAction } from '@/lib/admin-audit';
 import { error as logError } from '@/lib/logger';
 import { orderAdminItemAddSchema } from '@/lib/validation';
 
+// Module-scoped UUID validator. P2-9 (PCP-101 audit): same pattern
+// as the other admin [id] routes — pre-validate so bad UUIDs surface
+// as 400 instead of leaking a Postgres 22P02 as a generic 500.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * POST /api/admin/orders/[id]/items
  *
@@ -31,6 +37,13 @@ export async function POST(
   if (gate instanceof NextResponse) return gate;
   const { id: orderId } = await ctx.params;
   const admin = gate.admin;
+
+  if (!UUID_RE.test(orderId)) {
+    return NextResponse.json(
+      { success: false, error: 'معرّف الطلب غير صالح' },
+      { status: 400 }
+    );
+  }
 
   let body: unknown;
   try {

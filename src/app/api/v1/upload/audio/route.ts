@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import crypto from 'crypto';
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 import {
@@ -10,26 +8,33 @@ import {
 } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';
 import { error as logError } from '@/lib/logger';
+import { uploadToR2 } from '@/lib/r2';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/v1/upload/audio
  *
- * Customer uploads a voice note (WebM/Opus from MediaRecorder). Saved
- * under /public/uploads/voice/ and served back via the public URL.
+ * Customer uploads a voice note (WebM/MP4/Ogg from MediaRecorder).
+ * Saved to Cloudflare R2 and served back via the public R2 URL.
  * The chat panel + direct-order creation both rely on this endpoint.
  *
  * Accepts multipart/form-data with a single 'file' field. Optional
  * 'kind' field is logged but ignored.
  *
- * SECURITY: anonymous uploads allowed (matches the direct-order flow
- * before login). IP rate limit (AUDIO_UPLOAD_IP_CONFIG) caps disk
- * usage and bounds spam. Authenticated users still hit the same cap
- * keyed by IP — bot accounts alone don't bypass it.
+ * SECURITY: authenticated users only (direct orders now require login).
+ * IP rate limit (AUDIO_UPLOAD_IP_CONFIG) caps bandwidth and bounds spam.
  */
 export async function POST(request: NextRequest) {
   const userId = await resolveCustomerUserIdFromRequest(request);
+
+  // Require auth: direct orders now require login
+  if (!userId) {
+    return NextResponse.json(
+      { success: false, error: 'غير مصرح' },
+      { status: 401 }
+    );
+  }
 
   const ip = getClientIp(request);
   const rl = await checkRateLimit(ip, AUDIO_UPLOAD_IP_CONFIG);
@@ -69,26 +74,30 @@ export async function POST(request: NextRequest) {
     }
 
     const ext = isEbml ? 'webm' : isFtyp ? 'm4a' : 'ogg';
-    const publicDir = path.join(process.cwd(), 'public');
-    const dir = path.join(publicDir, 'uploads', 'voice');
-    // Belt-and-suspenders: Dockerfile already pre-creates this dir,
-    // but a recursive mkdirSync means a fresh container (e.g. dev) or
-    // a custom override that points publicDir elsewhere will still work.
-    fs.mkdirSync(dir, { recursive: true });
+    const contentType = isEbml ? 'audio/webm' : isFtyp ? 'audio/mp4' : 'audio/ogg';
 
-    const hash = crypto.randomBytes(8).toString('hex');
-    const filename = `voice-${Date.now()}-${hash}.${ext}`;
-    const filePath = path.join(dir, filename);
-    fs.writeFileSync(filePath, buf);
-    fs.chmodSync(filePath, 0o644);
+    // Upload to R2 with a key like: voice/2026-10/uuid.{ext}
+    const now = new Date();
+    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const uuid = crypto.randomUUID();
+    const key = `voice/${yearMonth}/${uuid}.${ext}`;
 
-    const url = `/uploads/voice/${filename}`;
-    return NextResponse.json({ success: true, url, size: file.size, ext, userId });
+    const r2Result = await uploadToR2({
+      key,
+      body: buf,
+      contentType,
+      cacheControl: 'public, immutable, max-age=31536000',
+    });
+
+    return NextResponse.json({
+      success: true,
+      url: r2Result.publicUrl,
+      size: file.size,
+      ext,
+      userId,
+    });
   } catch (err) {
-    // Mirrors the sibling CV/place-images routes: any unexpected throw
-    // (formData, writeFileSync, permissions, ENOSPC, etc.) returns 500
-    // with a friendly Arabic message and a structured log line for ops.
-    logError('audio upload failed', {
+    logError('audio upload to R2 failed', {
       err: (err as Error).message,
       stack: (err as Error).stack,
       userId,

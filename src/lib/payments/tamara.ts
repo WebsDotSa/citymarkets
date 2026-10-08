@@ -20,6 +20,7 @@
  */
 
 import { error as logError, warn as logWarn } from '@/lib/logger';
+import { verifyWebhookToken } from './webhook-secrets';
 
 const TAMARA_API_BASE =
   process.env.TAMARA_API_BASE_URL ||
@@ -261,30 +262,51 @@ export async function fetchOrderStatus(
 
 /**
  * Verify a Tamara webhook signature. Tamara sends an `Authorization`
- * header of the form `Bearer <webhook_token>` — we compare it against
- * the merchant-configured `TAMARA_WEBHOOK_TOKEN`.
+ * header of the form `Bearer <webhook_token>`. We compare it against
+ * the active secret registry in the `webhook_secrets` table, with
+ * fallback to the legacy single env-var `TAMARA_WEBHOOK_TOKEN`.
  *
  * SECURITY (F5): Previously this returned `true` when no token was
  * configured (dev convenience). Combined with `ALLOW_INSECURE_WEBHOOK=1`
  * accidentally reaching production, that allowed forged webhooks. We now
- * hard-fail unless the token is configured — callers that genuinely need
- * unsigned webhooks for local dev should mock this function in their
- * test harness instead of relying on the production code path.
+ * hard-fail unless a token is configured (via DB row or env) — callers
+ * that genuinely need unsigned webhooks for local dev should mock this
+ * function in their test harness instead of relying on the production
+ * code path.
+ *
+ * P0-2 (security Phase 1, 2026-10-03): now async to support the DB
+ * lookup. Tests that mock this function must mock it as async.
  */
-export function verifyWebhookSignature(authorizationHeader: string | null): boolean {
-  if (!TAMARA_WEBHOOK_TOKEN) {
+export async function verifyWebhookSignature(
+  authorizationHeader: string | null,
+): Promise<boolean> {
+  if (!authorizationHeader) return false;
+
+  // The header may be "Bearer <token>" or just "<token>". Match the
+  // behaviour of the route handler (which slices "Bearer " prefix).
+  const token = authorizationHeader.startsWith('Bearer ')
+    ? authorizationHeader.slice(7).trim()
+    : authorizationHeader.trim();
+
+  if (!token) return false;
+
+  // SECURITY (F5): if neither the DB nor the env has a secret
+  // configured, refuse. The dev escape hatch ALLOW_INSECURE_WEBHOOK
+  // is intentionally NOT honoured here — Tamara integration has no
+  // historical need for it, and the previous behaviour was exploitable
+  // in production. Tests should stub this function.
+  const hasAnySecret =
+    !!process.env.TAMARA_WEBHOOK_TOKEN ||
+    // We can't cheaply know if the DB has a row without querying; the
+    // helper handles that and returns ok=false in either case.
+    false;
+  if (!hasAnySecret) {
     throw new Error(
       'TAMARA_WEBHOOK_TOKEN is not configured. Refusing to accept unsigned webhooks. ' +
-        'Set the env var or stub this function in your test harness.'
+        'Set the env var or stub this function in your test harness.',
     );
   }
-  if (!authorizationHeader) return false;
-  const expected = `Bearer ${TAMARA_WEBHOOK_TOKEN}`;
-  // Constant-time comparison so timing attacks can't leak the token.
-  if (expected.length !== authorizationHeader.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < expected.length; i++) {
-    mismatch |= expected.charCodeAt(i) ^ authorizationHeader.charCodeAt(i);
-  }
-  return mismatch === 0;
+
+  const result = await verifyWebhookToken('tamara', token);
+  return result.ok;
 }

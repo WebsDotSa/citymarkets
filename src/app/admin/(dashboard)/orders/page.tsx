@@ -1,4 +1,5 @@
 "use client";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
@@ -624,12 +625,12 @@ function OrderRow({
                 })
               : "—"}
           </span>
-          <span className="text-[10px] text-gray-400">
+          <span className="text-tiny text-gray-400">
             {relativeTime(row.created_at)}
           </span>
           {row.scheduled && row.scheduled_for ? (
             <span
-              className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 w-fit"
+              className="inline-flex items-center gap-1 text-tiny font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 w-fit"
               title={`مجدول — فترة ${String(row.slot_window || "")}`}
             >
               📅 مجدول · {new Date(String(row.scheduled_for)).toLocaleString(
@@ -676,7 +677,7 @@ function OrderRow({
             {PAYMENT_METHOD_AR[paymentMethod] || paymentMethod || "—"}
           </span>
           <span
-            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full w-fit ${payment.classes}`}
+            className={`inline-flex items-center gap-1 text-tiny font-semibold px-1.5 py-0.5 rounded-full w-fit ${payment.classes}`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${payment.dot}`} />
             {payment.label}

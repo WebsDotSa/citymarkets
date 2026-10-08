@@ -90,6 +90,7 @@ ios/fastlane/.snapfile_diff.json
 *.dSYM.zip
 *.dSYM
 .swiftpm/
+<<<<<<< HEAD
 
 # Local development artifacts (2026-10-08)
 # Secrets — root .env (no .local suffix) is the user's secret stash.
@@ -134,3 +135,7 @@ ios/fastlane/.snapfile_diff.json
 # (kept out of the repo intentionally). Superseded by
 # scripts/customer-journey-e2e.mjs which reads secrets from .env.local.
 /scripts/jwt-test.mjs
+
+# Storybook dev/build logs (rotated by storybook)
+/*storybook.log
+/storybook-static/

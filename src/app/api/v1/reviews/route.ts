@@ -2,13 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { resolveCustomerUserIdFromRequest } from '@/lib/identity';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
+import { parsePagination } from "@/lib/api/pagination";
+import { checkRateLimit, REVIEW_SUBMIT_IP_CONFIG } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const productId = searchParams.get('productId');
   const mine = searchParams.get('mine') === '1';
-  const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
+  const { limit, page, offset } = parsePagination(searchParams, { defaultLimit: 20 });
+
+  // P2-12 (PCP-101 audit): reject non-UUID productId before opening a DB
+  // connection — Postgres would otherwise throw "invalid input syntax for
+  // type uuid" and the route would 500 instead of 400. Applies only to
+  // the productId branch; the "mine" branch doesn't filter by product.
+  if (productId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId)) {
+    return NextResponse.json(
+      { error: "معرّف المنتج غير صالح" },
+      { status: 400 },
+    );
+  }
 
   const client = await pool.connect();
 
@@ -90,6 +104,19 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // SECURITY (PCP-125): rate limit review submission by IP. The
+  // REVIEW_SUBMIT_IP_CONFIG (5/min) was added in Phase 2 but the
+  // route was never wired to call it. Without this, an attacker can
+  // flood product_reviews with fake reviews from a single IP.
+  const clientIp = getClientIp(request);
+  const ipLimit = await checkRateLimit(clientIp, REVIEW_SUBMIT_IP_CONFIG);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { error: 'تجاوزت عدد التقييمات المسموح بها. حاول بعد دقيقة.' },
+      { status: 429 }
+    );
+  }
+
   const userId = await resolveCustomerUserIdFromRequest(request);
   if (!userId) {
     return NextResponse.json(

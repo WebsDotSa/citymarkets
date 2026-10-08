@@ -149,7 +149,7 @@ export function FooterV2() {
         <div className="mb-10">
           <Link
             href="/delegate"
-            className="group flex items-center justify-between gap-4 p-5 md:p-6 rounded-2xl bg-gradient-to-l from-[#009345] to-[#007A38] text-white hover:shadow-xl hover:shadow-primary/20 transition-all"
+            className="group flex items-center justify-between gap-4 p-5 md:p-6 rounded-2xl bg-gradient-to-l from-primary to-primary-dark text-white hover:shadow-xl hover:shadow-primary/20 transition-all"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
@@ -320,7 +320,7 @@ export function FooterV2() {
           <div className="py-3">
             <Link
               href="/delegate"
-              className="flex items-center justify-center gap-2 w-full p-3 rounded-xl bg-gradient-to-l from-[#009345] to-[#007A38] text-white font-bold text-sm hover:shadow-lg transition-shadow"
+              className="flex items-center justify-center gap-2 w-full p-3 rounded-xl bg-gradient-to-l from-primary to-primary-dark text-white font-bold text-sm hover:shadow-lg transition-shadow"
             >
               <Bike className="w-4 h-4" />
               <span>سجّل كمندوب توصيل</span>
@@ -367,7 +367,7 @@ export function FooterV2() {
                   <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09M12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25" />
                 </svg>
                 <span className="flex flex-col items-start leading-tight">
-                  <span className="text-[9px] opacity-80">حمّله من</span>
+                  <span className="text-3xs opacity-80">حمّله من</span>
                   <span className="text-xs font-bold -mt-0.5">App Store</span>
                 </span>
               </a>

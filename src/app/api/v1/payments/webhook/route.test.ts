@@ -128,12 +128,23 @@ function makeFakeClient(opts: {
     release: vi.fn(),
   };
   // Post-COMMIT vendor fan-out uses pool.query (client is released).
-  // Mock pool.query to return the configured vendorIds so the fan-out
-  // fires the configured number of enqueues.
+  // The verifyWebhookToken path (P0-2) ALSO uses pool.query, but as
+  // its first call: SELECT env_var_name, label FROM webhook_secrets
+  // WHERE ... Tests run with no DB rows registered, so the first
+  // pool.query call returns [] and verifyWebhookToken falls through
+  // to the env-var path. The SECOND pool.query call is the vendor
+  // fan-out lookup, which returns the configured vendorIds.
   if (opts.vendorIds) {
-    vi.mocked(pool.query).mockResolvedValue({
-      rows: opts.vendorIds.map((vid) => ({ vendor_id: vid })),
-    } as never);
+    vi.mocked(pool.query)
+      .mockResolvedValueOnce({ rows: [] } as never) // webhook_secrets (empty)
+      .mockResolvedValue({
+        rows: opts.vendorIds.map((vid) => ({ vendor_id: vid })),
+      } as never);
+  } else {
+    // No vendor fan-out: still mock pool.query to return an empty
+    // webhook_secrets registry so verifyWebhookToken falls through to
+    // the env-var path (the test sets MOYASAR_WEBHOOK_SECRET).
+    vi.mocked(pool.query).mockResolvedValue({ rows: [] } as never);
   }
   return { client, calls };
 }
@@ -292,7 +303,7 @@ describe("POST /api/v1/payments/webhook — Bug A regression", () => {
     // Find the orders.status UPDATE
     const ordersStatus = calls.find(
       (c) =>
-        c.sql.trim().toUpperCase().startsWith("UPDATE ORDERS") &&
+        c.sql.trim().toUpperCase().startsWith("WITH OLD AS") &&
         /SET\s+STATUS/i.test(c.sql),
     );
     expect(ordersStatus).toBeDefined();

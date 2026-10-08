@@ -279,7 +279,7 @@ export function AdminVendors() {
         const hasLogin = r.has_owner && (r.login_email || r.login_phone);
         if (!hasLogin) {
           return (
-            <span className="text-[11px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-700">
+            <span className="text-2xs px-2 py-0.5 rounded-md bg-amber-50 text-amber-700">
               ⚠ بدون حساب دخول
             </span>
           );
@@ -288,7 +288,7 @@ export function AdminVendors() {
           <div className="flex flex-col gap-0.5">
             {r.login_phone ? (
               <span
-                className="text-[12px] text-gray-700 dir-ltr text-right"
+                className="text-xs text-gray-700 dir-ltr text-right"
                 title={`الجوال: ${r.login_phone}`}
                 dir="ltr"
               >
@@ -297,14 +297,14 @@ export function AdminVendors() {
             ) : null}
             {r.login_email ? (
               <span
-                className="text-[11px] text-gray-500 dir-ltr text-right"
+                className="text-2xs text-gray-500 dir-ltr text-right"
                 title={`البريد: ${r.login_email}`}
                 dir="ltr"
               >
                 ✉ {r.login_email}
               </span>
             ) : null}
-            <span className="text-[10px] text-emerald-600 font-medium">✓ حساب مالك جاهز</span>
+            <span className="text-tiny text-emerald-600 font-medium">✓ حساب مالك جاهز</span>
           </div>
         );
       },
@@ -317,7 +317,7 @@ export function AdminVendors() {
         <div className="flex flex-col gap-1">
           <button
             onClick={() => toggleField(r, "is_active")}
-            className={`text-[11px] px-2 py-0.5 rounded-md font-medium transition-colors ${
+            className={`text-2xs px-2 py-0.5 rounded-md font-medium transition-colors ${
               r.is_active
                 ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                 : "bg-gray-100 text-gray-500 hover:bg-gray-200"
@@ -328,7 +328,7 @@ export function AdminVendors() {
           </button>
           <button
             onClick={() => toggleField(r, "is_featured")}
-            className={`text-[11px] px-2 py-0.5 rounded-md font-medium transition-colors ${
+            className={`text-2xs px-2 py-0.5 rounded-md font-medium transition-colors ${
               r.is_featured
                 ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
                 : "bg-gray-50 text-gray-400 hover:bg-gray-100"
@@ -360,7 +360,7 @@ export function AdminVendors() {
         <p className="font-medium">💡 إدارة المتاجر</p>
         <p className="mt-1">
           أضف شعار ووصف ولون رئيسي لكل متجر. ستظهر هذه الهوية في صفحة{" "}
-          <Link href="/vendors" className="underline" target="_blank">
+          <Link href="/vendors" className="underline" target="_blank" rel="noopener noreferrer">
             المتاجر
           </Link>{" "}
           وعلى بطاقات المنتجات داخل المتجر.

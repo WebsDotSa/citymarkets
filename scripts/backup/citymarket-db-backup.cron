@@ -1,0 +1,19 @@
+# citymarkets.sa nightly DB backup (PCP-210) + weekly restore test (PCP-215)
+#
+# Daily: 02:00 UTC - pg_dump citymarket_db to /var/backups/citymarket_db/
+#   Retains 14 days. ~22 MB total. ~500 ms runtime.
+# Weekly: Sun 03:30 UTC - restore latest dump into a throwaway DB and
+#   assert row counts match live. Catches silent dump corruption
+#   within 7 days.
+#
+# Both scripts are root-owned, chmod 700, log to /var/log/. The
+# cron's MAILTO=root sends cron job stdout (success) AND stderr
+# (failure) to root's local mailbox - check journalctl -t CRON
+# or /var/mail/root if the backups ever stop silently.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+MAILTO=root
+
+# m h dom mon dow user  command
+ 0 2  *   *   *   root  /usr/local/bin/citymarket-db-backup
+30 3  *   *   0   root  /usr/local/bin/citymarket-db-restore-test

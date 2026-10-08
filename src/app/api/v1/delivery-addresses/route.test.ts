@@ -103,7 +103,7 @@ describe("GET /api/v1/delivery-addresses — auth gate + response shape", () => 
   });
 
   it("returns the addresses list with no owner-identifying fields (P2-3 shape)", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     // listAddressesService calls `query` (not pool.connect), so the
     // route rows come back via the top-level query mock.
     (query as unknown as { mockImplementationOnce: (fn: unknown) => void }).mockImplementationOnce(
@@ -111,7 +111,7 @@ describe("GET /api/v1/delivery-addresses — auth gate + response shape", () => 
         rows: [
           {
             id: "addr-1",
-            user_id: "user-1",
+            user_id: "00000000-0000-0000-0000-000000000001",
             guest_key: null,
             label: "Home",
             title: "المنزل",
@@ -153,7 +153,7 @@ describe("POST /api/v1/delivery-addresses — delegates to createAddressService"
   });
 
   it("returns 400 when label or address_text is missing", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     const res = await POST(mockRequest(BASE_URL, { label: "Home" }));
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -161,11 +161,11 @@ describe("POST /api/v1/delivery-addresses — delegates to createAddressService"
   });
 
   it("inserts via the service and returns the inserted row without owner fields", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
 
     const fakeRow = {
       id: "addr-2",
-      user_id: "user-1",
+      user_id: "00000000-0000-0000-0000-000000000001",
       guest_key: null,
       label: "Work",
       title: "العمل",
@@ -246,7 +246,7 @@ describe("PUT /api/v1/delivery-addresses — delegates to updateAddressService",
   });
 
   it("returns 400 when id query param missing", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     const res = await PUT(mockRequest(BASE_URL, { label: "X", address_text: "Y" }));
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -254,7 +254,7 @@ describe("PUT /api/v1/delivery-addresses — delegates to updateAddressService",
   });
 
   it("returns 404 when the service cannot find the address", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     // Service returns null when UPDATE matches 0 rows.
     const client = makeFakeClient({ row: null });
     vi.mocked(pool.connect).mockResolvedValueOnce(client as never);
@@ -273,10 +273,10 @@ describe("PUT /api/v1/delivery-addresses — delegates to updateAddressService",
   });
 
   it("updates the address and returns the updated row", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     const fakeRow = {
       id: "addr-1",
-      user_id: "user-1",
+      user_id: "00000000-0000-0000-0000-000000000001",
       guest_key: null,
       label: "Work",
       title: "العمل",
@@ -316,7 +316,7 @@ describe("DELETE /api/v1/delivery-addresses — preserves pre-P2-3 contract", ()
   });
 
   it("returns 200 even when rowCount=0 (idempotent contract)", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     // Service returns 0 when DELETE matches no rows; the route still
     // returns 200 to preserve the pre-P2-3 contract.
     (query as unknown as { mockImplementationOnce: (fn: unknown) => void }).mockImplementationOnce(
@@ -330,7 +330,7 @@ describe("DELETE /api/v1/delivery-addresses — preserves pre-P2-3 contract", ()
   });
 
   it("deletes via the service and returns 200 on success", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     (query as unknown as { mockImplementationOnce: (fn: unknown) => void }).mockImplementationOnce(
       async () => ({ rows: [], rowCount: 1 }),
     );
@@ -342,7 +342,7 @@ describe("DELETE /api/v1/delivery-addresses — preserves pre-P2-3 contract", ()
   });
 
   it("returns 400 when id query param missing", async () => {
-    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("user-1");
+    vi.mocked(resolveCustomerUserIdFromRequest).mockResolvedValue("00000000-0000-0000-0000-000000000001");
     const res = await DELETE(mockRequest(BASE_URL));
     expect(res.status).toBe(400);
     const body = await res.json();

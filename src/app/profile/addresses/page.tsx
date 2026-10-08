@@ -15,11 +15,13 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { PageContainer } from "@/components/ui/page-container";
 import {
   useDeliveryLocationState,
   useDeliveryLocationActions,
 } from "@/contexts/delivery-location-context";
 import { BRAND } from "@/lib/brand-theme";
+import { useBrandColorVars } from "@/hooks/use-color-vars";
 import type { AddressLabelType, DeliveryAddress } from '@/lib/delivery';
 import { ADDRESS_LABELS } from '@/lib/delivery';
 
@@ -46,10 +48,12 @@ export default function AddressesPage() {
 
   const [editing, setEditing] = useState<DeliveryAddress | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const colorVars = useBrandColorVars();
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6">
-      <h1 className="text-xl font-bold text-gray-900 mb-4">عناويني</h1>
+    <div style={colorVars}>
+      <PageContainer width="narrow" padding="normal" className="py-6">
+        <h1 className="text-xl font-bold text-gray-900 mb-4">عناويني</h1>
 
       {loading && (
         <p className="text-sm text-gray-500 text-center py-8">جاري التحميل…</p>
@@ -63,7 +67,7 @@ export default function AddressesPage() {
             type="button"
             onClick={openAddFlow}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-semibold"
-            style={{ backgroundColor: BRAND.primary }}
+            style={{ backgroundColor: 'var(--primary)' }}
           >
             <Plus className="w-4 h-4" />
             إضافة عنوان
@@ -89,11 +93,11 @@ export default function AddressesPage() {
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${BRAND.primary}15` }}
+                    style={{ backgroundColor: 'var(--primary-light)' }}
                   >
                     <Icon
                       className="w-5 h-5"
-                      style={{ color: BRAND.primary }}
+                      style={{ color: 'var(--primary)' }}
                     />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -199,6 +203,7 @@ export default function AddressesPage() {
 
       {/* Hidden: hand off to the existing add-flow modal mounted elsewhere */}
       <AddFlowMount />
+      </PageContainer>
     </div>
   );
 }
@@ -311,11 +316,11 @@ function EditAddressDialog({
                   >
                     <OptIcon
                       className="w-5 h-5"
-                      style={{ color: active ? BRAND.primary : "#6B7280" }}
+                      style={{ color: active ? 'var(--primary)' : "#6B7280" }}
                     />
                     <span
                       className="text-xs"
-                      style={{ color: active ? BRAND.primary : "#6B7280" }}
+                      style={{ color: active ? 'var(--primary)' : "#6B7280" }}
                     >
                       {opt.label}
                     </span>
@@ -403,7 +408,7 @@ function EditAddressDialog({
             onClick={submit}
             disabled={busy}
             className="inline-flex items-center gap-1 px-4 py-2.5 rounded-xl text-white font-semibold disabled:opacity-50"
-            style={{ backgroundColor: BRAND.primary }}
+            style={{ backgroundColor: 'var(--primary)' }}
           >
             {busy ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

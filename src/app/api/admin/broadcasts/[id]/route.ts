@@ -8,11 +8,14 @@ import { broadcastUpdateSchema, uuidSchema } from "@/lib/validation";
 import { logAdminAction } from "@/lib/admin-audit";
 import { error as logError } from "@/lib/logger";
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   const params = await context.params;
+  const badId = validateUuidOrError(params.id, "معرّف البث");
+  if (badId) return badId;
   const gate = await requireAdminApi(request, "manage_broadcasts");
   if (gate instanceof NextResponse) return gate;
 
@@ -44,6 +47,8 @@ export async function PUT(
   context: { params: Promise<{ id: string }> },
 ) {
   const params = await context.params;
+  const badId = validateUuidOrError(params.id, "معرّف البث");
+  if (badId) return badId;
   const gate = await requireAdminApi(request, "manage_broadcasts");
   if (gate instanceof NextResponse) return gate;
   if (!uuidSchema.safeParse(params.id).success) {
@@ -115,6 +120,8 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> },
 ) {
   const params = await context.params;
+  const badId = validateUuidOrError(params.id, "معرّف البث");
+  if (badId) return badId;
   const gate = await requireAdminApi(request, "manage_broadcasts");
   if (gate instanceof NextResponse) return gate;
   if (!uuidSchema.safeParse(params.id).success) {

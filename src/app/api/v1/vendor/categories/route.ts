@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { query, pool } from "@/lib/db";
 import { requireVendorRole } from "@/lib/identity";
 import { verifyVendorRequestWithDb } from "@/lib/identity/vendor-auth-with-db";
 import { generateSlug } from "@/lib/slug";
 import { cache } from "@/lib/cache";
 
 import { error as logError } from "@/lib/logger";
+
+import { checkRateLimit } from "@/lib/rate-limit";
+
+// SECURITY (PCP-149): per-vendor cap on category creation. A vendor
+// already has manager+ scope, but a malicious manager (or one with a
+// stolen session) could spam this endpoint to fill the categories
+// table or trigger cache busts in a loop. 30/hour per vendor.
+const VENDOR_CATEGORY_CREATE_CONFIG = {
+  maxRequests: 30,
+  windowMs: 60 * 60 * 1000,
+  keyPrefix: "vendor:category:create",
+} as const;
 
 /**
  * Vendor-facing categories CRUD (read + create only).
@@ -115,6 +127,19 @@ export async function POST(request: NextRequest) {
     const forbidden = requireVendorRole(session, "manager");
     if (forbidden) return forbidden;
 
+    // SECURITY (PCP-149): per-vendor cap so a manager cannot spam
+    // category creation (which also spams the categories cache bust).
+    const createLimit = await checkRateLimit(
+      `vendor:${session.vendorId}`,
+      VENDOR_CATEGORY_CREATE_CONFIG,
+    );
+    if (!createLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: "تجاوزت عدد العمليات، حاول لاحقاً" },
+        { status: 429 },
+      );
+    }
+
     let body: Record<string, unknown>;
     try {
       body = (await request.json()) as Record<string, unknown>;
@@ -153,47 +178,58 @@ export async function POST(request: NextRequest) {
     // Auto-derive the slug from the Arabic name (matches the admin
     // categories POST). If a slug is supplied AND free, keep it;
     // otherwise generate a unique fallback.
-    let baseSlug =
+    //
+    // Slug uniqueness is scoped by `vendor_id` (see partial uniques
+    // `uq_categories_vendor_slug` / `uq_categories_global_slug`).
+    //
+    // SECURITY (PCP-149): the pre-fix code did up to 98 SELECT
+    // round-trips before each INSERT to find a free slug. A vendor
+    // could submit 100 categories with colliding slugs and trigger
+    // 9,800 queries. We replace that with: try the INSERT, on
+    // unique-violation append `-N` and retry — at most 5 attempts
+    // (1 query per attempt) regardless of collision depth.
+    const baseSlug =
       typeof body.slug === "string" && body.slug.trim().length > 0
         ? body.slug.trim()
         : generateSlug(nameAr);
-    baseSlug = baseSlug || `cat-${Date.now()}`;
+    const startSlug = baseSlug || `cat-${Date.now()}`;
 
-    // Slug uniqueness is scoped by `vendor_id`. The migration replaced
-    // the global UNIQUE constraint with two partial uniques, so we
-    // check the relevant scope only.
-    let candidate = baseSlug;
-    let counter = 2;
-    while (counter < 100) {
-      const check = isPrivate
-        ? await query(
-            `SELECT id FROM categories WHERE vendor_id = $1 AND slug = $2 LIMIT 1`,
-            [session.vendorId, candidate],
-          )
-        : await query(
-            `SELECT id FROM categories WHERE vendor_id IS NULL AND slug = $1 LIMIT 1`,
-            [candidate],
-          );
-      if (check.rows.length === 0) break;
-      candidate = `${baseSlug}-${counter}`;
-      counter++;
+    let finalSlug = startSlug;
+    let insertedId: string | null = null;
+    const MAX_SLUG_RETRIES = 5;
+    for (let attempt = 0; attempt < MAX_SLUG_RETRIES; attempt++) {
+      const candidate = attempt === 0 ? finalSlug : `${startSlug}-${attempt + 1}`;
+      try {
+        const inserted = isPrivate
+          ? await pool.query<{ id: string }>(
+              `INSERT INTO categories
+                  (name_ar, name_en, slug, is_active, sort_order, vendor_id)
+                VALUES ($1, $2, $3, TRUE, 0, $4)
+                RETURNING id`,
+              [nameAr.trim(), nameEn.trim() || null, candidate, session.vendorId],
+            )
+          : await pool.query<{ id: string }>(
+              `INSERT INTO categories
+                  (name_ar, name_en, slug, is_active, sort_order, vendor_id)
+                VALUES ($1, $2, $3, TRUE, 0, NULL)
+                RETURNING id`,
+              [nameAr.trim(), nameEn.trim() || null, candidate],
+            );
+        insertedId = inserted.rows[0]?.id ?? null;
+        finalSlug = candidate;
+        break;
+      } catch (err: any) {
+        // 23505 = unique_violation on the partial unique indexes
+        if (err?.code !== "23505") throw err;
+        // Loop and try the next suffix.
+      }
     }
-    const finalSlug = candidate;
-
-    const inserted = await query<{ id: string }>(
-      isPrivate
-        ? `INSERT INTO categories
-              (name_ar, name_en, slug, is_active, sort_order, vendor_id)
-            VALUES ($1, $2, $3, TRUE, 0, $4)
-            RETURNING id`
-        : `INSERT INTO categories
-              (name_ar, name_en, slug, is_active, sort_order, vendor_id)
-            VALUES ($1, $2, $3, TRUE, 0, NULL)
-            RETURNING id`,
-      isPrivate
-        ? [nameAr.trim(), nameEn.trim() || null, finalSlug, session.vendorId]
-        : [nameAr.trim(), nameEn.trim() || null, finalSlug],
-    );
+    if (!insertedId) {
+      return NextResponse.json(
+        { success: false, error: "تعذّر إيجاد slug فريد، حاول باسم آخر" },
+        { status: 409 },
+      );
+    }
 
     // Bust the storefront's chip-strip cache for this vendor and the
     // shared categories cache (the latter is required only when the
@@ -208,7 +244,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        id: inserted.rows[0]?.id,
+        id: insertedId,
         slug: finalSlug,
         name_ar: nameAr.trim(),
         name_en: nameEn.trim() || null,

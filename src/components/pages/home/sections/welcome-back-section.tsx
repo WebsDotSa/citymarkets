@@ -94,10 +94,10 @@ export function WelcomeBackSection() {
     <section className="py-8 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-5">
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">
             أهلاً {user.name?.split(" ")[0] || "بك"} 👋
           </h2>
-          <p className="text-sm text-slate-500 mt-1 font-normal">
+          <p className="text-sm text-gray-500 mt-1 font-normal">
             كمّل من وين وقفت
           </p>
         </div>
@@ -155,21 +155,21 @@ export function WelcomeBackSection() {
           {lastOrder && reorderItems.length > 0 && (
             <Link
               href={`/orders/${lastOrder.id}`}
-              className="group bg-white border border-slate-100 rounded-3xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+              className="group bg-white border border-gray-100 rounded-3xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center">
-                  <RotateCcw className="w-5 h-5 text-slate-700" />
+                <div className="w-11 h-11 rounded-2xl bg-gray-100 flex items-center justify-center">
+                  <RotateCcw className="w-5 h-5 text-gray-700" />
                 </div>
-                <ArrowLeft className="w-4 h-4 text-slate-400 group-hover:text-slate-700 group-hover:-translate-x-1 transition-all" />
+                <ArrowLeft className="w-4 h-4 text-gray-400 group-hover:text-gray-700 group-hover:-translate-x-1 transition-all" />
               </div>
               <div className="space-y-2">
-                <p className="text-base font-bold text-slate-900">أعد طلبك</p>
+                <p className="text-base font-bold text-gray-900">أعد طلبك</p>
                 <div className="flex items-center -space-x-2 space-x-reverse">
                   {reorderItems.map((it, idx) => (
                     <div
                       key={idx}
-                      className="w-9 h-9 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center overflow-hidden"
+                      className="w-9 h-9 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center overflow-hidden"
                       style={{ zIndex: reorderItems.length - idx }}
                     >
                       {it.product?.image_url ? (
@@ -180,12 +180,12 @@ export function WelcomeBackSection() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <Sparkles className="w-4 h-4 text-slate-400" />
+                        <Sparkles className="w-4 h-4 text-gray-400" />
                       )}
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-slate-500">آخر طلب لك</p>
+                <p className="text-xs text-gray-500">آخر طلب لك</p>
               </div>
             </Link>
           )}

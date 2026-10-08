@@ -77,6 +77,15 @@ const PROTECTED_PREFIXES = ["/profile", "/orders", "/checkout"];
 // `/admin` and `/admin/<anything>` are all protected.
 const PUBLIC_PROFILE_EXACT = new Set<string>(["/profile/loyalty"]);
 
+// PUBLIC_ORDERS_EXACT — order-tracking routes that must remain reachable
+// for guest customers. The /auth/login page advertises "تتبع طلبك هنا"
+// which deep-links to /orders/track. The PROTECTED_PREFIXES guard on
+// /orders would otherwise send every guest to the login wall and silently
+// drop the link. The /orders/track page itself accepts a phone + tracking
+// code lookup (no JWT required) — it just needs the middleware to let
+// the request through. Add any future public order surface here.
+const PUBLIC_ORDERS_EXACT = new Set<string>(["/orders/track"]);
+
 // Admin sub-paths that must stay reachable without a session.
 const ADMIN_PUBLIC_PREFIXES = ["/admin/login"];
 
@@ -98,8 +107,13 @@ function isPublicProfile(pathname: string): boolean {
   return PUBLIC_PROFILE_EXACT.has(pathname);
 }
 
+function isPublicOrders(pathname: string): boolean {
+  return PUBLIC_ORDERS_EXACT.has(pathname);
+}
+
 function isProtected(pathname: string): boolean {
   if (isPublicProfile(pathname)) return false;
+  if (isPublicOrders(pathname)) return false;
   return PROTECTED_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),
   );
@@ -152,7 +166,6 @@ const CSRF_EXEMPT_PATHS: readonly string[] = [
   // HMAC-authenticated /api/v1/payments/webhook. /api/v1/vendors/[slug]/payment
   // (the legacy single-vendor payment initiate) was also removed; the
   // multi-vendor checkout pipeline is the only canonical payment path.
-  "/api/v1/auth/me", // GET only
   "/api/v1/track-order", // guest lookup
   "/api/v1/delivery/quote", // stateless delivery-fee quote (guest-friendly)
   "/api/v1/coupons/validate", // stateless coupon validation (read-only)
@@ -213,8 +226,21 @@ function csrfErrorResponse(): NextResponse {
 }
 
 /**
- * Auto-issue CSRF cookie on first visit so the client can read it and
- * echo it in the `x-csrf-token` header on subsequent mutating requests.
+ * Auto-issue CSRF cookie on first visit so the server-side gate has a
+ * token to compare against the `x-csrf-token` header.
+ *
+ * SECURITY (P2-2 / 2026-10-03): the cookie is now `httpOnly: true` so
+ * JavaScript in the page can NOT read it. The token reaches the
+ * application JS via the `GET /api/v1/auth/csrf` endpoint, which reads
+ * the cookie on the server side and returns the value as JSON.
+ *
+ * Cookie attributes:
+ *   - httpOnly: true  → XSS cannot read the cookie.
+ *   - secure: <env>   → cookie only travels over HTTPS in production.
+ *   - sameSite: strict → cross-site requests do not include it; that
+ *                       is the actual CSRF gate.
+ *   - maxAge: 24h     → long enough for a session, short enough that
+ *                       abandoned tabs do not retain a usable token.
  */
 function ensureCsrfCookie(
   request: NextRequest,
@@ -224,7 +250,7 @@ function ensureCsrfCookie(
   if (!token) {
     token = generateCsrfToken();
     response.cookies.set(CSRF_COOKIE_NAME, token, {
-      httpOnly: false,
+      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",

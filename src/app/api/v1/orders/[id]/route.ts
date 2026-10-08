@@ -29,6 +29,16 @@ export async function GET(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const { id: orderId } = await ctx.params;
+  // P2-9 (PCP-101 audit): validate UUID before opening a DB connection so
+  // a malformed URL returns 400 (Arabic "معرّف الطلب غير صالح") instead of
+  // bubbling a 500 from Postgres' "invalid input syntax for type uuid".
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(orderId)) {
+    return NextResponse.json(
+      { success: false, error: "معرّف الطلب غير صالح" },
+      { status: 400 },
+    );
+  }
   const userId = await resolveCustomerUserIdFromRequest(request);
   const url = new URL(request.url);
   const guestKey = idempotencyKeyFromQuery(url);
@@ -40,7 +50,6 @@ export async function GET(
               o.tracking_code AS order_number, o.type,
               o.voice_note_url, o.voice_note_duration,
               o.user_id::text as user_id,
-              a.plus_code as address_plus_code,
               ${ORDER_ADDRESS_COLUMNS},
               ${ORDER_USER_COLUMNS},
               m.delivery_lat, m.delivery_lng, m.delivery_plus_code, m.city, m.district,
@@ -75,13 +84,49 @@ export async function GET(
     }
 
     const items = await client.query(
-      `SELECT i.id, i.product_id, p.name_ar, p.image_url, p.price::float,
-              i.free_text, i.quantity, i.unit_price::float, i.notes,
-              i.resolved_price::float, i.resolved_product_id, i.resolved_at
-       FROM direct_order_items i
-       LEFT JOIN products p ON p.id = i.product_id
-       WHERE i.order_id = $1
-       ORDER BY i.created_at ASC`,
+      // P2-8 (PCP-101 audit): UNION ALL across order_items + direct_order_items.
+      // Catalog orders store lines in `order_items` (qty column, vendor_products
+      // FK). Direct orders store lines in `direct_order_items` (quantity +
+      // free_text + resolved_* + admin-only). The customer order-detail page
+      // shows the merged list — a single-table read misses ~95% of real orders.
+      `SELECT
+         id, product_id, name_ar, image_url, price,
+         free_text, quantity, unit_price, notes,
+         resolved_price, resolved_product_id, resolved_at,
+         resolved_by_admin_id
+       FROM (
+         SELECT i.id, i.product_id,
+                p.name_ar,
+                COALESCE(NULLIF(p.image_url, ''), NULLIF(p.image_urls[1], '')) AS image_url,
+                p.price::float8 AS price,
+                NULL::text       AS free_text,
+                i.qty            AS quantity,
+                i.unit_price::float8 AS unit_price,
+                i.notes,
+                NULL::numeric    AS resolved_price,
+                NULL::uuid       AS resolved_product_id,
+                NULL::timestamp  AS resolved_at,
+                NULL::uuid       AS resolved_by_admin_id,
+                1                AS _ord
+           FROM order_items i
+           LEFT JOIN vendor_products p ON p.id = i.product_id
+          WHERE i.order_id = $1
+         UNION ALL
+         SELECT i.id, i.product_id,
+                p.name_ar,
+                COALESCE(NULLIF(p.image_url, ''), NULLIF(p.image_urls[1], '')) AS image_url,
+                p.price::float8 AS price,
+                i.free_text, i.quantity, i.unit_price::float8, i.notes,
+                i.resolved_price::float8,
+                i.resolved_product_id,
+                i.resolved_at,
+                i.resolved_by_admin_id,
+                2                AS _ord
+           FROM direct_order_items i
+           LEFT JOIN vendor_products p ON p.id = i.product_id
+          WHERE i.order_id = $1
+       ) u
+       ORDER BY _ord ASC, quantity DESC NULLS LAST`,
       [orderId]
     );
 

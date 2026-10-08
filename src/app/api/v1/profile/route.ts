@@ -1,19 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/identity/auth-helpers';
+import { decryptPii } from '@/lib/security/pii-crypto';
 
-import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
+import { error as logError } from '@/lib/logger';
 
 // GET /api/v1/profile - Get customer profile
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!('user' in authResult)) return authResult;
-  
+
   const userId = authResult.user.id;
-  
+
   try {
-    const result = await query(
-      'SELECT id, phone, name, email, avatar_url, loyalty_points, loyalty_tier, created_at FROM users WHERE id = $1',
+    // P0-3 PII cutover: read encrypted + hmac columns alongside the
+    // legacy plaintext columns and prefer the decrypted value. Falls
+    // back to the plaintext column for rows that pre-date the backfill.
+    // The canonical helper for the single-user case is
+    // `loadDecryptedUser` in user-repo; we keep the inline map here
+    // because this SELECT also returns avatar/loyalty/created_at.
+    const result = await query<Record<string, unknown>>(
+      `SELECT id, phone, name, email, avatar_url, loyalty_points, loyalty_tier, created_at,
+              phone_encrypted, name_encrypted, email_encrypted
+         FROM users WHERE id = $1`,
       [userId]
     );
 
@@ -21,7 +30,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'العميل غير موجود' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: result.rows[0] });
+    const row = result.rows[0];
+    if (row.phone_encrypted) {
+      const d = decryptPii(row.phone_encrypted as string);
+      if (d != null) row.phone = d;
+    }
+    if (row.name_encrypted) {
+      const d = decryptPii(row.name_encrypted as string);
+      if (d != null) row.name = d;
+    }
+    if (row.email_encrypted) {
+      const d = decryptPii(row.email_encrypted as string);
+      if (d != null) row.email = d;
+    }
+    return NextResponse.json({ success: true, data: row });
   } catch (error) {
     logError('Profile fetch error:', error);
     return NextResponse.json({ success: false, error: 'فشل جلب البيانات' }, { status: 500 });

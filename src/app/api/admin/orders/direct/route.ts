@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { requireAdminApi } from "@/lib/identity/admin-api-auth-db";
 import { error as logError } from '@/lib/logger';
-import {
-  ORDER_LIST_COLUMNS,
-  ORDER_ADDRESS_COLUMNS_MINIMAL,
-  ORDER_USER_COLUMNS,
-} from '@/lib/orders/sql-fragments';
+import { parsePagination } from "@/lib/api/pagination";
 
 /**
  * GET /api/admin/orders/direct
@@ -20,12 +16,7 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const status = url.searchParams.get('status') || '';
   const search = url.searchParams.get('search') || '';
-  // Non-numeric input (e.g. ?limit=abc) parses to NaN and used to reach
-  // SQL as `LIMIT NaN` → 500. Fall back to defaults and clamp.
-  const rawLimit = parseInt(url.searchParams.get('limit') || '', 10);
-  const rawOffset = parseInt(url.searchParams.get('offset') || '', 10);
-  const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 50;
-  const offset = Number.isFinite(rawOffset) ? Math.max(rawOffset, 0) : 0;
+  const { limit, page, offset } = parsePagination(url.searchParams, { defaultLimit: 50, maxLimit: 200 });
 
   const client = await pool.connect();
   try {
@@ -42,10 +33,11 @@ export async function GET(request: NextRequest) {
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
     const res = await client.query(
-      `SELECT ${ORDER_LIST_COLUMNS},
-              o.tracking_code AS order_number, o.type,
-              ${ORDER_ADDRESS_COLUMNS_MINIMAL},
-              ${ORDER_USER_COLUMNS},
+      `SELECT o.id, o.tracking_code AS order_number, o.status, o.total::float, o.service_fee::float, o.tax::float,
+              o.payment_method, o.payment_status, o.created_at, o.updated_at,
+              o.guest_name, o.guest_phone,
+              u.name as user_name, u.phone as user_phone,
+              a.label as address_label, a.address_text,
               COALESCE((
                 SELECT COUNT(*) FROM direct_order_messages m
                 WHERE m.order_id = o.id AND m.sender_type = 'customer' AND m.read_by_admin_at IS NULL

@@ -1,0 +1,17 @@
+{
+  "buildCommand": "npm run build-storybook",
+  "outputDirectory": "storybook-static",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "api/**/*.ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
+  "github": {
+    "enabled": true,
+    "autoCreatePullRequestComments": false
+  }
+}

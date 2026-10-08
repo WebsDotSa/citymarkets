@@ -24,6 +24,7 @@ import {
 } from "@/server/invoice-pdf-server";
 import { error as logError } from "@/lib/logger";
 
+import { validateUuidOrError } from "@/lib/api/uuid-guard";
 /**
  * GET /api/v1/orders/[id]/invoice-pdf
  *
@@ -46,6 +47,8 @@ export async function GET(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const { id: orderId } = await ctx.params;
+  const badId = validateUuidOrError(orderId, "معرّف الطلب");
+  if (badId) return badId;
 
   // 1) Auth — accept either an admin session OR a customer that owns
   // this order (logged-in user_id or matching guest idempotency_key).

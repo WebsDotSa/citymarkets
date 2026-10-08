@@ -5,12 +5,20 @@ import { pool } from "@/lib/db";
 import { ROLE_PERMISSIONS, type AdminRole } from "@/lib/admin-types";
 import { verifyAdminRequest, type VerifiedAdminJwt } from "./admin-session";
 import { createRoleCache, type RoleCache } from "./auth/role-cache";
+import { assertTokenVersionMatches } from "./auth/token-version";
 
 export type { VerifiedAdminJwt as AdminAuthUser };
 
 interface AdminRoleEntry {
   role: AdminRole;
   isActive: boolean;
+  /**
+   * `admin_users.token_version` at the time of the cached DB read.
+   * Compared against the JWT's `tokenVersion` claim on every request
+   * so a bumped version (logout, password change, demotion) is
+   * detected within the 60s cache TTL.
+   */
+  tokenVersion: number;
 }
 
 // Short-lived in-memory cache so auth checks don't issue a DB query per
@@ -43,15 +51,23 @@ async function fetchAdminFreshFromDb(id: string): Promise<AdminRoleEntry | null>
   const cached = adminRoleCache.get(id);
   if (cached) return cached;
   try {
+    // SECURITY (PCP-144): SELECT token_version so the verify path can
+    // detect a bumped version (logout / password rotation / demotion)
+    // and reject the now-stale JWT. Without this column the cache
+    // could not differentiate a fresh admin from one whose session
+    // was forcibly invalidated elsewhere.
     const result = await pool.query(
-      `SELECT role::text AS role, is_active FROM admin_users WHERE id = $1`,
+      `SELECT role::text AS role, is_active, COALESCE(token_version, 1)::int AS token_version
+         FROM admin_users
+        WHERE id = $1`,
       [id],
     );
     if (result.rows.length === 0) return null;
-    const row = result.rows[0] as { role: string; is_active: boolean };
+    const row = result.rows[0] as { role: string; is_active: boolean; token_version: number };
     const entry: AdminRoleEntry = {
       role: row.role as AdminRole,
       isActive: row.is_active === true,
+      tokenVersion: row.token_version,
     };
     adminRoleCache.set(id, entry);
     return entry;
@@ -72,6 +88,15 @@ export function clearAdminRoleCache(id?: string): void {
  * this, a demoted admin would still have a valid JWT until natural
  * expiry (up to 7 days). The result is cached for 60s to avoid
  * per-request DB load.
+ *
+ * SECURITY (PCP-144): the cached DB row also carries
+ * `admin_users.token_version`. The JWT's `tokenVersion` claim (baked
+ * at sign time) is compared against the fresh DB value — a mismatch
+ * means the JWT was issued before a recent logout / password rotation
+ * and must be rejected. The logout and admin-user PUT routes both
+ * bump `token_version` AND call `clearAdminRoleCache`, so the next
+ * request is a cache miss → re-reads the DB → sees the new version
+ * → rejects the now-stale JWT.
  */
 export async function requireAdminApi(
   request: NextRequest,
@@ -88,6 +113,28 @@ export async function requireAdminApi(
 
   if (fresh.role !== admin.role) {
     return adminForbidden();
+  }
+
+  // SECURITY (PCP-144): token_version comparison. A bumped value
+  // means the JWT was issued before the most recent credential
+  // rotation, logout, or demotion — reject it. We also bust the
+  // cache so subsequent requests in this process get the fresh value
+  // without waiting for TTL. The compare is centralised in
+  // assertTokenVersionMatches so the customer / admin / vendor
+  // verify paths cannot drift.
+  //
+  // The cached entry was read by verifyAdminRequest with a tokenVersion
+  // claim baked from a recent DB read; we re-SELECT here and compare
+  // against the fresh row, not the cache, so a bump that happened
+  // between cache fill and this request is still detected.
+  if (
+    !assertTokenVersionMatches(
+      { tokenVersion: admin.tokenVersion },
+      fresh.tokenVersion,
+    )
+  ) {
+    clearAdminRoleCache(admin.id);
+    return adminUnauthorized();
   }
 
   if (permission && !adminHasPermission(fresh.role, permission)) {

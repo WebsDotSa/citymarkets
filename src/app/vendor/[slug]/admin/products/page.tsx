@@ -4,6 +4,7 @@ import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { useConfirm } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf-client";
+import { useFormFieldIdFromLabel } from "@/hooks/use-form-field-id";
 import { useVendorRole } from "../_lib/vendor-role-context";
 
 interface ProductsPageProps {
@@ -201,6 +202,7 @@ export default function VendorProductsPage({ params }: ProductsPageProps) {
                   <Link
                     href={`/vendors/${slug}/products/${product.id}`}
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200"
                   >
                     👁️
@@ -282,6 +284,14 @@ function AddProductModal({
   onClose: () => void;
   onSuccess: (product: any) => void;
 }) {
+  // Stable ids for label/input pairs in this form so screen readers
+  // announce the field name when each input is focused.
+  const nameId = useFormFieldIdFromLabel("vendor-product-modal", "اسم المنتج *");
+  const priceId = useFormFieldIdFromLabel("vendor-product-modal", "السعر (ر.س) *");
+  const descId = useFormFieldIdFromLabel("vendor-product-modal", "الوصف");
+  const categoryId = useFormFieldIdFromLabel("vendor-product-modal", "القسم");
+  const stockId = useFormFieldIdFromLabel("vendor-product-modal", "الكمية");
+
   const [formData, setFormData] = useState({
     nameAr: "",
     price: "",
@@ -393,10 +403,14 @@ function AddProductModal({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor={nameId}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               اسم المنتج *
             </label>
             <input
+              id={nameId}
               type="text"
               value={formData.nameAr}
               onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
@@ -406,10 +420,14 @@ function AddProductModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor={priceId}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               السعر (ر.س) *
             </label>
             <input
+              id={priceId}
               type="number"
               step="0.01"
               value={formData.price}
@@ -420,10 +438,14 @@ function AddProductModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor={descId}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               الوصف
             </label>
             <textarea
+              id={descId}
               value={formData.descriptionAr}
               onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })}
               className="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none"
@@ -432,10 +454,14 @@ function AddProductModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor={categoryId}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               القسم
             </label>
             <select
+              id={categoryId}
               value={formData.categoryId}
               onChange={(e) =>
                 setFormData({ ...formData, categoryId: e.target.value })
@@ -475,6 +501,7 @@ function AddProductModal({
                 checked={formData.trackStock}
                 onChange={(e) => setFormData({ ...formData, trackStock: e.target.checked })}
                 className="w-4 h-4"
+                aria-label="تتبع المخزون"
               />
               <span className="text-sm">تتبع المخزون</span>
             </label>
@@ -482,10 +509,14 @@ function AddProductModal({
 
           {formData.trackStock && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor={stockId}
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 الكمية
               </label>
               <input
+                id={stockId}
                 type="number"
                 value={formData.stockQuantity}
                 onChange={(e) => setFormData({ ...formData, stockQuantity: e.target.value })}
@@ -501,6 +532,7 @@ function AddProductModal({
                 checked={formData.isActive}
                 onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                 className="w-4 h-4"
+                aria-label="نشط"
               />
               <span className="text-sm">نشط</span>
             </label>

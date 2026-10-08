@@ -253,7 +253,7 @@ export default function EmploymentPage() {
       </div>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-b from-[#009345] to-[#008c40] px-4 py-10 text-center">
+      <div className="bg-gradient-to-b from-primary to-primary-700 px-4 py-10 text-center">
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
           <Briefcase className="w-8 h-8 text-primary" />
         </div>
