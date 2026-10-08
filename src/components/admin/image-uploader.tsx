@@ -7,6 +7,9 @@ import { compressImageForUpload } from "@/lib/image-compress";
 import { ALLOWED_IMAGE_MIME, MAX_IMAGE_BYTES } from "@/lib/validation/upload";
 import { error as logError } from "@/lib/logger";
 
+// Shown when a stored image URL 404s (e.g. missing CDN object).
+const PLACEHOLDER_SRC = "/placeholders/products/default.svg";
+
 interface ImageUploaderProps {
   value: string;
   onChange: (url: string) => void;
@@ -127,6 +130,10 @@ export function ImageUploader({
             loading="lazy"
             decoding="async"
             className="w-full h-full object-cover"
+            onError={(e) => {
+              const img = e.currentTarget;
+              if (!img.src.endsWith(PLACEHOLDER_SRC)) img.src = PLACEHOLDER_SRC;
+            }}
           />
 
           {/* Overlay actions */}
@@ -182,14 +189,46 @@ export function ImageUploader({
         </div>
       )}
 
-      {/* URL input fallback */}
+      {/* URL input fallback. SECURITY (defence-in-depth 2026-10-08):
+          validate the URL before forwarding to onChange so the
+          admin can't accidentally paste a javascript:/data:/vbscript:
+          URL (inert in <img src> but still worth rejecting) or a
+          third-party tracking pixel. Allow only http(s) schemes +
+          same-origin / cdn.citymarkets.sa hosts. */}
       <div className="relative">
         <ImageIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
           value={value || ""}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="أو أدخل رابط الصورة مباشرة..."
+          onChange={(e) => {
+            const raw = e.target.value.trim();
+            if (!raw) {
+              onChange("");
+              setError("");
+              return;
+            }
+            try {
+              const u = new URL(raw);
+              if (u.protocol !== "https:" && u.protocol !== "http:") {
+                setError("يجب أن يبدأ الرابط بـ http أو https");
+                return;
+              }
+              const host = u.hostname.toLowerCase();
+              const allowed =
+                host === "cdn.citymarkets.sa" ||
+                host.endsWith(".citymarkets.sa") ||
+                host === "citymarkets.sa";
+              if (!allowed) {
+                setError("يُسمح فقط بروابط cdn.citymarkets.sa");
+                return;
+              }
+              onChange(raw);
+              setError("");
+            } catch {
+              setError("صيغة الرابط غير صحيحة");
+            }
+          }}
+          placeholder="أو أدخل رابط صورة من cdn.citymarkets.sa..."
           className="w-full h-10 pr-10 pl-4 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
         />
       </div>

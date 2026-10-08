@@ -272,8 +272,6 @@ body {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 }
-  50% { box-shadow: 0 0 20px 10px rgba(0, 147, 69, 0); }
-}
 
 @keyframes shimmer {
   0% { background-position: -200% 0; }
@@ -1954,4 +1952,3 @@ main.ai-chat-main:has(section#main-content[aria-label="محادثة شيف سي�
  * of the viewport — its z-50 keeps it above the composer's z-40. The
  * chat messages column reserves `pb-[calc(160px+4rem+safe-area)]` so
  * no last message is hidden behind the composer. */
-

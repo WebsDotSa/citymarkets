@@ -22,6 +22,7 @@ import {
   resolveCategoryImageSrc,
 } from '@/lib/catalog';
 import { emojiForCategoryName } from '@/lib/catalog';
+import { CategoryImage } from "./category-image";
 
 interface MainCatsImageStripProps {
   roots: CategoryTreeNode[];
@@ -121,23 +122,13 @@ export function MainCatsImageStrip({
                   style={{ scrollSnapAlign: "center" }}
                 >
                   <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-white overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105">
-                    {src ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={src}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <span
-                        className="text-2xl sm:text-3xl drop-shadow-xs select-none"
-                        aria-hidden="true"
-                      >
-                        {emoji}
-                      </span>
-                    )}
+                    <CategoryImage
+                      src={src}
+                      emoji={emoji}
+                      loading="lazy"
+                      imageClassName="w-full h-full object-contain"
+                      fallbackClassName="text-2xl sm:text-3xl drop-shadow-xs select-none"
+                    />
                   </div>
                   <span
                     className={`text-2xs font-bold leading-tight line-clamp-1 w-full px-0.5 ${

@@ -30,3 +30,13 @@ export const SQL_REVENUE_ELIGIBLE = `
   o.status = 'confirmed'
   AND COALESCE(LOWER(TRIM(o.payment_method)), '') NOT IN ('cash', 'wallet', 'bank_transfer', '')
 `;
+
+/**
+ * Vendor-side revenue filter (vendor_orders has its own status enum +
+ * `payment_status` column on the vendor-order row, not on the parent).
+ * Used by analytics helpers that aggregate per-vendor.
+ */
+export const VENDOR_REVENUE_ELIGIBLE = `
+  vo.status IN ('confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered')
+  AND vo.payment_status = 'paid'
+`;

@@ -7,7 +7,7 @@ import {
   adminSessionCookieOptions,
 } from '@/lib/identity';
 import type { AdminRole } from '@/lib/admin-types';
-import { checkRateLimit, ADMIN_LOGIN_CONFIG, ADMIN_LOGIN_IP_CONFIG, OTP_VERIFY_CONFIG, OTP_VERIFY_IP_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
+import { checkRateLimit, ADMIN_LOGIN_CONFIG, ADMIN_LOGIN_IP_CONFIG, OTP_VERIFY_CONFIG, OTP_VERIFY_IP_CONFIG, OTP_SEND_CONFIG, OTP_SEND_IP_CONFIG, createRateLimitHeaders } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/request-ip';
 import { normalizeSaudiToE164, phoneForDb } from '@/lib/phone-format';
 import { adminLoginInputSchema } from '@/lib/validation/admin';
@@ -17,7 +17,7 @@ import {
   twilioSendVerification,
 } from '@/lib/twilio-verify';
 
-import { error as logError } from '@/lib/logger';
+import { error as logError, warn as logWarn } from '@/lib/logger';
 
 /**
  * POST /api/admin/auth/login
@@ -160,6 +160,49 @@ export async function POST(request: NextRequest) {
           { status: 503 }
         );
       }
+
+      // SECURITY: this step is unauthenticated, so without caps anyone
+      // could make us send unlimited SMS to arbitrary numbers (cost +
+      // harassment). Cap per IP and per number, mirroring customer OTP.
+      const sendIpLimit = await checkRateLimit(clientIp, OTP_SEND_IP_CONFIG);
+      const sendPhoneLimit = sendIpLimit.allowed
+        ? await checkRateLimit(`admin:${e164}`, OTP_SEND_CONFIG)
+        : sendIpLimit;
+      if (!sendIpLimit.allowed || !sendPhoneLimit.allowed) {
+        const limit = sendIpLimit.allowed ? sendPhoneLimit : sendIpLimit;
+        const response = NextResponse.json(
+          { success: false, error: 'تجاوزت عدد محاولات إرسال الرمز. انتظر قليلاً ثم أعد المحاولة.' },
+          { status: 429 }
+        );
+        Object.entries(createRateLimitHeaders(limit)).forEach(([k, v]) => response.headers.set(k, v));
+        response.headers.set('X-RateLimit-By', sendIpLimit.allowed ? 'phone' : 'ip');
+        return response;
+      }
+
+      // Only text numbers that belong to an active staff account. The
+      // response body is identical either way. To also close the
+      // timing side-channel (the Twilio call adds 200-600ms), the
+      // "no staff" branch sleeps for the average observed Twilio
+      // round-trip so an attacker cannot enumerate active admin
+      // phones by measuring response time.
+      const staff = await query(
+        `SELECT 1 FROM admin_users WHERE LOWER(phone) = LOWER($1) AND is_active = true LIMIT 1`,
+        [phoneForDb(e164)]
+      );
+
+      if (staff.rows.length === 0) {
+        // Match the Twilio round-trip window so the two branches are
+        // indistinguishable by response time. The body is the same as
+        // the success path, so neither the timing nor the body leaks
+        // whether the phone belongs to a staff account.
+        await new Promise((resolve) => setTimeout(resolve, 450));
+        return NextResponse.json({
+          success: true,
+          step: 'otp_sent',
+          message: 'تم إرسال رمز التحقق إلى رقمك',
+        });
+      }
+
       try {
         await twilioSendVerification(e164);
       } catch (e) {
@@ -228,25 +271,45 @@ export async function POST(request: NextRequest) {
           [identifier]
         );
 
-    if (lookup.rows.length === 0) {
-      return NextResponse.json(
+    // SECURITY: collapse "user not found", "user disabled", and "wrong
+    // password" into a single identical response so the endpoint cannot
+    // be used to enumerate which emails are valid admin accounts.
+    // Server-side logs preserve the real outcome for audit/forensics.
+    const genericAuthError = () =>
+      NextResponse.json(
         { success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
         { status: 401 }
       );
+
+    if (lookup.rows.length === 0) {
+      // Defensive: run a dummy bcrypt compare so the response timing
+      // matches the active-user / wrong-password path. This closes the
+      // timing channel that would otherwise reveal whether the email
+      // exists.
+      await verifyPassword(
+        input.password,
+        '$2b$10$CwTycUXWue0Thq9StjUM0uJ8.Gd0qFjH9F8Xh1bVbpY9mJ6kO7S1u'
+      ).catch(() => undefined);
+      return genericAuthError();
     }
     const admin = lookup.rows[0];
     if (!admin.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'هذا الحساب معطّل، تواصل مع مدير النظام' },
-        { status: 403 }
-      );
+      // Audit-log the disabled-account attempt server-side; the client
+      // gets the same generic error as for "user not found" / "wrong
+      // password" so an attacker cannot distinguish the cases.
+      logWarn('Admin login attempt against disabled account', {
+        email: identifier.toLowerCase(),
+        ip: clientIp,
+      });
+      await verifyPassword(
+        input.password,
+        admin.password_hash || '$2b$10$CwTycUXWue0Thq9StjUM0uJ8.Gd0qFjH9F8Xh1bVbpY9mJ6kO7S1u'
+      ).catch(() => undefined);
+      return genericAuthError();
     }
     const isValid = await verifyPassword(input.password, admin.password_hash);
     if (!isValid) {
-      return NextResponse.json(
-        { success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
-        { status: 401 }
-      );
+      return genericAuthError();
     }
     return finalizeAdminLogin(request, admin);
   } catch (error) {

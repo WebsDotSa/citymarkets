@@ -26,12 +26,12 @@ export type AdminUser = {
 export type AdminOrderStatus =
   | 'pending'
   | 'confirmed'
-  | 'preparing'
-  | 'shipped'
+  | 'shopping'
+  | 'on_the_way'
   | 'delivered'
   | 'cancelled';
 
-export type AdminPaymentStatus = 'unpaid' | 'pending' | 'paid' | 'failed' | 'refunded';
+export type AdminPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 export type AdminOrderItem = {
   id: string;

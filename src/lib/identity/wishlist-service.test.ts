@@ -77,6 +77,27 @@ describe("listWishlist", () => {
     const items = await listWishlist("u-1");
     expect(items[0]?.added_at).toBe("2026-09-29T12:00:00.000Z");
   });
+
+  /**
+   * REGRESSION (2026-10-08, customer-journey-e2e): the
+   * `WISHLIST_PRODUCT_FIELDS` SELECT used to reference `p.slug` on the
+   * `products_unified` view, but that view has no `slug` column — the
+   * live DB rejected every wishlist list/add with
+   *   "column p.slug does not exist"
+   * The fix sources the public slug from `p.sku` (also nullable on the
+   * view), exposed as `slug` to keep the WishlistProduct contract
+   * intact. The `slug` type is `string | null` because `sku` is
+   * nullable in the view.
+   */
+  it("SELECTs the slug from products_unified.sku (regression: view has no slug column)", async () => {
+    responseStack = [{ rows: [hydratedRow()], rowCount: 1 }];
+    await listWishlist("u-1");
+    const sql = calls[0]?.sql ?? "";
+    // The fix: do NOT reference p.slug (column does not exist on the view)
+    expect(sql).not.toMatch(/\bp\.slug\b/);
+    // The fix: pull from p.sku and alias as `slug` so the API contract stays.
+    expect(sql).toMatch(/p\.sku\s+AS\s+slug/i);
+  });
 });
 
 describe("addToWishlist", () => {
@@ -113,6 +134,33 @@ describe("addToWishlist", () => {
     const insertCall = calls.find((c) => /WITH inserted/i.test(c.sql));
     expect(insertCall).toBeDefined();
     expect(insertCall!.sql).toMatch(/ON CONFLICT \(user_id, product_id\) DO NOTHING/i);
+  });
+
+  /**
+   * REGRESSION (2026-10-08, customer-journey-e2e): the CTE+JOIN query
+   * in addToWishlist used to splice `WISHLIST_JOIN` directly into a
+   * SELECT that already started with `FROM inserted i`, producing
+   * `FROM inserted i FROM wishlist_items w JOIN products_unified p ...`
+   * which PostgreSQL rejects with "syntax error at or near FROM". The
+   * fix uses a parallel `WISHLIST_INSERTED_JOIN` clause that re-anchors
+   * the JOIN on the CTE alias `i` instead of starting a new FROM.
+   */
+  it("does NOT emit two FROM clauses in the CTE+JOIN (regression: list-join reused in CTE context)", async () => {
+    responseStack = [
+      { rows: [], rowCount: 0 },
+      { rows: [{ c: 5 }], rowCount: 1 },
+      { rows: [hydratedRow({ product_id: "p-2", id: "p-2" })], rowCount: 1 },
+    ];
+    await addToWishlist("u-1", "p-2");
+    const insertCall = calls.find((c) => /WITH inserted/i.test(c.sql));
+    expect(insertCall).toBeDefined();
+    // The fix: a single FROM clause (anchored on `inserted i`) followed
+    // by JOINs. The old code had a second FROM here.
+    const fromCount = (insertCall!.sql.match(/\bFROM\b/gi) ?? []).length;
+    expect(fromCount).toBe(1);
+    // And the fix JOINs the CTE alias, not wishlist_items w.
+    expect(insertCall!.sql).toMatch(/FROM inserted i/i);
+    expect(insertCall!.sql).toMatch(/JOIN products_unified p ON p\.id = i\.product_id/);
   });
 
   it("returns already_present when ON CONFLICT raced a concurrent insert", async () => {

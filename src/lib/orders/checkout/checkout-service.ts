@@ -45,7 +45,7 @@ import {
   type CheckoutResult,
 } from "./create-checkout";
 import type { DeliveryAddressRow } from "./resolve-address";
-import type { CouponRow } from "../pricing";
+import type { CouponRow } from "./pricing";
 import { reportCheckoutError } from "@/lib/errors/checkout-error-reporter";
 import { markOrderPaymentFailed } from "@/lib/payments/payment-service";
 import { getMainStoreAndDistance } from "@/lib/delivery/main-store";
@@ -380,6 +380,20 @@ export async function runCheckout(
       return mapResolutionError(result);
     }
 
+    // SECURITY / data-consistency (defence-in-depth 2026-10-08): clear
+    // the guest cart inside the same transaction as the order insert.
+    // The previous flow ran the DELETE on a separate pool connection
+    // AFTER the COMMIT, so a process crash between the two left the
+    // guest's cart items in place — a retry would create a second
+    // order for the same items. Moving the DELETE inside the tx closes
+    // the crash window. Idempotent on retry: a failed checkout rolls
+    // back the order insert AND the cart cleanup together.
+    if (!caller.userId && caller.sessionId) {
+      await client.query("DELETE FROM guest_cart WHERE session_id = $1", [
+        caller.sessionId,
+      ]);
+    }
+
     await client.query("COMMIT");
     txOpen = false;
 
@@ -402,12 +416,11 @@ export async function runCheckout(
       };
     }
 
-    // 8. Guest cart cleanup (logged-in users cleared inside createCheckout)
-    if (!caller.userId && caller.sessionId) {
-      await pool.query("DELETE FROM guest_cart WHERE session_id = $1", [
-        caller.sessionId,
-      ]);
-    }
+    // Guest cart cleanup moved inside the COMMIT block above so the
+    // DELETE participates in the same transaction as the order insert.
+    // (Defence-in-depth 2026-10-08: closing the crash window between
+    // COMMIT and the cart cleanup that previously left duplicate
+    // orders on retry.)
 
     // 9. Push + admin notify (fire-and-forget)
     void notifySuccess({

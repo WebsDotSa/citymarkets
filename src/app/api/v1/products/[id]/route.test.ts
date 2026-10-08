@@ -93,7 +93,7 @@ vi.mock("@/lib/logger", () => ({
   info: vi.fn(),
 }));
 
-import { query } from "@/lib/db";
+import { query as queryFn } from "@/lib/db";
 import { GET } from "./route";
 import type { NextRequest } from "next/server";
 
@@ -113,7 +113,7 @@ describe("GET /api/v1/products/[id] — products_unified migration (regression)"
 
   it("queries products_unified (not bare products) for product detail", async () => {
     const { query: q, calls } = makeFakeQuery();
-    vi.mocked(query).mockImplementation(q as never);
+    vi.mocked(queryFn).mockImplementation(q as never);
 
     const res = await GET(
       mockRequest(`http://localhost/api/v1/products/${PRODUCT_ID}`),
@@ -137,5 +137,106 @@ describe("GET /api/v1/products/[id] — products_unified migration (regression)"
       /\bJOIN\s+products\b(?!_unified)/i.test(c.sql)
     );
     expect(usesBareProducts).toBe(false);
+  });
+});
+
+describe("GET /api/v1/products/[id] — related-product images (regression, 2026-10-07)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /**
+   * BUGFIX (2026-10-07): the vendor related-products query read only
+   * `image_urls[0]`, but the admin product form writes a single upload
+   * to `image_url` leaving `image_urls[]` NULL — 1,411 of 4,900 active
+   * products at the time. Every similar-product card rendered the 📦
+   * placeholder. The fix mirrors the Slice 5 primary-image COALESCE in
+   * the related query; this test pins both the SQL shape and the
+   * response mapping so neither regresses.
+   */
+  it("related query COALESCEs image_url fallback and maps it into the response", async () => {
+    const query = vi.fn(async (sql: string, params: unknown[] = []) => {
+      const s = sql.trim().toUpperCase();
+
+      // Detail row — vendor product.
+      if (s.includes("FROM VENDOR_PRODUCTS") && s.includes("WHERE VP.ID = $1")) {
+        return {
+          rows: [
+            {
+              id: params[0],
+              vendor_id: "vendor-1",
+              category_id: "cat-1",
+              name_ar: "منتج متجر",
+              name_en: "vendor product",
+              description_ar: "وصف",
+              description_en: null,
+              images: null,
+              primary_image: "https://cdn.example.com/primary.jpg",
+              price: "19.99",
+              discount_price: null,
+              stock_qty: "10",
+              track_stock: true,
+              is_active: true,
+              sort_order: 0,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              vendor_name: "متجر",
+              vendor_slug: "store",
+              category_name: "فئة",
+              category_slug: "cat",
+            },
+          ],
+        };
+      }
+
+      // Related-products query — the COALESCE collapses the two image
+      // columns into `image_url`, exactly as Postgres returns it.
+      if (s.includes("FROM VENDOR_PRODUCTS") && s.includes("WHERE VENDOR_ID = $1")) {
+        return {
+          rows: [
+            {
+              id: "22222222-3333-4444-5555-666666666666",
+              name_ar: "منتج مشابه",
+              price: 5.5,
+              discount_price: null,
+              // What COALESCE(NULLIF(image_urls[1],''), NULLIF(image_url,''))
+              // yields for a single-image-only row.
+              image_url: "https://cdn.example.com/related.jpg",
+            },
+          ],
+        };
+      }
+
+      // fetchActiveOffer — none active.
+      if (s.includes("FROM OFFERS") || s.includes("OFFER_TARGETS")) {
+        return { rows: [] };
+      }
+
+      return { rows: [] };
+    });
+    vi.mocked(queryFn).mockImplementation(query as never);
+
+    const res = await GET(
+      mockRequest(`http://localhost/api/v1/products/${PRODUCT_ID}`),
+      { params: Promise.resolve({ id: PRODUCT_ID }) }
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+
+    // The related card image must be populated, not null.
+    expect(body.related).toHaveLength(1);
+    expect(body.related[0].image_url).toBe("https://cdn.example.com/related.jpg");
+
+    // And the SQL the route issued must carry the COALESCE fallback —
+    // without it Postgres returns null for single-image-only rows.
+    const relatedCall = vi.mocked(queryFn).mock.calls.find(
+      ([sql]) =>
+        typeof sql === "string" &&
+        sql.toUpperCase().includes("WHERE VENDOR_ID = $1"),
+    );
+    expect(relatedCall).toBeDefined();
+    expect(relatedCall![0]).toMatch(
+      /COALESCE\(\s*NULLIF\(image_urls\[1\],\s*''\),\s*NULLIF\(image_url,\s*''\)\)/i,
+    );
   });
 });

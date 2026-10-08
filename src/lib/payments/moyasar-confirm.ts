@@ -78,8 +78,18 @@ export async function confirmMoyasarPaymentForOrder(params: {
 
   const order = orderResult.rows[0];
 
-  if (userId && order.user_id && order.user_id !== userId) {
-    return { success: false, error: 'غير مصرح' };
+  // SECURITY FIX (MEDIUM): the previous pattern was an asymmetric check
+  // (`userId && order.user_id && order.user_id !== userId` → reject).
+  // That meant an authenticated request for a *guest* order (order.user_id
+  // is null → second clause falsy) bypassed ownership entirely, and an
+  // anonymous request bypassed it the same way. Replace with positive
+  // ownership: a registered order MUST be confirmed by its registered
+  // user; a guest order is bound only by the payment metadata + amount
+  // check below.
+  if (order.user_id !== null) {
+    if (!userId || order.user_id !== userId) {
+      return { success: false, error: 'غير مصرح' };
+    }
   }
 
   const metaOrderId = payment.metadata?.order_id;

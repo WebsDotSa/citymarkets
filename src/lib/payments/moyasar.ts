@@ -87,6 +87,17 @@ function sanitizeGatewayError(
 
 /** المبلغ بالهللة (1 ريال = 100) */
 export function toHalalas(sarAmount: number): number {
+  // SECURITY (defence-in-depth 2026-10-08): reject non-finite /
+  // non-positive input instead of silently coercing 0/NaN/-x to 1
+  // SAR (the previous `Math.max(100, ...)` floor). The minimum-charge
+  // floor only makes sense when the caller passed a valid, positive
+  // amount; throwing surfaces a programming error instead of charging
+  // the customer 1 SAR for a zero-amount order.
+  if (!Number.isFinite(sarAmount) || sarAmount <= 0) {
+    throw new Error(
+      `toHalalas: sarAmount must be a positive finite number, got ${sarAmount}`,
+    );
+  }
   return Math.max(100, Math.round(sarAmount * 100));
 }
 
@@ -289,8 +300,17 @@ export function getMoyasarSiteUrl(): string {
   return SITE_URL;
 }
 
+const DEFAULT_APPLE_PAY_LABEL = 'City Markets';
+
+/**
+ * Apple Pay merchant label shown on the payment sheet. moyasar-payment-form
+ * rejects any non-printable-ASCII label ("label should be English characters
+ * only") and renders "Form configuration issue!" instead of the button, so an
+ * Arabic/invalid value falls back to the English brand name.
+ */
 export function getMoyasarApplePayLabel(): string {
-  return process.env.MOYASAR_APPLE_PAY_LABEL?.trim() || 'سيتي ماركت';
+  const label = process.env.MOYASAR_APPLE_PAY_LABEL?.trim();
+  return label && /^[\x20-\x7E]+$/.test(label) ? label : DEFAULT_APPLE_PAY_LABEL;
 }
 
 export interface MoyasarPaymentDetails {

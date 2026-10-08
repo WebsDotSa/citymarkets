@@ -13,6 +13,7 @@ import { describe, expect, it } from "vitest";
 import {
   ALL_PAYMENT_METHODS,
   ALL_PAYMENT_METHODS_SET,
+  NON_ELECTRONIC_METHODS,
   PAYMENT_METHOD_ALIAS_MAP,
   PaymentMethodId,
   resolvePaymentMethod,
@@ -78,5 +79,22 @@ describe("PAYMENT_METHOD_ALIAS_MAP integrity", () => {
       expect(ALL_PAYMENT_METHODS_SET.has(canonical)).toBe(true);
       expect(legacy).not.toBe(canonical); // no self-mapping
     }
+  });
+});
+
+describe("NON_ELECTRONIC_METHODS (audit 2026-10-04 consolidation)", () => {
+  // Regression: order-metrics.ts used to redefine this set locally with
+  // a different membership (missing 'bank_transfer'), which made
+  // bank-transfer-eligible orders incorrectly excluded from analytics
+  // revenue. Assert all 4 entries are present and the canonical source
+  // is in payment-methods.ts (not order-metrics.ts).
+  it("contains exactly cash, wallet, bank_transfer, empty-string", () => {
+    expect([...NON_ELECTRONIC_METHODS].sort()).toEqual(
+      ["", "bank_transfer", "cash", "wallet"].sort(),
+    );
+  });
+
+  it("includes 'bank_transfer' (the entry that previously drifted)", () => {
+    expect(NON_ELECTRONIC_METHODS.has("bank_transfer")).toBe(true);
   });
 });

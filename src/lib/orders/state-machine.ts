@@ -371,3 +371,55 @@ export const ALL_PAYMENT_STATES: readonly PaymentState[] = [
   "failed",
   "refunded",
 ];
+
+// ── Derived status sets ────────────────────────────────────────────────────
+//
+// Single source of truth for "which order statuses should surface to which
+// audience?". Routes that filter rows by status previously inlined these
+// as array literals (`'pending','shopping' | ...`) which drifted across
+// the admin, driver, and vendor dashboards. Derived from the canonical
+// enums above so a new OrderState automatically lights up everywhere.
+
+export const TERMINAL_ORDER_STATUSES: ReadonlySet<OrderState> = new Set([
+  "delivered",
+  "cancelled",
+]);
+
+export const TERMINAL_PAYMENT_STATUSES: ReadonlySet<PaymentState> = new Set([
+  "paid",
+  "refunded",
+]);
+
+export const DRIVER_VISIBLE_STATUSES: ReadonlySet<OrderState> = new Set([
+  "pending",
+  "on_the_way",
+  "delivered",
+  "cancelled",
+]);
+
+export const DRIVER_TERMINAL_STATUSES: ReadonlySet<OrderState> = new Set([
+  "delivered",
+  "cancelled",
+]);
+
+export const ADMIN_VISIBLE_STATUSES: ReadonlySet<OrderState> = new Set([
+  "pending",
+  "confirmed",
+  "shopping",
+  "on_the_way",
+  "delivered",
+  "cancelled",
+]);
+
+/**
+ * Order statuses where the customer MUST NOT be able to mutate the order
+ * (cancel, change address, etc.). Distinct from `TERMINAL_ORDER_STATUSES`
+ * because `on_the_way` is still active but the customer has lost
+ * editability — the order is now with the driver. Used by
+ * `direct-order/order-detail-client.tsx` for `isLocked`.
+ */
+export const CUSTOMER_NON_EDITABLE_STATUSES: ReadonlySet<OrderState> = new Set([
+  "on_the_way",
+  "delivered",
+  "cancelled",
+]);

@@ -84,13 +84,15 @@ export function newEventID(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
-  // RFC 4122 v4 (less secure, but fine for client-side dedup)
+  // RFC 4122 v4 fallback (audit 2026-10-04): if getRandomValues is
+  // unavailable, throw — `Math.random` is NOT acceptable for analytics
+  // session IDs that may surface in cross-domain reports. Modern browsers
+  // (Chrome 11+, Firefox 21+, Safari 3.1+) all expose getRandomValues.
   const b = new Uint8Array(16);
-  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-    crypto.getRandomValues(b);
-  } else {
-    for (let i = 0; i < 16; i++) b[i] = Math.floor(Math.random() * 256);
+  if (typeof crypto === "undefined" || typeof crypto.getRandomValues !== "function") {
+    throw new Error("crypto.getRandomValues is required for analytics session IDs");
   }
+  crypto.getRandomValues(b);
   b[6] = (b[6] & 0x0f) | 0x40;
   b[8] = (b[8] & 0x3f) | 0x80;
   const hex = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");

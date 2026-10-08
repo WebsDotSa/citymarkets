@@ -13,6 +13,10 @@
  * without hitting a real database.
  */
 import { query } from "@/lib/db";
+import {
+  SQL_REVENUE_ELIGIBLE,
+  VENDOR_REVENUE_ELIGIBLE,
+} from "./orders/order-metrics";
 
 /** Allow-list of selectable windows. Anything else falls back to 30. */
 export const ALLOWED_PERIODS = [7, 30, 90] as const;
@@ -106,18 +110,14 @@ export type VendorTopProduct = {
 // SQL fragments shared by multiple helpers
 // ---------------------------------------------------------------------------
 
-/** Revenue-eligible order filter (mirrors `SQL_REVENUE_ELIGIBLE` from
- *  order-metrics.ts but uses table aliases so it composes). */
-const REVENUE_ORDER_FRAGMENT = `
-  o.status = 'confirmed'
-  AND COALESCE(LOWER(TRIM(o.payment_method)), '') NOT IN ('cash', 'wallet', '')
-`;
-
-/** Vendor-eligible filter (vendor_orders has its own status enum). */
-const VENDOR_REVENUE_FRAGMENT = `
-  vo.status IN ('confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered')
-  AND vo.payment_status = 'paid'
-`;
+// 2026-10-04 (refactor/full-repository-consolidation): the previous
+// inline `REVENUE_ORDER_FRAGMENT` here had drifted from the canonical
+// `SQL_REVENUE_ELIGIBLE` (missing `'bank_transfer'` in the NOT IN list,
+// so analytics undercounted bank-transfer-eligible revenue). Now both
+// fragments below are 1:1 references to the canonical exports so a new
+// exclusion propagates everywhere.
+const REVENUE_ORDER_FRAGMENT = SQL_REVENUE_ELIGIBLE;
+const VENDOR_REVENUE_FRAGMENT = VENDOR_REVENUE_ELIGIBLE;
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -129,23 +129,26 @@ describe("localStorage-backed helpers (browser-only)", () => {
       }
     });
 
-    it("falls back to a timestamped random key when crypto.randomUUID is missing", () => {
-      // Force the fallback by removing randomUUID temporarily.
-      // `crypto` is a non-writable getter on globalThis in modern Node, so
-      // we use Object.defineProperty to swap it for the duration of the
-      // assertion and restore it afterwards.
+    it("falls back to getRandomValues-based key when crypto.randomUUID is missing", () => {
+      // Force the fallback by removing randomUUID temporarily but keeping
+      // getRandomValues. `crypto` is a non-writable getter on globalThis
+      // in modern Node, so we use Object.defineProperty to swap it for
+      // the duration of the assertion and restore it afterwards.
+      // Audit 2026-10-04: the previous fallback used `Math.random` —
+      // the test now exercises `getRandomValues` because `Math.random` is
+      // not a CSPRNG and was removed from crypto-required paths.
       const originalDescriptor = Object.getOwnPropertyDescriptor(
         globalThis,
         "crypto",
       );
       Object.defineProperty(globalThis, "crypto", {
         configurable: true,
-        value: undefined,
+        value: { getRandomValues: (b: Uint8Array) => b.fill(0x42) },
       });
       try {
         const k = getOrCreateGuestKey();
-        // Fallback format: `guest_<timestamp>_<random>`
-        expect(k).toMatch(/^guest_\d+_[a-z0-9]+$/);
+        // Format: `guest_<timestamp>_<32-hex>` (16 bytes from getRandomValues)
+        expect(k).toMatch(/^guest_\d+_[0-9a-f]{32}$/);
       } finally {
         if (originalDescriptor) {
           Object.defineProperty(globalThis, "crypto", originalDescriptor);

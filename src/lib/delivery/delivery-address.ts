@@ -42,10 +42,24 @@ export function getOrCreateGuestKey(): string {
   if (typeof window === "undefined") return "";
   let key = localStorage.getItem(GUEST_KEY_STORAGE);
   if (!key) {
-    key =
-      typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `guest_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+      key = crypto.randomUUID();
+    } else {
+      // SECURITY: explicit guard on getRandomValues (matches the pattern
+      // in src/lib/ga-events.ts). The previous fallback assumed
+      // `crypto` existed whenever `crypto.randomUUID` did not, which is
+      // not safe in hardened CSP / sandboxed iframes. Throwing an
+      // explicit error prevents the guest key from collapsing to a
+      // blank string and silently breaking guest-cart writes.
+      if (typeof crypto === "undefined" || typeof crypto.getRandomValues !== "function") {
+        throw new Error("crypto.getRandomValues is required for guest key generation");
+      }
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      key = `guest_${Date.now()}_${Array.from(bytes, (b) =>
+        b.toString(16).padStart(2, "0"),
+      ).join("")}`;
+    }
     localStorage.setItem(GUEST_KEY_STORAGE, key);
   }
   return key;

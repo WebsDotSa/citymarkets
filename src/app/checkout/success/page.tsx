@@ -6,9 +6,11 @@ import Link from "next/link";
 import { CheckCircle, Loader2, AlertCircle, CreditCard } from "lucide-react";
 import { PAYMENT_METHOD_AR } from '@/lib/orders';
 import { trackPurchase } from "@/lib/ga-events";
+import { useCartActions } from "@/contexts/cart-context";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
+  const { clearCart } = useCartActions();
   const orderId = searchParams.get("order_id") || searchParams.get("orderId");
   const moyasarPaymentId = searchParams.get("id");
   const [status, setStatus] = useState<"loading" | "ok" | "pending" | "error">(
@@ -66,6 +68,10 @@ function SuccessContent() {
         }
         if (data.payment_status === "paid") {
           setStatus("ok");
+          // Hosted-gateway checkouts no longer wipe the cart before the
+          // redirect (a failed/cancelled payment used to return the
+          // customer to an empty cart). Clear it now that it's paid.
+          clearCart();
           // Google Analytics 4 + Meta Pixel — purchase. Fire only once
           // per paid order (status flips from "loading" → "ok", so this
           // useEffect runs exactly once for the success path).

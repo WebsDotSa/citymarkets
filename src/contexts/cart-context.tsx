@@ -158,7 +158,11 @@ function loadCart(): CartItem[] {
 
 function saveCart(items: CartItem[]) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  } catch {
+    // quota / private-mode failures must not crash the cart UI
+  }
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
@@ -179,6 +183,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       saveCart(items);
     }
   }, [items, isHydrated]);
+
+  // Keep tabs in sync: without this, a stale tab's next save overwrites
+  // the newer cart (or an empty one) written by another tab.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === CART_STORAGE_KEY) setItems(loadCart());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   // Stable action identity — these never change across renders, so
   // components that only consume actions don't re-render when the

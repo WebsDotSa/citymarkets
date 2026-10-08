@@ -23,8 +23,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { formatPrice } from "@/lib/format";
-import { countsAsElectronicRevenue } from '@/lib/orders';
-import { ORDER_STATUSES } from '@/lib/orders';
+import { countsAsElectronicRevenue, ORDER_STATUSES, ACTIVE_ORDER_STATUSES } from '@/lib/orders';
 import { StatCard } from "@/components/admin/admin-header";
 import { error as logError } from "@/lib/logger";
 
@@ -158,8 +157,8 @@ export function AdminDashboard() {
           Number(p.stock_qty) > 0 &&
           Number(p.stock_qty) <= 5
       ).length;
-      const pendingOrders = orders.filter(
-        (o: any) => o.status === "pending" || o.status === "confirmed"
+      const pendingOrders = orders.filter((o: any) =>
+        ACTIVE_ORDER_STATUSES.includes(o.status),
       ).length;
       const today = new Date().toDateString();
       const todayOrders = orders.filter(

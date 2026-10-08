@@ -23,12 +23,9 @@
 // All functions are side-effect-free — easy to unit test without a DB.
 
 import {
-  computeCouponDiscount,
-  computeLoyaltyRedemption,
-  type CouponRow,
-  type PricingSettings,
-} from "../pricing";
-import { computeDistanceFee } from '@/lib/delivery';
+  computeDistanceFee,
+  type DeliveryDistanceFeeSettings,
+} from '@/lib/delivery';
 
 /** One vendor's resolved group. */
 export interface VendorCheckoutGroup {
@@ -82,6 +79,122 @@ export interface CheckoutTotals {
 }
 
 /**
+ * Shape of the admin-tunable `delivery_settings.pricing` JSON row.
+ * Inlined from the legacy `src/lib/orders/pricing.ts` (B8 fold) — only
+ * the multi-vendor checkout pipeline still uses this struct; the
+ * single-vendor legacy POST `/api/v1/orders` was retired and removed
+ * during the repository consolidation.
+ */
+export interface PricingSettings extends DeliveryDistanceFeeSettings {
+  serviceFeeEnabled?: boolean;
+  serviceFeeType?: 'fixed' | 'percent' | string;
+  serviceFeeValue?: number | string | null;
+  taxEnabled?: boolean;
+  taxPercent?: number | string | null;
+}
+
+export interface CouponRow {
+  id?: string;
+  code?: string;
+  type: string;
+  value: number | string;
+  min_order?: number | string | null;
+  max_discount?: number | string | null;
+  max_uses?: number | string | null;
+  used_count?: number | string | null;
+  expires_at?: string | Date | null;
+  is_active: boolean;
+}
+
+/**
+ * Validate and compute a coupon's discount against the order subtotal.
+ * Returns `null` when the coupon is not applicable (expired, exhausted,
+ * below `min_order`, inactive). When valid returns the discount amount
+ * AND a flag indicating whether the coupon waives the delivery fee.
+ */
+export function computeCouponDiscount(args: {
+  coupon: CouponRow;
+  subtotal: number;
+}): { discount: number; freeDelivery: boolean } | null {
+  const { coupon, subtotal } = args;
+
+  if (
+    !coupon ||
+    !coupon.is_active ||
+    (coupon.expires_at && new Date(coupon.expires_at) < new Date()) ||
+    (coupon.max_uses != null && Number(coupon.used_count) >= Number(coupon.max_uses))
+  ) {
+    return null;
+  }
+
+  if (Number(coupon.min_order ?? 0) > 0 && subtotal < Number(coupon.min_order)) {
+    return null;
+  }
+
+  const couponValue = Number(coupon.value);
+  const maxDiscount = coupon.max_discount != null ? Number(coupon.max_discount) : null;
+
+  if (coupon.type === 'percentage') {
+    let d = Math.round((subtotal * couponValue) / 100 * 100) / 100;
+    if (maxDiscount != null) d = Math.min(d, maxDiscount);
+    return { discount: d, freeDelivery: false };
+  }
+  if (coupon.type === 'fixed') {
+    return { discount: Math.min(subtotal, couponValue), freeDelivery: false };
+  }
+  if (coupon.type === 'free_delivery') {
+    return { discount: 0, freeDelivery: true };
+  }
+  return null;
+}
+
+export interface LoyaltyRedemptionSettings {
+  redeem_value_per_point?: number;
+  max_redeem_percent?: number;
+  bundle_size?: number;
+}
+
+/**
+ * Compute how many loyalty points can be redeemed for this order.
+ *
+ * Defaults (100 pts = 5 SAR, 50% cap, 100-pt bundles) match the marketing
+ * page and the legacy inline implementation byte-for-byte. Pass `settings`
+ * (e.g. from `getLoyaltySettings()`) to honour admin-tuned rates.
+ *
+ * Returns zeros when the user has insufficient balance or when `requestedPoints`
+ * is zero.
+ */
+export function computeLoyaltyRedemption(args: {
+  balance: number;
+  subtotalAfterCoupon: number;
+  requestedPoints: number;
+  settings?: LoyaltyRedemptionSettings;
+}): { pointsRedeemed: number; pointsDiscount: number } {
+  const { balance, subtotalAfterCoupon, requestedPoints } = args;
+
+  const valuePerPoint = Number(args.settings?.redeem_value_per_point ?? 0.05);
+  const maxPercent = Number(args.settings?.max_redeem_percent ?? 0.5);
+  const bundleSize = Math.max(1, Math.floor(Number(args.settings?.bundle_size ?? 100)));
+
+  if (requestedPoints <= 0) {
+    return { pointsRedeemed: 0, pointsDiscount: 0 };
+  }
+
+  const maxByPoints = balance * valuePerPoint;
+  const maxByOrder = subtotalAfterCoupon * maxPercent;
+  const cap = Math.min(maxByPoints, maxByOrder);
+
+  // Server is the source of truth — ignore the client-provided discount
+  // and recompute from the points the user actually asked to spend.
+  let points = Math.min(requestedPoints, balance);
+  points = points - (points % bundleSize); // snap to bundle increments
+  const recomputed = points * valuePerPoint;
+  const discount = Math.min(recomputed, cap);
+
+  return { pointsRedeemed: points, pointsDiscount: discount };
+}
+
+/**
  * Compute the parent's service fee (catalog only). Mirrors the
  * `serviceFee` block of `computeOrderFees`:
  *   - disabled → 0
@@ -101,6 +214,27 @@ export function computeParentServiceFee(args: {
     return Math.round((catalogSubtotal * value) / 100 * 100) / 100;
   }
   return value;
+}
+
+/**
+ * Compute the parent-order tax line for a given catalog subtotal.
+ *
+ * B8 (audit 2026-09-30): extracted from the legacy
+ * `computeOrderFees` (deleted) so `/api/v1/delivery/quote` and the
+ * legacy order POST (now 410 Gone) share the same tax formula. Rules
+ * (byte-for-byte compatible with the previous implementation):
+ *   - `taxEnabled !== true` → 0
+ *   - else `subtotal × taxPercent / 100`, rounded to 2 decimals.
+ */
+export function computeParentTax(args: {
+  catalogSubtotal: number;
+  pricing: PricingSettings;
+}): number {
+  const { catalogSubtotal, pricing } = args;
+  const enabled = pricing.taxEnabled === true;
+  if (!enabled) return 0;
+  const percent = Number(pricing.taxPercent ?? 0);
+  return Math.round((catalogSubtotal * percent) / 100 * 100) / 100;
 }
 
 /**

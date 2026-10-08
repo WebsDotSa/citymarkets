@@ -12,6 +12,7 @@ import {
   invalidTransitionMessage as stateMachineInvalidMessage,
   PARENT_ORDER_TRANSITIONS_BY_ROLE,
 } from '@/lib/orders/state-machine';
+import { ORDER_LIST_COLUMNS } from '@/lib/orders/sql-fragments';
 import {
   awardPointsForOrder,
   getLoyaltySettings,
@@ -33,17 +34,20 @@ export async function GET(
   if (badId) return badId;
 
   try {
+    // SECURITY (RBAC): mirror the list endpoint's scope — a driver may
+    // only open orders assigned to them or still unassigned. Without
+    // this, any driver could read any order's customer name, phone and
+    // address by id.
+    const driverRow = await pool.query(
+      `SELECT id FROM drivers WHERE admin_user_id = $1`,
+      [gate.admin.id]
+    );
+    const ownDriverId = (driverRow.rows[0]?.id as string | undefined) ?? null;
+
     const result = await pool.query(
       `SELECT
-        o.id,
+        ${ORDER_LIST_COLUMNS},
         o.tracking_code as order_number,
-        o.status,
-        o.total::float as total,
-        o.delivery_fee::float as delivery_fee,
-        o.payment_method,
-        o.payment_status,
-        o.created_at,
-        o.updated_at,
         o.notes as order_notes,
         u.id as user_id,
         u.name as customer_name,
@@ -73,8 +77,9 @@ export async function GET(
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.id
       LEFT JOIN addresses da ON o.address_id = da.id
-      WHERE o.id = $1`,
-      [id]
+      WHERE o.id = $1
+        AND (o.driver_id IS NULL OR o.driver_id = $2)`,
+      [id, ownDriverId]
     );
 
     if (result.rows.length === 0) {

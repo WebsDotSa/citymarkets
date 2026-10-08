@@ -195,9 +195,10 @@ const nextConfig = {
               'accelerometer=()',
               'gyroscope=()',
               'magnetometer=()',
-              // Payment API: not used (Moyasar loads its own iframe
-              // server-side; no PaymentRequest on this site).
-              'payment=()',
+              // Payment API: MUST stay enabled for self. Safari gates
+              // ApplePaySession (Apple Pay via Moyasar's inline form) on
+              // this feature — `payment=()` silently kills Apple Pay.
+              'payment=(self)',
               // USB / serial / HID — never needed.
               'usb=()',
               'serial=()',

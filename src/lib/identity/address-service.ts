@@ -189,6 +189,14 @@ export async function createAddress(
     const makeDefault = input.is_default === true || isFirst;
 
     if (makeDefault) {
+      // SECURITY/PERF: `${whereSql}` is e.g. `user_id = $1::uuid` and is
+      // referenced TWICE in the SQL string. pg binds $1 once and reuses
+      // the same value for both occurrences — the params array must
+      // contain exactly one entry, not two. Passing [param, param] (the
+      // previous version) made pg complain "bind message supplies 2
+      // parameters, but prepared statement requires 1" because there is
+      // only one unique placeholder, even though it appears twice in the
+      // text.
       await client.query(
         `UPDATE addresses SET is_default = false WHERE ${whereSql} AND is_default = true`,
         [param],
