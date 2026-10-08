@@ -90,7 +90,6 @@ ios/fastlane/.snapfile_diff.json
 *.dSYM.zip
 *.dSYM
 .swiftpm/
-<<<<<<< HEAD
 
 # Local development artifacts (2026-10-08)
 # Secrets — root .env (no .local suffix) is the user's secret stash.

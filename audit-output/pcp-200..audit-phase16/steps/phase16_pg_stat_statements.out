@@ -1,0 +1,6 @@
+ERROR:  relation "pg_stat_statements" does not exist
+LINE 2: FROM pg_stat_statements
+             ^
+ERROR:  relation "pg_stat_statements" does not exist
+LINE 7: FROM pg_stat_statements
+             ^

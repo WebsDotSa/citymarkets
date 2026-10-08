@@ -1,0 +1,21 @@
+ deadlocks_ever 
+----------------
+              1
+(1 row)
+
+    datname    | stats_reset 
+---------------+-------------
+ citymarket_db | 
+(1 row)
+
+  pid  |    datname    |     usename     | application_name | client_addr | state  |         backend_start         |          query_start          
+-------+---------------+-----------------+------------------+-------------+--------+-------------------------------+-------------------------------
+ 46745 | citymarket_db | citymarket_user |                  | 172.17.0.1  | idle   | 2026-10-03 01:04:04.501862+00 | 2026-10-03 01:04:04.50714+00
+ 46747 | citymarket_db | citymarket_user |                  | 172.17.0.1  | idle   | 2026-10-03 01:04:08.067155+00 | 2026-10-03 01:04:08.080216+00
+ 46749 | citymarket_db | citymarket_user |                  | 172.17.0.1  | idle   | 2026-10-03 01:04:13.592446+00 | 2026-10-03 01:04:13.597779+00
+ 46770 | citymarket_db | citymarket_user | psql             |             | active | 2026-10-03 01:04:14.823432+00 | 2026-10-03 01:04:14.828082+00
+(4 rows)
+
+ERROR:  missing FROM-clause entry for table "blocking_activity"
+LINE 4:        blocking_activity.usename AS blocking_user,
+               ^

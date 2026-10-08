@@ -1,0 +1,20 @@
+ pid | datname | usename | state | query_start | query 
+-----+---------+---------+-------+-------------+-------
+(0 rows)
+
+ state  | count 
+--------+-------
+        |     5
+ active |     1
+ idle   |     2
+(3 rows)
+
+    datname    | deadlocks | xact_commit | xact_rollback | db_size 
+---------------+-----------+-------------+---------------+---------
+ citymarket_db |         0 |       48366 |           391 | 27 MB
+(1 row)
+
+ mode | waiting 
+------+---------
+(0 rows)
+

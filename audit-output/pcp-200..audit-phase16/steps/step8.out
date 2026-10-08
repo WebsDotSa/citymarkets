@@ -1,0 +1,24 @@
+       relname        |  size  
+----------------------+--------
+ abandoned_carts      | 208 kB
+ blog_posts           | 160 kB
+ coupons              | 160 kB
+ vendor_orders        | 128 kB
+ vendor_applications  | 128 kB
+ home_layouts         | 120 kB
+ offers               | 104 kB
+ vendor_staff         | 96 kB
+ loyalty_transactions | 96 kB
+ analytics_events     | 96 kB
+ order_status_logs    | 96 kB
+ offer_targets        | 96 kB
+ spin_results         | 96 kB
+ job_applications     | 96 kB
+ guest_cart           | 88 kB
+ product_reviews      | 80 kB
+ vendors              | 80 kB
+ wishlist_items       | 72 kB
+ stores               | 72 kB
+ orders_refunds       | 64 kB
+(20 rows)
+

@@ -1,0 +1,29 @@
+     rolname     | rolsuper | rolbypassrls | rolcreatedb | rolcreaterole | rolcanlogin 
+-----------------+----------+--------------+-------------+---------------+-------------
+ postgres        | t        | t            | t           | t             | t
+ migrations_user | t        | f            | f           | f             | t
+ citymarket_user | f        | t            | f           | f             | t
+ ci_user         | t        | t            | f           | f             | t
+ pcp146_probe    | f        | f            | f           | f             | f
+(5 rows)
+
+ current_setting 
+-----------------
+ "$user", public
+(1 row)
+
+ default_transaction_isolation 
+-------------------------------
+ read committed
+(1 row)
+
+ default_transaction_read_only 
+-------------------------------
+ off
+(1 row)
+
+  current_user   
+-----------------
+ citymarket_user
+(1 row)
+

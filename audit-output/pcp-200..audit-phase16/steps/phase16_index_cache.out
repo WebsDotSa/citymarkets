@@ -1,0 +1,8 @@
+ERROR:  column i.idx_blks_read does not exist
+LINE 3:        i.idx_blks_read,
+               ^
+ heap_read | heap_hit | heap_hit_pct 
+-----------+----------+--------------
+         0 | 28555174 |        100.0
+(1 row)
+

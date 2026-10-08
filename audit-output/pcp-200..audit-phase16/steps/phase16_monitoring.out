@@ -1,0 +1,26 @@
+            name            | setting | source  
+----------------------------+---------+---------
+ log_min_duration_statement | -1      | default
+ track_activities           | on      | default
+ track_io_timing            | off     | default
+(3 rows)
+
+ schemaname |      relname       | n_live_tup | n_dead_tup | dead_pct |        last_autovacuum        |       last_autoanalyze        
+------------+--------------------+------------+------------+----------+-------------------------------+-------------------------------
+ public     | vendor_products    |       4900 |        324 |      6.6 | 2026-09-30 22:53:57.865857+00 | 2026-09-30 22:53:57.998649+00
+ public     | orders             |         76 |         37 |     48.7 |                               | 2026-10-01 21:02:53.16288+00
+ public     | app_migrations     |        126 |         36 |     28.6 |                               | 2026-10-02 21:11:18.037862+00
+ public     | vendor_staff       |          6 |         25 |    416.7 |                               | 
+ public     | abandoned_carts    |         50 |         23 |     46.0 |                               | 
+ public     | vendors            |          7 |         18 |    257.1 |                               | 
+ public     | categories         |        156 |         15 |      9.6 |                               | 2026-09-30 21:14:56.269961+00
+ public     | cart               |         76 |         15 |     19.7 |                               | 2026-09-30 21:14:56.271009+00
+ public     | products           |       3454 |         13 |      0.4 | 2026-09-30 21:14:56.344306+00 | 2026-09-30 21:14:56.40742+00
+ public     | order_status_logs  |         16 |         11 |     68.8 |                               | 
+ public     | vendor_settings    |          2 |          9 |    450.0 |                               | 
+ public     | vendor_orders      |          5 |          9 |    180.0 |                               | 
+ public     | _migration_guards  |         10 |          8 |     80.0 |                               | 
+ public     | admin_users        |         11 |          8 |     72.7 |                               | 2026-10-01 15:56:50.479683+00
+ public     | vendor_order_items |          4 |          6 |    150.0 |                               | 
+(15 rows)
+

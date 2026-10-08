@@ -1,0 +1,35 @@
+         name          |  setting   
+-----------------------+------------
+ archive_command       | (disabled)
+ archive_mode          | off
+ archive_timeout       | 0
+ max_replication_slots | 10
+ max_wal_size          | 1024
+ min_wal_size          | 80
+ wal_keep_size         | 0
+ wal_level             | replica
+(8 rows)
+
+/etc/cron.d/:
+total 16
+drwxr-xr-x 2 root root 4096 Aug  3 00:00 .
+drwxr-xr-x 1 root root 4096 Sep 30 21:14 ..
+-rw-r--r-- 1 root root  201 Jun  6  2025 e2scrub_all
+
+/etc/cron.daily/:
+total 20
+drwxr-xr-x 2 root root 4096 Aug  3 00:00 .
+drwxr-xr-x 1 root root 4096 Sep 30 21:14 ..
+ slot_name | plugin | active | restart_lsn 
+-----------+--------+--------+-------------
+(0 rows)
+
+ application_name | state | sync_state | sent_lsn | replay_lsn | byte_lag 
+------------------+-------+------------+----------+------------+----------
+(0 rows)
+
+ application_name | conns 
+------------------+-------
+                  |     7
+(1 row)
+

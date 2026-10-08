@@ -1952,4 +1952,3 @@ main.ai-chat-main:has(section#main-content[aria-label="محادثة شيف سي�
  * of the viewport — its z-50 keeps it above the composer's z-40. The
  * chat messages column reserves `pb-[calc(160px+4rem+safe-area)]` so
  * no last message is hidden behind the composer. */
-

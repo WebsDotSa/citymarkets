@@ -1,0 +1,4 @@
+ blocked_pid | blocked_user | blocked_query | blocking_pid | blocking_user | blocking_query 
+-------------+--------------+---------------+--------------+---------------+----------------
+(0 rows)
+
