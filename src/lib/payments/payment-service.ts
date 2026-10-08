@@ -184,7 +184,11 @@ export async function authorizeOrderForPayment(args: {
     | { kind: "forbidden" }
     | { kind: "ineligible"; error: string }
     | { kind: "invalid_total" };
-  let result: Result;
+  // Initial value is a defensive default that the `try`/`catch` below
+  // always overwrites. We initialise here so TypeScript's definite-
+  // assignment analysis is satisfied on every code path (the catch is
+  // the only assignment point that TS can't see flowing through).
+  let result: Result = { kind: "invalid_total" };
   try {
     await client.query("BEGIN");
     const r = await client.query<OwnerSnapshot>(
@@ -336,9 +340,18 @@ export async function markOrderPaymentFailed(
   // Idempotent: if no hold exists (e.g. loyalty wasn't used on this
   // order, or it was already released), this is a no-op.
   try {
-    await releaseRedeemHoldForOrder((await import("@/lib/db")).pool, {
-      orderId: parentOrderId,
-    });
+    // releaseRedeemHoldForOrder requires a PoolClient (not the pool
+    // itself). We check out a dedicated client for this best-effort
+    // cleanup so a busy pool doesn't fail markOrderPaymentFailed.
+    const { pool } = await import("@/lib/db");
+    const loyaltyClient = await pool.connect();
+    try {
+      await releaseRedeemHoldForOrder(loyaltyClient, {
+        orderId: parentOrderId,
+      });
+    } finally {
+      loyaltyClient.release();
+    }
   } catch (err) {
     // Don't fail the whole markOrderPaymentFailed call if loyalty
     // cleanup errors — the payment_status is the source of truth, the
