@@ -104,6 +104,17 @@ export function MoyasarCheckoutForm({
   const [payError, setPayError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
 
+  // next/script fires `onLoad` only for the FIRST mount of a given src. When
+  // the customer switches payment method the form remounts, the library is
+  // already on the page, `onLoad` never fires again and the spinner
+  // "جاري تحميل نموذج الدفع..." would stay forever. Detect an
+  // already-loaded library on mount (and use `onReady` below).
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.Moyasar?.init) {
+      setScriptsReady(true);
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -220,6 +231,7 @@ export function MoyasarCheckoutForm({
     }
 
     if (paymentMethod === "apple_pay") {
+      initConfig.supported_networks = ["visa", "mastercard", "mada"];
       initConfig.apple_pay = {
         country: "SA",
         label: config.apple_pay_label,
@@ -271,7 +283,7 @@ export function MoyasarCheckoutForm({
       <Script
         src={MOYASAR_JS}
         strategy="afterInteractive"
-        onLoad={() => setScriptsReady(true)}
+        onReady={() => setScriptsReady(true)}
         onError={() => setLoadError("تعذّر تحميل مكتبة الدفع")}
       />
 

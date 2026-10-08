@@ -209,6 +209,23 @@ export function CheckoutNew() {
   // form so the customer can enter card details without leaving the page.
   // Cash remains an opt-in for customers who prefer to pay on delivery.
   const [selectedPayment, setSelectedPayment] = useState<string>("mada");
+  // Apple Pay is only offered (and preselected) on devices that can pay
+  // with it — iPhone/iPad/Safari with a card in Wallet. Detected after
+  // mount to avoid an SSR hydration mismatch.
+  const [applePayAvailable, setApplePayAvailable] = useState(false);
+  useEffect(() => {
+    try {
+      const ap = (window as unknown as {
+        ApplePaySession?: { canMakePayments: () => boolean };
+      }).ApplePaySession;
+      if (ap && ap.canMakePayments()) {
+        setApplePayAvailable(true);
+        setSelectedPayment((cur) => (cur === "mada" ? "apple_pay" : cur));
+      }
+    } catch {
+      // not available — keep default
+    }
+  }, []);
   const [isProcessing, setIsProcessing] = useState(false);
   // SECURITY (Pay-Dup): synchronous double-submit lock. `disabled`
   // on the button relies on React state and so updates asynchronously;
@@ -512,7 +529,9 @@ export function CheckoutNew() {
         // Use window.location so we leave the SPA — Moyasar expects a
         // full navigation. The success_url on the invoice will bring the
         // customer back to /checkout/success once the gateway fires.
-        clearCart();
+        // Do NOT clear the cart here: if the payment fails or the user
+        // backs out, they must still find their items. /checkout/success
+        // clears it once the order is confirmed paid.
         return {
           kind: "hosted_redirect",
           paymentUrl,
@@ -797,6 +816,12 @@ export function CheckoutNew() {
   // payment_url, once for inline_payment), and the two surfaces
   // share the same Chrome (HeaderV2 + BottomNavV2).
 
+  // Cart is restored from localStorage after mount — until then `items` is
+  // [] and the "السلة فارغة" screen would flash (or stick) on a full load.
+  if (!isHydrated) {
+    return <div className="min-h-screen bg-gray-50" aria-busy="true" />;
+  }
+
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
@@ -1040,7 +1065,12 @@ export function CheckoutNew() {
             invalid={showValidation && paymentInvalid}
           >
             <div className="space-y-3">
-              {PAYMENT_METHODS.map((method) => {
+              {[...PAYMENT_METHODS]
+                .filter((m) => m.id !== "apple_pay" || applePayAvailable)
+                .sort((a, b) =>
+                  a.id === "apple_pay" ? -1 : b.id === "apple_pay" ? 1 : 0,
+                )
+                .map((method) => {
                 const Icon = method.icon;
                 const selected = selectedPayment === method.id;
                 return (
