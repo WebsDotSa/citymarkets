@@ -87,6 +87,17 @@ function sanitizeGatewayError(
 
 /** المبلغ بالهللة (1 ريال = 100) */
 export function toHalalas(sarAmount: number): number {
+  // SECURITY (defence-in-depth 2026-10-08): reject non-finite /
+  // non-positive input instead of silently coercing 0/NaN/-x to 1
+  // SAR (the previous `Math.max(100, ...)` floor). The minimum-charge
+  // floor only makes sense when the caller passed a valid, positive
+  // amount; throwing surfaces a programming error instead of charging
+  // the customer 1 SAR for a zero-amount order.
+  if (!Number.isFinite(sarAmount) || sarAmount <= 0) {
+    throw new Error(
+      `toHalalas: sarAmount must be a positive finite number, got ${sarAmount}`,
+    );
+  }
   return Math.max(100, Math.round(sarAmount * 100));
 }
 

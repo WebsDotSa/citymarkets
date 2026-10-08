@@ -52,10 +52,24 @@ describe("toHalalas", () => {
   });
 
   it("enforces a minimum of 100 halalas (1 SAR)", () => {
-    // A sub-1-SAR amount would round to 0 and break the provider; clamp
-    // to 1 SAR so a 0.50 promo can't be silently zero-billed.
-    expect(toHalalas(0)).toBe(100);
+    // A sub-1-SAR amount rounds to <100 halalas and is clamped to 1
+    // SAR so a 0.50 promo doesn't silently zero-bill. The clamp only
+    // applies to positive, finite input — see the next test for the
+    // reject-on-zero/NaN path.
     expect(toHalalas(0.4)).toBe(100);
+    expect(toHalalas(0.5)).toBe(100);
+    expect(toHalalas(0.99)).toBe(100);
+  });
+
+  it("rejects non-positive or non-finite input (defence-in-depth 2026-10-08)", () => {
+    // SECURITY: the previous `Math.max(100, ...)` floor silently
+    // coerced 0 / NaN / negative to a 1 SAR charge. The new contract
+    // throws so a programming error surfaces instead of charging the
+    // customer for a zero-amount order.
+    expect(() => toHalalas(0)).toThrow(/positive finite number/);
+    expect(() => toHalalas(-1)).toThrow(/positive finite number/);
+    expect(() => toHalalas(Number.NaN)).toThrow(/positive finite number/);
+    expect(() => toHalalas(Number.POSITIVE_INFINITY)).toThrow(/positive finite number/);
   });
 });
 

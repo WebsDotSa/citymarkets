@@ -287,6 +287,12 @@ export async function markOrderPaymentFailed(
   vendorOrderIds: string[] = [],
 ): Promise<void> {
   const { pool } = await import("@/lib/db");
+  // SECURITY / data-consistency (defence-in-depth 2026-10-08): release
+  // the loyalty `pending_redeem` hold when payment fails. Without this
+  // step the customer's effective balance is held until manual
+  // reconciliation, causing the "available points" preview to drift
+  // downward over time as failed-checkout attempts accumulate.
+  const { releaseRedeemHoldForOrder } = await import("@/lib/orders/loyalty");
   await pool.query(
     `UPDATE orders SET payment_status = 'failed' WHERE id = $1`,
     [parentOrderId],
@@ -295,6 +301,22 @@ export async function markOrderPaymentFailed(
     await pool.query(
       `UPDATE vendor_orders SET payment_status = 'failed' WHERE id = $1`,
       [childId],
+    );
+  }
+  // Idempotent: if no hold exists (e.g. loyalty wasn't used on this
+  // order, or it was already released), this is a no-op.
+  try {
+    await releaseRedeemHoldForOrder((await import("@/lib/db")).pool, {
+      orderId: parentOrderId,
+    });
+  } catch (err) {
+    // Don't fail the whole markOrderPaymentFailed call if loyalty
+    // cleanup errors — the payment_status is the source of truth, the
+    // hold release is best-effort cleanup.
+    const { warn: logWarn } = await import("@/lib/logger");
+    logWarn(
+      "Failed to release pending_redeem hold on payment failure",
+      { parentOrderId, error: (err as Error)?.message ?? String(err) },
     );
   }
 }
