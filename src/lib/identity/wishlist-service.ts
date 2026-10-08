@@ -44,7 +44,7 @@ export interface WishlistProduct {
   id: string;
   name: string;
   name_ar: string | null;
-  slug: string;
+  slug: string | null;
   price: number;
   discount_price: number | null;
   image_url: string | null;
@@ -68,7 +68,8 @@ export interface WishlistAddResult {
 }
 
 const WISHLIST_PRODUCT_FIELDS = `
-  p.id, COALESCE(p.name_ar, p.name_en) AS name, p.name_ar, p.slug,
+  p.id, COALESCE(p.name_ar, p.name_en) AS name, p.name_ar,
+  p.sku AS slug,
   p.price::float8 AS price,
   p.discount_price::float8 AS discount_price,
   p.image_url,
@@ -82,6 +83,21 @@ const WISHLIST_PRODUCT_FIELDS = `
 const WISHLIST_JOIN = `
   FROM wishlist_items w
   JOIN products_unified p ON p.id = w.product_id
+  LEFT JOIN vendors v ON v.id = p.vendor_id
+`;
+
+/**
+ * addToWishlist hydrates the freshly-inserted row from a CTE, so its
+ * driving table is `inserted i` (not `wishlist_items w`). Reusing
+ * WISHLIST_JOIN here would produce two FROM clauses in the same
+ * SELECT — `FROM inserted i FROM wishlist_items w` — which PostgreSQL
+ * rejects with "syntax error at or near FROM". The fix is a parallel
+ * JOIN clause that re-anchors on the CTE alias and references the
+ * same product + vendor hydrations.
+ */
+const WISHLIST_INSERTED_JOIN = `
+  FROM inserted i
+  JOIN products_unified p ON p.id = i.product_id
   LEFT JOIN vendors v ON v.id = p.vendor_id
 `;
 
@@ -100,7 +116,7 @@ export async function listWishlist(userId: string): Promise<WishlistItem[]> {
     id: string;
     name: string;
     name_ar: string | null;
-    slug: string;
+    slug: string | null;
     price: number;
     discount_price: number | null;
     image_url: string | null;
@@ -183,7 +199,7 @@ export async function addToWishlist(
     id: string;
     name: string;
     name_ar: string | null;
-    slug: string;
+    slug: string | null;
     price: number;
     discount_price: number | null;
     image_url: string | null;
@@ -200,8 +216,7 @@ export async function addToWishlist(
        RETURNING product_id, added_at
      )
      SELECT i.product_id, i.added_at, ${WISHLIST_PRODUCT_FIELDS}
-     FROM inserted i
-     ${WISHLIST_JOIN}`,
+     ${WISHLIST_INSERTED_JOIN}`,
     [userId, productId],
   );
 
