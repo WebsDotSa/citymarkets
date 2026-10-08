@@ -179,7 +179,13 @@ describe("confirmMoyasarPaymentForOrder", () => {
     expect(res.error).toBe("غير مصرح");
   });
 
-  it("skips user check when userId is omitted (allows guest confirm)", async () => {
+  it("rejects anonymous caller when the order is registered (positive ownership)", async () => {
+    // SECURITY FIX (MEDIUM): previously the function only rejected when
+    // BOTH `userId` was provided AND the order had a registered user_id
+    // AND they disagreed. An anonymous caller (no userId) bypassed the
+    // check entirely and could confirm a registered customer's order.
+    // The fix flips this to positive ownership: a registered order MUST
+    // be confirmed by its registered user, even when no userId is sent.
     orderRow = {
       id: "ord-1",
       user_id: "user-99",
@@ -193,7 +199,31 @@ describe("confirmMoyasarPaymentForOrder", () => {
     const res = await confirmMoyasarPaymentForOrder({
       orderId: "ord-1",
       paymentId: "pay_1",
-      // no userId
+      // no userId — anonymous caller must NOT be allowed
+    });
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("غير مصرح");
+  });
+
+  it("allows guest-order confirmation when no userId is supplied (order has no registered user)", async () => {
+    // A truly guest order (`user_id` is null) is bound to the payment
+    // through the metadata + amount check below; no userId is required.
+    orderRow = {
+      id: "ord-1",
+      user_id: null,
+      total: "10.00",
+      payment_status: null,
+      status: "pending",
+      guest_phone: "0500000000",
+      guest_name: "ضيف",
+    };
+    paymentResponse = { success: true, status: "paid", amountHalalas: 1000, currency: "SAR" };
+    setNextFetchPayment();
+
+    const res = await confirmMoyasarPaymentForOrder({
+      orderId: "ord-1",
+      paymentId: "pay_1",
+      // no userId — guest order does not require one
     });
     expect(res.success).toBe(true);
   });
