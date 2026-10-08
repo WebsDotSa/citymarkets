@@ -14,6 +14,16 @@ export function generateId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
+  // SECURITY: guard getRandomValues explicitly. The original fallback
+  // assumed `crypto` was always defined whenever `crypto.randomUUID`
+  // was missing, which is not true in hardened sandboxes / sandboxed
+  // iframes where the Web Crypto API is fully absent. Throwing an
+  // explicit error matches the pattern in src/lib/ga-events.ts (newEventID)
+  // and surfaces the broken environment instead of silently producing
+  // undefined or empty idempotency keys.
+  if (typeof crypto === "undefined" || typeof crypto.getRandomValues !== "function") {
+    throw new Error("crypto.getRandomValues is required for ID generation");
+  }
   const b = new Uint8Array(16);
   crypto.getRandomValues(b);
   const hex = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");

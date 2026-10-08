@@ -65,8 +65,8 @@ const CHECKOUT_V2_ENABLED =
 
 export function CartV2() {
   const router = useRouter();
-  const { user } = useAuthState();
-  const { items, updateQuantity, removeItem, subtotal, clearCart } = useCart();
+  const { user, loading: authLoading } = useAuthState();
+  const { items, updateQuantity, removeItem, subtotal, clearCart, isHydrated } = useCart();
   const { addItem: wishlistAddItem } = useWishlistActions();
   const { showToast } = useToast();
   const { selectedAddress } = useDeliveryLocationState();
@@ -188,6 +188,9 @@ export function CartV2() {
 
   const handleCheckout = () => {
     if (checkoutBlockedByMixed) return;
+    // Auth bootstrap (/api/v1/auth/me) is async: `user` is null until it
+    // resolves, which used to bounce logged-in customers to the login page.
+    if (authLoading) return;
     if (!user) {
       router.push("/auth/login?redirect=/checkout");
     } else {
@@ -225,6 +228,12 @@ export function CartV2() {
     },
     [wishlistAddItem, removeItem, showToast],
   );
+
+  // The cart is restored from localStorage in a post-mount effect, so on a
+  // full page load `items` is [] for one render. Don't flash "empty cart".
+  if (!isHydrated) {
+    return <div className="min-h-screen bg-gray-50" aria-busy="true" />;
+  }
 
   if (items.length === 0) {
     return (
@@ -558,15 +567,15 @@ export function CartV2() {
             </p>
           )}
 
-          {/* Guest Checkout Option */}
-          {!user && (
-            <button
-              onClick={() => router.push("/checkout")}
-              className="w-full py-2 mt-1 text-primary-600 font-medium hover:text-primary-700 transition-colors text-sm"
-            >
-              أكمل كزائر
-            </button>
-          )}
+          {/* Guest Checkout Option — REMOVED 2026-10-08 (security review
+              F1). The middleware's PROTECTED_PREFIXES = ["/profile",
+              "/orders", "/checkout"] 307-redirects unauthenticated users
+              to /auth/login, so this button was a dead CTA that visually
+              advertised a guest-checkout capability the server doesn't
+              honor. The primary "تسجيل الدخول للدفع" button above
+              already handles the unauthenticated path correctly
+              (router.push("/auth/login?redirect=/checkout")). Re-add
+              this only when a real guest-checkout flow ships. */}
         </div>
       </div>
     </div>

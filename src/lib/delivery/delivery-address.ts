@@ -45,8 +45,15 @@ export function getOrCreateGuestKey(): string {
     if (typeof crypto !== "undefined" && crypto.randomUUID) {
       key = crypto.randomUUID();
     } else {
-      // Crypto-required fallback (2026-10-04 consolidation): use
-      // getRandomValues instead of Math.random (which is not a CSPRNG).
+      // SECURITY: explicit guard on getRandomValues (matches the pattern
+      // in src/lib/ga-events.ts). The previous fallback assumed
+      // `crypto` existed whenever `crypto.randomUUID` did not, which is
+      // not safe in hardened CSP / sandboxed iframes. Throwing an
+      // explicit error prevents the guest key from collapsing to a
+      // blank string and silently breaking guest-cart writes.
+      if (typeof crypto === "undefined" || typeof crypto.getRandomValues !== "function") {
+        throw new Error("crypto.getRandomValues is required for guest key generation");
+      }
       const bytes = new Uint8Array(16);
       crypto.getRandomValues(bytes);
       key = `guest_${Date.now()}_${Array.from(bytes, (b) =>

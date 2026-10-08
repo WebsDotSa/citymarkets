@@ -101,6 +101,19 @@ function mockRequest(body?: unknown, headers?: Record<string, string>): NextRequ
 
 const mockReconcile = vi.mocked(reconcilePayment);
 
+// SECURITY (2026-10-08): non-prod environments now REQUIRE
+// DEV_SIMULATE_TOKEN. Tests set it in beforeEach so the happy-path
+// cases pass the new auth gate; tests that specifically cover the
+// 401 / wrong-token behaviour override it as needed.
+const TEST_DEV_TOKEN = "test-dev-token";
+
+function authorizedRequest(body?: unknown, extraHeaders?: Record<string, string>): NextRequest {
+  return mockRequest(body, {
+    authorization: `Bearer ${TEST_DEV_TOKEN}`,
+    ...extraHeaders,
+  });
+}
+
 describe("POST /api/v1/payments/_dev/simulate", () => {
   beforeEach(() => {
     calls.length = 0;
@@ -109,14 +122,21 @@ describe("POST /api/v1/payments/_dev/simulate", () => {
     rollbackCalls = 0;
     mockReconcile.mockReset();
     mockReconcile.mockResolvedValue({ recoveredCount: 0, duplicate: false });
-    delete process.env.DEV_SIMULATE_TOKEN;
+    process.env.DEV_SIMULATE_TOKEN = TEST_DEV_TOKEN;
     setNodeEnv("test");
+  });
+
+  afterAll(() => {
+    if (previousToken === undefined) delete process.env.DEV_SIMULATE_TOKEN;
+    else process.env.DEV_SIMULATE_TOKEN = previousToken;
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else setNodeEnv(previousNodeEnv);
   });
 
   it("returns 404 in production", async () => {
     setNodeEnv("production");
     try {
-      const res = await POST(mockRequest({ invoice_id: "inv_1", status: "paid" }));
+      const res = await POST(authorizedRequest({ invoice_id: "inv_1", status: "paid" }));
       expect(res.status).toBe(404);
       expect(beginCalls).toBe(0);
     } finally {
@@ -124,50 +144,45 @@ describe("POST /api/v1/payments/_dev/simulate", () => {
     }
   });
 
-  it("returns 401 when DEV_SIMULATE_TOKEN is set and bearer is wrong", async () => {
-    process.env.DEV_SIMULATE_TOKEN = "expected-token";
-    try {
-      const res = await POST(
-        mockRequest(
-          { invoice_id: "inv_1", status: "paid" },
-          { authorization: "Bearer wrong" },
-        ),
-      );
-      expect(res.status).toBe(401);
-    } finally {
-      delete process.env.DEV_SIMULATE_TOKEN;
-    }
+  it("returns 401 when bearer token is wrong", async () => {
+    const res = await POST(
+      mockRequest(
+        { invoice_id: "inv_1", status: "paid" },
+        { authorization: "Bearer wrong" },
+      ),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 401 when DEV_SIMULATE_TOKEN is unset in non-prod", async () => {
+    // SECURITY (2026-10-08): non-prod environments no longer have an
+    // "open mode". Removing the token must lock the endpoint.
+    delete process.env.DEV_SIMULATE_TOKEN;
+    const res = await POST(authorizedRequest({ invoice_id: "inv_1", status: "paid" }));
+    expect(res.status).toBe(401);
   });
 
   it("accepts a matching bearer token", async () => {
-    process.env.DEV_SIMULATE_TOKEN = "expected-token";
-    try {
-      const res = await POST(
-        mockRequest(
-          { invoice_id: "inv_test_1", status: "paid" },
-          { authorization: "Bearer expected-token" },
-        ),
-      );
-      expect(res.status).toBe(200);
-    } finally {
-      delete process.env.DEV_SIMULATE_TOKEN;
-    }
+    const res = await POST(
+      authorizedRequest({ invoice_id: "inv_test_1", status: "paid" }),
+    );
+    expect(res.status).toBe(200);
   });
 
   it("returns 400 when invoice_id is missing", async () => {
-    const res = await POST(mockRequest({ status: "paid" }));
+    const res = await POST(authorizedRequest({ status: "paid" }));
     expect(res.status).toBe(400);
   });
 
   it("returns 404 when no order matches the invoice_id", async () => {
-    const res = await POST(mockRequest({ invoice_id: "missing" }));
+    const res = await POST(authorizedRequest({ invoice_id: "missing" }));
     expect(res.status).toBe(404);
     expect(rollbackCalls).toBe(1);
   });
 
   it("happy path: opens tx, fetches order, calls reconcilePayment, commits", async () => {
     const res = await POST(
-      mockRequest({ invoice_id: "inv_test_1", status: "paid" }),
+      authorizedRequest({ invoice_id: "inv_test_1", status: "paid" }),
     );
     expect(res.status).toBe(200);
     expect(beginCalls).toBe(1);
@@ -183,7 +198,7 @@ describe("POST /api/v1/payments/_dev/simulate", () => {
   });
 
   it("defaults gateway to moyasar + event_type to payment_paid", async () => {
-    await POST(mockRequest({ invoice_id: "inv_test_1", status: "paid" }));
+    await POST(authorizedRequest({ invoice_id: "inv_test_1", status: "paid" }));
     const call = mockReconcile.mock.calls[0]?.[1];
     expect(call?.gateway).toBe("moyasar");
     expect(call?.eventType).toBe("payment_paid");
@@ -191,14 +206,14 @@ describe("POST /api/v1/payments/_dev/simulate", () => {
   });
 
   it("maps refunded → paid (collapses non-canonical terminal status)", async () => {
-    await POST(mockRequest({ invoice_id: "inv_test_1", status: "refunded" }));
+    await POST(authorizedRequest({ invoice_id: "inv_test_1", status: "refunded" }));
     const call = mockReconcile.mock.calls[0]?.[1];
     expect(call?.eventType).toBe("payment_refunded");
     expect(call?.paymentDb).toBe("paid"); // collapsed: refunded doesn't have its own DB enum
   });
 
   it("falls back to 'paid' on an unknown status string", async () => {
-    await POST(mockRequest({ invoice_id: "inv_test_1", status: "wat" }));
+    await POST(authorizedRequest({ invoice_id: "inv_test_1", status: "wat" }));
     const call = mockReconcile.mock.calls[0]?.[1];
     expect(call?.eventType).toBe("payment_paid");
     expect(call?.paymentDb).toBe("paid");

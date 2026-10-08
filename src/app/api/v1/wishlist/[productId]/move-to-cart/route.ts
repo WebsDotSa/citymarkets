@@ -123,12 +123,32 @@ export async function POST(
       );
     }
     const stockAware = productRow.track_stock === false || productRow.track_stock === null;
-    if (!stockAware && Number(productRow.stock_qty) < quantity) {
-      await client.query('ROLLBACK');
-      return NextResponse.json(
-        { success: false, error: 'الكمية المطلوبة غير متوفرة' },
-        { status: 400, headers: createRateLimitHeaders(rl) },
+    // SECURITY / correctness (security review 2026-10-08): the original
+    // check compared stock_qty only to the NEW quantity, ignoring any
+    // quantity already present in the caller's cart. A caller who
+    // already had 5 of product X (stock_qty=4) and POSTed this endpoint
+    // with quantity=1 would pass the check (`4 < 1` is false) and the
+    // ON CONFLICT DO UPDATE would set cart.quantity = 5+1 = 6, exceeding
+    // the available stock. Pre-aggregate the existing cart row to fix.
+    if (!stockAware) {
+      const existingCart = await client.query(
+        `SELECT quantity FROM cart
+          WHERE user_id = $1::uuid
+            AND product_id = $2::uuid
+            AND COALESCE(vendor_id, '${CITY_MARKETS_VENDOR_ID}'::uuid) = COALESCE($3::uuid, '${CITY_MARKETS_VENDOR_ID}'::uuid)
+          LIMIT 1`,
+        [userId, productId, productRow.vendor_id ?? null],
       );
+      const existingQty = existingCart.rows[0]
+        ? Number(existingCart.rows[0].quantity)
+        : 0;
+      if (Number(productRow.stock_qty) < existingQty + quantity) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { success: false, error: 'الكمية المطلوبة غير متوفرة' },
+          { status: 400, headers: createRateLimitHeaders(rl) },
+        );
+      }
     }
 
     // Step 3: insert (or upsert) the cart row. The ON CONFLICT

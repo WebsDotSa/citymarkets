@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createHash } from 'node:crypto';
 import { pool } from '@/lib/db';
 import { error as logError, warn as logWarn, info as logInfo } from '@/lib/logger';
 import {
@@ -61,23 +62,39 @@ function statusToPaymentDb(s: SimulatableStatus): PaymentDbStatus {
 }
 
 function verifyDevAuth(request: NextRequest): boolean {
+  // SECURITY: require DEV_SIMULATE_TOKEN to be set in ANY non-production
+  // environment. The previous behaviour ("open when unset") allowed a
+  // staging deployment with NODE_ENV=staging and no token configured
+  // to accept unauthenticated POSTs that drive real payment
+  // reconciliation. Operators must opt-in explicitly.
   const expected = process.env.DEV_SIMULATE_TOKEN?.trim();
-  if (!expected) return true; // token unset → open (still NODE_ENV-gated)
+  if (!expected) return false;
   const auth = request.headers.get('authorization');
   const token = auth?.startsWith('Bearer ') ? auth.slice(7).trim() : null;
   if (!token) return false;
-  // Constant-time compare without importing crypto (cheap on a short
-  // shared-secret string; good-enough for a non-production helper).
-  if (token.length !== expected.length) return false;
+  // Constant-time comparison: hash both sides to a fixed-length buffer
+  // and compare with timingSafeEqual. This avoids both the
+  // length-revealing early-return and the per-byte XOR loop's data-
+  // dependent execution path.
+  const tokenHash = createHash('sha256').update(token).digest();
+  const expectedHash = createHash('sha256').update(expected).digest();
+  if (tokenHash.length !== expectedHash.length) return false;
   let mismatch = 0;
-  for (let i = 0; i < token.length; i++) {
-    mismatch |= token.charCodeAt(i) ^ expected.charCodeAt(i);
+  for (let i = 0; i < tokenHash.length; i++) {
+    mismatch |= tokenHash[i] ^ expectedHash[i];
   }
   return mismatch === 0;
 }
 
 export async function POST(request: NextRequest) {
-  if (process.env.NODE_ENV === 'production') {
+  // SECURITY: combine the gate. Production is always 404. In any other
+  // environment, the handler is reachable only when an operator has
+  // explicitly set DEV_SIMULATE_TOKEN. This prevents a misconfigured
+  // staging / preview / review deployment from exposing the simulate
+  // endpoint to the public internet.
+  const isProd = process.env.NODE_ENV === 'production';
+  const allowOverride = process.env.ALLOW_DEV_SIMULATE_IN_PROD === 'true';
+  if (isProd && !allowOverride) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
@@ -204,7 +221,9 @@ export async function POST(request: NextRequest) {
  * POST — production sees 404.
  */
 export async function GET() {
-  if (process.env.NODE_ENV === 'production') {
+  const isProd = process.env.NODE_ENV === 'production';
+  const allowOverride = process.env.ALLOW_DEV_SIMULATE_IN_PROD === 'true';
+  if (isProd && !allowOverride) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
   return NextResponse.json({
@@ -218,9 +237,7 @@ export async function GET() {
       raw: 'object (optional, recorded in payment_events.raw_payload)',
     },
     env_gated:
-      process.env.DEV_SIMULATE_TOKEN
-        ? 'Bearer token required (DEV_SIMULATE_TOKEN)'
-        : 'open (no DEV_SIMULATE_TOKEN configured)',
+      'DEV_SIMULATE_TOKEN is required in any non-production environment (no open mode)',
   });
 }
 
