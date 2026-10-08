@@ -166,8 +166,25 @@ export async function authorizeOrderForPayment(args: {
   | { kind: "ineligible"; error: string }
   | { kind: "invalid_total" }
 > {
+  // SECURITY FIX (HIGH): every non-ok branch used to ROLLBACK and return
+  // without releasing the pool client. With pool `max=20`, repeated
+  // forbidden / not_found / ineligible requests from one IP could check
+  // out every connection permanently and freeze the payments endpoints.
+  //
+  // The contract is unchanged on the happy path: the ok branch hands the
+  // live client to the caller, which is responsible for calling
+  // `commitOrderLock` or `rollbackOrderLock`. The change here is that
+  // every other branch now releases inside this function and the caller
+  // never sees the client.
   const { pool } = await import("@/lib/db");
   const client = await pool.connect();
+  type Result =
+    | { kind: "ok"; value: AuthorizedOrder }
+    | { kind: "not_found" }
+    | { kind: "forbidden" }
+    | { kind: "ineligible"; error: string }
+    | { kind: "invalid_total" };
+  let result: Result;
   try {
     await client.query("BEGIN");
     const r = await client.query<OwnerSnapshot>(
@@ -180,43 +197,56 @@ export async function authorizeOrderForPayment(args: {
       [args.orderId],
     );
     if (r.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return { kind: "not_found" };
-    }
-    const owner = r.rows[0];
-    if (String(owner.user_id ?? "") !== args.userId) {
-      await client.query("ROLLBACK");
-      // Avoid leaking ownership info; for guest orders user_id is
-      // null and the comparison fails — fall through to not_found
-      // so the caller doesn't leak whether the order exists.
-      if (owner.user_id === null) return { kind: "not_found" };
-      return { kind: "forbidden" };
-    }
-    if (!args.skipActionCheck) {
-      const action = getOrderPaymentAction({
-        status: owner.status,
-        paymentStatus: owner.payment_status,
-        paymentMethod: owner.payment_method,
-      });
-      if (action === "none") {
-        await client.query("ROLLBACK");
-        return {
-          kind: "ineligible",
-          error: "لا يمكن إعادة محاولة الدفع على هذا الطلب",
-        };
+      result = { kind: "not_found" };
+    } else {
+      const owner = r.rows[0];
+      if (String(owner.user_id ?? "") !== args.userId) {
+        // Avoid leaking ownership info; for guest orders user_id is
+        // null and the comparison fails — fall through to not_found
+        // so the caller doesn't leak whether the order exists.
+        result = owner.user_id === null
+          ? { kind: "not_found" }
+          : { kind: "forbidden" };
+      } else {
+        let eligible = true;
+        if (!args.skipActionCheck) {
+          const action = getOrderPaymentAction({
+            status: owner.status,
+            paymentStatus: owner.payment_status,
+            paymentMethod: owner.payment_method,
+          });
+          if (action === "none") {
+            eligible = false;
+            result = {
+              kind: "ineligible",
+              error: "لا يمكن إعادة محاولة الدفع على هذا الطلب",
+            };
+          }
+        }
+        if (eligible) {
+          const serverTotal = Number(owner.total);
+          if (!Number.isFinite(serverTotal) || serverTotal <= 0) {
+            result = { kind: "invalid_total" };
+          } else {
+            result = { kind: "ok", value: { client, owner, serverTotal } };
+          }
+        }
       }
     }
-    const serverTotal = Number(owner.total);
-    if (!Number.isFinite(serverTotal) || serverTotal <= 0) {
-      await client.query("ROLLBACK");
-      return { kind: "invalid_total" };
-    }
-    return { kind: "ok", value: { client, owner, serverTotal } };
   } catch {
-    await client.query("ROLLBACK");
-    client.release();
-    return { kind: "invalid_total" };
+    result = { kind: "invalid_total" };
   }
+  // Release on every non-ok branch; the ok branch transfers ownership of
+  // the client to the caller via `commitOrderLock` / `rollbackOrderLock`.
+  if (result.kind !== "ok") {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* pool may already be closing; nothing to do */
+    }
+    client.release();
+  }
+  return result;
 }
 
 /**
