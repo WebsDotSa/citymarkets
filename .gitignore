@@ -121,3 +121,16 @@ ios/fastlane/.snapfile_diff.json
 /ios-citymarkets/
 /ios-citymarkets.zip
 /ios-citymarkets-*.zip
+
+# pnpm migration artefacts (2026-10-08). The project is currently on npm;
+# these files were left behind by a half-completed migration. The
+# workspace.yaml still has placeholder 'set this to true or false' values
+# so committing them would break installs. If the project migrates to
+# pnpm in the future, regenerate the workspace and re-init the lockfile.
+/pnpm-lock.yaml
+/pnpm-workspace.yaml
+
+# One-off JWT-signing test script. Hardcoded dev DB password + JWT secret
+# (kept out of the repo intentionally). Superseded by
+# scripts/customer-journey-e2e.mjs which reads secrets from .env.local.
+/scripts/jwt-test.mjs
