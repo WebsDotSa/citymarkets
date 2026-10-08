@@ -216,9 +216,6 @@ export async function addToWishlist(
      )
      SELECT i.product_id, i.added_at, ${WISHLIST_PRODUCT_FIELDS}
      ${WISHLIST_INSERTED_JOIN}`,
-     FROM inserted i
-     JOIN products_unified p ON p.id = i.product_id
-     LEFT JOIN vendors v ON v.id = p.vendor_id`,
     [userId, productId],
   );
 

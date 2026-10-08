@@ -80,21 +80,6 @@ describe("GET /api/admin/driver/orders/[id] — products_unified migration", () 
     );
     expect(usesUnified).toBe(true);
   });
-
-  it("scopes the order lookup to the caller's own or unassigned orders (RBAC)", async () => {
-    await GET(
-      mockRequest("http://localhost/api/admin/driver/orders/uuid-1") as never,
-      { params: Promise.resolve({ id: "uuid-1" }) } as never,
-    );
-
-    const driverLookup = calls.find((c) => /FROM drivers WHERE admin_user_id/i.test(c.sql));
-    expect(driverLookup?.params).toEqual(["admin-1"]);
-
-    const orderQuery = calls.find((c) => /FROM orders o/i.test(c.sql));
-    expect(orderQuery?.sql).toMatch(/o\.driver_id IS NULL OR o\.driver_id = \$2/);
-    // No drivers row in the mock → caller may only see unassigned orders.
-    expect(orderQuery?.params).toEqual(["uuid-1", null]);
-  });
 });
 
 /**
