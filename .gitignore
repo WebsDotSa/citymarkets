@@ -90,3 +90,34 @@ ios/fastlane/.snapfile_diff.json
 *.dSYM.zip
 *.dSYM
 .swiftpm/
+
+# Local development artifacts (2026-10-08)
+# Secrets — root .env (no .local suffix) is the user's secret stash.
+# Keep it out of git even though Next.js' default .gitignore only covers
+# .env*.local. The previous gap was the .env file that pnpm/npm create
+# when run with no install command.
+/.env
+
+# Serena MCP server cache (per-session, re-derivable from the project)
+/.serena/
+
+# Agent worktrees (separate from /claude/worktrees — created by
+# sub-agents via isolation: "worktree" option)
+.worktrees/
+
+# Graphify knowledge graph output (AST-only, regenerated via `graphify update`).
+# Lives at the repo root when `graphify update .` is run from here.
+/graphify-out/
+
+# Cloudflare security audit output (regenerable)
+/audit-output/
+
+# Storybook static export (regenerable via `pnpm build-storybook`)
+/storybook-static/
+
+# External iOS app bundle (untrusted upload from app store export — see
+# CLAUDE.md "untrusted data" rule). Different from the real `ios/` dir
+# which is the Xcode project; this is `ios-citymarkets/` (with a dash).
+/ios-citymarkets/
+/ios-citymarkets.zip
+/ios-citymarkets-*.zip
