@@ -353,6 +353,8 @@ export async function createCheckout(
   // negative (oversell).
   for (const it of resolved.catalog) {
     if (it.track_stock) {
+      // Primary path: decrement the canonical vendor_products row
+      // (the unified source of truth after migration 014).
       const dec = await client.query(
         `UPDATE vendor_products
             SET stock_quantity = stock_quantity - $1
@@ -361,11 +363,32 @@ export async function createCheckout(
         [it.quantity, it.product_id, CITY_MARKETS_VENDOR_ID],
       );
       if (dec.rowCount === 0) {
-        return {
-          success: false,
-          error: "نفد المخزون",
-          kind: "stock_insufficient",
-        };
+        // FALLBACK (defence-in-depth 2026-10-08, LOW-5 from security
+        // review): resolveItems reads from `products_unified` which
+        // is a UNION ALL of `vendor_products` and the legacy
+        // `products` table. The union exists during the Slice 4
+        // migration window (see resolve-items.ts:11-15). A row that
+        // exists only in `products` (e.g. a newly inserted legacy
+        // row whose vendor_products mirror hasn't been backfilled
+        // yet) would pass the resolveItems stock check but return
+        // rowCount=0 here — producing a false-positive
+        // "stock_insufficient" that blocks checkout for in-stock
+        // products. Attempt the same atomic UPDATE on the legacy
+        // table before failing.
+        const legacyDec = await client.query(
+          `UPDATE products
+              SET stock_qty = stock_qty - $1
+            WHERE id = $2 AND track_stock = true
+              AND stock_qty >= $1`,
+          [it.quantity, it.product_id],
+        );
+        if (legacyDec.rowCount === 0) {
+          return {
+            success: false,
+            error: "نفد المخزون",
+            kind: "stock_insufficient",
+          };
+        }
       }
     }
   }
