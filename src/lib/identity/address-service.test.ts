@@ -107,10 +107,11 @@ describe("createAddress", () => {
     );
     const insertCall = calls.find((c) => /INSERT INTO addresses/i.test(c.sql));
     expect(insertCall).toBeDefined();
-    // params: [label, description, title, lat, lng, address_text, makeDefault, place_images]
-    expect(insertCall!.params[0]).toBe("Home");
-    expect(insertCall!.params[2]).toBe("Home"); // resolved title
-    expect(insertCall!.params[6]).toBe(true); // auto-promoted to default
+    // params: [ownerValue, label, description, title, lat, lng, address_text, makeDefault, place_images]
+    expect(insertCall!.params[0]).toBe("u-1"); // ownerValue
+    expect(insertCall!.params[1]).toBe("Home");
+    expect(insertCall!.params[3]).toBe("Home"); // resolved title
+    expect(insertCall!.params[7]).toBe(true); // auto-promoted to default
   });
 
   it("does NOT auto-promote when owner already has addresses", async () => {
@@ -121,7 +122,7 @@ describe("createAddress", () => {
       { label: "Office", lat: 24.7, lng: 46.6, is_default: false },
     );
     const insertCall = calls.find((c) => /INSERT INTO addresses/i.test(c.sql));
-    expect(insertCall!.params[6]).toBe(false);
+    expect(insertCall!.params[7]).toBe(false);
   });
 
   it("writes user_id for user owner", async () => {
@@ -134,7 +135,8 @@ describe("createAddress", () => {
     const insertCall = calls.find((c) => /INSERT INTO addresses/i.test(c.sql));
     // Column list uses user_id (interpolated; safe — type-narrowed).
     expect(insertCall!.sql).toMatch(/INSERT INTO addresses \(user_id,/);
-    expect(insertCall!.params[0]).toBe("X"); // label
+    expect(insertCall!.params[0]).toBe("u-7"); // ownerValue
+    expect(insertCall!.params[1]).toBe("X"); // label
   });
 
   it("writes guest_key for guest owner", async () => {
@@ -146,9 +148,65 @@ describe("createAddress", () => {
     );
     const insertCall = calls.find((c) => /INSERT INTO addresses/i.test(c.sql));
     // Column list interpolates owner column name (safe — branch is
-    // type-narrowed). The value is bound as $1.
+    // type-narrowed). The guest value is bound as $1 with no cast.
     expect(insertCall!.sql).toMatch(/INSERT INTO addresses \(guest_key,/);
-    expect(insertCall!.params[0]).toBe("Hotel");
+    expect(insertCall!.params[0]).toBe("g-9");
+    expect(insertCall!.params[1]).toBe("Hotel");
+  });
+
+  /**
+   * REGRESSION (2026-10-08, customer-journey-e2e): the "auto-promote to
+   * default" UPDATE used to pass `[param, param]` (two parameters) for
+   * an SQL string that only references `$1` once. pg binds the same
+   * value to every occurrence of `$1` in the text, so the params
+   * array must hold exactly one entry — even when the SQL references
+   * it twice (via `${whereSql}`).
+   *
+   * The previous version triggered
+   *   "bind message supplies 2 parameters, but prepared statement \"\" requires 1"
+   * from the live DB and broke every first-time address save.
+   */
+  it("passes a single param to the auto-promote UPDATE (regression: pg bind counts unique placeholders, not text occurrences)", async () => {
+    mockCount = 0; // first address → makeDefault branch runs
+    mockRows = [{ id: "a-7" }];
+    await createAddress(
+      { kind: "user", userId: "u-1" },
+      { label: "Home", lat: 24.7, lng: 46.6, is_default: true },
+    );
+    const updateCall = calls.find(
+      (c) =>
+        /UPDATE addresses SET is_default = false/i.test(c.sql) &&
+        /COALESCE/.test(c.sql),
+    );
+    expect(updateCall).toBeDefined();
+    // The SQL references `${whereSql}` twice — both render to
+    // `user_id = $1::uuid` (one unique placeholder, two text
+    // occurrences). The params array must therefore be length 1, not 2.
+    expect(updateCall!.params).toHaveLength(1);
+    expect(updateCall!.params[0]).toBe("u-1");
+  });
+
+  /**
+   * REGRESSION (2026-10-08, customer-journey-e2e): the INSERT used to
+   * interpolate `${owner.userId}::uuid` into the SQL string as a
+   * fragment. pg's parser saw `58f85100-xxxx-...` and read the leading
+   * digits as a numeric literal, then choked on the hex tail
+   * ("trailing junk after numeric literal at or near \"58f85100\"").
+   * The fix binds the owner value as $1 and lets pg cast server-side.
+   */
+  it("binds owner value as a parameter with $1::uuid cast (regression: unquoted interpolation broke INSERT)", async () => {
+    mockCount = 0;
+    mockRows = [{ id: "a-8" }];
+    await createAddress(
+      { kind: "user", userId: "58f85100-2c1a-4a72-9999-abcdef012345" },
+      { label: "Home", lat: 24.7, lng: 46.6 },
+    );
+    const insertCall = calls.find((c) => /INSERT INTO addresses/i.test(c.sql));
+    expect(insertCall).toBeDefined();
+    // The userId is bound, not interpolated. Look for the $1::uuid
+    // placeholder syntax that proves the fix.
+    expect(insertCall!.sql).toMatch(/VALUES \(\$1::uuid,/);
+    expect(insertCall!.params[0]).toBe("58f85100-2c1a-4a72-9999-abcdef012345");
   });
 });
 

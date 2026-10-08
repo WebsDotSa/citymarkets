@@ -162,20 +162,39 @@ export async function createAddress(
     const makeDefault = input.is_default === true || isFirst;
 
     if (makeDefault) {
+      // SECURITY/PERF: `${whereSql}` is e.g. `user_id = $1::uuid` and is
+      // referenced TWICE in the SQL string. pg binds $1 once and reuses
+      // the same value for both occurrences — the params array must
+      // contain exactly one entry, not two. Passing [param, param] (the
+      // previous version) made pg complain "bind message supplies 2
+      // parameters, but prepared statement requires 1" because there is
+      // only one unique placeholder, even though it appears twice in the
+      // text.
       await client.query(
         `UPDATE addresses SET is_default = false WHERE ${whereSql} AND id <> COALESCE((SELECT id FROM addresses WHERE ${whereSql} LIMIT 1), '00000000-0000-0000-0000-000000000000'::uuid)`,
-        [param, param],
+        [param],
       );
     }
 
     const ownerColumn = owner.kind === "user" ? "user_id" : "guest_key";
-    const ownerValue = owner.kind === "user" ? `${owner.userId}::uuid` : owner.guestKey;
+    // SECURITY/PARSE: previously this interpolated `${owner.userId}::uuid`
+    // directly into the VALUES clause as a SQL fragment. pg's parser saw
+    // `58f85100-xxxx-...` and read the leading digits as a numeric
+    // literal, then choked on the hex tail ("trailing junk after numeric
+    // literal at or near 58f85100"). The fix is to pass the owner value
+    // as a bound parameter ($1) and let pg cast it server-side. The
+    // cast is conditional because the guest owner column is TEXT, not
+    // UUID.
+    const ownerValue =
+      owner.kind === "user" ? owner.userId : owner.guestKey;
+    const ownerCast = owner.kind === "user" ? "$1::uuid" : "$1";
 
     const insertResult = await client.query<AddressRow>(
       `INSERT INTO addresses (${ownerColumn}, label, description, title, lat, lng, address_text, is_default, place_images)
-       VALUES (${ownerValue}, $2, $3, $4, $5::float8, $6::float8, $7, $8, $9::text[])
+       VALUES (${ownerCast}, $2, $3, $4, $5::float8, $6::float8, $7, $8, $9::text[])
        RETURNING ${SELECT_FIELDS}`,
       [
+        ownerValue,
         input.label,
         input.description ?? null,
         title,
